@@ -1,0 +1,486 @@
+vignette("lmPerm")
+AIC(model1)
+AIC(model2)
+AIC(model3)
+AIC(model4)
+AIC(model5)
+AIC(model)
+summary(model1)
+model2
+AIC(model1)
+AIC(model2)
+summary(model1)
+plot(model)
+plot(model1)
+plot(model2)
+plot(model3)
+plot(model4)
+fake.data_u<-data.frame(Treatment=rep(c("A", "B"),each=30), resp=c(runif(30, 4, 5), runif(4.5, 5.5, 1)))#
+#
+model6<-lmp(resp-mean(resp)~Treatment, data=fake.data_u, maxIter=999999, Ca=0)
+fake.data_u<-data.frame(Treatment=rep(c("A", "B"),each=30), resp=c(runif(30, 4, 5), runif(30, 4.5, 5.5)))#
+#
+model6<-lmp(resp-mean(resp)~Treatment, data=fake.data_u, maxIter=999999, Ca=0)
+summary(model6)
+model6<-lmp(resp-mean(resp)~Treatment, data=fake.data_u, maxIter=999999, Ca=0)#
+model7<-lmp(trans-mean(trans)~Treatment, data=fake.data_u, maxIter=999999, Ca=0)
+fake.data<-data.frame(Treatment=rep(c("A", "B"),each=30), resp=c(rnorm(30, 5, 1), rnorm(30, 6, 1)))#
+#
+fake.data_u<-data.frame(Treatment=rep(c("A", "B"),each=30), resp=c(runif(30, 4, 5), runif(30, 4.5, 5.5)))#
+#
+fake.data_u$trans<-0.0223*(fake.data$resp^2.9816)#
+#
+model6<-lmp(resp-mean(resp)~Treatment, data=fake.data_u, maxIter=999999, Ca=0)#
+model7<-lmp(trans-mean(trans)~Treatment, data=fake.data_u, maxIter=999999, Ca=0)
+summary(model8)
+summary(model7)
+summary(model6)
+Anova(model6)
+Anova(model7)
+plot(model6)
+plot(model7)
+AIC(model6)
+AIC(model7)
+19*40*52
+19*40*52*1.254
+18*40*52*1.254
+18*40*52*1
+20*40*52*1
+20*40*52*1.254
+15*20*30
+19*40*52
+18*40*52*1.254
+18*40*52*1
+19*40*52*1
+5*10*8
+5*8*8
+6*8*8
+1148/7
+348.71*2
+697.42/5
+697.42/3
+(697.42/3)/4
+(697.42/3)/5
+697.42/14
+2*(697.42/14)
+3*(697.42/14)
+697.42/5
+#assignment#
+#
+#object#
+a<-1#
+#
+#vector#
+vec<-c(a,4)#
+#
+#matrix#
+mat<-matrix(vec, nrow=2, ncol=2)
+mat
+#function#
+breakfast_cals<-function(eggs, pancakes, bacon){#
+	cals<-eggs*78 + pancakes*86 + bacon*43#
+	cals#
+}
+breakfast_cals(eggs=2, pancakes=2, bacon=4)
+breakfast_cals(eggs=3, pancakes=2)
+breakfast_cals(eggs=3, pancakes=2, bacon=0)
+egg_days<-c(1,0,5,2,3,2,0)#
+pancake_days<-c(2,2,2,2,2,2,2)#
+bacon_days<-c(0,2,0,4,0,1,1)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)
+run_amount<-function(breakfast){#
+	distance<-(breakfast-300)/100#
+}
+rm()
+clear()
+vector<-c(1,2,4,7,1)
+vector
+matrix(0, nrow=2, ncol=3)
+breakfast_cals<-function(eggs, pancakes, bacon){#
+	cals<-eggs*78 + pancakes*86 + bacon*43#
+	cals#
+}
+breakfast_cals(eggs=2, pancakes=2, bacon=5)
+breakfast_cals(eggs=2, pancakes=2)
+breakfast_cals<-function(eggs=0, pancakes=0, bacon=0){#
+	cals<-eggs*78 + pancakes*86 + bacon*43#
+	cals#
+}
+breakfast_cals(eggs=2)
+#assignment#
+#
+#object#
+a<-1#
+#vector#
+vec<-c(a,4)#
+#matrix#
+mat<-matrix(vec, nrow=2, ncol=2)#
+#function#
+breakfast_cals<-function(eggs=0, pancakes=0, bacon=0){#
+	eggs*78 + pancakes*86 + bacon*43#
+}
+egg_days<-c(1,0,5,2,3,2,0)#
+pancake_days<-c(2,2,2,2,2,2,2)#
+bacon_days<-c(0,2,0,4,0,1,1)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)
+egg_days<-c(1,0,5,2,3,2,0)#
+pancake_days<-c(2,2,2,2,2,2,2)#
+bacon_days<-c(0,2)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)
+egg_days<-c(1,0,5,2,3,2,0)#
+pancake_days<-c(2,2,2,2,2,2,2)#
+bacon_days<-c(2)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)
+egg_days<-c(1,0,5,2,3,2)#
+pancake_days<-c(2,2,2,2,2,2)#
+bacon_days<-c(2,0)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)
+breakfast_cals(egg_days, pancake_days, bacon_days)
+breakfast_cals(bacon_days, egg_days, pancake_days)
+breakfast_cals(bacon=bacon_days, eggs=egg_days, pancakes=pancake_days)
+?seq
+seq()
+seq(2)
+?
+length
+length(bacon_days)
+length(eggs_days)
+length(egg_days)
+matrix<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+matrix
+matrix[1,2]
+matrix[3,2]
+matrix[,2]
+rm(list=ls())
+matrix
+matrix<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+#assignment#
+#
+#object#
+a<-1#
+#vector#
+vec<-c(a,4)#
+#matrix#
+mat<-matrix(vec, nrow=2, ncol=2)#
+#function#
+breakfast_cals<-function(eggs=0, pancakes=0, bacon=0){#
+	eggs*78 + pancakes*86 + bacon*43#
+}#
+egg_days<-c(1,0,5,2,3,2)#
+pancake_days<-c(2,2,2,2,2,2)#
+bacon_days<-c(2,0)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)#
+#practice:#
+#
+#write a function to convert celsius to fahrenheit#
+#
+#Use that function to make a 2-column matrix, the first column of celsius from 0 to 50, the second of corresponding fahrenheit values#
+#Make a matrix where the first column is a population with phenotype values between 0 and 10 (may be drawn randomly using rnorm() or runif())#
+#
+#use the sample() function to fill the second column with a second generation drawn from the first generation. There are multiple ways to do this!#
+#
+#do this for 10 generations.#
+#
+#wouldn't a loop be nice now?
+egg_mat<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+egg_mat
+egg_mat[,2]
+egg_mat[,2]<-0
+egg_mat
+plot(egg_mat)
+plot(egg_mat[,1]~egg_mat[,2])
+24.65+78.70+64
+(24.65+78.70+64)/2
+119.57/2
+2000*0.53
+rbinom(10,1,0.5)
+rbinom(1,10,0.5)
+rbinom(10,1,0.5)
+matrix(NA, ncol=5, nrow=5)
+matrix(c(0,1), ncol=5, nrow=5)
+matrix(c(0,1,2), ncol=5, nrow=5)
+mat<-matrix(0, nrow=5, ncol=2)
+mat
+mat[,1]<-1:5
+mat
+mat[,3]<-1
+install.packages("viridis")#
+install.packages("mgcv")#
+install.packages("boot")#
+install.packages("magick")#
+#
+library(viridis)#
+library(mgcv)  #needed for gam command#
+library(boot)  #needed for the inv.logit command#
+#library(magick)
+2200*0.53
+?ncol
+583.34+291.67
+12/5
+35/12
+#draw body sizes that differ between Treatments using rnorm#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=5), Resp=c(rnorm(5, 5, 1), rnorm(5,3,1)))
+Results
+boxplot(Results)
+boxplot(Results$Resp~Results$Trt)
+lm(Resp~Trt, data=Results)
+summary(lm(Resp~Trt, data=Results))
+#plot mean body sizes from each treatment#
+boxplot(Results$Resp~Results$Trt)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
+}
+sample_test(10)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+boxplot(Results$Resp~Results$Trt)#
+}
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
+}#
+#
+sample_test(10)#
+boxplot(Results$Resp~Results$Trt)
+sample_test(100)#
+boxplot(Results$Resp~Results$Trt)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
+}#
+#
+output<-sample_test(100)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(10)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(1000)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(2)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(5)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(5)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(10)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(100)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+?boxplot
+sample_test<-function(s_size, sd){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, sd), rnorm(s_size,3,sd)))#
+Results#
+}#
+#
+output<-sample_test(s_size=100, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(s_size=1000, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim#
+#
+#Run it for different sample si
+output<-sample_test(s_size=100, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(s_size=100, sd=1)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+plot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+10.49+29.33+18.60+15.55+19.95+5.69+6.39+7.16
+113.16/2
+348.69/4
+150/5
+14+33+18+18+22
+21+15+32+13+25+16+33
+155+15
+170-105
+155/7
+2046/15
+136/4
+30*15
+30*15*4.5
+100000/12
+3/8
+47.71/2
+60*1.75
+500/20
+52*5
+260/25
+200/8
+exp^2
+exp^(1/2)
+e^(1/2)
+exp
+exp(1/2)
+exp(-1/2)
+exp(-1/2)+e(-0.08^2/2*(0.1^2))
+exp(-1/2)+exp(-0.08^2/2*(0.1^2))
+exp(-1/2)+exp((-0.08^2)/2*(0.1^2))
+exp((-0.08^2)/2*(0.1^2))
+exp((-0.05^2)/2*(0.1^2))
+exp((-0.09^2)/2*(0.1^2))
+exp((-0.1^2)/2*(0.1^2))
+exp((-0.1^2)/(2*(0.1^2)))
+exp((-0.08^2)/(2*(0.1^2)))
+exp((-0.07^2)/(2*(0.1^2)))
+exp((-0.01^2)/(2*(0.1^2)))
+1-0.9*(4*0.1*0.9)^1
+1-0.1*(4*0.1*0.9)^1
+1-0.1*(4*0.2*0.9)^1
+1-0.1*(4*0.3*0.9)^1
+1-0.1*(4*0.4*0.9)^1
+1-0.1*(4*0.2*0.8)^1
+1-0.1*(4*0.3*0.7)^1
+1-0.1*(4*0.4*0.6)^1
+1-0.1*(4*0.4*0.6)^16
+1-0.1*(4*0.5*0.5)^16
+1-0.1*(4*0.3*0.7)^16
+1-0.1*(4*0.3*0.7)^(1/16)
+1/16
+x=0.5#
+#
+survival<-function(x){#
+	1-0.1*(4*x*(1-x))^(1/16)#
+}
+survival(x)
+survival(0.6)
+sapply(seq(0,1, by=0.1), survival)
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B)#
+}#
+#
+survival(0.6)#
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B)#
+}#
+#
+survival(0.6)
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B#
+}#
+#
+survival(0.6)
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=16){#
+	1-0.1*(4*x*(1-x))^B#
+}#
+#
+survival(0.6)#
+plot(sapply(seq(0,1, by=0.1), survival))
+279.93+17.54
+(279.93+17.54)/2
+69/12
+(69/12)/2
+29.79+15.75
+sample(1:4, 4, replace=FALSE)
+runif(1,min=0, max=1)
+sample(1:4, 3, replace=FALSE)
+1800/60
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/data")#
+#
+data<-read.csv("testing_for_bursters.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+head(data)
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/data")#
+#
+data<-read.csv("testing_for_bursters.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+generate_sum<-function(var){#
+	summary<-aggregate(var~flight_type, data=data, FUN=mean)#
+	summary$min<-aggregate(var~flight_type, data=data, FUN=min)$var#
+	summary$max<-aggregate(var~flight_type, data=data, FUN=max)$var#
+summary#
+}
+generate_sum<-function(var){#
+	summary<-aggregate(var~flight_type, data=data, FUN=mean)#
+	summary$min<-aggregate(var~flight_type, data=data, FUN=min)$var#
+	summary$max<-aggregate(var~flight_type, data=data, FUN=max)$var#
+summary#
+}#
+#
+generate_sum(var=average_speed)
+generate_sum(var="average_speed")
+data[,5]
+summary<-aggregate(data[,5]~flight_type, data=data, FUN=mean)
+summary
+generate_sum<-function(var){#
+	summary<-aggregate(data[,var]~flight_type, data=data, FUN=mean)#
+	summary$min<-aggregate(data[,var]~flight_type, data=data, FUN=min)[,2]#
+	summary$max<-aggregate(data[,var]~flight_type, data=data, FUN=max)[,2]#
+summary#
+}#
+#
+generate_sum(var="average_speed")
+head(data)
+sum_avg_sd<-generate_sum(var="average_speed")#
+sum_total_flight<-generate_sum(var="total_flight_time")#
+sum_distance<-generate_sum(var="distance")#
+sum_short_bout<-generate_sum(var="shortest_flying_bout")#
+sum_long_bout<-generate_sum(var="longest_flying_bout")#
+sum_port_flying<-generate_sum(var="portion_flying")#
+sum_max_sd<-generate_sum(var="max_speed")
+sum_avg_sd
+sum_total_flight
+sum_distance
+sum_short_bout
+sum_long_bout
+sum_port_flying
+sum_max_sd
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/data")#
+#
+data<-read.csv("testing_for_bursters_all.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+generate_sum<-function(var){#
+	summary<-aggregate(data[,var]~flight_type, data=data, FUN=mean)#
+	summary$min<-aggregate(data[,var]~flight_type, data=data, FUN=min)[,2]#
+	summary$max<-aggregate(data[,var]~flight_type, data=data, FUN=max)[,2]#
+summary#
+}#
+sum_distance<-generate_sum(var="distance") #max B=46; min Y=250 *******most promising#
+sum_dist_dur<-generate_sum(var="distance/duration")
+head(data)
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/data")#
+#
+data<-read.csv("testing_for_bursters_all.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+generate_sum<-function(var){#
+	summary<-aggregate(data[,var]~flight_type, data=data, FUN=mean)#
+	summary$min<-aggregate(data[,var]~flight_type, data=data, FUN=min)[,2]#
+	summary$max<-aggregate(data[,var]~flight_type, data=data, FUN=max)[,2]#
+summary#
+}#
+sum_distance<-generate_sum(var="distance") #max B=46; min Y=250 *******most promising#
+sum_dist_dur<-generate_sum(var="dist_dur")
+sum_dist_dur
+sum_distance
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/data")#
+#
+data<-read.csv("testing_for_bursters_all.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+generate_sum<-function(var){#
+	summary<-aggregate(data[,var]~flight_type, data=data, FUN=mean)#
+	summary$min<-aggregate(data[,var]~flight_type, data=data, FUN=min)[,2]#
+	summary$max<-aggregate(data[,var]~flight_type, data=data, FUN=max)[,2]#
+summary#
+}#
+sum_distance<-generate_sum(var="distance") #max B=46; min Y=250 *******most promising#
+sum_dist_dur<-generate_sum(var="dist_dur")
+sum_distance
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/data")#
+#
+data<-read.csv("testing_for_bursters_all.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+generate_sum<-function(var){#
+	summary<-aggregate(data[,var]~flight_type, data=data, FUN=mean)#
+	summary$min<-aggregate(data[,var]~flight_type, data=data, FUN=min)[,2]#
+	summary$max<-aggregate(data[,var]~flight_type, data=data, FUN=max)[,2]#
+summary#
+}#
+sum_distance<-generate_sum(var="distance") #max B=46; min Y=250 *******most promising#
+sum_dist_dur<-generate_sum(var="dist_dur")
+sum_distance
+sum_dist_dur
