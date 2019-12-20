@@ -20,7 +20,7 @@ def get_IDs(filepath):
                     set_name = cases[1]
                 elif set_cases == 3:
                     if cases[1] == '':
-                        set_name = cases[1]
+                        set_name = cases[2]
                     elif cases[2] == '':
                         set_name = cases[1] + '0'
                 else:

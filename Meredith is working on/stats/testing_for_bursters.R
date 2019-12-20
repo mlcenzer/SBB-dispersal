@@ -2,6 +2,8 @@ setwd("~/Documents/Florida soapberry project/2019 Dispersal/data")
 
 data<-read.csv("testing_for_bursters_all.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
 
+
+
 generate_sum<-function(var){
 	summary<-aggregate(data[,var]~flight_type, data=data, FUN=mean)
 	summary$min<-aggregate(data[,var]~flight_type, data=data, FUN=min)[,2]
