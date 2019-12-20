@@ -2,7 +2,8 @@ import csv
 
 #***************************************************************************************************************************                           
 # Input: filepath for data file as .csv file                                                                                                           
-# Output: a dictionary of IDs & filenames.                                                                                                             
+# Output: a dictionary of IDs & filenames.
+# Note that this will need to be changed if the actual files are re-named to match the filenames in the data sorted file.
 #***************************************************************************************************************************                           
 
 def get_IDs(filepath):
@@ -22,13 +23,13 @@ def get_IDs(filepath):
                         set_name = cases[1]
                     elif cases[2] == '':
                         set_name = cases[1] + '0'
-                    else:
-                        print("What case is this?!")
                 else:
-                    print("The case of the missing", cases)
-                filename = "set" + set_name + temp_name.split("set")[1][3:]
-                if ID == "":
-                    ID = 'non-flier' ####Note to MLC: ask Anastasia about the long list of filenames with no IDs                                       
+                    print("What case is this?!")
+            else:
+                print("The case of the missing", cases)
+            filename = "set" + set_name + temp_name.split("set")[1][3:]
+            if ID == "":
+                ID = 'non-flier' ####Note to MLC: ask Anastasia about the long list of filenames with no IDs                                       
             ID_data[filename] = ID
     return ID_data
 

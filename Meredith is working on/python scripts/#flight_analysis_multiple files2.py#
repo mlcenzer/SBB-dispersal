@@ -119,6 +119,7 @@ for file in dir_list:
         print(filename)
         big_list.append(row_data)
         
+        
         if filename in yes_flew(base_path + r'data/all_dispersal_data_sorted_updated.csv'):
             OutputFile=open(base_path + r'python output/' + filename, "w")
             for index in range(0, len(time_graph)):
