@@ -11,7 +11,9 @@ import os
 
 #path = "/Users/anastasiabernat/Desktop/odd_text_files/"
 
-path = "/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/data/recording txts/"
+base_path = "/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/"
+
+path = base_path + r"recording txts/"
 
 dir_list = sorted(os.listdir(path))
 
@@ -70,7 +72,7 @@ def peak_standardization(colum):
 for file in dir_list:
     if file.startswith("."):
         continue
-    filepath = r"/Users/anastasiabernat/Desktop/odd_text_files/" + str(file)
+    filepath = base_path + r"recording txts/" + str(file)
 #    print(filepath)
 #    filename = input("File path -> ")
     InputFile = open(filepath, mode="r", encoding='latin-1')
@@ -120,7 +122,7 @@ for file in dir_list:
     # Define the filepath of the output file. Add more channels to the write command line if needed. 
     #************************************************************************************************************
     
-    folderpath = r"/Users/anastasiabernat/Desktop/odd_standardized_files/standardized_peaks_"
+    folderpath = base_path + r"SBB-dispersal git/Meredith is working on/python output/standardized_peaks_"
     OutputFile = open(folderpath + str(file), mode="w")
     for i in range(0, len(Lines)):
         OutputFile.write('%.1f' % time_colum[i] + ", " +

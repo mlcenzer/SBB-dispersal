@@ -1,0 +1,5 @@
+average_speed,total_flight_time,distance,shortest_flying_bout,longest_flying_bout,portion_flying,total_duration,max_speed,channel_num,ID
+0,0,0,0,0,0,3599.6,0,1,315
+0,0,0,0,0,0,3599.6,0,2,337
+0,0,0,0,0,0,3599.6,0,3,102
+0.24610533938194087,3594.7,862.0275999999906,0,3594.7,0.9986387376375152,3599.6,0.3695882352941201,4,288

@@ -1,0 +1,111 @@
+
+#***************************************************************************************************************************                           
+# This function returns duration of the shortest and longest bouts in seconds, entire flight duration in seconds and                                   
+# percentage of time spent in flight over time spent at rest. The function also returns the number of flying bouts of a                                
+# specified duration and their respective duration expressed as percentage of the entire time spent in flight. In the example                          
+# below the bouts duration were set at 60-300s, 300-900s, 900-3600s, 3600-14400s and >14400s. The recording time was set at                            
+# 8h (28800s).                                                                                                                                         
+#***************************************************************************************************************************                           
+
+def flying_bouts(time, speed, ch, tot_duration):
+    t_odd = []
+    t_even = []
+    tot_t = []
+    last_time = 0
+    diff = 0
+    flight_time = 0
+    longest_bout = 0
+    shortest_bout = 0
+    bout_time = []
+    fly_time=0
+    flight_60_300=[]
+    sum_60_300=0
+    flight_300_900=[]
+    sum_300_900=0
+    flight_900_3600=[]
+    sum_900_3600=0
+    flight_3600_14400=[]
+    sum_3600_14400=0
+    flight_14400=[]
+    sum_14400=0
+    events_300=0
+    events_900=0
+    events_3600=0
+    events_14400=0
+    events_more_14400=0
+    if len(time) > 2:
+        if float(time[1]) < float(time[0]) + 20:
+            bout_time.append(time[0])
+
+        #***************************************************************************************************************************                   
+        #creates a list of time values where time gaps are no longer than 20s between consecutive time elements of the list                            
+        #***************************************************************************************************************************                   
+
+        for i in range(0, len(time)-1):
+            if float(time[i+1]) >= float(time[i]) + 20:
+                bout_time.append(time[i])
+                bout_time.append(time[i+1])
+
+        if bout_time[-1] != time[-1]:
+            bout_time.append(time[-1])
+
+        #***************************************************************************************************************************                   
+        #clean the flying bout time event list from redundant values using set().                                                                      
+        #set() method is used to convert any of the iterable to the distinct element and sorted sequence of iterable elements.                         
+        #***************************************************************************************************************************                   
+
+        for t in range(1, len(bout_time)):
+            bout_time = sorted(list(set(bout_time)))
+
+        #***************************************************************************************************************************                   
+        #calculates the flight descriptive statistics                                                                                                  
+        #***************************************************************************************************************************                   
+
+        if len(bout_time)%2 != 0:
+            last_time = float(bout_time[-1])
+            del bout_time[-1]
+
+        t_odd = bout_time[0::2]
+        t_even = bout_time[1::2]
+        for ii in range(0, len(t_odd)):
+            diff = float(t_even[ii]) - float(t_odd[ii])
+            tot_t.append(diff)
+
+        if float(last_time) != 0:
+            diff = float(last_time) - float(t_even[-1])
+            tot_t.append(diff)
+        flight_time = sum(float(i) for i in tot_t)
+        for index in range(0, len(tot_t)):
+            if float(tot_t[index])>60 and float(tot_t[index])<=300:
+                flight_60_300.append(float(tot_t[index])/flight_time)
+            elif float(tot_t[index])>300 and float(tot_t[index])<=900:
+                flight_300_900.append(float(tot_t[index])/flight_time)
+            elif float(tot_t[index])>900 and float(tot_t[index])<=3600:
+                flight_900_3600.append(float(tot_t[index])/flight_time)
+            elif float(tot_t[index])>3600 and float(tot_t[index])<=14400:
+                flight_3600_14400.append(float(tot_t[index])/flight_time)
+            elif float(tot_t[index])>14400:
+                flight_14400.append(float(tot_t[index])/flight_time)
+        if len(flight_60_300) > 0:
+            sum_60_300=sum(float(a) for a in flight_60_300)
+            shortest_bout = float(min(flight_60_300))*flight_time
+        if len(flight_300_900) > 0:
+            sum_300_900=sum(float(b) for b in flight_300_900)
+        if len(flight_900_3600) > 0:
+            sum_900_3600=sum(float(c) for c in flight_900_3600)
+        if len(flight_3600_14400) > 0:
+            sum_3600_14400=sum(float(d) for d in flight_3600_14400)
+        if len(flight_14400) > 0:
+            sum_14400=sum(float(e) for e in flight_14400)
+        longest_bout = max(tot_t)
+        fly_time=flight_time/tot_duration          #total recording time defined by the user                                                           
+        events_300=len(flight_60_300)
+        events_900=len(flight_300_900)
+        events_3600=len(flight_900_3600)
+        events_14400=len(flight_3600_14400)
+        events_more_14400=len(flight_14400)
+    else:
+        print('Channel', ch, 'has only one peak - cannot perform calculation')
+
+    return (flight_time, shortest_bout, longest_bout, fly_time, sum_60_300, sum_300_900, sum_900_3600, sum_3600_14400, sum_14400, events_300, events_900, events_3600, events_14400, events_more_14400)
+
