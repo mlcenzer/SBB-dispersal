@@ -1,5 +1,7 @@
 import csv
 import os
+import re
+import pandas as pd
 
 #***************************************************************************************************************************
 # Creates a time list in which each element represents the occurence of a single peak event.
@@ -48,10 +50,11 @@ def speed_list(time, ch_number):
             # Change the threshold speed value accordingly
             # Delete the # at the beginning of line 50-52 to activate the command
             #*********************************************************************
-            
-            #for x in range(0, len(speed_channel)):
-            #    if float(speed_channel[x]) < 0.1:
-            #        speed_channel[x] = 0
+            #######mlc change: uncommented minimum speed threshhold below
+
+            for x in range(0, len(speed_channel)):
+                if float(speed_channel[x]) < 0.1:
+                    speed_channel[x] = 0
 
         else:
             print ("Channel ",ch, "has only one peak - impossible to calculate motion stats")
@@ -262,6 +265,128 @@ def graph(time, speed):
     
     return time_new, speed_new
 
+#***************************************************************************************************************************                           
+# Input: Datafile path with IDs and filenames of the bugs. Can be modified to check for inconsistencies based on
+#           the columns.
+# Output: A dictionary where the filename is the key and the values are IDs. As well as additional
+#           data entry checks and summaries.
+#
+# Note that this will need to be changed if the actual files are re-named to match the filenames in the data sorted file.
+#***************************************************************************************************************************                           
+
+def get_IDs(filepath):
+    ID_data = {} 
+    with open(filepath, "r") as data_file:
+        reader = csv.DictReader(data_file)
+    
+        total_bug_count = 0
+        filename_count = 0
+        no_recording_count = 0
+        inconsistency_count = 0
+        no_ID_count = 0
+
+        no_recording_warning = 0
+        dead_count = 0
+        short_wing_count = 0
+        count_rest = 0
+
+        for row in reader:
+            total_bug_count += 1
+            set_num = row["set_number"]
+            chamber = row["chamber"]
+        
+            if row["filename"] != 'NA':
+                filename_count += 1
+                temp_name = row["filename"]
+                cases = temp_name.split("-")[0].split('0')
+                set_cases = len(cases)
+                ID = row["ID"]
+            
+                # Checking for Inconsistencies:
+
+                if row["NOTES"] == 'no recording' or row["NOTES"] == 'no recording; paint came off pre-trail':
+                    print("NO RECORDING WARNING: File exists BUT bugs did NOT fly. ---------------------")
+                    print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    no_recording_warning += 1
+                if ID == '':
+                    print("NO ID WARNING: File exists but there is no ID ---------------------")
+                    print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    no_ID_count += 1
+                if set_cases == 2:
+                    set_name = cases[1]
+                elif set_cases == 3:
+                    if cases[1] == '':
+                        set_name = cases[2]
+                    elif cases[2] == '':
+                         set_name = cases[1] + '0'
+                else:
+                    print("WARNING: File exists but its NAME may be written inconsistenly: ")
+                    print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    inconsistency_count += 1
+                filename = row["filename"]
+                ID_data[filename] = ID
+
+            # Tracking No Recordings - uncomment out as needed
+        
+            else:
+                if row["NOTES"] == 'no recording' or row["NOTES"] == 'no recording; paint came off pre-trail':
+                    #print("NO RECORDING: No file b/c bugs did NOT fly. ---------------------")
+                    #print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    no_recording_count += 1
+                elif row["died?"] == 'Y':
+                    #print("DIED: No file b/c bugs died before could be tested. ---------------------")
+                    #print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    dead_count += 1
+                elif row["short-wing?"] == 'Y':
+                    #print("SHORT-WING: No file b/c filtered out as a short wing bug. ---------------------")
+                    #print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    short_wing_count += 1
+                else:
+                    count_rest += 1
+                
+            #filename = "set" + set_num + temp_name.split("set")[1][3:]
+            #ID_dict[filename] = ID
+
+    # Summary
+
+    print("WARNING CHECKS -------------------------------------")
+    print("Total number of bugs: ", total_bug_count)
+    print("Count of bugs with files: ", filename_count)
+    print("Count of unwanted 'no recordings': ", no_recording_warning)
+    print("Count of inconsistent filenames: ", inconsistency_count)
+    print("Count of no ID's: ", no_ID_count)
+
+    print("NO RECORDING COUNTS --------------------------------")
+    print("Count of total 'no recordings': ", no_recording_count)
+    print("Count of deaths before could make a recording: ", dead_count)
+    print("Count of short-wings who were filited out: ", short_wing_count)
+
+    print("CHECK ----------------------------------------------")
+    sum_no_recordings = (short_wing_count + dead_count + no_recording_count) + filename_count
+
+    print("Check if the sum of no recordings plus bugs with recordings: " + str(sum_no_recordings) + " is equal to the total number of bugs: " + str(total_bug_count))
+    print("If they're the same, this is zero: ", count_rest)
+
+    print("DICTIONARY CHECK -----------------------------------")
+    print("Check the length of ID_data: ", len(ID_data))
+    #print(ID_data)
+    print('\n')
+
+    return ID_data
+
+#***************************************************************************************************************************
+# Input: Filename as a string. Necessary to do this because some files have IDs in their filename at the end before
+#           the '.txt' endstring while other files do not have IDs at the end, so each has to undergo
+#           different string manipulations to get the desired channel numbers, channel letters, and IDs.
+# Output: re.Match object if the filename does end with a digit. 'None' if the filename does NOT end with a digit. 
+#***************************************************************************************************************************
+
+def filename_ends_with_digit(filename):
+    temp_filename = filename.replace("-", "_")
+    match = re.match(r'\w*\d+.txt$', temp_filename)
+    
+    return match
+
 #************************************************************************************************************
 # The flight data file(s) can be called by either defining the complete filepath (for example c:\desktop\recordings
 # \filename.txt) or defining a default path in the section "write the path here" that will be automatically
@@ -273,17 +398,27 @@ def cls(): print ("\n" * 100)
 
 cls()
 
-path = "/Users/anastasiabernat/Desktop/Standardized Peaks3/"
+path = "/Users/anastasiabernat/Desktop/Standardized Peaks Test/"
+
+data_path = r"/Users/anastasiabernat/Desktop/all_dispersal_data_sorted_updated4.csv"
+
+row_IDs = get_IDs(data_path)
+
+big_list=[]
+
 print(path)
 dir_list = sorted(os.listdir(path))
 for file in dir_list:
     if file.startswith("."):
         continue
-    filepath = r"/Users/anastasiabernat/Desktop/Standardized Peaks3/" + str(file)
+    filepath = path + str(file)
 #    filename = input('File path or file name -> ')
     tot_duration = find_time_duration(filepath)
     input_file = open(filepath, mode="r")
-
+    
+    df = pd.read_csv(filepath, sep=",")
+    n_rows, n_columns = df.shape
+    
     data_list = list(input_file)
     time_column = []
     list_dict=dict()
@@ -295,77 +430,136 @@ for file in dir_list:
     #peaks6 = []
     #peaks7 = []
     #peaks8 = []
-
+    
     for i in range(0, len(data_list)):
-        raw = data_list[i]
-        a,b,c,d,e = raw.split(",") # if >5 channels then a,b,c,d,e,f,g,h,j
-        time_column.append(a)
-        peaks1.append(b)
-        peaks2.append(c)
-        peaks3.append(d)
-        peaks4.append(e)
-        #peaks5.append(f)
-        #peaks6.append(g)
-        #peaks7.append(h)
-        #peaks8.append(j)
-
-    list_dict[1]=peaks1
-    list_dict[2]=peaks2
-    list_dict[3]=peaks3
-    list_dict[4]=peaks4
-    #list_dict[5]=peaks5
-    #list_dict[6]=peaks6
-    #list_dict[7]=peaks7
-    #list_dict[8]=peaks8
+        if n_columns == 2:
+            raw = data_list[i]
+            a,b = raw.split(",") # if >5 channels then a,b,c,d,e,f,g,h,j
+            time_column.append(a)
+            peaks1.append(b)
+        if n_columns > 2:
+            raw = data_list[i]
+            a,b,c,d,e = raw.split(",") # if >5 channels then a,b,c,d,e,f,g,h,j
+            time_column.append(a)
+            peaks1.append(b)
+            peaks2.append(c)
+            peaks3.append(d)
+            peaks4.append(e)
+            #peaks5.append(f)
+            #peaks6.append(g)
+            #peaks7.append(h)
+            #peaks8.append(j)
+            
+    if n_columns == 2:
+        list_dict[1]=peaks1
+    if n_columns > 2:
+        list_dict[1]=peaks1
+        list_dict[2]=peaks2
+        list_dict[3]=peaks3
+        list_dict[4]=peaks4
+        #list_dict[5]=peaks5
+        #list_dict[6]=peaks6
+        #list_dict[7]=peaks7
+        #list_dict[8]=peaks8
 
     input_file.close()
 
-
     output_data = []
-
     for i in range(1, len(list_dict)+1):
+
         row_data = {}
-        print('CHANNEL ' + str(i) + ' -------------------------------------------')
+
+        # Filename String Manipulation: Channel Letters, Channel Numbers, and IDs
+        
+        if filename_ends_with_digit(file):
+            ID = str(file).split("_")[-1].replace(".txt", "")
+            row_data["ID"] = ID
+            print("ID: ", row_data["ID"])         
+            filename = str(file).split("_")[2].replace(".txt", "") + "_" + ID + '.txt'
+            row_data['filename'] = filename
+            channel_chamber = str(file).split("_")[2].split("-")[-1]
+            channel_chamber = re.findall('\d+|\D+', channel_chamber)
+            channel_chamber = str(channel_chamber[0]) + "-" + str(channel_chamber[1])
+            channel_letter = channel_chamber[0]
+            channel_num = channel_chamber[2]
+            row_data["channel_chamber"] = channel_chamber
+            row_data["channel_letter"] = channel_letter
+            row_data["channel_num"] = channel_num
+
+        else:
+            filename = str(file).split("_")[-1].replace(".txt", "") + str(i)+'.txt'
+            row_data['filename'] = filename
+            row_data["channel_num"] = i
+            channel_letter = str(file).split("_")[-1].split("-")[-1].replace(".txt", "")
+            channel_num = str(i)
+            row_data["channel_letter"] = channel_letter
+            row_data["channel_chamber"] = str(channel_letter) + "-" + str(i)
+            
+            if filename in row_IDs:
+                row_data['ID'] = row_IDs[filename]
+                print("ID: ", row_IDs[filename])      
+            else:
+                row_data['ID'] = 'missing ID'
+
+        # Calculations and Print Statements
+        
+        print('CHANNEL ' + channel_num + ' -------------------------------------------')
         time_channel = time_list(time_column, list_dict[i])
         speed_channel = speed_list(time_channel, i)
         time_n, speed_n, dist, av_speed = distance(time_channel, speed_channel)
         fly_time, short_bout, long_bout, flight, fly_to_300, fly_to_900, fly_to_3600, fly_to_14400, fly_more_14400, event_300, event_900, event_3600, event_14400, event_more_14400 = flying_bouts(time_n, speed_n, i, tot_duration)
-        print('Average speed channel ' + str(i) + ' -> ' + '%.2f' % av_speed)
-        row_data['average_speed'] = av_speed            # row_data['column'] = value
-        print('Total flight time channel ' + str(i) + ' -> ' + '%.2f' % fly_time)
-        row_data['total_flight_time'] = fly_time  
-        print('Distance channel ' + str(i) + ' -> ' + '%.2f' % dist)
-        row_data['distance'] = dist 
-        print('Shortest flying bout channel ' + str(i) + ' -> ' + '%.2f' % short_bout)
-        row_data['shortest_flying_bout'] = short_bout 
-        print('Longest flying bout channel ' + str(i) + ' -> ' + '%.2f' %long_bout)
-        row_data['longest_flying_bout'] = long_bout 
+        print('Average speed channel ' + channel_num + ' -> ' + '%.2f' % av_speed)
+        print('Total flight time channel ' + channel_num + ' -> ' + '%.2f' % fly_time)
+        print('Distance channel ' + channel_num + ' -> ' + '%.2f' % dist)
+        print('Shortest flying bout channel ' + channel_num + ' -> ' + '%.2f' % short_bout)
+        print('Longest flying bout channel ' + channel_num + ' -> ' + '%.2f' %long_bout)
         print('This individual spent ' + '%.3f' %flight + ' of its time flying with this composition: ')
-        row_data['portion_flying'] = flight
-        row_data['total_duration'] = tot_duration
         print('  60s-300s = ' + '%.3f' %fly_to_300 + ' with ',event_300, 'events')
         print('  300s-900s = ' + '%.3f' %fly_to_900 + ' with ',event_900, 'events')
         print('  900s-3600s = ' + '%.3f' %fly_to_3600 + ' with ',event_3600, 'events')
         print('  3600s-14400s = ' + '%.3f' %fly_to_14400 + ' with ',event_14400, 'events')
         print('  14400s = ' + '%.3f' %fly_more_14400 + ' with ',event_more_14400, 'events')
         print('\n')
-        output_data.append(row_data) # created a list of dictionaries
-        time_graph, speed_graph = graph(time_n, speed_n)
-        row_data['max_speed'] = max(speed_graph)
-        row_data["channel_num"] = i
-        #row_data["channel_letter"] = str(file).split
-        filename = str(file).split("_")[-1].replace(".txt", "") + str(i)+'.txt'
-        print(filename)
         
-        if filename in yes_flew(r'/Users/anastasiabernat/Desktop/all_dispersal_data_sorted_updated.csv'):
-            OutputFile=open(r'/Users/anastasiabernat/Desktop/Flight Analyses 5/' + filename, "w")
+        time_graph, speed_graph = graph(time_n, speed_n)
+
+        # Flight Stats:
+        
+        row_data['average_speed'] = av_speed
+        row_data['total_flight_time'] = fly_time 
+        row_data['distance'] = dist 
+        row_data['shortest_flying_bout'] = short_bout         
+        row_data['longest_flying_bout'] = long_bout         
+        row_data['portion_flying'] = flight
+        row_data['total_duration'] = tot_duration
+        row_data['max_speed'] = max(speed_graph)
+
+        output_data.append(row_data) # created a list of dictionaries
+
+        big_list.append(row_data)
+        
+        
+        if filename in yes_flew(data_path):
+            OutputFile=open(r"/Users/anastasiabernat/Desktop/Flight_Analyses_Test/" + filename, "w")
             for index in range(0, len(time_graph)):
                 OutputFile.write('%.1f' % time_graph[index] + ',' + '%.2f' %speed_graph[index] + '\n')
             OutputFile.close()
         
-        with open(r"/Users/anastasiabernat/Desktop/flight_stats4/flight_stats-" + str(file).split("_")[-1].replace(".txt", "") + ".csv", "w") as csv_file:
-            writer = csv.DictWriter(csv_file, fieldnames = row_data.keys())
-            writer.writeheader()
-            for row in output_data:
-                writer.writerow(row)
+##        with open(r"/Users/anastasiabernat/Desktop/flight_stats4/flight_stats-" + str(file).split("_")[-1].replace(".txt", "") + ".csv", "w") as csv_file:
+##            writer = csv.DictWriter(csv_file, fieldnames = row_data.keys())
+##            writer.writeheader()
+##            for row in output_data:
+##                writer.writerow(row)
+
+#print(big_list)
+
+# All Flight Stats Summary File
+
+outpath = r"/Users/anastasiabernat/Desktop/"
+with open(outpath + "flight_summary.csv", "w") as csv_file:
+    writer = csv.DictWriter(csv_file, fieldnames = big_list[1].keys())
+    writer.writeheader()
+    for row in big_list:
+        writer.writerow(row)
+
 
