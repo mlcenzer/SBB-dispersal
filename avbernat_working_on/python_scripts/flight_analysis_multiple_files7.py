@@ -1,7 +1,28 @@
-import csv
+#***************************************************************************************************************************
+# FLIGHT ANALYSES FOR MULTIPLE FILES
+# Version 7
+# Last updated: Jan 3, 2020
+# Authors: (Attisano, et al.), Anastasia Bernat, Meredith Cenzer
+#***************************************************************************************************************************
+
 import os
+import sys
+import csv
 import re
 import pandas as pd
+
+#*************************************************************************************************************
+# Process/Purpose: If you don't want a function to print, call blockPrint() before it, and enablePrint() when
+#       you want it to continue. If you want to disable all printing, start blocking at the top of the file.
+#*************************************************************************************************************
+
+def blockPrint():
+    sys.stdout = open(os.devnull, 'w')
+
+def enablePrint():
+    sys.stdout = sys.__stdout__
+
+#blockPrint()
 
 #***************************************************************************************************************************
 # Creates a time list in which each element represents the occurence of a single peak event.
@@ -235,7 +256,6 @@ def yes_flew(filepath):
                     yes_flew_list.append(row["filename"])
 
     return yes_flew_list
-        
 
 #***************************************************************************************************************************
 # This function is used to to clean up the final time and speed variation file for each channel in order to produce
@@ -374,12 +394,12 @@ def get_IDs(filepath):
 
     return ID_data
 
-#***************************************************************************************************************************
+#********************************************************************************************************************
 # Input: Filename as a string. Necessary to do this because some files have IDs in their filename at the end before
 #           the '.txt' endstring while other files do not have IDs at the end, so each has to undergo
 #           different string manipulations to get the desired channel numbers, channel letters, and IDs.
 # Output: re.Match object if the filename does end with a digit. 'None' if the filename does NOT end with a digit. 
-#***************************************************************************************************************************
+#********************************************************************************************************************
 
 def filename_ends_with_digit(filename):
     temp_filename = filename.replace("-", "_")
