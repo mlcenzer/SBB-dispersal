@@ -1,4 +1,4 @@
-ID,box,test_date,time_start,set_number,chamber,sex,population,site,host_plant,flew,died?,flight_type,flight_details,NOTES,filename,mass,short-wing?,eggs,time_end,latitude,longitutde
+ID,box,test_date,time_start,set_number,chamber,sex,population,site,host_plant,flew,died?,flight_type,flight_details,NOTES,filename,mass,short-wing?,eggs,time_end,latitude,longitude
 329,C,10.15,11:30am,1,A-1,M,Lake Placid,Barber shop,K. elegans,Y,,C,continuous,,set001-11am-10-15-19-A1.txt,,,,,27.298660028,-81.36611608
 372,Petri2,10.15,11:30am,1,A-2,F,Leesburg,Veteran’s Memorial Park,K. elegans,N,,,,,set001-11am-10-15-19-A2.txt,,,Y,,28.812980,-81.877895
 37,Petri1,10.15,11:30am,1,A-3,F,Key Largo,JP Grove,C. corindum ,N,Y,,,,set001-11am-10-15-19-A3.txt,,,Y,,25.187398,-80.358596

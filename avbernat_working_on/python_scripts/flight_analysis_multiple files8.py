@@ -659,7 +659,7 @@ def check_egg_layers(egg_data, data):
 data_cols = ['ID', 'box','test_date', 'time_start', 'set_number','chamber', 'sex',
              'population', 'site', 'host_plant', 'flew', 'died?', 'flight_type',
              'flight_details', 'NOTES','filename', 'mass', 'short-wing?', 'eggs',
-             'time_end']
+             'time_end', 'latitude', 'longitude']
 analyses_cols = ['filename', 'channel_num', 'channel_letter', 'chamber', 'ID',
                  'set_number', 'average_speed', 'total_flight_time', 'distance',
                  'shortest_flying_bout', 'longest_flying_bout', 'portion_flying',
@@ -678,13 +678,18 @@ merged_data = pd.merge(left=df_analyses, right=df_data,
                        left_on=['ID', 'chamber', 'filename', 'set_number'],
                        right_on=['ID', 'chamber', 'filename', 'set_number'], how='inner')
 
-unmerged_rows = check_dimensions(df_analyses, merged_data)
-print("Unmerged Rows:", unmerged_rows)
-missing_egg_layers, ID_dict = check_egg_layers(df_eggs, df_data)
-print("Missing females from dataset that laid eggs:", missing_egg_layers)
-print(ID_dict)
+# Checks
 
-full_data_outpath = r"/Users/anastasiabernat/Desktop/full_data.csv"
+##unmerged_rows = check_dimensions(df_analyses, merged_data)
+##print(unmerged_rows)
+##missing_egg_layers, ID_dict = check_egg_layers(df_eggs, df_data)
+##print("Missing females from dataset that laid eggs:", missing_egg_layers)
+##
+##print(ID_dict)
+##print(merged_data.head())
+##print(merged_data)
+
+full_data_outpath = r"/Users/anastasiabernat/Desktop/full_data_latest.csv"
 full_header = merged_data.columns.values
 merged_data.to_csv(full_data_outpath, header=None, index='ID', mode='w')
 
