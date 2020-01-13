@@ -5,15 +5,15 @@ import csv
 # Updating the all_dispersal_data sheet with sex, site, and host plant.
 #***************************************************************************************
 
-demographics_data = r"/Users/anastasiabernat/Desktop/bug_demographics_data.csv"
+demographics_data = r"/Users/anastasiabernat/Desktop/bug_demographics_data_coor.csv"
 
-all_dispersal_data = r"/Users/anastasiabernat/Desktop/all_dispersal_data_latest4.csv"
-
-# can also do one large demographics dict
+all_dispersal_data = r"/Users/anastasiabernat/Desktop/all_dispersal_data3.csv"
 
 sex_dict = {} 
 site_dict = {}
 host_dict = {}
+lat_dict = {}
+long_dict = {}
 
 with open(demographics_data, "r") as demo_data:
     reader = csv.DictReader(demo_data)
@@ -23,6 +23,8 @@ with open(demographics_data, "r") as demo_data:
         pop = row["population"]
         host = row["host"]
         site = row["site"]
+        lat = row["latitude"]
+        long = row["longitude"]
 
         if ID not in sex_dict:
             sex_dict[ID] = sex
@@ -30,7 +32,10 @@ with open(demographics_data, "r") as demo_data:
             site_dict[(ID, pop)] = site
         if (ID, site) not in host_dict:
             host_dict[(ID, site)] = host
-
+        if (ID, site) not in lat_dict:
+            lat_dict[(ID, site)] = lat
+        if lat not in long_dict:
+            long_dict[lat] = long
 
 full_data = [] 
 with open(all_dispersal_data, "r") as all_data:
@@ -42,6 +47,9 @@ with open(all_dispersal_data, "r") as all_data:
         sex = sex_dict[ID_num]
         site = site_dict[(ID_num, population)]
         host_plant = host_dict[(ID_num, site)]
+        lat = lat_dict[(ID_num, site)]
+        long = long_dict[lat]
+        
         
         row_data["ID"] = ID_num
         row_data["box"] = r["box"]
@@ -63,6 +71,8 @@ with open(all_dispersal_data, "r") as all_data:
         row_data["short-wing?"] = r["short-wing?"]
         row_data["eggs"] = r["eggs"]
         row_data["time_end"] = r["time_end"]
+        row_data["latitude"] = lat
+        row_data["longitutde"] = long
 
 
         
@@ -70,7 +80,7 @@ with open(all_dispersal_data, "r") as all_data:
 
 #print(full_data[0:5])
 
-outpath = r"/Users/anastasiabernat/Desktop/all_dispersal_data_new.csv"
+outpath = r"/Users/anastasiabernat/Desktop/all_dispersal_data4.csv"
 
 with open(outpath, "w") as output_file:
     writer = csv.DictWriter(output_file, fieldnames = row_data.keys())
