@@ -1,0 +1,1169 @@
+?seq
+seq()
+seq(2)
+?
+length
+length(bacon_days)
+length(eggs_days)
+length(egg_days)
+matrix<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+matrix
+matrix[1,2]
+matrix[3,2]
+matrix[,2]
+rm(list=ls())
+matrix
+matrix<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+#assignment#
+#
+#object#
+a<-1#
+#vector#
+vec<-c(a,4)#
+#matrix#
+mat<-matrix(vec, nrow=2, ncol=2)#
+#function#
+breakfast_cals<-function(eggs=0, pancakes=0, bacon=0){#
+	eggs*78 + pancakes*86 + bacon*43#
+}#
+egg_days<-c(1,0,5,2,3,2)#
+pancake_days<-c(2,2,2,2,2,2)#
+bacon_days<-c(2,0)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)#
+#practice:#
+#
+#write a function to convert celsius to fahrenheit#
+#
+#Use that function to make a 2-column matrix, the first column of celsius from 0 to 50, the second of corresponding fahrenheit values#
+#Make a matrix where the first column is a population with phenotype values between 0 and 10 (may be drawn randomly using rnorm() or runif())#
+#
+#use the sample() function to fill the second column with a second generation drawn from the first generation. There are multiple ways to do this!#
+#
+#do this for 10 generations.#
+#
+#wouldn't a loop be nice now?
+egg_mat<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+egg_mat
+egg_mat[,2]
+egg_mat[,2]<-0
+egg_mat
+plot(egg_mat)
+plot(egg_mat[,1]~egg_mat[,2])
+24.65+78.70+64
+(24.65+78.70+64)/2
+119.57/2
+2000*0.53
+rbinom(10,1,0.5)
+rbinom(1,10,0.5)
+rbinom(10,1,0.5)
+matrix(NA, ncol=5, nrow=5)
+matrix(c(0,1), ncol=5, nrow=5)
+matrix(c(0,1,2), ncol=5, nrow=5)
+mat<-matrix(0, nrow=5, ncol=2)
+mat
+mat[,1]<-1:5
+mat
+mat[,3]<-1
+install.packages("viridis")#
+install.packages("mgcv")#
+install.packages("boot")#
+install.packages("magick")#
+#
+library(viridis)#
+library(mgcv)  #needed for gam command#
+library(boot)  #needed for the inv.logit command#
+#library(magick)
+2200*0.53
+?ncol
+583.34+291.67
+12/5
+35/12
+#draw body sizes that differ between Treatments using rnorm#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=5), Resp=c(rnorm(5, 5, 1), rnorm(5,3,1)))
+Results
+boxplot(Results)
+boxplot(Results$Resp~Results$Trt)
+lm(Resp~Trt, data=Results)
+summary(lm(Resp~Trt, data=Results))
+#plot mean body sizes from each treatment#
+boxplot(Results$Resp~Results$Trt)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
+}
+sample_test(10)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+boxplot(Results$Resp~Results$Trt)#
+}
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
+}#
+#
+sample_test(10)#
+boxplot(Results$Resp~Results$Trt)
+sample_test(100)#
+boxplot(Results$Resp~Results$Trt)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
+}#
+#
+output<-sample_test(100)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(10)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(1000)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(2)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(5)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(5)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(10)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(100)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+?boxplot
+sample_test<-function(s_size, sd){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, sd), rnorm(s_size,3,sd)))#
+Results#
+}#
+#
+output<-sample_test(s_size=100, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(s_size=1000, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim#
+#
+#Run it for different sample si
+output<-sample_test(s_size=100, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(s_size=100, sd=1)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+plot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+10.49+29.33+18.60+15.55+19.95+5.69+6.39+7.16
+113.16/2
+348.69/4
+150/5
+14+33+18+18+22
+21+15+32+13+25+16+33
+155+15
+170-105
+155/7
+2046/15
+136/4
+30*15
+30*15*4.5
+100000/12
+3/8
+47.71/2
+60*1.75
+500/20
+52*5
+260/25
+200/8
+exp^2
+exp^(1/2)
+e^(1/2)
+exp
+exp(1/2)
+exp(-1/2)
+exp(-1/2)+e(-0.08^2/2*(0.1^2))
+exp(-1/2)+exp(-0.08^2/2*(0.1^2))
+exp(-1/2)+exp((-0.08^2)/2*(0.1^2))
+exp((-0.08^2)/2*(0.1^2))
+exp((-0.05^2)/2*(0.1^2))
+exp((-0.09^2)/2*(0.1^2))
+exp((-0.1^2)/2*(0.1^2))
+exp((-0.1^2)/(2*(0.1^2)))
+exp((-0.08^2)/(2*(0.1^2)))
+exp((-0.07^2)/(2*(0.1^2)))
+exp((-0.01^2)/(2*(0.1^2)))
+1-0.9*(4*0.1*0.9)^1
+1-0.1*(4*0.1*0.9)^1
+1-0.1*(4*0.2*0.9)^1
+1-0.1*(4*0.3*0.9)^1
+1-0.1*(4*0.4*0.9)^1
+1-0.1*(4*0.2*0.8)^1
+1-0.1*(4*0.3*0.7)^1
+1-0.1*(4*0.4*0.6)^1
+1-0.1*(4*0.4*0.6)^16
+1-0.1*(4*0.5*0.5)^16
+1-0.1*(4*0.3*0.7)^16
+1-0.1*(4*0.3*0.7)^(1/16)
+1/16
+x=0.5#
+#
+survival<-function(x){#
+	1-0.1*(4*x*(1-x))^(1/16)#
+}
+survival(x)
+survival(0.6)
+sapply(seq(0,1, by=0.1), survival)
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B)#
+}#
+#
+survival(0.6)#
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B)#
+}#
+#
+survival(0.6)
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B#
+}#
+#
+survival(0.6)
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=16){#
+	1-0.1*(4*x*(1-x))^B#
+}#
+#
+survival(0.6)#
+plot(sapply(seq(0,1, by=0.1), survival))
+279.93+17.54
+(279.93+17.54)/2
+69/12
+(69/12)/2
+29.79+15.75
+sample(1:4, 4, replace=FALSE)
+runif(1,min=0, max=1)
+sample(1:4, 3, replace=FALSE)
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/data")#
+#
+#data<-read.csv("testing_for_bursters_all.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal")#
+#
+data30<-read.csv("data/dispersal_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data60<-read.csv("data/dispersal_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data90<-read.csv("data/dispersal_data3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on")#
+#
+data30<-read.csv("data/dispersal_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data60<-read.csv("data/dispersal_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data90<-read.csv("data/dispersal_data3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+data90<-read.csv("data/dispersal3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+head(data30)
+#exploring dispersal data#
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal")#
+#
+data30<-read.csv("data/dispersal_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data60_raw<-read.csv("data/dispersal_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data60<-data60_raw[!is.na(data60_raw$flew),]#
+#
+data90_raw<-read.csv("data/dispersal3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data90<-data90_raw[!is.na(data90_raw$flew),]#
+#
+datalong_raw<-read.csv("data/dispersal4.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+datalong<-datalong_raw[!is.na(datalong_raw$flew),]#
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID, datalong$ID)), sex=NA, population=c(data30$population, data60$population, data90$population, datalong$population), chamber=c(data30$chamber, data60$chamber, data90$chamber, datalong$chamber), trial=rep(c("30", "60", "90", "long"), times=c(nrow(data30), nrow(data60), nrow(data90), nrow(datalong))), flew=c(data30$flew, data60$flew, data90$flew, datalong$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type, datalong$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass, datalong$mass), pophost=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+}#
+data<-data[data$flew=="Y" | data$flew=="N",]#
+data<-na.omit(data)#
+data$flew_num<-0#
+data$flew_num[data$flew=="Y"]<-1
+#exploring dispersal data#
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/")#
+#
+data30<-read.csv("data/dispersal_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data60_raw<-read.csv("data/dispersal_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data60<-data60_raw[!is.na(data60_raw$flew),]#
+#
+data90_raw<-read.csv("data/dispersal3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data90<-data90_raw[!is.na(data90_raw$flew),]#
+#
+datalong_raw<-read.csv("data/dispersal4.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+datalong<-datalong_raw[!is.na(datalong_raw$flew),]#
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID, datalong$ID)), sex=NA, population=c(data30$population, data60$population, data90$population, datalong$population), chamber=c(data30$chamber, data60$chamber, data90$chamber, datalong$chamber), trial=rep(c("30", "60", "90", "long"), times=c(nrow(data30), nrow(data60), nrow(data90), nrow(datalong))), flew=c(data30$flew, data60$flew, data90$flew, datalong$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type, datalong$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass, datalong$mass), pophost=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+}#
+data<-data[data$flew=="Y" | data$flew=="N",]#
+data<-na.omit(data)#
+data$flew_num<-0#
+data$flew_num[data$flew=="Y"]<-1
+head(data)
+flight<-read.csv("flight output/flight_summary.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+head(flight)
+#exploring dispersal data#
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/")#
+#
+data30<-read.csv("data/dispersal_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data60_raw<-read.csv("data/dispersal_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data60<-data60_raw[!is.na(data60_raw$flew),]#
+#
+data90_raw<-read.csv("data/dispersal3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data90<-data90_raw[!is.na(data90_raw$flew),]#
+#
+datalong_raw<-read.csv("data/dispersal4.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+datalong<-datalong_raw[!is.na(datalong_raw$flew),]#
+#
+flight<-read.csv("flight output/flight_summary.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+head(flight)
+#exploring dispersal data#
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/")#
+#
+data30<-read.csv("data/dispersal_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data60_raw<-read.csv("data/dispersal_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data60<-data60_raw[!is.na(data60_raw$flew),]#
+#
+data90_raw<-read.csv("data/dispersal3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data90<-data90_raw[!is.na(data90_raw$flew),]#
+#
+#these need to be split and curated first.#
+#datalong_raw<-read.csv("data/dispersal4.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#datalong<-datalong_raw[!is.na(datalong_raw$flew),]#
+#
+flight<-read.csv("flight output/flight_summary.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	data$distance[row] <- flight$distance[flight$ID==data$ID[row]]#
+	data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row]]#
+}#
+#
+data<-data[data$flew=="Y" | data$flew=="N",]#
+data<-na.omit(data)#
+data$flew_num<-0#
+data$flew_num[data$flew=="Y"]<-1#
+library(lme4)#
+#
+#model1<-glmer(flew_num~mass + sex + pophost + (1|chamber), family=binomial, data=data)#
+#summary(model1)
+data
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+browser()	#
+	data$distance[row] <- flight$distance[flight$ID==data$ID[row]]#
+	data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row]]#
+}
+row
+data$ID[row]
+flight[flight$ID==329,]
+flight$distance[flight$ID==329,]
+flight$distance[flight$ID==329]
+flight$distance[flight$ID==329 & flight$total_duration<=1800]
+flight$distance[flight$ID==329][1]
+Q
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial=="30"){	#
+		data$distance[row] <- flight$distance[flight$ID==data$ID[row]][1]#
+		data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row]][1]#
+	}#
+}
+head(data)
+data
+data$distance
+cbind(data$distance, data$trial)
+data$trial
+data[data$trial==30,]
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		data$distance[row] <- flight$distance[flight$ID==data$ID[row]][1]#
+		data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row]][1]#
+	}#
+}
+data$distance
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		data$distance[row] <- flight$distance[flight$ID==data$ID[row]][1]#
+		data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row]][1]#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(length(flight$distance[flight$ID==data$ID[row] & flight$total_duration==1800]>1)){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row]])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row]])#
+		}#
+		else {#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row]][2]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row]][2]#
+		}#
+	}#
+}
+data$distancew
+data$distance
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+	}#
+	else if(data$trial[row]=="60"){#
+		data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800])#
+		data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800])#
+	}#
+	else if(data$trial[row]=="90"){#
+		data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])	#
+	}#
+}
+flight[flight$ID==2,]
+flight[flight$ID==2 & flight$total_duration<1800,]
+length(flight[flight$ID==2 & flight$total_duration<1800,])
+nrow(flight[flight$ID==2 & flight$total_duration<1800,])
+nrow(flight[flight$ID==2 & flight$total_duration<=1800,])
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,]!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			data$distance[row]==0#
+			data$avg_spd[row]==0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,]!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]==0#
+			data$avg_spd[row]==0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,]!=0){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		}#
+		else {#
+			data$distance[row]==0#
+			data$avg_spd[row]==0#
+		}	#
+	}#
+}
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,]!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			data$distance[row]==0#
+			data$avg_spd[row]==0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,]!=0)){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]==0#
+			data$avg_spd[row]==0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,]!=0)){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		}#
+		else {#
+			data$distance[row]==0#
+			data$avg_spd[row]==0#
+		}	#
+	}#
+}
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,]!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,]!=0)){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,]!=0)){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+		}	#
+	}#
+}
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,]!=0)){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,]!=0)){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,]!=0)){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+		}	#
+	}#
+}
+data
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,]!=0)){#
+			browser()#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,]!=0)){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,]!=0)){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+		}	#
+	}#
+}
+row
+flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]
+flight[flight$ID==data$ID[row] & flight$total_duration<=1800,]
+Q
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/")#
+#
+data30<-read.csv("data/dispersal_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data60_raw<-read.csv("data/dispersal_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data60<-data60_raw[!is.na(data60_raw$flew),]#
+#
+data90_raw<-read.csv("data/dispersal3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data90<-data90_raw[!is.na(data90_raw$flew),]#
+#
+#these need to be split and curated first.#
+#datalong_raw<-read.csv("data/dispersal4.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#datalong<-datalong_raw[!is.na(datalong_raw$flew),]#
+#
+flight<-read.csv("flight output/flight_summary_modifed.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,]!=0)){#
+			#browser()#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,]!=0)){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,]!=0)){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+		}	#
+	}#
+}
+flight<-read.csv("flight output/flight_summary_modifed.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/")#
+#
+data30<-read.csv("data/dispersal_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data60_raw<-read.csv("data/dispersal_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data60<-data60_raw[!is.na(data60_raw$flew),]#
+#
+data90_raw<-read.csv("data/dispersal3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data90<-data90_raw[!is.na(data90_raw$flew),]#
+#
+#these need to be split and curated first.#
+#datalong_raw<-read.csv("data/dispersal4.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#datalong<-datalong_raw[!is.na(datalong_raw$flew),]#
+#
+flight<-read.csv("flight output/flight_summary_modified.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,]!=0)){#
+			#browser()#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,]!=0)){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,]!=0)){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+		}	#
+	}#
+}
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,]!=0)){#
+			browser()#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,]!=0)){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,]!=0)){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+		}	#
+	}#
+}
+row
+flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]
+flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]
+c
+c
+c
+c
+c
+c
+c
+c
+data[,9:11]
+data[9:11,]
+flight[flight$ID==data$ID[10] & flight$total_duration<=1800,]
+nrow(flight[flight$ID==data$ID[10] & flight$total_duration<=1800,])
+data$trial[10,]
+data$trial[10]
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,]!=0)){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			browser()#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,]!=0)){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,]!=0)){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+		}	#
+	}#
+}
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,])!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			browser()#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,])!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,])!=0){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+		}	#
+	}#
+}
+row
+data$ID[9]
+Q
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,])!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,])!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,])!=0){#
+			data$distance[row] <- sum(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+			data$avg_spd[row] <- mean(flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600])#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+		}	#
+	}#
+}
+head(datya)
+head(data)
+data$distance
+data$distance[data$flew==Y]
+data$distance[data$flew=='Y']
+head(data)
+data[data$flew=="Y",]
+data[data$flew=="Y","ID"]
+data$ID
+aggregate(distance~pophost, data=data[data$flew=="Y",], FUN=mean)
+aggregate(distance~pophost, data=data[data$flew=="Y",], FUN=length)
+hist(data$distance)
+hist(data$distance[data$flew=="Y",])
+hist(data$distance[data$flew=="Y"])
+hist(data$distance[data$flew=="Y"], breaks=seq(0,3000, by=100))
+hist(data$distance[data$flew=="Y"], breaks=seq(0,3000, by=50))
+hist(data$distance[data$flew=="Y"], breaks=seq(0,3000, by=10))
+hist(data$distance[data$flew=="Y"], breaks=seq(0,3000, by=5))
+hist(data$distance[data$flew=="Y"], breaks=seq(0,3000, by=2))
+hist(data$distance[data$flew=="Y"], breaks=seq(0,3000, by=1))
+hist(data$distance[data$flew=="Y"], breaks=seq(0,3000, by=50))
+hist(data$avg_spd[data$flew=="Y"])
+data$avg_spd
+#exploring dispersal data#
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/")#
+#
+data30<-read.csv("data/dispersal_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data60_raw<-read.csv("data/dispersal_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data60<-data60_raw[!is.na(data60_raw$flew),]#
+#
+data90_raw<-read.csv("data/dispersal3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data90<-data90_raw[!is.na(data90_raw$flew),]#
+#
+#these need to be split and curated first.#
+#datalong_raw<-read.csv("data/dispersal4.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#datalong<-datalong_raw[!is.na(datalong_raw$flew),]#
+#
+flight<-read.csv("flight output/flight_summary_modified.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,])!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,])!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,])!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration>3600]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+		}	#
+	}#
+}#
+#
+data<-data[data$flew=="Y" | data$flew=="N",]#
+data<-na.omit(data)#
+data$flew_num<-0#
+data$flew_num[data$flew=="Y"]<-1#
+#library(lme4)#
+#
+#model1<-glmer(flew_num~mass + sex + pophost + (1|chamber), family=binomial, data=data)#
+#summary(model1)
+hist(data$avg_spd[data$flew=="Y"])
+hist(data$avg_spd)
+data$avg_spd
+data$distamce
+data$distance
+data$trial
+data30
+#exploring dispersal data#
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/")#
+#
+data30<-read.csv("data/dispersal_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#
+data60_raw<-read.csv("data/dispersal_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data60<-data60_raw[!is.na(data60_raw$flew),]#
+#
+data90_raw<-read.csv("data/dispersal3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data90<-data90_raw[!is.na(data90_raw$flew),]#
+#
+#these need to be split and curated first.#
+#datalong_raw<-read.csv("data/dispersal4.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#datalong<-datalong_raw[!is.na(datalong_raw$flew),]#
+#
+flight<-read.csv("flight output/flight_summary_modified.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+#
+for(row in 1:nrow(data)){#
+	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
+	if(data$population[row]=="North Key Largo"){#
+		data$pophost[row]<-"C.corindum"#
+	}#
+	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
+	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
+	else {data$pophost[row]<-"K.elegans"}#
+	if(data$trial[row]=="30"){	#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,])!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="60"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,])!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+			}#
+	}#
+	else if(data$trial[row]=="90"){#
+		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,])!=0){#
+			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600]#
+			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration>3600]#
+		}#
+		else {#
+			data$distance[row]<-0#
+			data$avg_spd[row]<-0#
+		}	#
+	}#
+}#
+#
+#data<-data[data$flew=="Y" | data$flew=="N",]#
+#data<-na.omit(data)#
+#data$flew_num<-0#
+#data$flew_num[data$flew=="Y"]<-1#
+#library(lme4)#
+#
+#model1<-glmer(flew_num~mass + sex + pophost + (1|chamber), family=binomial, data=data)#
+#summary(model1)
+hist(data$avg_spd)
