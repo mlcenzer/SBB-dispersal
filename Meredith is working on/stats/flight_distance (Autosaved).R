@@ -81,8 +81,12 @@ anova(m12, m14, test="Chisq") #No effect of A*B interaction
 
 model30<-glm(distance~host_c*sym_dist, family=Gamma(link="log"), data=data_short)
 ###Strong negative effect of sym_dist: longer dispersal distances closer to the sympatric zone
-###Strong positive interaction between host and sym_dist: the effect of the sympatric zone distance was more positive on GRT
+###Strong positive interaction between host and sym_dist: the effect of distance from the sympatric zone on dispersal was weaker on GRT bugs
 
+summary30<-aggregate(distance~host_plant*sym_dist, data=data_short, FUN=mean)
+summary30BV<-aggregate(distance~sym_dist, data=data_short[data_short$host_c==-1,], FUN=mean)
+plot(summary30$distance~summary30$sym_dist, pch=c(19,22)[as.factor(summary30$host_plant)])
+plot(summary30BV$distance~summary30BV$sym_dist)
 
 
 #####Keep ID number in here

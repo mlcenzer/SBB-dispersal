@@ -603,7 +603,7 @@ for file in dir_list:
 
 # All Flight Stats Summary File
 
-outpath = r"/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/data/"
+outpath = r"/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/data"
 with open(outpath + "flight_summary_latest2.csv", "w") as csv_file:
     writer = csv.DictWriter(csv_file, fieldnames = big_list[1].keys())
     writer.writeheader()
