@@ -1,0 +1,245 @@
+---
+title: "Soapberry Bug Flight Dispersal Spatial Data Visualization"
+author: "Anastasia Bernat"
+fontsize: 11pt
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document:
+    df_print: kable
+    fig_caption: no
+    fig_height: 3.5
+    fig_width: 3.5
+    highlight: monochrome
+geometry: margin=0.75in
+fig_crop: no
+---
+
+```{r setup, include=FALSE}
+# Load some commonly used packages.
+library(MASS)
+library(gridExtra)
+library(tidyverse)
+library(mosaic)
+library(broom)
+library(dplyr)
+library(knitr)
+library(readr)
+
+# Set numerical output display parameters
+options(width=70, digits=4, scipen=8)
+# Set R output size a bit smaller than default
+knitr::opts_chunk$set(size='small', prompt=FALSE, comment="")
+# set plot theme to black and white
+ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_update(panel.grid.major = ggplot2::element_line(colour = "grey75"))
+
+# Spatial Libraries
+library(sf)
+library(sp)
+library(lubridate)
+library(tmap)
+library(geojsonR)
+library(geojsonio)
+library(lwgeom) # lwgeom is known as the light-weight geometry library used by 'PostGIS' 
+library(cleangeo)
+```
+
+## Import and read the data.
+
+```{r, include=FALSE}
+full_data3 <- read_csv("full_data3.csv")
+```
+
+## Filter for only the columns you need.
+
+```{r}
+filtered_data <- select(full_data3, ID, filename, chamber, set_number, average_speed, total_flight_time, 
+                        distance, shortest_flying_bout, longest_flying_bout, portion_flying, max_speed,
+                        sex, population, site, host_plant, flew, flight_type, mass, eggs, 
+                        lat =latitude, 
+                        lon = longitude)
+
+# Get rid of NA's in long and lat columns
+filtered_data <- filter(filtered_data, !is.na(lat), !is.na(lon))
+glimpse(filtered_data)
+```
+
+## Convert to a spatial point object and plot.
+
+```{r}
+dispersal_data <- st_as_sf(filtered_data,
+                           coords = c("lon", "lat"),
+                           crs = 4326,
+                           agr = "constant")
+
+dispersal_data <- st_transform(dispersal_data, 2236)
+plot(dispersal_data)
+```
+
+This shows us the data, but visually it's hard to read. Let's try mapping multipolygon and polygon shapes.
+
+## Create mappable multipolygon shapes for designated areas. Sites to use:
+
+(i) Go to OpenStreetMaps: https://nominatim.openstreetmap.org
+
+(ii) Type in the area you want your multipolygon for.
+
+(iii) Find the OSM ID and copy it.
+
+(iv) Go to Polygon Creation: http://polygons.openstreetmap.fr/index.py
+
+(v) Past the OSM ID into the 'Id of relation' box.
+
+(vi) Click on 'image' to confirm that is the shape you want on OpenStreetMaps or Google Maps.
+
+(vii) Click on GeoJSON and copy the url.
+
+(viii) Convert the GeoJSON dat into a nested list using geojson_read() or lapply() and st_read as the second argument. lapply() and st_read() are much more efficient. The map() function is also similar to lapply(), but for some reason it does not work here. Similar to pandas in Python, the map() function transforms its input by applying a function to each element and returning a vector (or whichever class you want) with the same length as the input.
+
+(ix) Find a spatial reference number or (espg) for Florida. I went with 2236, East Florida as pictured here on OpenStreetMaps: https://maps.omniscale.com/en/openstreetmap/epsg-2236. 
+
+(x) If there is a gap in one or more of the polygons created, use st_make_valid() to bypass the error and make the polygon valid.
+
+```{r}
+florida <- "http://polygons.openstreetmap.fr/get_geojson.py?id=162050&params=0"
+lake_wales <- "http://polygons.openstreetmap.fr/get_geojson.py?id=117732&params=0"
+lake_placid <- "http://polygons.openstreetmap.fr/get_geojson.py?id=117660&params=0"
+homestead <-"http://polygons.openstreetmap.fr/get_geojson.py?id=1216731&params=0.004000-0.001000-0.001000" 
+north_key_largo <- "http://polygons.openstreetmap.fr/get_geojson.py?id=119071&params=0" 
+gainesville <- "http://polygons.openstreetmap.fr/get_geojson.py?id=118870&params=0"
+leesburg <- "http://polygons.openstreetmap.fr/get_geojson.py?id=117476&params=0"
+key_largo <- "http://polygons.openstreetmap.fr/get_geojson.py?id=119070&params=0"
+plantation_key <-  "http://polygons.openstreetmap.fr/get_geojson.py?id=117963&params=0"
+
+# Just For Florida
+florida <- st_read(florida)
+class(florida)
+FL <- mutate(florida, population = "Florida")
+FL_transformed <- st_transform(FL, 2236)
+
+# For Other Populations
+urls <- c(lake_wales, lake_placid, homestead, north_key_largo, gainesville,
+          leesburg, key_largo, plantation_key)
+
+polylist <- lapply(urls, st_read)
+sf_df <- do.call(rbind, polylist)
+
+populations <- c("Lake Wales", "Lake Placid", "Homestead", "North Key Largo",
+           "Gainesville", "Leesburg", "Key Largo", "Plantation Key")
+
+pops <- cbind(sf_df, populations)
+class(pops)
+df_transformed <- st_transform(pops, 2236)
+
+# Check for valid or invalid geometries
+poly_valid_report <- st_is_valid(df_transformed)
+poly_valid_report # see that LW, LP, GV, LB, and PK are invalid
+
+# You can use st_make_valid() method similar to PostGIS method to fix broken geometries.
+
+df_final <- st_make_valid(df_transformed) %>%
+  st_cast("MULTIPOLYGON") 
+
+poly_valid_report2 <- st_is_valid(df_final)
+poly_valid_report2
+
+tmap_mode("view")
+tmap_mode("plot")
+
+tm_shape(df_final) +
+  tm_polygons("populations") +
+  tm_basemap("Hydda.Base")
+```
+
+(xi) Combine the comprehensive sf dataframe with the sf dataframe mapping the populations to the polygon shapes.
+
+(xii) Write your data to a csv or gpkg file using write_sf(). (Still unsure what application opens gpkg files)
+
+```{r}
+combined <- st_join(df_final, dispersal_data)
+write_sf(combined, "flight_spatial_data.csv", layer_options="GEOMETRY=AS_WKT")
+#write_sf(combined_df, "combined2.gpkg")
+```
+
+```{r}
+
+# filter out those that didn't fly for now?
+
+combined_filtered <- combined %>%
+  filter(average_speed !=0)
+  
+short <- head(combined_filtered, 100)
+#getwd()
+short_combined <- head(combined, 350)
+names(short_combined)
+
+# Start building the map!
+
+tmap_mode("plot")
+
+m <- tm_shape(combined) +
+  tm_polygons("average_speed", title = "Average Flight Speed Across Populations(m/s)",
+              legend.hist = TRUE) +
+  tm_basemap("Hydda.Base") +
+  tm_borders() +
+  tm_layout(main.title = "Average Flight Speed (m/s)", 
+            legend.hist.size = 1.5, 
+            compass.type = "4star", 
+            legend.outside = TRUE) +
+    tm_compass(show.labels = 1, 
+             cardinal.directions = c("N", "E", "S", "W"),
+             position = c(.65, .85), 
+             size = 2.5, 
+             color.light= "grey90",
+             color.dark= "grey30") +
+  tm_scale_bar(position = c("left", "bottom")) +
+tm_shape(FL_transformed)
+
+save_tmap(m, "Florida_map2.png")
+
+m2 <- tm_shape(FL_transformed) +
+  tm_polygons("population") +
+  # tm_fill(col="grey85", alpha = 0.1, palette="Reds") +
+  # tm_borders(col = "grey85") 
+tm_shape(combined) +
+  tm_polygons("average_speed", title = "Average Flight Speed (m/s)", legend.hist = TRUE) +
+  tm_basemap("Hydda.Base") +
+  tm_borders() +
+  tm_layout(main.title = "Average Flight Speed Across Populations (m/s)",
+            legend.hist.size = 1.5, 
+            compass.type = "4star", 
+            legend.outside = TRUE) +
+    tm_compass(show.labels = 1, 
+             cardinal.directions = c("N", "E", "S", "W"),
+             position = c(.85, .85), 
+             size = 2.5, 
+             color.light= "grey90",
+             color.dark= "grey30") +
+  tm_scale_bar(position = c("left", "bottom")) 
+
+save_tmap(m2, "Florida_map3unedited.png")
+
+m3 <- tm_shape(combined) +
+  tm_polygons("distance", title = "Flight Distance (m)", 
+              legend.hist = TRUE) +
+  tm_basemap("Hydda.Base") +
+  tm_borders() +
+  tm_layout(main.title = "Distance Flew Across Populations (m)", 
+            legend.hist.size = 1.5, 
+            compass.type = "4star", 
+            legend.outside = TRUE) +
+    tm_compass(show.labels = 1, 
+             cardinal.directions = c("N", "E", "S", "W"),
+             position = c(.85, .85), 
+             size = 2.5, 
+             color.light= "grey90",
+             color.dark= "grey30") +
+  tm_scale_bar(position = c("left", "bottom")) 
+
+save_tmap(m3, "Florida_map4.png")
+```
+
+
+Possible solution? https://stackoverflow.com/questions/60233775/r-tmap-sf-error-arguments-imply-differing-number-of-rows-when-viewing-map --> "change the geometry collections to multipolygons."
