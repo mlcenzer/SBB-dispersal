@@ -81,7 +81,150 @@ anova(m12, m14, test="Chisq") #No effect of A*B interaction
 
 model30<-glm(distance~host_c*sym_dist, family=Gamma(link="log"), data=data_short)
 ###Strong negative effect of sym_dist: longer dispersal distances closer to the sympatric zone
-###Strong positive interaction between host and sym_dist: the effect of the sympatric zone distance was more positive on GRT
+###Strong positive interaction between host and sym_dist: the effect of distance from the sympatric zone on dispersal was weaker on GRT bugs
+
+summary30<-aggregate(distance~host_plant*sym_dist, data=data_short, FUN=mean)
+#summary30BV<-aggregate(distance~sym_dist, data=data_short[data_short$host_c==-1,], FUN=mean)
+plot(summary30$distance~summary30$sym_dist, pch=c(19,22)[as.factor(summary30$host_plant)])
+#plot(summary30BV$distance~summary30BV$sym_dist)
+
+
+
+
+
+
+
+
+###60 minutes trials:
+data_hour<-data_flew[data_flew$trial_type=="T60",]
+
+#######No chamber effects
+summary(glm(distance~chamber, data=data_hour, family=Gamma(link="log")))
+
+#######No effect of test date
+summary(glm(distance~days_from_start, data=data_hour, family=Gamma(link="log")))
+
+#######No effect of test time
+summary(glm(distance~min_from_start, data=data_hour, family=Gamma(link="log")))
+
+
+data<-data.frame(R=data_hour$distance, A=data_hour$host_c, B=data_hour$sex_c, C=data_hour$sym_dist, X=data_hour$chamber)
+
+library(lme4)
+
+#run AICprobs script
+setwd("/Users/Meredith/Desktop/Documents/R/generic models/")
+source("AICprobabilities.R")
+source("generic models-Gamma glm 3-FF log link.R")
+sort(summary$AIC)
+sort(P, decreasing=TRUE, index.return=TRUE)
+#5 models did not converge: m8, m10, m11, m13, m15; this link function may not be the best. Trying again with identity and inverse.
+source("generic models-Gamma glm 3-FF inverse link.R")
+sort(summary$AIC)
+sort(P, decreasing=TRUE, index.return=TRUE)
+###All converged with inverse - but the results don't make any sense.
+#top models: m8, m14, m9, m11, m17, m1
+source("generic models-Gamma glm 3-FF.R")
+sort(summary$AIC)
+sort(P, decreasing=TRUE, index.return=TRUE)
+#####Not converging
+
+
+anova(m8, m11, test="Chisq") #No effect of adding C
+anova(m14, m11, test="Chisq") #No effect of A*C interaction
+anova(m9, m12, test="Chisq") #No effect of adding B
+anova(m14, m17, test="Chisq") #No effect of B*C interaction
+###So, let's use m8
+
+model60<-glm(distance~host_c*sex_c, family=Gamma(link="inverse"), data=data_hour)
+summary(model60)
+###Marginal effect of host plant: bugs from GRT disperse farther
+###Marginal effect of sex: males disperse farther
+###Marginal interaction between host and sex: the effect of host is weaker on males
+
+#######I am not sure how to interpret these estimates, but the above interpretation is based on logical direction rather than coef(model60), which makes no sense to me.
+
+summary60<-aggregate(distance~host_plant*sex, data=data_hour, FUN=mean)
+#summary30BV<-aggregate(distance~sym_dist, data=data_hour[data_hour$host_c==-1,], FUN=mean)
+plot(summary60$distance~c(1,2,1,2), col=c(1,2)[as.factor(summary60$sex)])
+#plot(summary30BV$distance~summary30BV$sym_dist)
+
+
+
+
+
+
+
+
+
+
+
+
+
+###90 minutes trials:
+data_ninety<-data_flew[data_flew$trial_type=="T90",]
+
+#######No chamber effects
+summary(glm(distance~chamber, data=data_ninety, family=Gamma(link="inverse")))
+
+#######No effect of test date
+summary(glm(distance~days_from_start, data=data_ninety, family=Gamma(link="inverse")))
+
+#######No effect of test time
+summary(glm(distance~min_from_start, data=data_ninety, family=Gamma(link="inverse")))
+
+
+data<-data.frame(R=data_ninety$distance, A=data_ninety$host_c, B=data_ninety$sex_c, C=data_ninety$sym_dist, X=data_ninety$chamber)
+
+library(lme4)
+
+#run AICprobs script
+setwd("/Users/Meredith/Desktop/Documents/R/generic models/")
+source("AICprobabilities.R")
+source("generic models-Gamma glm 3-FF log link.R")
+sort(summary$AIC)
+sort(P, decreasing=TRUE, index.return=TRUE)
+#5 models did not converge: m9, m12, m14, m17; this link function may not be the best. Trying again with identity and inverse.
+source("generic models-Gamma glm 3-FF inverse link.R")
+sort(summary$AIC)
+sort(P, decreasing=TRUE, index.return=TRUE)
+###All converged with inverse
+#top models: m14, m17, m9, m12, m16
+source("generic models-Gamma glm 3-FF.R")
+sort(summary$AIC)
+sort(P, decreasing=TRUE, index.return=TRUE)
+#####Not converging
+
+
+anova(m8, m11, test="Chisq") #No effect of adding C
+anova(m14, m11, test="Chisq") #No effect of A*C interaction
+anova(m9, m12, test="Chisq") #No effect of adding B
+anova(m14, m17, test="Chisq") #No effect of B*C interaction
+###So, let's use m8
+
+model60<-glm(distance~host_c*sex_c, family=Gamma(link="inverse"), data=data_ninety)
+summary(model60)
+###Marginal effect of host plant: bugs from GRT disperse farther
+###Marginal effect of sex: males disperse farther
+###Marginal interaction between host and sex: the effect of host is weaker on males
+
+#######I am not sure how to interpret these estimates, but the above interpretation is based on logical direction rather than coef(model60), which makes no sense to me.
+
+summary60<-aggregate(distance~host_plant*sex, data=data_ninety, FUN=mean)
+#summary30BV<-aggregate(distance~sym_dist, data=data_ninety[data_ninety$host_c==-1,], FUN=mean)
+plot(summary60$distance~c(1,2,1,2), col=c(1,2)[as.factor(summary60$sex)])
+#plot(summary30BV$distance~summary30BV$sym_dist)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
