@@ -36,6 +36,8 @@ for(row in 1:length(data_all$days_from_start)){
 	}
 }
 
+data_all$min_from_start_c<-data_all$min_from_start-mean(data_all$min_from_start)
+
 data_flew<-data_all[data_all$distance!=0,]
 
 
@@ -193,26 +195,25 @@ sort(P, decreasing=TRUE, index.return=TRUE)
 source("generic models-Gamma glm 3-FF.R")
 sort(summary$AIC)
 sort(P, decreasing=TRUE, index.return=TRUE)
-#####Not converging
+#####Not converging, use inverse link.
 
 
-anova(m8, m11, test="Chisq") #No effect of adding C
-anova(m14, m11, test="Chisq") #No effect of A*C interaction
-anova(m9, m12, test="Chisq") #No effect of adding B
-anova(m14, m17, test="Chisq") #No effect of B*C interaction
-###So, let's use m8
+anova(m14, m17, test="Chisq") #No effect of adding B*C interaction
+anova(m14, m12, test="Chisq") #Strong effect of adding A*B interaction
+anova(m9, m12, test="Chisq") #No effect of adding B alone
+anova(m12, m16, test="Chisq") #No effect of B*C interaction
+###So let's use m14
 
-model60<-glm(distance~host_c*sex_c, family=Gamma(link="inverse"), data=data_ninety)
-summary(model60)
-###Marginal effect of host plant: bugs from GRT disperse farther
-###Marginal effect of sex: males disperse farther
-###Marginal interaction between host and sex: the effect of host is weaker on males
+model90<-glm(distance~host_c*sex_c + host_c*sym_dist, family=Gamma(link="inverse"), data=data_ninety)
+summary(model90)
+###Moderate effect of sym_dist: Being close to the sympatric zone makes you disperse farther
+###Moderate interaction between host and sym_dist: Being from BV --> stronger effect of being close to the sympatric zone
 
-#######I am not sure how to interpret these estimates, but the above interpretation is based on logical direction rather than coef(model60), which makes no sense to me.
+#######I am not sure how to interpret these estimates, but the above interpretation is based on logical direction rather than coef(model90), which makes no sense to me.
 
-summary60<-aggregate(distance~host_plant*sex, data=data_ninety, FUN=mean)
+summary90<-aggregate(distance~host_plant*sym_dist, data=data_ninety, FUN=mean)
 #summary30BV<-aggregate(distance~sym_dist, data=data_ninety[data_ninety$host_c==-1,], FUN=mean)
-plot(summary60$distance~c(1,2,1,2), col=c(1,2)[as.factor(summary60$sex)])
+plot(summary90$distance~summary90$sym_dist, pch=c(19,22)[as.factor(summary90$host_plant)])
 #plot(summary30BV$distance~summary30BV$sym_dist)
 
 
@@ -229,15 +230,26 @@ plot(summary60$distance~c(1,2,1,2), col=c(1,2)[as.factor(summary60$sex)])
 
 
 #####Keep ID number in here
-data_long<-data_all[data_all$trial_type=="Tlong",]
+data_long<-data_flew[data_flew$trial_type=="Tlong",]
 
-data<-data.frame(R=data_long$distance, A=data_long$host_c, B=data_long$sex_c, C=data_long$lat_c, X=data_long$ID)
+#######No chamber effects
+summary(glmer(distance~chamber + (1|ID), data=data_long, family=Gamma(link="log")))
+
+#######No effect of test date
+summary(glmer(distance~days_from_start + (1|ID), data=data_long, family=Gamma(link="log")))
+
+#######YES effect of test time: later starting bugs don't get as long to fly
+summary(glm(distance~min_from_start_c, data=data_long, family=Gamma(link="log")))
+
+
+
+data<-data.frame(R=data_long$distance, A=data_long$host_c, B=data_long$sex_c, C=data_long$lat_c, D=data_long$min_from_start_c, X=data_long$ID)
 
 library(lme4)
 
 #run AICprobs script
 setwd("/Users/Meredith/Desktop/Documents/R/generic models/")
 source("AICprobabilities.R")
-source("generic models-binomial glmer 3-FF.R")
+source("generic models-Gamma glmer 4-FF log link.R")
 sort(summary$AIC)
 sort(P, decreasing=TRUE, index.return=TRUE)
