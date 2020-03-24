@@ -23,9 +23,6 @@ data_all$eggs_b[data_all$eggs=="Y"]<-1
 
 data_all$ID<-as.factor(data_all$ID)
 
-
-##############Excel was built by a goddamn monster
-
 data_all$min_from_start<-0
 
 for(row in 1:length(data_all$days_from_start)){
@@ -57,6 +54,63 @@ hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=s
 legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
 par(mar=c(4.8,4.9,0.1,0.1))
 hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(90,0), xlab="Average distance (m)", main="")
+
+
+####With a flipped axis, considering a 'bin' to be 1km?
+
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=mean)
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance
+
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')
+legend(5, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+par(mar=c(4.8,4.9,0.1,0.1))
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,10, by=0.5), ylim=c(90,0), xlab="Average distance (km)", main="")
+
+
+####With unflipped axis, considering a 'bin' to be 1km?
+##I like this one, but want to normalize it as a density plot.
+
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=mean)
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance
+
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n', density=TRUE)
+legend(5, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+#par(mar=c(4.8,4.9,0.1,0.1))
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,10, by=0.5), xlab="Average distance (km)", add=TRUE, density=TRUE)
+
+
+###normalizing
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=max)
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance
+
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-0.49,17.01, by=0.5), xlab="Average distance (km)", freq=FALSE)
+legend(3, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+#par(mar=c(4.8,4.9,0.1,0.1))
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-0.49,17.01, by=0.5), add=TRUE, freq=FALSE)
+
+
+
+
+####As the sum of all distance traveled? This may be problematic as some individuals were preferentially tested additional times.
+
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=sum)
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance
+
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,30, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+par(mar=c(4.8,4.9,0.1,0.1))
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,30, by=0.5), ylim=c(90,0), xlab="Average distance (km)", main="")
+
+
+
+
+
+
+
+
+
 
 
 
