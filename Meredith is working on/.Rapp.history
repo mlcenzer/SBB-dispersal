@@ -1,135 +1,579 @@
-rm(list=ls())#
+length
+length(bacon_days)
+length(eggs_days)
+length(egg_days)
+matrix<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+matrix
+matrix[1,2]
+matrix[3,2]
+matrix[,2]
+rm(list=ls())
+matrix
+matrix<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+#assignment#
 #
-#second draft stats for first mate#
-setwd("~/Documents/Florida soapberry project/2019 May/2019 mate choice")#
+#object#
+a<-1#
+#vector#
+vec<-c(a,4)#
+#matrix#
+mat<-matrix(vec, nrow=2, ncol=2)#
+#function#
+breakfast_cals<-function(eggs=0, pancakes=0, bacon=0){#
+	eggs*78 + pancakes*86 + bacon*43#
+}#
+egg_days<-c(1,0,5,2,3,2)#
+pancake_days<-c(2,2,2,2,2,2)#
+bacon_days<-c(2,0)#
 #
-#load functions and metadata#
-source("age calculator.R")#
+breakfast_cals(egg_days, pancake_days, bacon_days)#
+#practice:#
 #
-#Load and prep metadata#
-#metadata#
-data_raw<-read.csv("labdata_8_29.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+#write a function to convert celsius to fahrenheit#
 #
-data<-data_raw[data_raw$ID!="" & data_raw$ID!="ID #",]#
+#Use that function to make a 2-column matrix, the first column of celsius from 0 to 50, the second of corresponding fahrenheit values#
+#Make a matrix where the first column is a population with phenotype values between 0 and 10 (may be drawn randomly using rnorm() or runif())#
 #
-data$dead<-0#
-data$dead[data$death.date!=""]<-1#
+#use the sample() function to fill the second column with a second generation drawn from the first generation. There are multiple ways to do this!#
 #
-#######Analyze survival rates at this point.#
-model<-glm(dead~nathost.site + pophost, family=binomial, data=data)#
-summary(model)#
+#do this for 10 generations.#
 #
-data_GV<-data[data$nathost=="K.elegans",]#
-data_GV$site.year<--1#
-data_GV$site.year[data_GV$nathost.site=="GV 2019"]<-1#
-data_GV$site<--1#
-data_GV$site[data_GV$nathost.site=="LW 2014"]<-1#
+#wouldn't a loop be nice now?
+egg_mat<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+egg_mat
+egg_mat[,2]
+egg_mat[,2]<-0
+egg_mat
+plot(egg_mat)
+plot(egg_mat[,1]~egg_mat[,2])
+24.65+78.70+64
+(24.65+78.70+64)/2
+119.57/2
+2000*0.53
+rbinom(10,1,0.5)
+rbinom(1,10,0.5)
+rbinom(10,1,0.5)
+matrix(NA, ncol=5, nrow=5)
+matrix(c(0,1), ncol=5, nrow=5)
+matrix(c(0,1,2), ncol=5, nrow=5)
+mat<-matrix(0, nrow=5, ncol=2)
+mat
+mat[,1]<-1:5
+mat
+mat[,3]<-1
+install.packages("viridis")#
+install.packages("mgcv")#
+install.packages("boot")#
+install.packages("magick")#
 #
-model<-glm(dead~site + site.year, family=binomial, data=data_GV)#
-summary(model)#
-#
-########################Dvpt.time#
-data<-data[data$dead==0 & data$eclosion.date!="",]#
-data$ha.mo<-as.numeric(unlist(lapply(strsplit(data$hatch.date,"[.]"), function(x) x[1])))#
-data$ha.day<-as.numeric(unlist(lapply(strsplit(data$hatch.date,"[.]"), function(x) x[2])))#
-data$ec.mo<-as.numeric(unlist(lapply(strsplit(data$eclosion.date,"[.]"), function(x) x[1])))#
-data$ec.day<-as.numeric(unlist(lapply(strsplit(data$eclosion.date,"[.]"), function(x) x[2])))#
-data$june_days<-0#
-data$july_days<-31#
-data$aug_days<-0#
-#
-for(n in 1:nrow(data)){#
-	if(data$ha.mo[n]=="6"){data$june_days[n]<-30-data$ha.day[n]}#
-	if(data$ha.mo[n]=="7"){data$july_days[n]<-31-data$ha.day[n]}#
-	if(data$ec.mo[n]=="7"){data$july_days[n]<-data$ec.day[n]}#
-	if(data$ec.mo[n]=="8"){data$aug_days[n]<-data$ec.day[n]}#
+library(viridis)#
+library(mgcv)  #needed for gam command#
+library(boot)  #needed for the inv.logit command#
+#library(magick)
+2200*0.53
+?ncol
+583.34+291.67
+12/5
+35/12
+#draw body sizes that differ between Treatments using rnorm#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=5), Resp=c(rnorm(5, 5, 1), rnorm(5,3,1)))
+Results
+boxplot(Results)
+boxplot(Results$Resp~Results$Trt)
+lm(Resp~Trt, data=Results)
+summary(lm(Resp~Trt, data=Results))
+#plot mean body sizes from each treatment#
+boxplot(Results$Resp~Results$Trt)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
+}
+sample_test(10)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+boxplot(Results$Resp~Results$Trt)#
+}
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
 }#
 #
-data$dvpt.time<-data$june_days+data$july_days+data$aug_days#
+sample_test(10)#
+boxplot(Results$Resp~Results$Trt)
+sample_test(100)#
+boxplot(Results$Resp~Results$Trt)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
+}#
 #
-data_GV<-data[data$nathost=="K.elegans",]#
-data_GV$site.year<--1#
-data_GV$site.year[data_GV$nathost.site=="GV 2019"]<-1#
-data_GV$site<--1#
-data_GV$site[data_GV$nathost.site=="LW 2014"]<-1#
+output<-sample_test(100)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(10)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(1000)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(2)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(5)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(5)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(10)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(100)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+?boxplot
+sample_test<-function(s_size, sd){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, sd), rnorm(s_size,3,sd)))#
+Results#
+}#
 #
-model<-glm(dvpt.time~site + site.year + sex, data=data_GV, family=Gamma)#
-summary(model)
-aggregate(dvpt.time~pop, data=data_GV)
-aggregate(dvpt.time~pop, data=data_GV, FUN=mean)
-aggregate(dvpt.time~pop*sex, data=data_GV, FUN=mean)
-dv_data<-aggregate(dvpt.time~pop*sex, data=data_GV, FUN=mean)
-dv_data$n<-aggregate(dvpt.time~pop*sex, data=data_GV, FUN=length)$dvpt.time
-dv_data
-dv_data$n<-aggregate(dvpt.time~pophost*sex, data=data_GV, FUN=length)$dvpt.time
-dv_data<-aggregate(dvpt.time~pophost*sex, data=data_GV, FUN=mean)
-dv_data$n<-aggregate(dvpt.time~pophost*sex, data=data_GV, FUN=length)$dvpt.time
-dv_data
-#exploring dispersal data#
+output<-sample_test(s_size=100, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(s_size=1000, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim#
+#
+#Run it for different sample si
+output<-sample_test(s_size=100, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(s_size=100, sd=1)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+plot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+10.49+29.33+18.60+15.55+19.95+5.69+6.39+7.16
+113.16/2
+348.69/4
+150/5
+14+33+18+18+22
+21+15+32+13+25+16+33
+155+15
+170-105
+155/7
+2046/15
+136/4
+30*15
+30*15*4.5
+100000/12
+3/8
+47.71/2
+60*1.75
+500/20
+52*5
+260/25
+200/8
+exp^2
+exp^(1/2)
+e^(1/2)
+exp
+exp(1/2)
+exp(-1/2)
+exp(-1/2)+e(-0.08^2/2*(0.1^2))
+exp(-1/2)+exp(-0.08^2/2*(0.1^2))
+exp(-1/2)+exp((-0.08^2)/2*(0.1^2))
+exp((-0.08^2)/2*(0.1^2))
+exp((-0.05^2)/2*(0.1^2))
+exp((-0.09^2)/2*(0.1^2))
+exp((-0.1^2)/2*(0.1^2))
+exp((-0.1^2)/(2*(0.1^2)))
+exp((-0.08^2)/(2*(0.1^2)))
+exp((-0.07^2)/(2*(0.1^2)))
+exp((-0.01^2)/(2*(0.1^2)))
+1-0.9*(4*0.1*0.9)^1
+1-0.1*(4*0.1*0.9)^1
+1-0.1*(4*0.2*0.9)^1
+1-0.1*(4*0.3*0.9)^1
+1-0.1*(4*0.4*0.9)^1
+1-0.1*(4*0.2*0.8)^1
+1-0.1*(4*0.3*0.7)^1
+1-0.1*(4*0.4*0.6)^1
+1-0.1*(4*0.4*0.6)^16
+1-0.1*(4*0.5*0.5)^16
+1-0.1*(4*0.3*0.7)^16
+1-0.1*(4*0.3*0.7)^(1/16)
+1/16
+x=0.5#
+#
+survival<-function(x){#
+	1-0.1*(4*x*(1-x))^(1/16)#
+}
+survival(x)
+survival(0.6)
+sapply(seq(0,1, by=0.1), survival)
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B)#
+}#
+#
+survival(0.6)#
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B)#
+}#
+#
+survival(0.6)
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B#
+}#
+#
+survival(0.6)
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=16){#
+	1-0.1*(4*x*(1-x))^B#
+}#
+#
+survival(0.6)#
+plot(sapply(seq(0,1, by=0.1), survival))
+279.93+17.54
+(279.93+17.54)/2
+69/12
+(69/12)/2
+29.79+15.75
+sample(1:4, 4, replace=FALSE)
+runif(1,min=0, max=1)
+sample(1:4, 3, replace=FALSE)
+87.65*2
+110+8+29+16+17+44+75+2+8+59+29+66+38+40+25+13+220+29+12+29+50
+5400/60
+8*60
+480/9
+480/90
+2.7*(480/90)
+252+368.96
+620.96-367.96
 rm(list=ls())#
 setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/")#
 #
-data30<-read.csv("data/dispersal_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
+data_all<-read.csv("data/full_data3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
 #
-data60_raw<-read.csv("data/dispersal_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
-data60<-data60_raw[!is.na(data60_raw$flew),]#
+data_all<-data_all[data_all$flew!="",]#
 #
-data90_raw<-read.csv("data/dispersal3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
-data90<-data90_raw[!is.na(data90_raw$flew),]#
+data_all$flew_b<-0#
+data_all$flew_b[data_all$flew=="Y"]<-1#
 #
-#these need to be split and curated first.#
-#datalong_raw<-read.csv("data/dispersal4.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
-#datalong<-datalong_raw[!is.na(datalong_raw$flew),]#
+data_all$host_c[data_all$host_plant=="K. elegans"]<-1#
+data_all$host_c[data_all$host_plant=="C. corindum" | data_all$host_plant=="C. corindum "]<- -1#
 #
-flight<-read.csv("flight output/flight_summary_modified.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)#
-data<-data.frame(ID=as.factor(c(data30$ID, data60$ID, data90$ID)), sex=NA, population=c(data30$population, data60$population, data90$population), chamber=c(data30$chamber, data60$chamber, data90$chamber), trial=rep(c("30", "60", "90"), times=c(nrow(data30), nrow(data60), nrow(data90))), flew=c(data30$flew, data60$flew, data90$flew), flight_type=c(data30$flight_type, data60$flight_type, data90$flight_type), mass=c(rep(NA, times=nrow(data30)), data60$mass, data90$mass), pophost=NA, distance=NA, avg_spd=NA)#
+data_all$sex_c<--1#
+data_all$sex_c[data_all$sex=="F"]<-1#
 #
-for(row in 1:nrow(data)){#
-	data$sex[row]<-data30$sex[data30$ID==data$ID[row]]#
-	if(data$population[row]=="North Key Largo"){#
-		data$pophost[row]<-"C.corindum"#
+data_all$lat_c<-data_all$latitude-mean(data_all$latitude)#
+#
+data_all$sym_dist<-abs(data_all$latitude-25.49197)#
+#
+data_all$eggs_b<-0#
+data_all$eggs_b[data_all$eggs=="Y"]<-1#
+#
+data_all$ID<-as.factor(data_all$ID)#
+##############Excel was built by a goddamn monster#
+#
+data_all$min_from_start<-0#
+#
+for(row in 1:length(data_all$days_from_start)){#
+	minute<-as.numeric(strsplit(strsplit(data_all$time_start[row], ":")[[1]][2], '[ap]m'))#
+	hour<-as.numeric(strsplit(data_all$time_start[row], ":")[[1]][1])#
+	if(hour>=7){#
+		data_all$min_from_start[row]<-60*(hour-8)+minute#
+	}	#
+	if(hour<7){#
+		data_all$min_from_start[row]<-60*(hour+4)+minute#
 	}#
-	else if(data$population[row]=="Key Largo") data$pophost[row]<-"C.corindum"#
-	else if(data$population[row]=="Plantation Key") data$pophost[row]<-"C.corindum"#
-	else {data$pophost[row]<-"K.elegans"}#
-	if(data$trial[row]=="30"){	#
-		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=1800,])!=0){#
-			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=1800]#
-			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=1800]#
-		}#
-		else {#
-			data$distance[row]<-0#
-			data$avg_spd[row]<-0#
-			}#
-	}#
-	else if(data$trial[row]=="60"){#
-		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800,])!=0){#
-			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
-			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration<=3600 & flight$total_duration>1800]#
-		}#
-		else {#
-			data$distance[row]<-0#
-			data$avg_spd[row]<-0#
-			}#
-	}#
-	else if(data$trial[row]=="90"){#
-		if(nrow(flight[flight$ID==data$ID[row] & flight$total_duration>3600,])!=0){#
-			data$distance[row] <- flight$distance[flight$ID==data$ID[row] & flight$total_duration>3600]#
-			data$avg_spd[row] <- flight$average_speed[flight$ID==data$ID[row] & flight$total_duration>3600]#
-		}#
-		else {#
-			data$distance[row]<-0#
-			data$avg_spd[row]<-0#
-		}	#
-	}#
-}
-head(data)
-data
-head(flights)
-head(flight)
-flight$max_speed
-aggregate(max_speed~total_length, data=data, FUN=mean)
-head(data)
-aggregate(max_speed~total_length, data=flight, FUN=mean)
-head(flight)
-aggregate(max_speed~total_duration, data=flight, FUN=mean)
+}#
+##Analyze as binomial; must-includes are trial_type, ID number#
+#
+###Are individual measures correlated across trials?#
+####I am having issues of non-convergence that appear to be due to singularity #
+library(lme4)#
+model<-glmer(flew_b~host_c+(1|ID), data=data_all, family=binomial)#
+##This model will not converge because of singularity in the random factor ID#
+#
+getME(model, "lower") #this is 0; so, according to the internet (https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html) that means we have to simplify the model. The model can't get any simpler, so sadly it looks like we're going to have to do this trial by trial...which is likely to be a total mess!
+data_all$distance
+hist(data_all$distance)
+hist(data_all$distance, breaks=seq(0,17000, by=10))
+dist_summary<-aggregate(distance~ID, data=data_all, FUN=mean)
+dist_summary
+dist_summary<-aggregate(distance~ID, data=data_all, FUN=mean)#
+dist_summary$n<-aggregate(distance~ID, data=data_all, FUN=length)$distance
+dist_summary
+dist_summary<-aggregate(distance~ID*host, data=data_all, FUN=mean)#
+dist_summary$n<-aggregate(distance~ID*host, data=data_all, FUN=length)$distance
+head(data_all)
+dist_summary<-aggregate(distance~ID*host_plant, data=data_all, FUN=mean)#
+dist_summary$n<-aggregate(distance~ID*host_plant, data=data_all, FUN=length)$distance
+hist(dist_summary$distance[dist_summary$host_c==1, col=rgb(0,1,1,0.5)]
+)
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5))
+max(dist_summary$distance)
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=10))
+dist_summary$distance[dist_summary$host_c==1]
+dist_summary
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=mean)#
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance#
+#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=10))
+?hist
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=10))#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,1,0,0.5), breaks=seq(0,4200, by=10), add=TRUE)
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=100))#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.5,0,0.5), breaks=seq(0,4200, by=100), add=TRUE)
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=100), ylim=c(0,100))#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=100), add=TRUE)
+legend(3500, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=100), ylim=c(0,100), xlab="Average distance (m)")#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=100), add=TRUE)#
+legend(3500, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pt.col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=100), ylim=c(0,100), xlab="Average distance (m)")#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=100), add=TRUE)#
+legend(3500, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=22, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=100), ylim=c(0,100), xlab="Average distance (m)")#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=100), add=TRUE)#
+legend(3000, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,100), xlab="Average distance (m)")#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), add=TRUE)#
+legend(3000, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,100), xlab="Average distance (m)", main='')#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), add=TRUE)#
+legend(3000, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,100), xlab="Average distance (m)", main='Soapberry bug dispersal fall 2019')#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), add=TRUE)#
+legend(3000, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(100,0), add=TRUE)
+mfrow(c(1,2))#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(-100,100), xlab="Average distance (m)", main='Soapberry bug dispersal fall 2019')#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(100,0))#
+legend(3000, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(-100,100), xlab="Average distance (m)", main='Soapberry bug dispersal fall 2019')#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(100,0))#
+legend(3000, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+par(mfrow=c(1,2))
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(-100,100), xlab="Average distance (m)", main='Soapberry bug dispersal fall 2019')
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(100,0))#
+legend(3000, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+par(mfrow=c(2,1))#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,100), xlab="Average distance (m)", main='Soapberry bug dispersal fall 2019')#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(100,0))#
+legend(3000, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))
+par(mfrow=c(2,1))#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,100), xlab="", main='Soapberry bug dispersal fall 2019')#
+legend(3000, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(100,0), xlab="Average distance (m)", main="")
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,100), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')
+?par
+par(mfrow=c(2,1), mar=c(0.1,0.1,0.1,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,100), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(3000, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(100,0), xlab="Average distance (m)", main="")
+par(mfrow=c(2,1), mar=c(0.1,0.5,0.5,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,100), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(0.5,0.5,0.1,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(100,0), xlab="Average distance (m)", main="")
+par(mfrow=c(2,1), mar=c(0.1,0.9,0.8,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,100), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(0.8,0.9,0.1,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(100,0), xlab="Average distance (m)", main="")
+par(mfrow=c(2,1), mar=c(0.1,1.9,1.8,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(1.8,1.9,0.1,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(90,0), xlab="Average distance (m)", main="")
+par(mfrow=c(2,1), mar=c(0.1,2.9,1.8,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(2.8,2.9,0.1,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(90,0), xlab="Average distance (m)", main="")
+par(mfrow=c(2,1), mar=c(0.1,4.9,1.8,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(90,0), xlab="Average distance (m)", main="")
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(90,0), xlab="Average distance (m)", main="")
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=sum)#
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance
+dist_summary
+max(dist_summary$distance)
+max(dist_summary$distance)/100
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=sum)#
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance#
+#
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/100), col=rgb(0,1,1,0.5), breaks=seq(0,300, by=10), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/100), col=rgb(1,0.2,0,0.5), breaks=seq(0,300, by=10), ylim=c(90,0), xlab="Average distance (m)", main="")
+?map
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=sum)#
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance#
+#
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(0,30, by=1), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(0,30, by=1), ylim=c(90,0), xlab="Average distance (km)", main="")
+seq(0,30, by=1)
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,30, by=1), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,30, by=1), ylim=c(90,0), xlab="Average distance (km)", main="")
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,30, by=0.1), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,30, by=0.1), ylim=c(90,0), xlab="Average distance (km)", main="")
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,30, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,30, by=0.5), ylim=c(90,0), xlab="Average distance (km)", main="")
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=mean)#
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance#
+#
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==1], col=rgb(0,1,1,0.5), breaks=seq(0,4200, by=50), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist(dist_summary$distance[dist_summary$host_c==-1], col=rgb(1,0.2,0,0.5), breaks=seq(0,4200, by=50), ylim=c(90,0), xlab="Average distance (m)", main="")
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,42, by=1), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(2800, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,42, by=1), ylim=c(90,0), xlab="Average distance (km)", main="")
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(28, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,10, by=0.5), ylim=c(90,0), xlab="Average distance (km)", main="")
+legend(8, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(8, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,10, by=0.5), ylim=c(90,0), xlab="Average distance (km)", main="")
+par(mfrow=c(2,1), mar=c(0.1,4.9,4.8,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(5, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,10, by=0.5), ylim=c(90,0), xlab="Average distance (km)", main="")
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(5, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,10, by=0.5), xlab="Average distance (km)", add=TRUE)
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(5, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,10, by=0.5), xlab="Average distance (km)", add=TRUE)
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=mean)#
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance#
+dist_summary$dist_norm<-dist_summary$distance/max(dist_summary$distance)
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=mean)#
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n')#
+legend(5, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,10, by=0.5), xlab="Average distance (km)", add=TRUE)
+?dens
+??dens
+?hist
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n', density=TRUE)
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n', density=TRUE)#
+legend(5, 80, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,10, by=0.5), xlab="Average distance (km)", add=TRUE, density=TRUE)
+?densityPlot
+??densityPlot
+library(rethinking)#
+dens(dist_summary$distance)
+?dens
+dens((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), main='Soapberry bug dispersal fall 2019', xaxt='n')
+?hist
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", main='Soapberry bug dispersal fall 2019', xaxt='n', freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-1,10, by=0.5), ylim=c(0,90), xlab="", xaxt='n', freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-1,10, by=0.5), xlab="", xaxt='n', freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), breaks=seq(-1,10, by=0.5), xlab="Average distance (km)", add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-1,10, by=0.5), xlab="Average distance (km)", xaxt='n', freq=FALSE)#
+legend(5, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-1,10, by=0.5), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-1,10, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(5, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-1,10, by=0.5), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.1), main='Soapberry bug dispersal fall 2019', breaks=seq(-1,10, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(5, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-1,10, by=0.1), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.1), main='Soapberry bug dispersal fall 2019', breaks=seq(-1,10, by=0.1), xlab="Average distance (km)", freq=FALSE)#
+legend(5, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-1,10, by=0.1), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.1), main='Soapberry bug dispersal fall 2019', breaks=seq(-1,10, by=0.2), xlab="Average distance (km)", freq=FALSE)#
+legend(5, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-1,10, by=0.2), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-1,10, by=0.2), xlab="Average distance (km)", freq=FALSE)#
+legend(5, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-1,10, by=0.2), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-1,5, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(5, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-1,5, by=0.5), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-1,5, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(3, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-1,5, by=0.5), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-0.5,5, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(3, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-0.5,5, by=0.5), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-0.25,4.75, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(3, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-0.25,4.75, by=0.5), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-0.1,4.9, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(3, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-0.1,4.9, by=0.5), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-0.05,4.95, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(3, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-0.05,4.95, by=0.5), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-0.01,4.99, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(3, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-0.01,4.99, by=0.5), add=TRUE, freq=FALSE)
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-0.001,4.999, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(3, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-0.001,4.999, by=0.5), add=TRUE, freq=FALSE)
+dist_summary
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-0.49,4.51, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(3, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-0.49,4.51, by=0.5), add=TRUE, freq=FALSE)
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=max)#
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance#
+bins<-seq(-1,10, by=1)#
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-0.49,4.51, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(3, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-0.49,4.51, by=0.5), add=TRUE, freq=FALSE)
+dist_summary<-aggregate(distance~ID*host_c, data=data_all, FUN=max)#
+dist_summary$n<-aggregate(distance~ID*host_c, data=data_all, FUN=length)$distance#
+bins<-seq(-1,10, by=1)
+dist_summary
+max(dist_summary$distance)
+max(dist_summary$distance)/1000
+hist((dist_summary$distance[dist_summary$host_c==-1]/1000), col=rgb(1,0.2,0,0.5), main='Soapberry bug dispersal fall 2019', breaks=seq(-0.49,17.01, by=0.5), xlab="Average distance (km)", freq=FALSE)#
+legend(3, 1, legend=c("Spatially clustered host", "Spatially unclustered host"), pch=15, col=c(rgb(0,1,1,0.5), rgb(1,0.2,0,0.5)))#
+#par(mar=c(4.8,4.9,0.1,0.1))#
+hist((dist_summary$distance[dist_summary$host_c==1]/1000), col=rgb(0,1,1, 0.5), breaks=seq(-0.49,17.01, by=0.5), add=TRUE, freq=FALSE)

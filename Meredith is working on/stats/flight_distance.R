@@ -393,10 +393,3 @@ sort(P, decreasing=TRUE, index.return=TRUE)
 
 
 
-
-##########If it still won't converge, time to bust out the big (Bayesian) guns? 
-##Return here.
-
-
-
-
