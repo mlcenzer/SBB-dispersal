@@ -1,0 +1,270 @@
+---
+title: "Binomial Modeling: flight_yes_no"
+author: "Anastasia Bernat"
+date: "3/30/2020"
+output: html_document
+---
+
+# Winter 2020 Flight Trials 
+
+```{r setup, include=FALSE}
+rm(list=ls())
+setwd("~/Desktop/Rstats-winter2020/")
+
+library(datetime)
+library(lme4)
+library(lubridate)
+library(broom)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Reading the data
+
+Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice in the flight mill and observed from 8 AM to (5-8 PM) each day.
+
+```{r}
+data_all<-read.csv("main_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+data_all<-data_all[data_all$flew!="",]
+```
+
+# Recoding column values
+
+```{r}
+data_all$flew_b<-0
+data_all$flew_b[data_all$flew=="Y"]<-1
+
+data_all$host_c[data_all$host_plant=="K.elegans"]<-1
+data_all$host_c[data_all$host_plant=="C. corindum" | data_all$host_plant=="C. corindum "]<- -1
+
+data_all$sex_c<--1
+data_all$sex_c[data_all$sex=="F"]<-1
+
+data_all$lat_c<-data_all$latitude-mean(data_all$latitude)
+
+data_all$sym_dist<-abs(data_all$latitude-25.49197)
+
+data_all$eggs_b<-0
+data_all$eggs_b[data_all$EWM=="Y"]<-1
+
+data_all$ID<-as.factor(data_all$ID)
+
+data_all$min_from_start<-0
+data_all$min_from_start <- as.integer(data_all$total_duration / 60)
+
+data_all$days_from_start <- 0
+data_all$test_date <- as_date(data_all$test_date)
+dates <- sort(unique(data_all$test_date))
+
+for (i in 1:length(dates)){
+  day_diff <- dates[i] - dates[1]
+  for (r in 1:length(data_all$test_date)){
+    if (data_all$test_date[r] == dates[i]) {
+      data_all$days_from_start[r] = day_diff }
+  }
+}
+
+```
+
+# GLM Modeling
+```{r}
+model<-glmer(flew_b~host_c + (1|ID) + (1|trial_type), data=data_all, family=binomial)
+getME(model, "lower")
+```
+
+This model will not converge because of singularity in the random factor ID and trial type. The generalized components from the fitted mixed effects model is 0; so, according to the internet  (https://rstudio-pubs-static.s3.amazonaws.com/33653_57fc7b8e5d484c909b615d8633c01d51.html) that means we have to simplify the model. The model can't get any simpler, so looks like we're going to have to do this trial by trial.
+
+# Multi-hour trials
+
+## All trials
+
+```{r}
+####### No effect of chamber
+tidy(glm(flew_b~chamber, data=data_all, family=binomial))
+
+####### Effect of test date
+tidy(glm(flew_b~days_from_start, data=data_all, family=binomial))
+
+####### Effect of test time
+tidy(glm(flew_b~min_from_start, data=data_all, family=binomial))
+
+```
+
+## T1 
+
+```{r}
+
+data_T1 <-data_all[data_all$trial_type=="T1",]
+
+####### No effect of chamber
+tidy(glm(flew_b~chamber, data=data_T1, family=binomial))
+
+####### No effect of test date
+tidy(glm(flew_b~days_from_start, data=data_T1, family=binomial))
+
+####### Effect of test time
+tidy(glm(flew_b~min_from_start, data=data_T1, family=binomial))
+
+```
+
+If random factor is significant, what do you do?
+
+```{r}
+R = data_T1$flew_b
+A = data_T1$host_c
+B = data_T1$sex_c
+C = data_T1$sym_dist
+D = data_T1$min_from_start # as a covariate 
+
+data<-data.frame(R, A, B, C, D)
+#data<-data.frame(R, A, B, C)
+head(data) #kable()
+
+# Automatic stepwise functions using AIC to decide between models
+model.null <- glm(R~1, family=binomial, data = data_T1)
+model.large <-glm(R~A*B*C*D, family=binomial, data=data_T1)
+
+# Backwards
+#step(model.large, direction = "backward")
+```
+
+For backwards selection:
+
+- # Warning message: glm.fit: fitted probabilities numerically 0 or 1 occurred (https://stats.stackexchange.com/questions/11109/how-to-deal-with-perfect-separation-in-logistic-regression). Seems to be happening for the saturated model only. And that is why the backwards selection chooses the saturated model...
+
+- Minimum AIC value from the backwards selection function:  m_backwards <- glm(formula = R ~ A + B + C + D + A:B + A:C + A:D + B:D + C:D + A:B:D + A:C:D, family = binomial, data = data), AIC: 325.2
+
+```{r}
+# Forwards
+#step(model.null, scope = ~ (A*B*C*D), direction = "forward")
+```
+For forwards selection:
+
+- Minimum AIC value from the forwards selection function:  m_forwards <- glm(formula = R ~ D + B, family = binomial, data = data), AIC: 337.1
+
+    
+```{r}
+#run AICprobs script
+source("AICprobabilities.R")
+source("generic models-binomial glm 4-FF.R")
+AICs <- sort(summary$AIC)
+models <- sort(P, decreasing=TRUE, index.return=TRUE)
+
+AICs <- AICs[1:4]
+models <- models$ix[1:4]
+rbind(AICs, models) # top models and their AIC values
+```
+
+m23 <- glm(formula = R ~ A * B + D, family = binomial, data = data)
+m41 <- glm(formula = R ~ A * B + A * D, family = binomial, data = data)
+m43 <- glm(formula = R ~ A * B + B * D, family = binomial, data = data)
+m73 <- glm(formula = R ~ A * B + A * D + C * D, family = binomial, data = data)
+
+```{r}
+anova(m23, m41, test="Chisq") ## Adding the A*D interaction does not improve fit
+anova(m23, m43, test="Chisq") ## Replacing the A*D interaction with the B*D interaction does not improve fit
+anova(m23, m73, test="Chisq") ## Adding the A*D and C*D interaction does not improve fit
+```
+
+```{r}
+model_T1<-glm(flew_b~host_c*sex_c + min_from_start, family=binomial, data=data_T1)
+tidy(model_T1)
+```
+
+* No detectable effect of being from GRT; 
+* no longer a strong negative effect of being far from the sympatric zone; 
+* strong negative effect of being female;
+* positive effect of a bug's trial start time. 
+* strong positive interaction between sex and host plant, such that the positive effects of being on GRT are stronger if you're female
+
+```{r}
+summary <-aggregate(flew_b~host_c*sex_c + min_from_start, data=data_T1, FUN=mean)
+## Consider covariates
+
+model_T1_final <-glmer(flew_b~host_c*sex_c + min_from_start + (1|population), 
+                    family=binomial, data=data_T1)
+tidy(model_T1_final)
+## Did not change effect estimates or improve model fit
+```
+
+## T2
+
+```{r}
+
+data_T2 <-data_all[data_all$trial_type=="T2",]
+
+####### No effect of chamber
+summary(glm(flew_b~chamber, data=data_T2, family=binomial))
+
+####### No effect of test date
+summary(glm(flew_b~days_from_start, data=data_T2, family=binomial))
+
+####### Effect of test time
+summary(glm(flew_b~min_from_start, data=data_T2, family=binomial))
+
+```
+
+```{r}
+R = data_T2$flew_b
+A = data_T2$host_c
+B = data_T2$sex_c
+C = data_T2$sym_dist
+D = data_T2$min_from_start # as a covariate 
+
+data<-data.frame(R, A, B, C, D)
+#data<-data.frame(R, A, B, C)
+head(data) #kable()
+
+# Automatic stepwise functions using AIC to decide between models
+model.null <- glm(R~1, family=binomial, data = data_T2)
+model.large <-glm(R~A*B*C*D, family=binomial, data=data_T2)
+
+# Backwards
+#step(model.large, direction = "backward")
+```
+
+```{r}
+# Forwards
+#step(model.null, scope = ~ (A*B*C*D), direction = "forward")
+```
+
+```{r}
+#run AICprobs script
+source("AICprobabilities.R")
+source("generic models-binomial glm 4-FF.R")
+AICs <- sort(summary$AIC)
+models <- sort(P, decreasing=TRUE, index.return=TRUE)
+
+AICs <- AICs[1:4]
+models <- models$ix[1:4]
+rbind(AICs, models) # top models and their AIC values
+```
+
+m85 <- glm(formula = R ~ A * D + B * D + C * D, family = binomial, data = data)
+m63 <- glm(formula = R ~ A * D + C * D + B, family = binomial, data = data)
+m105<- glm(formula = R ~ A * D + B * C + B * D + C * D, family = binomial, data = data)
+m84 <- glm(formula = R ~ A * D + B * C + C * D, family = binomial, data = data)
+
+```{r}
+m84
+anova(m85, m84, test="Chisq") # B*D interaction fits better than B*C interaction
+anova(m85, m63, test="Chisq") # Removing the B*D interaction does not improve fit
+anova(m85, m105, test="Chisq") 
+```
+
+```{r}
+model_T2 <-glm(flew_b~host_c*min_from_start + sex_c*min_from_start + sym_dist*min_from_start,
+           family=binomial, data=data_T2)
+summary(model_T2)
+```
+
+```{r}
+summary <-aggregate(flew_b~host_c*min_from_start + sex_c*min_from_start +
+                      sym_dist*min_from_start, data=data_T2, FUN=mean)
+## Consider covariates
+
+model_T2_final <-glmer(flew_b~host_c*sex_c + min_from_start + (1|population), 
+                    family=binomial, data=data_T2)
+summary(model_T2_final)
+## Did change effect estimates
+```
