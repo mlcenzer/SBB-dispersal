@@ -1,6 +1,8 @@
 import os
 import csv
+import re
 import pandas as pd
+
 
 from datetime import datetime, date
 
@@ -187,8 +189,8 @@ egg_df_sums.rename(columns={'eggs':'total_eggs'}, inplace=True)
 merged_eggs = pd.merge(left=egg_df, right=egg_df_sums, left_on=['ID'],
                        right_on=['ID'], how='left')
 
-egg_outpath = r"/Users/anastasiabernat/Desktop/egg_data-winter2020.csv"
-merged_eggs.to_csv(egg_outpath, index=False, mode='w')
+# egg_outpath = r"/Users/anastasiabernat/Desktop/egg_data-winter2020_final.csv"
+# merged_eggs.to_csv(egg_outpath, index=False, mode='w')
 
 
 main_df = pd.read_csv(main_data, parse_dates = ['test_date'])
@@ -202,16 +204,84 @@ merged_data2.to_csv(outpath2, index=False, mode='w')
 # Merge 4. Egg-analyses-trial-demographics data with morphology data.
 #***************************************************************************************
 
+morphology_data = r"/Users/anastasiabernat/Desktop/morphology-flight-trials-Winter2020.csv"
+main_data = r"/Users/anastasiabernat/Desktop/main_data.csv"
 
+check_sex_dict = {} # Check if ID and sex match
+update_sex_dict = {} 
+morph_measurements = {}
 
-# To be continued
+with open(morphology_data, "r") as morph_data:
+    reader = csv.DictReader(morph_data)
+    for row in reader:
+        ID = row["\ufeffID"]
+        sex = row["sex"]
+        pop = row["population"]
+        
+        beak = row["beak"]
+        thorax = row["thorax"]
+        wing = row["wing"]
+        body = row["body"]
+        w_morph = row["w_morph"]
+        morph_notes = row["notes"]
 
+        if (ID, sex) not in check_sex_dict:
+            check_sex_dict[(ID, sex)] = pop
+        if ID not in update_sex_dict:
+            update_sex_dict[ID] = sex
+        if (ID, pop) not in morph_measurements:
+            morph_measurements[(ID,pop)] = [beak, thorax, wing, body, w_morph, morph_notes]
+            
+full_data = [] 
+with open(main_data, "r") as main_data:
+    reader = csv.DictReader(main_data)
+    for r in reader:
+        ID_num = r["ID"]
+        population = r["population"]
+        sex = r["sex"]
+        pop = re.sub('[^A-Z]', '', population)
+        if pop == "G":
+            pop = "GV"
+        if pop == "H":
+            pop = "HS"
+        if pop == "L":
+            pop = "LB"
+        
+        try:
+            pop = check_sex_dict[(ID_num, sex)]
+        except KeyError:
+            #print("KeyError for ID, ", ID_num)
+            sex = update_sex_dict[ID]
 
+        r["sex"] = sex
+        
+        try:
+            r["beak"] = morph_measurements[(ID_num,pop)][0]
+            r["thorax"] = morph_measurements[(ID_num,pop)][1]
+            r["wing"] = morph_measurements[(ID_num,pop)][2]
+            r["body"] = morph_measurements[(ID_num,pop)][3]
+            r["w_morph"] = morph_measurements[(ID_num,pop)][4]
+            r["morph_notes"] = morph_measurements[(ID_num,pop)][-1]
+        except KeyError:
+            print("KeyError for ID and pop, ", ID_num, pop)
+            r["beak"] = ''
+            r["thorax"] = ''
+            r["wing"] = ''
+            r["body"] = ''
+            r["w_morph"] = ''
+            r["morph_notes"] = 'missing tube'           
 
+        full_data.append(r)
 
+#print(full_data[0:5])
 
+outpath = r"/Users/anastasiabernat/Desktop/complete_flight_data-Winter2020.csv"
 
-
+with open(outpath, "w") as output_file:
+    writer = csv.DictWriter(output_file, fieldnames = r.keys())
+    writer.writeheader()
+    for r in full_data:
+        writer.writerow(r)
 
 
 
