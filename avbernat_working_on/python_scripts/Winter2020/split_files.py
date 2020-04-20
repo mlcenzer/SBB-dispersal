@@ -21,7 +21,7 @@ from datetime import datetime
 #datapath = r"/Users/anastasiabernat/Desktop/dispersal_data/multiple_hours/multiple_hours_data_original2.csv"
 
 # Winter 2020
-datapath = r"/Users/anastasiabernat/Desktop/all_flight_trials-processed-March30.2020.csv"
+datapath = r"/Users/anastasiabernat/Desktop/all_flight_trials-processed-April16.2020.csv"
 
 first_flight_dict = {}
 current_flight_dict = {}
@@ -113,7 +113,8 @@ with open(filepath, "r") as overnight_file:
 #path = r"/Users/anastasiabernat/Desktop/event_markers_clean2/"
 
 # Winter 2020
-path = r"/Users/anastasiabernat/Desktop/flight-files_final/"
+#path = r"/Users/anastasiabernat/Desktop/flight-files_final/"
+path = r"/Users/anastasiabernat/Desktop/original/"
 
 dir_list = sorted(os.listdir(path))
 
@@ -192,7 +193,8 @@ for file in dir_list:
 
             full_data.append(new_row)
 
-    with open(r"/Users/anastasiabernat/Desktop/winter2020_flight_files_to_split/" + file,"w") as output_file:
+    #with open(r"/Users/anastasiabernat/Desktop/winter2020_flight_files_to_split/" + file,"w") as output_file:
+    with open(r"/Users/anastasiabernat/Desktop/holder2/" + file,"w") as output_file:
         writer = csv.DictWriter(output_file, delimiter=',', fieldnames=new_row.keys())
         for r in full_data:
             writer.writerow(r)
@@ -209,30 +211,18 @@ for file in dir_list:
 #filepath = r"/Users/anastasiabernat/Desktop/files_to_split3/"
 
 #Winter 2020
-filepath = r"/Users/anastasiabernat/Desktop/winter2020_flight_files_to_split/"
+#filepath = r"/Users/anastasiabernat/Desktop/winter2020_flight_files_to_split/"
+filepath = r"/Users/anastasiabernat/Desktop/holder2/"
 
 dir_files = sorted(os.listdir(filepath))
 col_names = ["TBF","1","2","3","4","event_happened","datetime",
              "chn1_ID","chn2_ID","chn3_ID","chn4_ID"]
 
+check_list = []
+
 for f in dir_files:
     if f.startswith("."):
         continue
-    if f.startswith("T1"):
-        continue
-    if f.startswith("T2_set011"):
-        continue
-    if f.startswith("T2_set012-3-04-2020-A"):
-        continue
-    if f.startswith("T2_set013"):
-        continue
-    if f.startswith("T2_set014"):
-        continue
-    if f.startswith("T2_set015"):
-        continue
-    if f.startswith("T2_set016"):
-        continue
-
     filename = filepath + str(f)
     set_num = f.split('-')[0][6:]
     channel_letter = f.split('.')[0][-1]
@@ -248,10 +238,14 @@ for f in dir_files:
 
     for channel in range(1,5):
         ID_data = {}
-        broken_channels = ['1111', '2222', '3333', '4444', '5555'] 
+        check_row = {}
+        broken_channels = ['1111', '2222', '3333', '4444', '5555']
+
+
         with open(filename,"r") as input_file:
             reader = csv.DictReader(input_file,fieldnames=col_names)
             for row in reader:
+                
                 ID = row['chn' + str(channel) + '_ID']
                 if ID in broken_channels:
                     continue
@@ -279,20 +273,33 @@ for f in dir_files:
                 ID_data[ID].append(new_row)
         if ID not in broken_channels:
             print(">>Individual file cut at, " + str(individual_cut) + " for ID, " + str(ID) + "<<")
-            #last_row = row
-            #print("Last row, %s"%last_row) #of the input file
     
         for key_ID, data in ID_data.items():
             print("     Making file for ID, " + str(key_ID))
-            with open(r"/Users/anastasiabernat/Desktop/holder/" +
+            with open(r"/Users/anastasiabernat/Desktop/holder4/" +
                       os.path.basename(filename).split(".")[0] + str(channel) + '_' + str(key_ID) + ".txt","w") as output_file:
                 writer = csv.DictWriter(output_file, fieldnames=new_row.keys())
                 for r in data:
                     writer.writerow(r)
-                    
-##for end_ID in end_IDs:
-##        last_row = r
-##        print("      Last row, %s"%last_row)
 
+        if ID not in broken_channels:
+            datetime_obj = datetime.strptime(r["datetime"],'%Y-%m-%d %H:%M:%S')
+            check_row["set_num"] = set_num
+            check_row["chamber"] = channel_letter + "-" + str(channel)
+            check_row["ID"] = ID
+            check_row["time_end"] = individual_cut
+            check_row["last_filerow_time"] = datetime_obj
 
+            if individual_cut == datetime_obj:
+                check_row["time_matches?"] = "TRUE"
+            else:
+                check_row["time_matches?"] = "FALSE"
 
+            check_list.append(check_row)
+
+outpath = r"/Users/anastasiabernat/Desktop/time_summary.csv"          
+with open(outpath, "w") as out_file:
+    writer = csv.DictWriter(out_file, fieldnames=check_list[1].keys())
+    writer.writeheader()
+    for row in check_list:
+        writer.writerow(row)
