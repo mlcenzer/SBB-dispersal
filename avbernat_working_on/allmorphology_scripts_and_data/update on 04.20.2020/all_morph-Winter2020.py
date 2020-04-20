@@ -3,20 +3,20 @@ import csv
 
 from datetime import datetime, date
 
-all_morph = r"/Users/anastasiabernat/Desktop/morph_to_cp-Winter2020.csv"
+all_morph = r"/Users/anastasiabernat/Desktop/allmorph/morph_to_cp-Winter2020.csv"
 # missing date_collected, host_plant, lat, long, and who diapausing
 
-demographics_data = r"/Users/anastasiabernat/Desktop/demographic_data_winter2020.csv"
+demographics_data = r"/Users/anastasiabernat/Desktop/allmorph/demographic_data_winter2020.csv"
 # file with remaining needed information
 
-diapausing_dict = {"North Key Largo": "NA",
-                   "Key Largo": "NA",
-                   "Homestead": "NA",
-                   "Leesburg": "NA",
-                   "Lake Placid": "NA",
-                   "Lake Wales": "NA",
-                   "Plantation Key": "NA",
-                   "Gainesville": "NA"} #non-diapausing vs. diapausing
+diapausing_dict = {"North Key Largo": "non-diapausing",
+                   "Key Largo": "non-diapausing",
+                   "Homestead": "non-diapausing",
+                   "Leesburg": "non-diapausing",
+                   "Lake Placid": "diapause-like behavior observed",
+                   "Lake Wales": "non-diapausing",
+                   "Plantation Key": "non-diapausing",
+                   "Gainesville": "non-diapausing"} #non-diapausing vs. diapausing
 
 abbreviations_dict = {"NKL": "North Key Largo",
                    "KL": "Key Largo",
@@ -81,12 +81,13 @@ with open(all_morph, "r") as morph_data:
         r["long"] = long
 
         r["population"] = abbreviations_dict[pop]
+        r["diapause"] = diapausing_dict[r["population"]]
 
         full_data.append(r)
 
 #print(full_data[0:5])
 
-outpath = r"/Users/anastasiabernat/Desktop/allmorphology_newfieldbugs2.csv"
+outpath = r"/Users/anastasiabernat/Desktop/allmorph/allmorphology_newfieldbugs2.csv"
 
 ordered_header = ["\ufeffID", "pophost", "population", "sex", "beak", "thorax", "wing", "body", "month", "year",
                   "months_since_month_zero", "season", "w_morph", "lat", "long", "diapause",
