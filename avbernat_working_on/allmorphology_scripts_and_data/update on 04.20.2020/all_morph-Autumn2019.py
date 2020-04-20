@@ -4,9 +4,9 @@ import csv
 from datetime import datetime, date
 
 
-all_morph = r"/Users/anastasiabernat/Desktop/morph_to_cp.csv" # near completed file but missing dates
+all_morph = r"/Users/anastasiabernat/Desktop/allmorph/morph_to_cp-Fall2020.csv" # near completed file but missing dates
 
-demographics_data = r"/Users/anastasiabernat/Desktop/bug_demographics_data_coor.csv" # file with sites so can match site-dates to site-IDs
+demographics_data = r"/Users/anastasiabernat/Desktop/allmorph/bug_demographics_data_coor.csv" # file with sites so can match site-dates to site-IDs
 
 field_date_collected_dict = {"NW 10th Ave & 18th St": "10.06.2019", # GV
                              "SW 296th St & 182nd Ave": "10.04.2019", # HS
@@ -24,7 +24,7 @@ field_date_collected_dict = {"NW 10th Ave & 18th St": "10.06.2019", # GV
                              "Founder's #1": "10.02.2019", # PK
                              "Founder's #2": "10.02.2019", # PK
                              "Dagny Trellis": "10.03.2019",
-                             "DD -inter": "10.03.2019", # unkown
+                             "DD -inter": "10.02.2019", # unkown
                              "DD": "10.02.2019"}
 
 
@@ -74,7 +74,7 @@ with open(all_morph, "r") as morph_data:
 
 #print(full_data[0:5])
 
-outpath = r"/Users/anastasiabernat/Desktop/allmorphology_newfieldbugs.csv"
+outpath = r"/Users/anastasiabernat/Desktop/allmorph/allmorphology_newfieldbugs.csv"
 
 ordered_header = ["\ufeffID", "pophost", "population", "sex", "beak", "thorax", "wing", "body", "month", "year",
                   "months_since_month_zero", "season", "w_morph", "lat", "long", "diapause",
