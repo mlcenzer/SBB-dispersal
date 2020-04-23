@@ -4,7 +4,7 @@ import csv
 from datetime import datetime, date
 
 
-all_morph = r"/Users/anastasiabernat/Desktop/allmorph/morph_to_cp-Fall2020.csv" # near completed file but missing dates
+all_morph = r"/Users/anastasiabernat/Desktop/allmorph/morph_to_cp.csv" # near completed file but missing dates
 
 demographics_data = r"/Users/anastasiabernat/Desktop/allmorph/bug_demographics_data_coor.csv" # file with sites so can match site-dates to site-IDs
 
@@ -74,7 +74,7 @@ with open(all_morph, "r") as morph_data:
 
 #print(full_data[0:5])
 
-outpath = r"/Users/anastasiabernat/Desktop/allmorph/allmorphology_newfieldbugs.csv"
+outpath = r"/Users/anastasiabernat/Desktop/allmorph/allmorphology_newfieldbugs-edited.csv"
 
 ordered_header = ["\ufeffID", "pophost", "population", "sex", "beak", "thorax", "wing", "body", "month", "year",
                   "months_since_month_zero", "season", "w_morph", "lat", "long", "diapause",
