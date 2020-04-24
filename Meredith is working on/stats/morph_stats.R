@@ -3,7 +3,7 @@ setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Me
 
 data_all<-read.csv("data/full_data3.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
 
-data_morph<-read.csv("data/morph_to_cp.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+data_morph<-read.csv("data/bug_morphology_flight-trials-Autumn2019.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
 
 
 #data_all<-data_all[data_all$flew!="",]
@@ -36,10 +36,6 @@ for(row in 1:length(test_data$ID)){
 }
 test_data$ID[which(test_data$trial_sex!=test_data$morph_sex)]
 #in addition to the identified 253, possible problems with 68, 116, 118, and 399
-##Exclude for the time being
-for(n in c(68, 116, 118, 253, 399)){
-	data_morph<-data_morph[data_morph$ID!=n,]
-}
 
 #data_all$eggs_b<-0
 #data_all$eggs_b[data_all$eggs=="Y"]<-1
@@ -62,7 +58,6 @@ for(row in 1:length(data_all$days_from_start)){
 }
 
 
-#############A few datasheet conflicts that should be resolved before re-running these.
 
 
 
@@ -78,24 +73,26 @@ source("AICprobabilities.R")
 source("generic models-gaussian glm 3-FF.R")
 sort(summary$AIC)
 sort(P, decreasing=TRUE, index.return=TRUE)
-###top 8: m4, m7, m12, m8, m11, m13, m16, m14
+###top 6: m12, m4, m14, m16, m7, m8
 
 anova(m4, m7, test="Chisq")##No improvement from adding sym_dist
-anova(m7, m12, test="Chisq")##No improvement from adding host*sym_dist interaction
+anova(m7, m12, test="Chisq")##Significant improvement from adding host*sym_dist interaction
 anova(m4, m8, test="Chisq")##No improvement from adding host*sex interaction
-anova(m8, m11, test="Chisq")##No improvement from adding sym_dist
-anova(m14, m11, test="Chisq")##No improvement from adding host*sym_dist
-anova(m16, m13, test="Chisq")##No improvement from adding sex*sym_dist
+anova(m12, m14, test="Chisq")##No improvement from adding host*sex
+anova(m12, m16, test="Chisq")##No improvement from adding sex*sym_dist
+anova(m4, m8, test="Chisq")##No improvement from adding host*sex
 
-model_thorax<-glm(thorax~host_c + sex_c, data=data_morph, family=gaussian)
+model_thorax<-glm(thorax~host_c*sym_dist + sex_c, data=data_morph, family=gaussian)
 
 summary(model_thorax)
 
-###Results totally unsurprisingly:
+###Results:
 #Females are bigger
-#Individuals from K. elegans are bigger
+#Individuals get smaller moving away from the sympatric zone
+#But, bugs further from the sympatric zone get less small if they are from K. elegans
 
-
+summary_thorax<-aggregate(thorax~sex*pophost*sym_dist, data=data_morph, FUN=mean)
+plot(thorax~sym_dist, col=c(rgb(1,0.5,0.5),rgb(0,1,0.8,0.5))[as.factor(pophost)], pch=c(19,21)[as.factor(sex)], data=summary_thorax)
 
 
 
@@ -112,27 +109,31 @@ source("AICprobabilities.R")
 source("generic models-gaussian glm 4-FF.R")
 sort(summary$AIC)
 sort(P, decreasing=TRUE, index.return=TRUE)
-###top 5: m72, m88, m50, m92, m99, m97
+###top 5: m72, m50, m88, m62, m92
 ##These are unfortunately complex
 
-anova(m72, m50, test="Chisq")##Significant improvement from inclusion of sex*host interaction
+anova(m72, m50, test="Chisq")##Marginal improvement from inclusion of sex*host interaction (so should examine both m72 and m50)
 anova(m72, m88, test="Chisq")##No improvement from adding sym_dist
 anova(m88, m92, test="Chisq")##No improvement from adding host*sym_dist interaction
-anova(m88, m97, test="Chisq")##No improvement from adding sex*sym_dist interaction
-anova(m88, m99, test="Chisq")##No improvement from adding thorax*sym_dist interaction
+anova(m50, m62, test="Chisq")##No improvement from adding sym_dist
+anova(m88, m62, test="Chisq")##Marginal improvement from adding sex*host interaction
 
-model_beak<-glm(beak~host_c*sex_c + host_c*thor_c + sex_c*thor_c, data=data_morph, family=gaussian)
-summary(model_beak)
+model_beak1<-glm(beak~host_c*sex_c + host_c*thor_c + sex_c*thor_c, data=data_morph, family=gaussian)
+summary(model_beak1)
+
+model_beak2<-glm(beak~host_c*thor_c + sex_c*thor_c, data=data_morph, family=gaussian)
+summary(model_beak2)
+
 #Given these three interactions, it seems highly possible that a three-way interaction would improve this model so much as I might regret this I'm going to try that model too.
 model_beak_3<-glm(beak~host_c*sex_c*thor_c, data=data_morph, family=gaussian)
-anova(model_beak, model_beak_3, test="Chisq")#Thank goodness it doesn't improve it
+anova(model_beak1, model_beak_3, test="Chisq")#Thank goodness it doesn't improve it
 
 
-###There is a lot going on here.
+###There is a lot going on here. In both models:
 #Bugs from K.elegans have shorter beaks
 #Females have longer beaks
 #bigger bugs have longer beaks (duh)
-#The negative effect of being from K.elegans on beak length is weaker for females
+#The negative effect of being from K.elegans on beak length is marginally weaker for females (MODEL 1 ONLY)
 #The positive effect of body size on beak length is weaker for bugs from K.elegans
 #The positive effect of body size on beak length is stronger for females
 
@@ -140,39 +141,7 @@ anova(model_beak, model_beak_3, test="Chisq")#Thank goodness it doesn't improve 
 boxplot(beak~pophost*sex, data=data_morph) #without body size
 plot(beak~thorax, data=data_morph, col=c(rgb(1,0.5,0.5),rgb(0,1,0.8,0.5))[as.factor(pophost)], pch=c(19,21)[as.factor(sex)])
 
-##########Wing morph
-
-data<-data.frame(R=data_morph$w_morph_b, A=data_morph$host_c, B=data_morph$sex_c, C=data_morph$sym_dist)
-
-library(lme4)
-
-#run AICprobs script
-setwd("/Users/Meredith/Desktop/Documents/R/generic models/")
-source("AICprobabilities.R")
-source("generic models-binomial glm 3-FF.R")
-sort(summary$AIC)
-sort(P, decreasing=TRUE, index.return=TRUE)
-#m18 didn't converge - that's fine, just don't use it
-#Top 6 models: m15, m13, m5, m17, m16, m9
-
-anova(m13, m15, test="Chisq")##Marginal improvement from host*sex
-anova(m15, m17, test="Chisq")##No improvement from adding host*sym_dist
-anova(m13, m16, test="Chisq")##No improvement from adding host*sym_dist
-anova(m5, m9, test="Chisq")##No improvement from adding host*sym_dist interaction
-
-model_wmorph<-glm(w_morph_b~host_c*sex_c + sex_c*sym_dist, family=binomial, data=data_morph)
-summary(model_wmorph)
-
-##
-#Bugs from K.elegans are more likely to have long wings
-#There is a weak effect of sex, such that females are marginally more likely to have short wings than males are.
-#No direct effect of sym_dist
-#No host*sex effect
-#Being further from the sympatric zone increases your likelihood of having long wings more if you are female.
-
-#visualize
-wing_summary<-aggregate(w_morph_b~sex*pophost*sym_dist, FUN=mean, data=data_morph)
-plot(w_morph_b~sym_dist, data=wing_summary, col=c(rgb(1,0.5,0.5),rgb(0,1,0.8,0.5))[as.factor(pophost)], pch=c(19,21)[as.factor(sex)])
+##########Wing morph; because most short-wing morphs were excluded a priori, this doesn't really make sense to ask with this subset of individuals.
 
 ##########Wing length (L only), must also include body size as a covariate
 
@@ -188,12 +157,12 @@ source("AICprobabilities.R")
 source("generic models-gaussian glm 4-FF.R")
 sort(summary$AIC)
 sort(P, decreasing=TRUE, index.return=TRUE)
-#top 5 models: m32, m39, m51, m48, m65
+#top 4 models: m32, m51, m39, m48
 
 anova(m32, m39, test="Chisq")##No improvement from sex (?!)
 anova(m32, m51, test="Chisq")##No improvement from adding host*thorax
 anova(m32, m48, test="Chisq")##No improvement from adding host*sym_dist
-anova(m39, m65, test="Chisq")##No improvement from adding sex*sym_dist
+
 
 model_wing<-glm(wing~host_c + sym_dist*thor_c, data=data_L, family=gaussian)
 summary(model_wing)
