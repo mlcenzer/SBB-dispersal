@@ -33,9 +33,10 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 ```{r}
 # Script that loads and cleans up the data
 source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
 ```
 
-# Plotting Data
+# Initial Data Visualizations
 
 ```{r}
 # Categorizing Binomial Data Function: It groups explanatory values into categories and calculates the sample of proportion of flight for each category
@@ -50,13 +51,13 @@ cat_data2 <- categorize_data(data_all, all_of("minute_duration"), all_of("flew_b
 ```
 
 ```{r fig.width=7, fig.height=2.5}
-# Plotting the categorized data
-
+# Plotting observered proportions of yes flew by minutes from incubation start 
 p1 <- as.grob(expression(plot(as.matrix(cat_data1[1]), 
      as.matrix(cat_data1[3]),
      ylab="Sample Proportion of Yes Flew", xlab="Minutes From Incubtation Start (m) ", main="Observed proportions of yes flew by minutes from incubation start")
 ))
 
+# Plotting observered proportions of yes flew by minutes from trial start
 p2 <- as.grob(expression(
   plot(as.matrix(cat_data2[1]), 
      as.matrix(cat_data2[3]),
@@ -165,15 +166,19 @@ summary(glm(flew_b~min_from_IncStart, data=data_T1, family=binomial))
 ```{r}
 # Missing mass for some (3 NA)
 missing_mass <- subset(data_T1, is.na(data_T1$mass))
-missing_mass
 # 339, 48, and 342 have no mass and were tested on the same date
 data_T1 <- setdiff(data_T1, missing_mass)
+# Recentering
+data_T1$lat_c<-data_T1$latitude-mean(data_T1$latitude)
+data_T1$sym_dist<-abs(data_T1$latitude-25.49197)
+data_T1$mass_c <- data_T1$mass-mean(data_T1$mass, na.rm=TRUE) 
 
 R = data_T1$flew_b
 A = data_T1$host_c
 B = data_T1$sex_c
 C = data_T1$sym_dist
 D = data_T1$mass_c # as a covariate 
+##I would not compete these against each other - because mass is determined in part by A, B, and C, I would not add it until after we've tested the other three.
 
 data<-data.frame(R, A, B, C, D)
 
@@ -198,92 +203,105 @@ For forwards selection:
 - Minimum AIC value from the forwards selection function:  m_forwards <- glm(formula = R ~ D + B, family = binomial, data = data_T1), AIC: 404.83
 
 ```{r}
+# Glmnet is a package that fits a generalized linear model via penalized maximum likelihood.
+# source("glmnet_analyses-3FF.R")
+# See that 4 = D = mass has a much greater coefficient than the rest
+# The cross validation curve has large error bars.
+```
+
+```{r}
+# TRIAL 1 WITHOUT MASS AS A COVARIATE
+
+#run AICprobs script
+source("AICprobabilities.R")
+source("generic models-binomial glm 3-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- models_init$ix[1:top]
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+**All models with  >0.05 probability.**
+
+m8 <- glm(formula = R ~ A * B, family = binomial, data = data)
+m11 <- glm(formula = R ~ A * B + C, family = binomial, data = data)
+m15 <- glm(formula = R ~ A * B + B * C, family = binomial, data = data)
+m2 <- glm(formula = R ~ B, family = binomial, data = data)
+m14 <- glm(formula = R ~ A * B + A * C, family = binomial, data = data)
+
+```{r}
+anova(m8, m11, test="Chisq") ## Adding C does not improve fit
+anova(m8, m15, test="Chisq") ## Adding B*C interaction does not improve fit
+anova(m8, m2, test="Chisq") ## Removing A does improve fit
+```
+
+```{r}
+model_T1<-glm(flew_b~sex_c, family=binomial, data=data_T1)
+summary(model_T1)
+```
+* strong negative effect of sex, where if you are female you are less likely to fly.
+* no longer an effect of host or distance from sympatric zone.
+
+```{r}
+model_T1_final <-glmer(flew_b~sex_c + (1|population), family=binomial, data=data_T1) #  boundary (singular) fit: see ?isSingular error
+summary(model_T1_final) 
+## Did not change effect estimates or improve model fit
+```
+
+```{r}
+# TRIAL 1 WITH MASS AS A COVARIATE
+
 #run AICprobs script
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R")
 AICs <- sort(summary$AIC)
-models <- sort(P, decreasing=TRUE, index.return=TRUE)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:4]
-models <- models$ix[1:4]
-rbind(AICs, models) # top models and their AIC values
+AICs <- AICs[1:top]
+models <- models_init$ix[1:top]
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
 ```
 
 m26 <- glm(formula = R ~ A * D + B, family = binomial, data = data)
 m63 <- glm(formula = R ~ A * D + C * D + B, family = binomial, data = data)
-m23 <- glm(formula = R ~ A * B + D, family = binomial, data = data)
-m44 <- glm(formula = R ~ A * B + C * D, family = binomial, data = data)
 
 ```{r}
 anova(m26, m63, test="Chisq") ## Adding the C*D interaction does not improve fit
-anova(m26, m23, test="Chisq") ## Replacing the A*D + B with A*B + D does improve fit (neg Dev)
-anova(m23, m63, test="Chisq") ## More complex model does not improve fit
-anova(m23, m44, test="Chisq") ## Replacing D with C*D does not improve fit
 ```
 
 Comparing models: Because most changes in deviance are positive, meaning that Model 2 had a higher deviance value, this suggests that the Model 1 fits better Model 2.
 
 ```{r}
-model_T1<-glm(flew_b~host_c*sex_c + mass_c, family=binomial, data=data_T1)
-summary(model_T1)
+model_T1_m<-glm(flew_b~host_c*mass_c + sex_c, family=binomial, data=data_T1)
+summary(model_T1_m)
 ```
 
 * no longer a strong negative effect of being far from the sympatric zone; 
-* strong negative effect of mass and has a large coefficient;
 * no effect of host plant
+* strong negative effect of mass and has a large coefficient, where the heavier the bug is the much less likely the bug will fly.
 * host*sex interaction shows a strong positive effect, such that if from GRT and are female then more likely to be dispersive
-* no effect of sex
+* marginal effect of sex, where if you are female you are less likely to fly
 
 ```{r}
-model_T1_final <-glmer(flew_b~host_c*sex_c + mass_c + (1|population), 
+model_T1_mfinal <-glmer(flew_b~host_c*sex_c + mass_c + (1|population), 
                     family=binomial, data=data_T1) #  boundary (singular) fit: see ?isSingular error
-summary(model_T1_final) 
-## Did not change effect estimates or improve model fit
+summary(model_T1_mfinal) 
+## Did change effect estimates, sex no longer has an effect, the host*sex interaction has a much smaller effect but still significant, and the mass effect has increased.
 ```
 
 ## Glmnet Plotting for Trial 1
 
 ```{r}
 # Glmnet is a package that fits a generalized linear model via penalized maximum likelihood.
-
-x <- data %>% 
-  select(A,B,C,D) %>% 
-  data.matrix()
-y <- data$R
-
-fit <- glmnet(x,y, family="binomial", alpha=1) # alpha = 1 for lasso, 0 for ridge
-fit # as decrease lambda, the degrees of freedom increases
-plot(fit, label=TRUE) # coefficient profile (that's plotted by the l1 norm of the coefficient vector) - 4 = D and 3 = C are near 0
-# L1 Norm: Also known as Manhattan Distance or Taxicab norm . L1 Norm is the sum of the magnitudes of the vectors in a space. It is the most natural way of measure distance between vectors, that is the sum of absolute difference of the components of the vectors.
-```
-
-The axis above indicates the number of nonzero coefficients at the current $\lambda$, which is the effective degrees of freedom (df) for the lasso.
-
-```{r}
-summary(fit) # extract all of the fitted models
-lambda.1se <- coef(fit,s=0.1) # extract coefficients at a single value of lambda
-lambda.1se
-```
-
-lambda.1se gives the most regularized model such that error is within one standard error of the minimum
-
-```{r}
-# cross-validation curve
-cv.fit <- cv.glmnet(x,y, family="binomial")
-plot(cv.fit) 
-```
-Large error bars.
-
-The lowest point in the curve indicates the optimal lambda: the log value of lambda that best minimizes the error in cross-validation. We can extract this values as:
-
-```{r}
-opt_lambda <- cv.fit$lambda.min
-opt_lambda
-```
-
-```{r}
-lambda.min <- coef(cv.fit, s = opt_lambda)
-lambda.min 
+# source("glmnet_analyses-4FF.R")
+# See that 4 = D = mass has a much greater coefficient than the rest
+# The cross validation curve has large error bars.
 ```
 
 ## Plotting for Trial 1 
@@ -475,6 +493,8 @@ Mass is really dominating everything, so let's split by sex after looking at Tri
 ## T2: GLM Binomial Modeling | Mass as a covariate 
 
 ```{r}
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
 data_T2 <-data_all[data_all$trial_type=="T2",]
 
 ####### No effect of chamber
@@ -488,6 +508,11 @@ summary(glm(flew_b~min_from_IncStart, data=data_T2, family=binomial))
 ```
 
 ```{r}
+# Recentering
+data_T2$lat_c<-data_T2$latitude-mean(data_T2$latitude)
+data_T2$sym_dist<-abs(data_T2$latitude-25.49197)
+data_T2$mass_c <- data_T2$mass-mean(data_T2$mass, na.rm=TRUE) 
+
 R = data_T2$flew_b
 A = data_T2$host_c
 B = data_T2$sex_c
@@ -521,6 +546,18 @@ best_fit <- glm(formula = R ~ D + A
 AIC:356.7
 
 ```{r}
+
+source("AICprobabilities.R")
+source("generic models-binomial glm 3-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- models_init$ix[1:top]
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+
 #run AICprobs script
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R")
