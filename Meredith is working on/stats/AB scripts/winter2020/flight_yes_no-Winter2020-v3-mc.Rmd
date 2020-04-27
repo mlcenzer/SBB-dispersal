@@ -179,8 +179,11 @@ categorize_data <- function(data, explanatory_var, response_var, interval, initi
 ```{r}
 # ALL DATA: Observed proportions of yes flew by minutes from incubation start 
 cat_data1 <- categorize_data(data_all, "min_from_IncStart", "flew_b", 30, 0, 30)
+
 ##compare to aggregate
-summary_1<-aggregate(flew_b~min_from_IncStart, data=data_all, FUN=mean)
+data_all$bins<-round(data_all$min_from_IncStart/30)*30
+summary_1<-aggregate(flew_b~bins, data=data_all, FUN=mean)
+summary_1$N<-aggregate(flew_b~bins, data=data_all, FUN=length)$flew_b
 # ALL DATA: Observed proportions of yes flew by minutes from trial start
 cat_data2 <- categorize_data(data_all, "minute_duration", "flew_b", 30, 0, 30)
 ```

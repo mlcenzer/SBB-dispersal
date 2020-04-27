@@ -28,6 +28,7 @@ library(tidyselect)
 source('cleandata-Winter2020-mc-baseR.R')
 data_all<-read_data("data/complete_flight_data-Winter2020-edited.csv")
 
+source('flight_yes_no-cat_data_function-mc.R')
 
 model<-glmer(flew_b~host_c*sex_c + (1|ID) + (1|trial_type), data=data_all, family=binomial)
 summary(model)
@@ -147,7 +148,7 @@ top <- length(models_init$x[which(models_init$x>0.05)])
 AICs <- AICs[1:top]
 models <- models_init$ix[1:top]
 probs <- models_init$x[1:top]
-rbind(AICs, models, probs) # top models and their AIC values
+rbind(AICs, models, probs) # top models and their AIC values & probabilities
 #```
 
 m26 <- glm(formula = R ~ A * D + B, family = binomial, data = data)
@@ -175,117 +176,9 @@ summary(model_T1)
 #* host*sex interaction shows a strong positive effect, such that if from GRT and are female then more likely to be dispersive
 #* no effect of sex
 
-#```{r}
-model_T1_final <-glmer(flew_b~host_c*sex_c + mass_c + (1|population), 
-                    family=binomial, data=data_T1) #  boundary (singular) fit: see ?isSingular error
-summary(model_T1_final) 
-## Did not change effect estimates or improve model fit
-#```
-
-## Glmnet Plotting for Trial 1
-
-#```{r}
-# Glmnet is a package that fits a generalized linear model via penalized maximum likelihood.
-
-x <- data %>% 
-  select(A,B,C,D) %>% 
-  data.matrix()
-y <- data$R
-
-fit <- glmnet(x,y, family="binomial", alpha=1) # alpha = 1 for lasso, 0 for ridge
-fit # as decrease lambda, the degrees of freedom increases
-plot(fit, label=TRUE) # coefficient profile (that's plotted by the l1 norm of the coefficient vector) - 4 = D and 3 = C are near 0
-# L1 Norm: Also known as Manhattan Distance or Taxicab norm . L1 Norm is the sum of the magnitudes of the vectors in a space. It is the most natural way of measure distance between vectors, that is the sum of absolute difference of the components of the vectors.
-#```
-
-#The axis above indicates the number of nonzero coefficients at the current $\lambda$, which is the effective degrees of freedom (df) for the lasso.
-
-#```{r}
-summary(fit) # extract all of the fitted models
-lambda.1se <- coef(fit,s=0.1) # extract coefficients at a single value of lambda
-lambda.1se
-#```
-
-#lambda.1se gives the most regularized model such that error is within one standard error of the minimum
-
-#```{r}
-# cross-validation curve
-cv.fit <- cv.glmnet(x,y, family="binomial")
-plot(cv.fit) 
-#```
-#Large error bars.
-
-#The lowest point in the curve indicates the optimal lambda: the log value of lambda that best minimizes the error in cross-validation. We can extract this values as:
-
-#```{r}
-opt_lambda <- cv.fit$lambda.min
-opt_lambda
-#```
-
-#```{r}
-lambda.min <- coef(cv.fit, s = opt_lambda)
-lambda.min 
-#```
-
-## Plotting for Trial 1 
-
-#```{r}
-plot(data_T1$mass, data_T1$flew_b)
-#```
-
-#```{r}
-# Missing mass for some (3 NA)
-missing_mass <- subset(data_all, is.na(data_all$mass))
-# 339, 48, and 342 have no mass and were tested on the same date
-data_mass <- setdiff(data_all, missing_mass)
-
-## ALL DATA: Observed proportions of yes flew by mass
-cat_data3 <- categorize_data(data_mass, all_of("mass"), all_of("flew_b"),  0.010, 0.015, 0.025) 
-
-## TRIAL 1 DATA: Observed proportions of yes flew by mass
-missing_mass <- subset(data_T1, is.na(data_all$mass))
-data_mass_T1 <- setdiff(data_T1, missing_mass)
-cat_data4 <- categorize_data(data_mass_T1, all_of("mass"), all_of("flew_b"),  0.010, 0.015, 0.025) 
-
-#```
-
-#```{r}
-# ALL DATA
-all_fit <-lm(flew_b~mass, data=data_mass) 
-coeff <- coefficients(summary(all_fit))
-
-eq <- paste0("portion_flew = ", round(coeff[1],3),
-             ifelse(sign(coeff[2])==1, " + ", " - "), 
-             abs(round(coeff[2],3)), "*mass")
-
-plot(as.matrix(cat_data3[1]), 
-     as.matrix(cat_data3[3]),
-     ylab="Sample Proportion of Yes Flew", 
-     xlab="Mass (g)", 
-     main="All Data: Observed proportions of yes flew by mass")
-abline(coeff[1], coeff[2], col="blue")
-mtext(eq, side=4)
-
-# TRIAL 1 
-fit1<-lm(flew_b~mass, data=data_mass_T1) 
-coeff <- coefficients(summary(fit1))
-
-eq <- paste0("portion_flew = ", round(coeff[1],3),
-             ifelse(sign(coeff[2])==1, " + ", " - "), 
-             abs(round(coeff[2],3)), "*mass")
-
-plot(as.matrix(cat_data4[1]), 
-     as.matrix(cat_data4[3]),
-     ylab="Sample Proportion of Yes Flew", 
-     xlab="Mass (g)", 
-     main="Trial 1: Observed proportions of yes flew by mass")
-abline(coeff[1], coeff[2], col="blue")
-mtext(eq, side=4)
-
-#```
 
 
-#```{r fig.width=5, fig.height=3}
+########
 summary <-aggregate(flew_b~sex*host_plant*sym_dist, data=data_all, FUN=mean)
 summary
 
@@ -309,6 +202,7 @@ legend("topright",
 
 #```{r}
 # ...would this graph make sense?
+###Because sym_dist didn't end up having an effect, it would make more sense to plot based on sex, host, and mass; maybe swap out sym_dist for mass here?
 ##### Observed proportions of yes flew by mass #############
 
 # Missing mass for some (3 NA)
@@ -386,6 +280,14 @@ NaN_rows <- subset(categorized_data4, is.na(categorized_data4$sample_prop))
 categorized_data4 <- setdiff(categorized_data4, NaN_rows)
 
 categorized_data4
+
+###Compare to aggregate
+data_all$mass_bin<-round(data_all$mass/0.01)*0.01
+
+summary_4<-aggregate(flew_b~mass_bin*sex*host_plant, data=data_all, FUN=mean)
+summary_4$N<-aggregate(flew_b~mass_bin*sex*host_plant, data=data_all, FUN=length)$flew_b
+summary_4
+
 #```
 
 #```{r fig.width=5, fig.height=3}
