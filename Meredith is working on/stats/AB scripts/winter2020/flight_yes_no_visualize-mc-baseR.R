@@ -82,12 +82,12 @@ cat_data1 <- categorize_data(data_all, "min_from_IncStart", "flew_b", 30, 0, 30)
 
 ##compare to aggregate
 
-####Problem 1: some of these times are not entered in military time, I don't think these bugs started flying at 3am? Edited into new edited data file.
-###Two, I cannot figure out what this function is supposed to be doing, because it does not seem to be putting them in bins rounded to the nearest 30?
+####some of these times are not entered in military time, I don't think these bugs started flying at 3am? Edited into new edited data file.
+
 data_all$bins<-ceiling(data_all$min_from_IncStart/30)*30
 summary_1<-aggregate(flew_b~bins, data=data_all, FUN=mean)
 summary_1$N<-aggregate(flew_b~bins, data=data_all, FUN=length)$flew_b
-###I see, this has a very specific kind of rounding scheme that cannot be reproduced with round, ceiling, or floor
+###I see, this has a very specific kind of rounding scheme that cannot be reproduced exactly with round, ceiling, or floor
 
 # ALL DATA: Observed proportions of yes flew by minutes from trial start
 cat_data2 <- categorize_data(data_all, "minute_duration", "flew_b", 30, 0, 30)
@@ -132,3 +132,87 @@ eq <- paste0("portion_flew = ", cf[1],
 plot(x,y, xlab= "Starting Time", ylab="Proportion of 24-H Day Spent Flying")
   abline(coef(fit)[1:2], col="blue") # Alternative: lines(x, fitted(fit), col="blue")
 mtext(eq, 3, line=-2, side=3)
+
+
+
+
+
+
+
+summary <-aggregate(flew_b~sex*host_plant*sym_dist, data=data_all, FUN=mean)
+summary
+
+par(mar=c(6.5, 5.5, 5.5, 9.5), xpd=TRUE) # Add extra space to right of plot area; change clipping to figure
+plot(summary$flew_b~summary$sym_dist, 
+     col=c(1,2)[as.factor(summary$sex)], # Female = Black, Male = Red
+     pch=c(19,22)[as.factor(summary$host_plant)],
+     main="Observed Data",
+     xlab = "Distance from Sympatric Zone (°)",
+     ylab= "Proportion Flew", # K. elegans = Squares C.corindum = circles
+     #sub=eq_glmer
+     ) 
+legend("topright",
+       legend = c("C.corindum and F","K.elegans and M"),
+       inset=c(-0.23,0.2),
+       col=c(1,2),
+       pch = c(19,22),
+       title="Groups")
+
+
+
+########This next section won't work because all_of() doesn't exist in the version of this package I'm able to run.
+## Plotting for Trial 1 
+
+#```{r}
+plot(data_T1$flew_b, data_T1$mass)
+#```
+
+#```{r}
+# Missing mass for some (3 NA)
+missing_mass <- subset(data_all, is.na(data_all$mass))
+# 339, 48, and 342 have no mass and were tested on the same date
+data_mass <- setdiff(data_all, missing_mass)
+
+## ALL DATA: Observed proportions of yes flew by mass
+cat_data3 <- categorize_data(data_mass, all_of("mass"), all_of("flew_b"),  0.010, 0.015, 0.025) 
+
+## TRIAL 1 DATA: Observed proportions of yes flew by mass
+missing_mass <- subset(data_T1, is.na(data_all$mass))
+data_mass_T1 <- setdiff(data_T1, missing_mass)
+cat_data4 <- categorize_data(data_mass_T1, all_of("mass"), all_of("flew_b"),  0.010, 0.015, 0.025) 
+
+#```
+
+#```{r}
+# ALL DATA
+all_fit <-lm(flew_b~mass, data=data_mass) 
+coeff <- coefficients(summary(all_fit))
+
+eq <- paste0("portion_flew = ", round(coeff[1],3),
+             ifelse(sign(coeff[2])==1, " + ", " - "), 
+             abs(round(coeff[2],3)), "*mass")
+
+plot(as.matrix(cat_data3[1]), 
+     as.matrix(cat_data3[3]),
+     ylab="Sample Proportion of Yes Flew", 
+     xlab="Mass (g)", 
+     main="All Data: Observed proportions of yes flew by mass")
+abline(coeff[1], coeff[2], col="blue")
+mtext(eq, side=4)
+
+# TRIAL 1 
+fit1<-lm(flew_b~mass, data=data_mass_T1) 
+coeff <- coefficients(summary(fit1))
+
+eq <- paste0("portion_flew = ", round(coeff[1],3),
+             ifelse(sign(coeff[2])==1, " + ", " - "), 
+             abs(round(coeff[2],3)), "*mass")
+
+plot(as.matrix(cat_data4[1]), 
+     as.matrix(cat_data4[3]),
+     ylab="Sample Proportion of Yes Flew", 
+     xlab="Mass (g)", 
+     main="Trial 1: Observed proportions of yes flew by mass")
+abline(coeff[1], coeff[2], col="blue")
+mtext(eq, side=4)
+
