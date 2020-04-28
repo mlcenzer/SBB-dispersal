@@ -166,7 +166,7 @@ anova(m23, m44, test="Chisq") ## Replacing D with C*D does not improve fit
 #Comparing models: Because most changes in deviance are positive, meaning that Model 2 had a higher deviance value, this suggests that the Model 1 fits better Model 2.
 
 #```{r}
-model_T1<-glm(flew_b~host_c*sex_c + body_c, family=binomial, data=data_T1)
+model_T1<-glm(flew_b~host_c*sex_c + mass_c, family=binomial, data=data_T1)
 summary(model_T1)
 #```
 
