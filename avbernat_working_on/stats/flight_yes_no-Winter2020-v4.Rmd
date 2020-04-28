@@ -32,8 +32,9 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 
 ```{r}
 # Script that loads and cleans up the data
+temp_filepath = "~/Desktop/Rstats-winter2020/complete_flight_data-Winter2020.csv"
+file_name = "clean_flight_data.R"
 source("clean_flight_data.R")
-data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
 ```
 
 # Initial Data Visualizations
