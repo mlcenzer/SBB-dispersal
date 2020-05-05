@@ -285,6 +285,18 @@ abline(coefff[1], coefff[2], col="blue")
 mtext(eq, side=4)
 ```
 
+
+```{r fig.width=7, fig.height=2.5}
+pf1 <- as.grob(expression(
+  plot(data_fem$flew_b, data_fem$total_eggs)))
+# seems like if you generally laid less eggs you flew, but a lot of females laid few and also didn't fly
+pf2 <- as.grob(expression(
+  plot(data_fem$mass, data_fem$total_eggs)))
+pf3 <- as.grob(expression(
+  plot(data_fem$sym_dist,data_fem$total_eggs)))
+grid.arrange(pf1,pf2,pf3, ncol=3)
+```
+
 ## MALE DATA PLOTS
 
 ```{r}
@@ -332,6 +344,10 @@ plot(as.matrix(cat_data7[1]),
      main="Observed proportions of yes flew by distance from sympatric zone")
 abline(coeffm[1], coeffm[2], col="blue")
 mtext(eq, side=4)
+```
+
+```{r}
+plot(data_male$mass, data_male$flew_b) # only a few large ones...really driving this but need to go back and check in the morphology if it's a typo or a a big male, but beside that looks pretty 50-50
 ```
 
 
