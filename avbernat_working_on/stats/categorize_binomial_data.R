@@ -1,4 +1,4 @@
-# Categorizing Binomial Data Function
+# Categorizing Binomial Data Function w/ 1 Continuous Factor
 
 #########################################################################################################
 # FUNCTION: categorize_data | Group explanatory values into categories and calculate the sample 
@@ -14,7 +14,7 @@
 categorize_data <- function(data, explanatory_var, response_var, interval, initial_val, final_val) {
   df <- select(data, explanatory_var, response_var)
   df <- df[order(df[explanatory_var]),]
-  
+
   bins <- round(max(df[explanatory_var]) / interval)
   
   n_col= length(df)
@@ -27,17 +27,20 @@ categorize_data <- function(data, explanatory_var, response_var, interval, initi
   
   for (b in 1:bins) {
     
-    binned_df <- as.data.frame(matrix(df[df[explanatory_var] <f & df[explanatory_var] > i], ncol=n_col))
+    binned_df <- as.data.frame(matrix(df[df[explanatory_var] < f & df[explanatory_var] >= i], ncol=n_col))
     if (nrow(binned_df) == 0) {
-      i <- i + 0.1
-      f <- f + 0.1
+      i <- i + interval
+      f <- f + interval
       next
     }
-    flew_n <- binned_df[-1]
+    
+    flew_n <- binned_df[2] # response variable
     successes <- sum(flew_n)
     n_cases <- nrow(binned_df)
     sample_prop <- successes / n_cases
-    
+    if (is.na(sample_prop)) {
+      next
+    }
     
     matrix[b,1] <- f
     matrix[b,2] <- n_cases
