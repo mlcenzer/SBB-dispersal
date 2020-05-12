@@ -1,0 +1,809 @@
+---
+title: 'Data Visualizations: flight_yes_no'
+author: "Anastasia Bernat"
+date: "5/4/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Winter 2020 Flight Trials 
+
+```{r setup, include=FALSE}
+rm(list=ls())
+setwd("~/Desktop/Rstats-winter2020/")
+
+library(lme4)
+library(rethinking)
+
+library(lubridate)
+library(chron)
+library(dplyr)
+library(tidyselect)
+
+library(glmnet)
+library(ggplotify)
+library(gridExtra)
+library(ggformula)
+library(randomcoloR)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice in the flight mill and observed from 8 AM to (5-8 PM) each day.
+
+# Loading, cleaning, and recoding the data
+
+```{r}
+# Script that loads and cleans up the data
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+```
+
+# ALL DATA PLOTS
+
+```{r}
+# Categorizing Binomial Data Function: It groups explanatory values into categories and calculates the sample of proportion of flight for each category
+source("categorize_binomial_data.R") # categorize_binomial_data2.R works too
+```
+
+```{r}
+# ALL DATA: Observed proportions of yes flew by minutes from incubation start 
+cat_data1 <- categorize_data(data_all, all_of("min_from_IncStart"), all_of("flew_b"), 30, 0, 30)
+# ALL DATA: Observed proportions of yes flew by minutes from trial start
+cat_data2 <- categorize_data(data_all, all_of("minute_duration"), all_of("flew_b"), 30, 0, 30)
+```
+
+```{r fig.width=7, fig.height=2.5}
+# Plotting observered proportions of yes flew by minutes from incubation start 
+p1 <- as.grob(expression(plot(as.matrix(cat_data1[1]), 
+     as.matrix(cat_data1[3]),
+     ylab="Sample Proportion of Yes Flew", xlab="Minutes From Incubtation Start (min) ", main="Observed proportions of yes flew by minutes from incubation start")
+))
+
+# Plotting observered proportions of yes flew by minutes from trial start
+p2 <- as.grob(expression(
+  plot(as.matrix(cat_data2[1]), 
+     as.matrix(cat_data2[3]),
+     ylab="Sample Proportion of Yes Flew", xlab="Minutes From Trial Start (min)", main="Observed proportions of yes flew by minutes from trial start") %>%
+  abline(v=120, col="red")
+))
+
+grid.arrange(p1,p2, ncol=2)
+```
+
+```{r}
+cat_data1$min_from_IncStart
+fit <- lm(`Sample Proportion`~ min_from_IncStart, data=cat_data1)
+summary(fit) # NO significant effect
+
+cf <- round(coef(fit), 2)  ## rounded coefficients for better output
+eq <- paste0("portion_flew = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), 
+             abs(cf[2]), "*time_start ") ## sign check to avoid having plus followed by minus for negative coefficients
+
+plot(cat_data1$min_from_IncStart,cat_data1$`Sample Proportion`, xlab= "Starting Time", ylab="Proportion of 24-H Day Spent Flying")
+  abline(coef(fit)[1:2], col="blue")
+mtext(eq, 3, line=-2, side=3)
+text(300,0.4, c("not significant"), col= "red")
+```
+
+```{r}
+cat_data2$log_min_duration <- log(cat_data2$minute_duration)
+m <- quap(
+  alist(
+    `Sample Proportion` ~ dnorm(mu, sigma),
+    mu <- alpha + beta*(log_min_duration),
+    alpha ~ dnorm(5.792217, 5), # this should be in terms of height not weight
+    beta ~ dlnorm(0,1),
+    sigma ~ dunif(0,10)
+  ),
+  data=cat_data2
+)
+precis(m)
+
+#x_seq <- log(min(cat_data2$minute_duration):max(cat_data2$minute_duration))
+x_seq <- log(seq(from=0, to=840, length.out=30))
+mu <- sim(m,data=list(log_min_duration=x_seq)) 
+
+mu_mean <- apply(mu,2,mean) 
+mu_ci <- apply(mu,2,PI,prob=0.89) 
+
+# Plot Log
+plot( cat_data2$log_min_duration , cat_data2$`Sample Proportion` , col=col.alpha(rangi2,0.7),
+      ylab="Sample Proportion of Yes Flew", 
+      xlab="Log(Minutes From Trial Start) log(min)", 
+      main="Observed proportions of yes flew by log(minutes) from trial start" )
+lines(x_seq, mu_mean) 
+shade(mu_ci, lim = x_seq)
+text(6,0.3, c("significant"), col= "darkolivegreen4")
+
+# Plot Non-log
+plot( cat_data2$minute_duration , cat_data2$`Sample Proportion` , col=col.alpha(rangi2,0.7), 
+      ylab="Sample Proportion of Yes Flew", 
+      xlab="Minutes From Trial Start (min)", 
+      main="Observed proportions of yes flew by minutes from trial start" )
+lines( exp(x_seq), mu_mean) 
+shade(mu_ci, lim = exp(x_seq))
+abline(v=120, col="red", lty=2)
+```
+
+```{r}
+# Filter out those that didn't fly.
+all_flew <- filter(data_all, flew_b == 1)
+
+# What is happening for those who flew?
+x = chron(times = all_flew$time_start)
+y = all_flew$total_duration # seconds 
+y = y / (24*60*60) # proportion of the day they flew
+
+fit <- lm(y~x, data=all_flew)
+summary(fit) # significant effect
+
+cf <- round(coef(fit), 2)  ## rounded coefficients for better output
+eq <- paste0("portion_flew = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), 
+             abs(cf[2]), "*time_start ") ## sign check to avoid having plus followed by minus for negative coefficients
+
+plot(x,y, xlab= "Starting Time", ylab="Proportion of 24-H Day Spent Flying")
+  abline(coef(fit)[1:2], col="blue") # Alternative: lines(x, fitted(fit), col="blue")
+mtext(eq, 3, line=-2, side=3)
+```
+
+```{r}
+# Missing mass for some (3 NA)
+missing_mass <- subset(data_all, is.na(data_all$mass))
+# IDs 339, 48, and 342 have no mass and were tested on the same date
+# Remove missing mass
+data_mass <- data_all %>%
+  filter(!is.na(mass))
+
+## ALL DATA: Observed proportions of yes flew by mass
+cat_data3 <- categorize_data(data_mass, all_of("mass"), all_of("flew_b"),  0.010, 0.015, 0.025) 
+
+## TRIAL 1 DATA: Observed proportions of yes flew by mass
+data_T1 <-data_all[data_all$trial_type=="T1",]
+data_mass_T1 <- data_T1 %>%
+  filter(!is.na(mass))
+
+cat_data4 <- categorize_data(data_mass_T1, all_of("mass"), all_of("flew_b"),  0.010, 0.015, 0.025) 
+
+```
+
+```{r}
+plot(data_T1$mass, data_T1$flew_b)
+```
+
+```{r}
+# ALL DATA 
+#all_fit <-lm(flew_b~mass, data=data_mass) 
+all_fit <-lm(`Sample Proportion`~ mass, data=cat_data3) 
+coeff <- coefficients(summary(all_fit))
+coeff
+
+mass_seq <- seq(from=0.02, to=0.20, length.out=30)
+mu <- link(all_fit, data=data.frame(mass=mass_seq)) # gives warning
+mu.PI <- apply(mu,2,PI, prob=0.89)
+
+eq <- paste0("portion_flew = ", round(coeff[1],3),
+             ifelse(sign(coeff[2])==1, " + ", " - "), 
+             abs(round(coeff[2],3)), "*mass")
+
+plot(as.matrix(cat_data3[1]), 
+     as.matrix(cat_data3[3]),
+     ylab="Sample Proportion of Yes Flew", 
+     xlab="Mass (g)", 
+     main="All Data: Observed proportions of yes flew by mass")
+shade(mu.PI, mass_seq)
+abline(coeff[1], coeff[2], col="blue")
+mtext(eq, side=4)
+```
+
+```{r}
+# TRIAL 1 - FIX THIS TOO
+
+fit_mass<-lm(flew_b~mass, data=data_mass_T1) 
+coeff <- coefficients(summary(fit_mass))
+
+mass_seq <- seq(from=0.01, to=0.180, length.out=30)
+mu <- link(fit_mass, data=data.frame(mass=mass_seq)) # gives warning
+mu.PI <- apply(mu,2,PI, prob=0.89)
+
+eq <- paste0("portion_flew = ", round(coeff[1],3),
+             ifelse(sign(coeff[2])==1, " + ", " - "), 
+             abs(round(coeff[2],3)), "*mass")
+
+plot(as.matrix(cat_data4[1]), 
+     as.matrix(cat_data4[3]),
+     ylab="Sample Proportion of Yes Flew", 
+     xlab="Mass (g)", 
+     main="Trial 1: Observed proportions of yes flew by mass")
+abline(coeff[1], coeff[2], col="blue")
+mtext(eq, side=4)
+shade(mu.PI, mass_seq)
+```
+
+```{r fig.width=5, fig.height=3}
+summary <-aggregate(flew_b~sex*host_plant*sym_dist, data=data_all, FUN=mean)
+summary
+
+par(mar=c(6.5, 5.5, 5.5, 9.5), xpd=TRUE) # Add extra space to right of plot area; change clipping to figure
+plot(summary$flew_b~summary$sym_dist, 
+     col=c(1,2)[as.factor(summary$sex)], # Female = Black, Male = Red
+     pch=c(19,22)[as.factor(summary$host_plant)],
+     main="Observed Data",
+     xlab = "Distance from Sympatric Zone (°)",
+     ylab= "Proportion Flew", # K. elegans = Squares C.corindum = circles
+     #sub=eq_glmer
+     ) 
+legend("topright",
+       legend = c("C.corindum and F","K.elegans and M"),
+       inset=c(-0.23,0.2),
+       col=c(1,2),
+       pch = c(19,22),
+       title="Groups")
+
+```
+
+```{r}
+missing_mass <- subset(data_all, is.na(data_all$mass))
+data_mass <- data_all %>%
+  filter(!is.na(mass))
+
+source("categorize_binomial_data-MF.R")
+cat_data5 <- categorize_data_MF(data_mass, all_of("mass"), all_of("sex_c"), 
+                                all_of("host_c"), all_of("flew_b"), 0.010, 0.015, 0.025)
+cat_data5
+```
+
+```{r fig.width=5, fig.height=3}
+
+gf_point(sample_prop ~ mass, data=cat_data5, col=~sex_c, size=~host_c,
+         xlab = "Mass (g)", ylab= "Sample Proportion that Flew",
+         title= "Observed Data")
+
+par(mar=c(6.5, 5.5, 5.5, 9.5), xpd=TRUE) 
+plot(cat_data5$sample_prop~cat_data5$mass, 
+     col=c(1,2)[as.factor(cat_data5$sex_c)], # Female = Black, Male = Red
+     pch=c(19,22)[as.factor(cat_data5$host_c)],
+     main="Observed Data",
+     xlab = "Mass (g)",
+     ylab= "Proportion Flew", # K. elegans = Squares, C.corindum = circles
+     #sub=eq_glmer
+     ) 
+legend("topright",
+       legend = c("C.corindum and F","K.elegans and M"),
+       inset=c(-0.23,0.2),
+       col=c(1,2),
+       pch = c(19,22),
+       title="Groups")
+```
+
+# TRIAL 1 PLOTS
+
+
+
+# TRIAL 2 PLOTS
+
+```{r}
+data_T2 <-data_all[data_all$trial_type=="T2",]
+plot(data_T2$mass, data_T2$flew_b)
+```
+
+```{r}
+##### TRIAL 2 DATA: Observed proportions of yes flew by mass #############
+cat_data6 <- categorize_data(data_T2, all_of("mass"), all_of("flew_b"),  0.010, 0.015, 0.025)
+```
+
+```{r}
+fit<-lm(flew_b~mass, data=data_T2) 
+coeff <- coefficients(summary(fit))
+
+mass_seq <- seq(from=0.0, to=0.18, length.out=30)
+mu <- link(fit, data=data.frame(mass=mass_seq)) # gives warning
+mu.PI <- apply(mu,2,PI, prob=0.89)
+
+eq <- paste0("portion_flew = ", round(coeff[1],3),
+             ifelse(sign(coeff[2])==1, " + ", " - "), 
+             abs(round(coeff[2],3)), "*mass")
+
+plot(as.matrix(cat_data6[1]), 
+     as.matrix(cat_data6[3]),
+     ylab="Sample Proportion of Yes Flew", 
+     xlab="Mass (g)", 
+     main="Trial 2: Observed proportions of yes flew by mass")
+shade(mu.PI, mass_seq)
+abline(coeff[1], coeff[2], col="blue")
+mtext(eq, side=4)
+```
+
+## FEMALE DATA PLOTS
+
+```{r}
+data_fem <- data_all[data_all$sex=="F",]
+```
+
+```{r fig.width=5, fig.height=3}
+plot(data_fem$sym_dist, data_fem$flew_b)
+
+fem_sum <-aggregate(flew_b~host_plant*sym_dist, data=data_fem, FUN=mean)
+fem_sum
+
+par(mar=c(6.5, 5.5, 5.5, 9.5), xpd=TRUE) # Add extra space to right of plot area; change clipping to figure
+plot(fem_sum$flew_b~fem_sum$sym_dist, 
+     pch=c(19,22)[as.factor(fem_sum$host_plant)],
+     main="Observed Data",
+     xlab = "Distance from Sympatric Zone (°)",
+     ylab= "Proportion Flew", # K. elegans = Squares C.corindum = circles
+     #sub=eq_glmer
+     ) 
+legend("topright",
+       legend = c("C.corindum","K.elegans"),
+       inset=c(-0.23,0.2),
+       pch = c(19,22),
+       title="Groups")
+
+```
+
+
+```{r}
+cat_data7 <- categorize_data(data_fem, all_of("sym_dist"), all_of("flew_b"),  0.1, 0, 0.05) 
+
+fit_fem <- lm(flew_b~sym_dist, data=data_fem) 
+coefff <- coefficients(summary(fit_fem))
+
+eq <- paste0("portion_flew = ", round(coefff[1],3),
+             ifelse(sign(coefff[2])==1, " + ", " - "), 
+             abs(round(coefff[2],3)), "*sym_dist")
+
+plot(as.matrix(cat_data7[1]), 
+     as.matrix(cat_data7[3]),
+     ylab="Sample Proportion of Yes Flew", 
+     xlab="Distance From Sympatric Zone (°)", 
+     main="Observed proportions of yes flew by distance from sympatric zone")
+abline(coefff[1], coefff[2], col="blue")
+mtext(eq, side=4)
+```
+
+
+```{r fig.width=7, fig.height=2.5}
+pf1 <- as.grob(expression(
+  plot(data_fem$flew_b, data_fem$total_eggs)))
+# seems like if you generally laid less eggs you flew, but a lot of females laid few and also didn't fly
+pf2 <- as.grob(expression(
+  plot(data_fem$mass, data_fem$total_eggs)))
+pf3 <- as.grob(expression(
+  plot(data_fem$sym_dist,data_fem$total_eggs)))
+grid.arrange(pf1,pf2,pf3, ncol=3)
+```
+
+```{r}
+####### Sample proportion that laid eggs by mass ####### AND
+####### Total eggs laid  by mass #######
+
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+data_fem <- data_all[data_all$sex=="F",]
+
+# Data Manipulation - filtering, removing duplicates, and recentering mass
+data_fem_filtered <- data_fem %>%
+  filter(!is.na(total_eggs)) %>%
+  filter(!is.na(mass))
+data_fem_filtered <-data_fem_filtered[!duplicated(data_fem_filtered$ID, 
+                                                  data_fem_filtered$total_eggs),]
+
+data_fem_filtered$mass_c <- data_fem_filtered$mass - mean(data_fem_filtered$mass)
+
+source("categorize_binomial_data.R") 
+cat_data8 <- categorize_data(data_fem_filtered, all_of("mass"), all_of("total_eggs"),  0.010, 0.015, 0.025) 
+```
+
+
+```{r}
+####### Sample proportion that laid eggs by mass ####### AND
+####### Total eggs laid  by mass #######
+
+# Plotting - lm, PI
+
+par(mfrow=c(1,2)) 
+
+# Plot 1 ---------------------------------------------------
+
+fit_prop <- lm(`Sample Proportion`~mass, data=cat_data8) 
+coeff <- coefficients(summary(fit_prop))
+
+eq <- paste0("portion_total_eggs = ", round(coeff[1],3),
+             ifelse(sign(coeff[2])==1, " + ", " - "), 
+             abs(round(coeff[2],3)), "*mass")
+
+mass.seq <- seq(from=0, to=.25, length.out=30)
+mu <- link(fit_prop, data=data.frame(mass=mass.seq)) # gives warning
+mu.PI <- apply(mu,2,PI, prob=0.89)
+
+plot(as.matrix(cat_data8[1]),
+     as.matrix(cat_data8[3]),
+     ylab="Proportion of Total Eggs Laid", 
+     xlab="Mass (g)", 
+     main="Observed proportions of eggs laid by mass",
+     cex.main=0.8)
+abline(coeff[1], coeff[2], col="blue")
+mtext(eq, side=4, cex=0.9)
+shade(mu.PI, mass.seq)
+
+# Plot 2 ---------------------------------------------------
+fit_eggs <- lm(total_eggs~mass_c, data=data_fem_filtered) 
+coeff <- coefficients(summary(fit_eggs))
+
+eq <- paste0("total_eggs = ", round(coeff[1],3),
+             ifelse(sign(coeff[2])==1, " + ", " - "), 
+             abs(round(coeff[2],3)), "*mass_c")
+
+mass_c.seq <- seq(from=-.1, to=.15, length.out=30)
+mu <- link(fit_eggs, data=data.frame(mass_c=mass_c.seq)) # gives warning
+mu.PI <- apply(mu,2,PI, prob=0.89)
+
+plot(total_eggs ~ mass_c, data= data_fem_filtered,
+     ylab="Total Eggs Laid", 
+     xlab="Mass Centered (g)", 
+     main="Female Data: Total eggs laid by mass",
+     cex.main=0.9)
+abline(coeff[1], coeff[2], col="blue")
+mtext(eq, side=4, cex=0.9)
+shade(mu.PI, mass_c.seq)
+```
+
+
+```{r}
+##### Egg laid day of flight by variations/change in mass ########
+
+# Data Manipulation - filtering, removing duplicates, recentering mass, and calculating changes in mass
+
+data_fem <- data_all[data_all$sex=="F",] # 1.) Reselect the data (for integrity purposes)
+data_f <- select(data_fem, ID, eggs_b)
+duplicates <- data_f[duplicated(data_f),] # 2.) This will give you duplicate rows:
+dim(data_f[duplicated(data_f),])[1] # 3.) This will give you the number of duplicates:
+omit <- duplicates$ID # 4.) # Pull out IDs that are duplicate and put them in an omit vector
+
+# 5.) Remove those IDs from the original dataframe and return dataframe of unique values
+data_fem_u <- data_fem[!data_fem$ID %in% omit, ]
+
+# 6.) Filter and recenter
+data_eggs <- data_fem_u %>%
+  filter(!is.na(mass))
+
+data_eggs$mass_c <- data_eggs$mass - mean(data_eggs$mass)
+
+# 7.) Determine in diff dataframes which female bugs had egg switch responses (on one day they laid eggs and were tested and on another they were testedthey did not lay eggs)
+
+data_eggs_f <- select(data_eggs, ID, eggs_b)
+dupCheck<- data_eggs_f[duplicated(data_eggs_f),] # check that there are no duplicates of ID and eggs_b
+dupCheck # if there are zero rows then good
+
+dupIDs <- data_eggs[duplicated(data_eggs$ID),] # duplicated IDs in this set (aka. T2 bugs)
+data_eggs_compare <- data_eggs[data_eggs$ID %in% dupIDs$ID, ] # keep all duplicated IDs (aka. T1 and T2 bugs who switch egg repsonse)
+#ID_match <- data_eggs_compare[duplicated(data_eggs_compare$ID),] 
+
+data_eggs_compare2 <- data_eggs_compare %>% # filter for only T1 bugs
+  filter(trial_type == "T1")
+
+# NOTE: one bug: ID number 109 had two trial 1's so we'll say the second trial 1 is 'trial 2'
+rows_to_keep <- data_eggs_compare2$filename != "set005-2-21-2020-B3_109.txt"
+egg_data = data_eggs_compare2[rows_to_keep,]
+
+egg_data_s <- egg_data[order(egg_data$ID),] # Sort the data
+ID_match_s <- dupIDs[order(dupIDs$ID),] # Sort the data
+
+```
+
+By this point we have filtered the data for female bugs that have an egg switch response, meaning, on one day they laid eggs and were tested and on another they were testedthey did not lay eggs. But how did the flight response change? Let's calculate flight responses and reinscribe those as well.
+
+First, calculate variances/change in mass between trial 1 and trial 2 (between trials). Second, reinscribe flew_b to be 0 if flew in T1 but not T2 and 1 if flew in T2 but not T1 
+
+```{r}
+# 8.) Calcualte mass differences and flight response differences for fem bugs who had yes-no egg laying differences.
+
+#######################################################################################
+# KEY
+#
+# if mass diff is + , then mass was gained from T1 to T2
+# if mass diff is -, then mass was lost from T1 to T2
+#
+# if flight diff = 0, then no flight reponse change (flew or did not fly both times))
+# if flight diff = -1, then flew in T1 but not T2
+# if flight diff = 1, then flew in T2 but not T1
+#
+#######################################################################################
+
+
+egg_data_s <- egg_data[order(egg_data$ID),] # Sort the data
+egg_data_s
+if (egg_data$ID %in% ID_match_s$ID) {
+  egg_data_s$mass_diff <- ID_match_s$mass - egg_data_s$mass # T2 - T1 masses differences
+  egg_data_s$flew_delta <- ID_match_s$flew_b - egg_data_s$flew_b # T2 - T1 flight response differences
+} 
+
+# 9.) Calcualte the number of times the bug yes flew for all trials
+
+for (row in seq(1:nrow(egg_data_s))) {
+  egg_data_s$flew_count[row] <- 1 # flew once
+  if (ID_match_s$flew_b[row] == 1 && egg_data_s$flew_b[row] == 1) {
+    egg_data_s$flew_count[row] <- 2 # flew twice
+  }
+  if (ID_match_s$flew_b[row] == 0 && egg_data_s$flew_b[row] == 0) {
+    egg_data_s$flew_count[row] <- 0 # didn't fly for either 
+  }
+} # 12 of the 34 rows flew twice
+
+egg_data_s2 <- egg_data_s[order(egg_data_s$mass_diff),]
+egg_data_compact <- select(egg_data_s2, ID, flew_delta, mass_diff, flew_count)
+egg_data_compact 
+```
+
+Three things noticed:
+
+(i) 12 of the 34 rows flew twice (in both trials).
+
+(ii) 12 of the 34 did not flew at all (in either trial).
+
+(iii) there were no cases in which the flight diff = 1, so no female bugs flew in T2 but not T1. But 10 cases of the 34 that flew in T1 but not T2.
+
+```{r}
+# Plot flight proportions by negative | positive mass_change. 
+source("categorize_binomial_data3.R") # categorize_binomial_data2.R works too
+cat_data9 <- categorize_data(egg_data_s2, all_of("mass_diff"), all_of("flew_delta"),  0.005, 0.010, -0.040) 
+```
+
+
+```{r}
+##### Proportion flew for females who laid eggs day of flight in one trial but not the other COMPARED to their variations/change in mass ########
+
+fit <- lm(`Sample Proportion`~mass_diff, data=cat_data9) 
+coeff <- coefficients(summary(fit))
+
+eq <- paste0("portion_flew = ", round(coeff[1],3),
+             ifelse(sign(coeff[2])==1, " + ", " - "), 
+             abs(round(coeff[2],3)), "*mass_diff")
+
+mass_diff.seq <- seq(from=-0.04, to=0.08, length.out=30)
+mu <- link(fit, data=data.frame(mass_diff=mass_diff.seq)) # gives warning
+mu.PI <- apply(mu,2,PI, prob=0.89)
+
+plot(as.matrix(cat_data9[1]),
+     as.matrix(cat_data9[3]),
+     ylim = c(-1,1),
+     ylab="Proportion Flew Over Trials", 
+     xlab="Mass Differences between T1 to T2 (g)", 
+     main="Observed proportions of yes flew by mass differences between trials",
+     cex=0.9)
+abline(coeff[1], coeff[2], col="blue")
+mtext(eq, side=4, cex=0.9)
+shade(mu.PI, mass_diff.seq)
+abline(v=0, col="mediumpurple3", type="l", lty=2)
+text(0.01, 0.95, c("gained mass"),col="mediumpurple4")
+text(-0.009, 0.963, c("lost mass"), col="mediumpurple4")
+abline(h=0, col="darkolivegreen4", type="l", lty=2)
+text(0.060, 0.087, c("flew in T2 but not T1"),col="darkolivegreen4")
+text(0.060, -0.087, c("flew in T1 but not T2"),col="darkolivegreen4")
+```
+
+```{r}
+egg_data_compact 
+```
+
+```{r}
+source("categorize_binomial_data-MF2.R") 
+cat_data10 <- categorize_data_MF(egg_data_s2, all_of("mass_diff"), all_of("flew_count"), all_of("flew_delta"), 0.005, 0.010, -0.040) 
+```
+
+```{r}
+gf_point(sample_prop ~ mass_diff, data=cat_data10, col=~flew_count,
+         xlab = "Mass Differences between T1 and T2 (g)", ylab= "Proportion Flew Over Trials",
+         title= "Observed proportions of yes flew by mass differences between trials")
+
+fit <- lm(sample_prop~mass_diff, data=cat_data10) 
+coeff <- coefficients(summary(fit))
+
+eq <- paste0("portion_flew = ", round(coeff[1],3),
+             ifelse(sign(coeff[2])==1, " + ", " - "), 
+             abs(round(coeff[2],3)), "*mass_diff")
+
+mass_diff.seq <- seq(from=-0.04, to=0.08, length.out=30)
+mu <- link(fit, data=data.frame(mass_diff=mass_diff.seq)) # gives warning
+mu.PI <- apply(mu,2,PI, prob=0.89)
+```
+
+```{r}
+plot(as.matrix(cat_data10[1]),
+     as.matrix(cat_data10[3]),
+     #col=c(3,2,1)[as.factor(cat_data10$flew_count)], # green = 2, black = -1
+     #col=c(1,2)[as.factor(summary$sex)], # Female = Black, Male = Red
+     pch=c(19,22,21)[as.factor(cat_data10$flew_count)],
+     ylim = c(-1,1),
+     ylab="Proportion Flew Over Trials", 
+     xlab="Mass Differences between T1 to T2 (g)", 
+     main="Observed proportions of yes flew by mass differences between trials",
+     cex=0.9)
+abline(coeff[1], coeff[2], col="blue")
+mtext(eq, side=4, cex=0.9)
+shade(mu.PI, mass_diff.seq)
+abline(v=0, col="mediumpurple3", type="l", lty=2)
+text(0.01, 0.95, c("gained mass"),col="mediumpurple4")
+text(-0.009, 0.963, c("lost mass"), col="mediumpurple4")
+abline(h=0, col="darkolivegreen4", type="l", lty=2)
+text(0.060, 0.087, c("flew in T2 but not T1"),col="darkolivegreen4")
+text(0.060, -0.087, c("flew in T1 but not T2"),col="darkolivegreen4")
+legend("topright",
+       #legend = c("Both Trials","One Trial", "No Trial"),
+       legend = c("2", "1", "0"),
+       #inset=c(-0.03,0.02),
+       pch = c(19,22,21),
+       title="Flight Count")
+```
+
+```{r}
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+#  Eggs laid by week graph
+eggs_laid <- read.csv("egg_data-winter2020_final.csv") # go merge ID with population in Python - could also transpose this data into the data_all sheet
+
+# Check which ID's flew to see which female bugs were tested and only keep those
+highest_ID <- max(as.integer(data_all$ID))
+cat("Highest ID tested:", highest_ID)
+eggs_laid <- filter(eggs_laid, ID <= 333)
+
+# Convert date_collected to a Date object.
+eggs_laid$date <- as_date(eggs_laid$date_collected) 
+eggs_laid
+
+# Make sure all the eggs are summed up for that week
+df <- eggs_laid %>% 
+  group_by(ID, date,pop) %>% 
+  summarise(egg_n = sum(eggs))
+
+# Cumulative sum of eggs through time 
+df <- df %>%
+  group_by(c(ID)) %>%
+  mutate(c_eggs = cumsum(egg_n))
+
+# For simplicity, add a new column - days_from_EggStart (days from when first collected eggs)
+df$days_from_EggStart <- df$date - df$date[1]
+```
+
+```{r}
+# Calculate mean eggs each day laid by all females:
+
+d <- c()
+m <- c()
+for (i in 1:max(df$days_from_EggStart)) {
+  df_day <- filter(df, days_from_EggStart == i)
+  if (nrow(df_day) == 0 | nrow(df_day) ==1) { # those that only said eggs once removed.
+    next
+  }
+  d <- c(d, i)
+  mean <- round(mean(df_day$c_eggs))
+  m <- c(m,mean)
+}
+
+# Plot all lines - could color by population or distance from the sympatric zone or do the mean of each population
+cols <- terrain.colors(max(df$ID))
+
+plot(NA, ylim = c(0, 360), xlim = c(0, 24), 
+     xlab="Days From First Egg Collection", 
+     ylab="Cumulative Eggs Laid",
+     main="Cumulative Eggs Laid Over Time",
+     bty="n")
+df_m <- c()
+for(i in 1:max(df$ID)) {
+  df_ID <- filter(df, ID == i)
+  if (nrow(df_ID) == 0 | nrow(df_ID) == 1) { # those that only said eggs once removed.
+    next
+  }
+  lines(c_eggs ~ days_from_EggStart, data=df_ID, type="o", col=cols[i])
+}
+lines(d, m, type="o")
+text(23.5,110, labels = c("mean"))
+
+
+
+```
+
+```{r}
+rand_colors <- randomColor(df$ID, luminosity="bright")
+```
+
+```{r}
+# Group and calcualte mean eggs laid each day by population:
+
+plot(NA, ylim = c(0, 250), xlim = c(0, 28), 
+     xlab="Days From First Egg Collection", 
+     ylab="Mean Eggs Laid",
+     main="Mean Eggs Laid Over Time By Population",
+     bty="n")
+pops <- unique(unlist(df$pop)) 
+e <- 0
+o <- -1
+for (p in 1:length(pops)) {
+  df_pop <- filter(df, pop == pops[p])
+  days <- c()
+  pm <- c()
+  for (d in 1:max(df_pop$days_from_EggStart)) { # want the mean of each day for each population
+    df_pop_day <- filter(df_pop,days_from_EggStart == d )  
+    if (nrow(df_pop_day) == 0 ) { 
+      next }
+    days <- c(days, d)
+    pop_m <- round(mean(df_pop_day$c_eggs))
+    pm <- c(pm, pop_m)
+  }
+  lines(days, pm, type="o", col=rand_colors[p]) # why won't the color change??
+  
+  if (p %% 2 == 0) {
+    e <- e + 2
+    text(x=25.5, y=pop_m, labels=pops[e],cex=0.8)
+  } else { 
+    o <- o + 2
+    text(x=25.5, y=(pop_m+10), labels=pops[o],cex=0.8)
+    } 
+}
+```
+
+- could do cumulative eggs laid over time
+- plot change in mass over time (lines?)
+
+## MALE DATA PLOTS
+
+```{r}
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+data_male <- data_all[data_all$sex=="M",]
+```
+
+```{r fig.width=5, fig.height=3}
+plot(data_male$sym_dist, data_male$flew_b)
+
+male_sum <-aggregate(flew_b~host_plant*sym_dist, data=data_male, FUN=mean)
+male_sum
+
+par(mar=c(6.5, 5.5, 5.5, 9.5), xpd=TRUE) # Add extra space to right of plot area; change clipping to figure
+plot(male_sum$flew_b~male_sum$sym_dist, 
+     pch=c(19,22)[as.factor(male_sum$host_plant)],
+     main="Observed Data",
+     xlab = "Distance from Sympatric Zone (°)",
+     ylab= "Proportion Flew", # K. elegans = Squares C.corindum = circles
+     #sub=eq_glmer
+     ) 
+legend("topright",
+       legend = c("C.corindum","K.elegans"),
+       inset=c(-0.23,0.2),
+       pch = c(19,22),
+       title="Groups")
+
+```
+
+
+```{r}
+source("categorize_binomial_data.R")
+cat_data7 <- categorize_data(data_male, all_of("sym_dist"), all_of("flew_b"),  0.1, 0, 0.05) 
+
+fit_male <- lm(flew_b~sym_dist, data=data_male) 
+coeffm <- coefficients(summary(fit_male))
+coeffm
+
+eq <- paste0("portion_flew = ", round(coeffm[1],3),
+             ifelse(sign(coeffm[2])==1, " + ", " - "), 
+             abs(round(coeffm[2],3)), "*sym_dist")
+
+plot(as.matrix(cat_data7[1]), 
+     as.matrix(cat_data7[3]),
+     ylab="Sample Proportion of Yes Flew", 
+     xlab="Distance From Sympatric Zone (°)", 
+     main="Observed proportions of yes flew by distance from sympatric zone")
+abline(coeffm[1], coeffm[2], col="blue")
+mtext(eq, side=4)
+```
+
+```{r}
+plot(data_male$mass, data_male$flew_b) # only a few large ones...really driving this but need to go back and check in the morphology if it's a typo or a a big male, but beside that looks pretty 50-50
+```
+
+
+
