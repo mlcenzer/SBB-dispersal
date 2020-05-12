@@ -18,7 +18,7 @@ from datetime import datetime, date
 
 demographics_data = r"/Users/anastasiabernat/Desktop/demographic_data_winter2020.csv"
 
-trial_data = r"/Users/anastasiabernat/Desktop/all_flight_trials-time-processed-March30.2020.csv"
+trial_data = r"/Users/anastasiabernat/Desktop/all_flight_trials-time-processed-April21.2020.csv"
 
 county_dict = {"Gainesville": "Alachua",
                "Homestead": "Miami-Dade",
@@ -29,6 +29,7 @@ county_dict = {"Gainesville": "Alachua",
                "North Key Largo": "North Key Largo",
                "Plantation Key": "Plantation Key"}
 
+pop_dict = {} # save for later for egg data | 447 ID missed - no pop
 sex_dict = {} 
 site_dict = {}
 host_dict = {}
@@ -47,7 +48,10 @@ with open(demographics_data, "r") as demo_data:
         lat = row["latitude"]
         long = row["longitude"]
         field_date = row['field_date_collected']
+        #ID_n = int(float(ID))
 
+        if ID not in pop_dict:
+            pop_dict[ID] = pop
         if ID not in sex_dict:
             sex_dict[ID] = sex
         if (ID, pop) not in site_dict:
@@ -74,7 +78,7 @@ with open(trial_data, "r") as all_data:
             long = long_dict[lat]
             county = county_dict[population]
         except KeyError:
-            #print("KeyError for ID, ", ID_num)
+            #pprint("KeyError for ID, ", ID_num)
             continue
 
         row_data["ID"] = ID_num
@@ -179,7 +183,7 @@ merged_data.to_csv(outpath, index=False, mode='w')
 # Merge 3. Analyses-trial-demographics data with egg data.
 #***************************************************************************************
 
-egg_data = r"/Users/anastasiabernat/Desktop/egg_data-winter2020.csv"
+egg_data = r"/Users/anastasiabernat/Desktop/egg_data-winter2020_clean.csv"
 main_data = r"/Users/anastasiabernat/Desktop/analyses-trial-demo-data_winter2020.csv"
 
 egg_df = pd.read_csv(egg_data, parse_dates = ['date_collected'])
@@ -189,8 +193,11 @@ egg_df_sums.rename(columns={'eggs':'total_eggs'}, inplace=True)
 merged_eggs = pd.merge(left=egg_df, right=egg_df_sums, left_on=['ID'],
                        right_on=['ID'], how='left')
 
-# egg_outpath = r"/Users/anastasiabernat/Desktop/egg_data-winter2020_final.csv"
-# merged_eggs.to_csv(egg_outpath, index=False, mode='w')
+merged_eggs['ID'] = merged_eggs['ID'].apply(str)
+merged_eggs['pop'] = merged_eggs['ID'].map(pop_dict)
+
+egg_outpath = r"/Users/anastasiabernat/Desktop/egg_data-winter2020_final.csv"
+merged_eggs.to_csv(egg_outpath, index=False, mode='w')
 
 
 main_df = pd.read_csv(main_data, parse_dates = ['test_date'])
@@ -199,6 +206,13 @@ merged_data2 = pd.merge(left=main_df, right=egg_df_sums, left_on=['ID'],
 
 outpath2 = r"/Users/anastasiabernat/Desktop/main_data.csv"
 merged_data2.to_csv(outpath2, index=False, mode='w')
+
+# make a total eggs dict by ID
+# make an eggs dict by (ID, date_collected)
+
+# could make a file where add to row if date and ID there
+# make an new row with info on egg output if date not overlapping
+# https://www.geeksforgeeks.org/python-combine-two-dictionary-adding-values-for-common-keys/
 
 #***************************************************************************************
 # Merge 4. Egg-analyses-trial-demographics data with morphology data.
