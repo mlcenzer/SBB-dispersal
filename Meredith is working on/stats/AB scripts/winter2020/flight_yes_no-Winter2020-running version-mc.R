@@ -431,7 +431,7 @@ data_male <- data_all[data_all$sex=="M" & !is.na(data_all$mass),]
 summary(glm(flew_b~chamber, data=data_male, family=binomial))
 
 ####### Effect of test date (as seen in the data_all)
-summary(glm(flew_b~days_from_start_c, data=data_male, family=binomial))
+summary(glmer(flew_b~days_from_start_c + (1|trial_type), data=data_male, family=binomial))
 
 ####### No effect of test time (but close p = 0.09443)
 summary(glm(flew_b~min_from_IncStart, data=data_male, family=binomial))
@@ -538,6 +538,8 @@ summary(model_male_mass)
 
 #* Strong negative effect if from GRT
 #* Strong negative effect of mass, that if weigh more then less likely to disperse
+
+
 
 
 ######################Come back in here
@@ -650,7 +652,7 @@ ffem_model<-glmer(flew_b~eggs_b + (1|population) + (1|trial_type), family=binomi
 summary(ffem_model) # still a strong negative effect if laid eggs that day
 ```
 
-Host seems to not be effecing female flight...let's remove it
+#Host seems to not be effecing female flight...let's remove it
 
 ```{r}
 missing_mass <- subset(data_fem, is.na(data_fem$mass))
