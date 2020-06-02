@@ -428,7 +428,7 @@ cls()
 
 # Winter 2020
 path = "/Users/anastasiabernat/Desktop/winter2020_standardized_files/"
-data_path = r"/Users/anastasiabernat/Desktop/all_flight_trials-time-processed-March30.2020.csv"
+data_path = r"/Users/anastasiabernat/Desktop/all_flight_trials-time-processed-April21.2020.csv"
 
 #row_IDs = get_IDs(data_path) #uncomment this if file does not have the ID in its name 
 
@@ -599,6 +599,12 @@ for file in dir_list:
 ##            for index in range(0, len(time_graph)):
 ##                OutputFile.write('%.1f' % time_graph[index] + ',' + '%.2f' %speed_graph[index] + '\n')
 ##            OutputFile.close()
+
+        OutputFile=open(r"/Users/anastasiabernat/Desktop/Flight_Analyses/" + filename, "w")
+        for index in range(0, len(time_graph)):
+            OutputFile.write('%.1f' % time_graph[index] + ',' + '%.2f' %speed_graph[index] + '\n')
+        OutputFile.close()
+
         
 ##        with open(r"/Users/anastasiabernat/Desktop/flight_stats4/flight_stats-" + str(file).split("_")[-1].replace(".txt", "") + ".csv", "w") as csv_file:
 ##            writer = csv.DictWriter(csv_file, fieldnames = row_data.keys())
@@ -611,7 +617,7 @@ for file in dir_list:
 # All Flight Stats Summary File
 
 outpath = r"/Users/anastasiabernat/Desktop/holder/"
-with open(outpath + "flight_stats_summary_winter2020.csv", "w") as csv_file:
+with open(outpath + "flight_stats_summary_winter2020-v2.csv", "w") as csv_file:
     writer = csv.DictWriter(csv_file, fieldnames = big_list[1].keys())
     writer.writeheader()
     for row in big_list:
