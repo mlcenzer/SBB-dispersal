@@ -3,7 +3,8 @@
 ################ Loading the data #####################
 
 read_flight_data<-function(filename){
-    data_all_init<-read.csv(filename, header=TRUE, sep=",", stringsAsFactors=FALSE)
+  
+    data_all_init<-read.csv(filename, header=TRUE, sep=",", stringsAsFactors=FALSE) # Change to TRUE
     
     ############ 1. ) Remove unnecessary columns ############
     
@@ -41,24 +42,27 @@ read_flight_data<-function(filename){
     data_all$minute_duration_c <- data_all$minute_duration-mean(data_all$minute_duration)
     
     # Minutes From When Incubator Lights Turned On
+    tested <- nrow(data_all[data_all$tested == "yes",])
+    
     t_IncLights_turn_on <- 8 # AM
     data_all$min_from_IncStart <- 0
-    for(row in 1:length(data_all$ID)){
-      time <- chron(times=data_all$time_start[row])
-      minute<- minutes(time)
-      hour <- hours(time)
-      data_all$min_from_IncStart[row] <- 60*(hour - t_IncLights_turn_on) + minute
+    for(row in 1:tested){
+      time <- strptime(data_all$time_start[row], format="%H:%M:%S")
+      min <- minute(time)
+      hr <- hour(time)
+      data_all$min_from_IncStart[row] <- 60*(hr - t_IncLights_turn_on) + min
     } 
     data_all$min_from_IncStart_c <- data_all$min_from_IncStart-mean(data_all$min_from_IncStart)
     
     # Days From Starting Time
     data_all$days_from_start <- 0
+    data_all$test_date[data_all$tested == "no"] <- data_all$test_date[1]
     data_all$test_date <- as_date(data_all$test_date) 
     dates <- sort(unique(data_all$test_date))
     
     for (i in 1:length(dates)){
       day_diff <- dates[i] - dates[1]
-      for (r in 1:length(data_all$test_date)){
+      for (r in 1:tested){
         if (data_all$test_date[r] == dates[i]) {
           data_all$days_from_start[r] = day_diff }
       }
