@@ -32,63 +32,8 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 
 ```{r}
 # Script that loads and cleans up the data
-temp_filepath = "~/Desktop/Rstats-winter2020/complete_flight_data-Winter2020.csv"
-file_name = "clean_flight_data.R"
 source("clean_flight_data.R")
-```
-
-# Initial Data Visualizations
-
-```{r}
-# Categorizing Binomial Data Function: It groups explanatory values into categories and calculates the sample of proportion of flight for each category
-source("categorize_binomial_data.R")
-```
-
-```{r}
-# ALL DATA: Observed proportions of yes flew by minutes from incubation start 
-cat_data1 <- categorize_data(data_all, all_of("min_from_IncStart"), all_of("flew_b"), 30, 0, 30)
-# ALL DATA: Observed proportions of yes flew by minutes from trial start
-cat_data2 <- categorize_data(data_all, all_of("minute_duration"), all_of("flew_b"), 30, 0, 30)
-```
-
-```{r fig.width=7, fig.height=2.5}
-# Plotting observered proportions of yes flew by minutes from incubation start 
-p1 <- as.grob(expression(plot(as.matrix(cat_data1[1]), 
-     as.matrix(cat_data1[3]),
-     ylab="Sample Proportion of Yes Flew", xlab="Minutes From Incubtation Start (m) ", main="Observed proportions of yes flew by minutes from incubation start")
-))
-
-# Plotting observered proportions of yes flew by minutes from trial start
-p2 <- as.grob(expression(
-  plot(as.matrix(cat_data2[1]), 
-     as.matrix(cat_data2[3]),
-     ylab="Sample Proportion of Yes Flew", xlab="Minutes From Trial Start (m)", main="Observed proportions of yes flew by minutes from trial start") %>%
-  abline(v=120, col="red")
-))
-
-grid.arrange(p1,p2, ncol=2)
-```
-
-```{r}
-# Filter out those that didn't fly.
-all_flew <- filter(data_all, flew_b == 1)
-
-# What is happening for those who flew?
-x = chron(times = all_flew$time_start)
-y = all_flew$total_duration # seconds 
-y = y / (24*60*60) # proportion of the day they flew
-
-fit <- lm(y~x, data=all_flew)
-summary(fit) # significant effect
-
-cf <- round(coef(fit), 2)  ## rounded coefficients for better output
-eq <- paste0("portion_flew = ", cf[1],
-             ifelse(sign(cf[2])==1, " + ", " - "), 
-             abs(cf[2]), "*time_start ") ## sign check to avoid having plus followed by minus for negative coefficients
-
-plot(x,y, xlab= "Starting Time", ylab="Proportion of 24-H Day Spent Flying")
-  abline(coef(fit)[1:2], col="blue") # Alternative: lines(x, fitted(fit), col="blue")
-mtext(eq, 3, line=-2, side=3)
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
 ```
 
 # GLM Modeling: Multi-hour trials
@@ -149,7 +94,7 @@ summary(glm(flew_b~wing_c, data=data_all, family=binomial))
 
 ```
 
-## T1: GLM Binomial Modeling | Mass as a covariate 
+## TRIAL 1: GLM Binomial Modeling 
 
 ```{r}
 data_T1 <-data_all[data_all$trial_type=="T1",]
@@ -165,10 +110,11 @@ summary(glm(flew_b~min_from_IncStart, data=data_T1, family=binomial))
 ```
 
 ```{r}
-# Missing mass for some (3 NA)
+# Remove any missing masses
 missing_mass <- subset(data_T1, is.na(data_T1$mass))
-# 339, 48, and 342 have no mass and were tested on the same date
-data_T1 <- setdiff(data_T1, missing_mass)
+data_T1 <- data_T1 %>%
+  filter(!is.na(mass))
+
 # Recentering
 data_T1$lat_c<-data_T1$latitude-mean(data_T1$latitude)
 data_T1$sym_dist<-abs(data_T1$latitude-25.49197)
@@ -241,14 +187,15 @@ anova(m8, m2, test="Chisq") ## Removing A does improve fit
 ```
 
 ```{r}
-model_T1<-glm(flew_b~sex_c, family=binomial, data=data_T1)
+model_T1<-glm(flew_b~sex_c*host_c, family=binomial, data=data_T1)
 summary(model_T1)
 ```
 * strong negative effect of sex, where if you are female you are less likely to fly.
-* no longer an effect of host or distance from sympatric zone.
+* no longer an effect of host or distance from sympatric zone. (last season there was)
+* strong interaction between sex and host where if female and from GRT, then more likely to fly.
 
 ```{r}
-model_T1_final <-glmer(flew_b~sex_c + (1|population), family=binomial, data=data_T1) #  boundary (singular) fit: see ?isSingular error
+model_T1_final <-glmer(flew_b~sex_c*host_c + (1|population), family=binomial, data=data_T1) #  boundary (singular) fit: see ?isSingular error
 summary(model_T1_final) 
 ## Did not change effect estimates or improve model fit
 ```
@@ -305,192 +252,6 @@ summary(model_T1_mfinal)
 # The cross validation curve has large error bars.
 ```
 
-## Plotting for Trial 1 
-
-```{r}
-plot(data_T1$mass, data_T1$flew_b)
-```
-
-```{r}
-# Missing mass for some (3 NA)
-missing_mass <- subset(data_all, is.na(data_all$mass))
-# 339, 48, and 342 have no mass and were tested on the same date
-data_mass <- setdiff(data_all, missing_mass)
-
-## ALL DATA: Observed proportions of yes flew by mass
-cat_data3 <- categorize_data(data_mass, all_of("mass"), all_of("flew_b"),  0.010, 0.015, 0.025) 
-
-## TRIAL 1 DATA: Observed proportions of yes flew by mass
-missing_mass <- subset(data_T1, is.na(data_all$mass))
-data_mass_T1 <- setdiff(data_T1, missing_mass)
-cat_data4 <- categorize_data(data_mass_T1, all_of("mass"), all_of("flew_b"),  0.010, 0.015, 0.025) 
-
-```
-
-```{r}
-# ALL DATA
-all_fit <-lm(flew_b~mass, data=data_mass) 
-coeff <- coefficients(summary(all_fit))
-
-eq <- paste0("portion_flew = ", round(coeff[1],3),
-             ifelse(sign(coeff[2])==1, " + ", " - "), 
-             abs(round(coeff[2],3)), "*mass")
-
-plot(as.matrix(cat_data3[1]), 
-     as.matrix(cat_data3[3]),
-     ylab="Sample Proportion of Yes Flew", 
-     xlab="Mass (g)", 
-     main="All Data: Observed proportions of yes flew by mass")
-abline(coeff[1], coeff[2], col="blue")
-mtext(eq, side=4)
-
-# TRIAL 1 
-fit1<-lm(flew_b~mass, data=data_mass_T1) 
-coeff <- coefficients(summary(fit1))
-
-eq <- paste0("portion_flew = ", round(coeff[1],3),
-             ifelse(sign(coeff[2])==1, " + ", " - "), 
-             abs(round(coeff[2],3)), "*mass")
-
-plot(as.matrix(cat_data4[1]), 
-     as.matrix(cat_data4[3]),
-     ylab="Sample Proportion of Yes Flew", 
-     xlab="Mass (g)", 
-     main="Trial 1: Observed proportions of yes flew by mass")
-abline(coeff[1], coeff[2], col="blue")
-mtext(eq, side=4)
-
-```
-
-
-```{r fig.width=5, fig.height=3}
-summary <-aggregate(flew_b~sex*host_plant*sym_dist, data=data_all, FUN=mean)
-summary
-
-par(mar=c(6.5, 5.5, 5.5, 9.5), xpd=TRUE) # Add extra space to right of plot area; change clipping to figure
-plot(summary$flew_b~summary$sym_dist, 
-     col=c(1,2)[as.factor(summary$sex)], # Female = Black, Male = Red
-     pch=c(19,22)[as.factor(summary$host_plant)],
-     main="Observed Data",
-     xlab = "Distance from Sympatric Zone (°)",
-     ylab= "Proportion Flew", # K. elegans = Squares C.corindum = circles
-     #sub=eq_glmer
-     ) 
-legend("topright",
-       legend = c("C.corindum and F","K.elegans and M"),
-       inset=c(-0.23,0.2),
-       col=c(1,2),
-       pch = c(19,22),
-       title="Groups")
-
-```
-
-```{r}
-# ...would this graph make sense?
-##### Observed proportions of yes flew by mass #############
-
-# Missing mass for some (3 NA)
-missing_mass <- subset(data_all, is.na(data_all$mass))
-missing_mass
-# 339, 48, and 342 have no mass and were tested on the same date
-data_all <- setdiff(data_all, missing_mass)
-
-# group x values into categories and calculate the sample of proportion of flight for each category
-df <- select(data_all, mass, flew_b, sex_c, host_c)
-df <- df[order(df$mass),]
-
-mass_interval <- 0.010
-bins <- round(max(df$mass) / mass_interval)
-
-iterations = bins
-variables = + length(df) + 1
-matrix <- matrix(ncol=variables, nrow=iterations)
-
-i <- 0.015
-f <- 0.025
-for (b in 1:bins) {
-  matrix[b,1] <- f
-  binned_df <- filter(df, mass < f & mass > i)
-
-  flew_n <- binned_df$flew_b
-  successes <- sum(flew_n)
-  n_cases <- nrow(binned_df)
-  sample_prop <- successes / n_cases
-  if (is.na(sample_prop)) {
-    next
-  }
-  #sex_group_mean <- mean(binned_df$sex_c)
-  #host_group_mean <- mean(binned_df$host_c)
-  
-  sex_group_mean <- mean(binned_df$sex_c)
-  host_group_mean <- mean(binned_df$host_c)
-  print(host_group_mean)
-  
-  if (sex_group_mean < 0) {
-    sex_group_mean <- floor(sex_group_mean)
-    sex <- "M"
-  }
-  if (sex_group_mean > 0) {
-    sex_group_mean <- ceiling(sex_group_mean)
-    sex <- "F"
-  }
-  if (host_group_mean < 0) {
-    host <- "K.elegans"
-    host_group_mean <- floor(host_group_mean)
-
-  }
-  if (host_group_mean > 0) {
-    host <- "C.corindum"
-    host_group_mean <- ceiling(host_group_mean)
-  }
-
-  matrix[b,2] <- n_cases
-  matrix[b,3] <- round(sample_prop,3)
-  matrix[b,4] <- sex_group_mean
-  matrix[b,5] <- host_group_mean
-  
-  cat("Cases:", n_cases, end="\t")
-  cat("Sample Proportion:", sample_prop, end="\n")
-  
-  i <- i + 0.010
-  f <- f + 0.010
-}
-
-categorized_data4 <- as.data.frame(matrix)
-colnames(categorized_data4) <- c("mass", "n_cases", 
-                                     "sample_prop", "sex", "host_plant")
-
-NaN_rows <- subset(categorized_data4, is.na(categorized_data4$sample_prop))
-categorized_data4 <- setdiff(categorized_data4, NaN_rows)
-
-categorized_data4
-```
-
-```{r fig.width=5, fig.height=3}
-
-gf_point(sample_prop ~ mass, data=categorized_data4, col=~sex, size=~host_plant,
-         xlab = "Mass (g)", ylab= "Sample Proportion that Flew",
-         title= "Observed Data")
-
-par(mar=c(6.5, 5.5, 5.5, 9.5), xpd=TRUE) 
-plot(categorized_data4$sample_prop~categorized_data4$mass, 
-     col=c(1,2)[as.factor(categorized_data4$sex)], # Female = Black, Male = Red
-     pch=c(19,22)[as.factor(categorized_data4$host_plant)],
-     main="Observed Data",
-     xlab = "Mass (g)",
-     ylab= "Proportion Flew", # K. elegans = Squares, C.corindum = circles
-     #sub=eq_glmer
-     ) 
-legend("topright",
-       legend = c("C.corindum and F","K.elegans and M"),
-       inset=c(-0.23,0.2),
-       col=c(1,2),
-       pch = c(19,22),
-       title="Groups")
-```
-
-Mass is really dominating everything, so let's split by sex after looking at Trial 2.
-
 ## T2: GLM Binomial Modeling | Mass as a covariate 
 
 ```{r}
@@ -518,15 +279,15 @@ R = data_T2$flew_b
 A = data_T2$host_c
 B = data_T2$sex_c
 C = data_T2$sym_dist
-D = data_T2$mass_c # as a covariate 
+#D = data_T2$mass_c # as a covariate 
 
-data<-data.frame(R, A, B, C, D)
-#data<-data.frame(R, A, B, C)
+#data<-data.frame(R, A, B, C, D)
+data<-data.frame(R, A, B, C)
 head(data) #kable()
 
 # Automatic stepwise functions using AIC to decide between models
 model.null <- glm(R~1, family=binomial, data = data_T2)
-model.large <-glm(R~A*B*C*D, family=binomial, data=data_T2)
+model.large <-glm(R~A*B*C, family=binomial, data=data_T2)
 
 # Backwards
 #step(model.large, direction = "backward")
@@ -547,7 +308,8 @@ best_fit <- glm(formula = R ~ D + A
 AIC:356.7
 
 ```{r}
-
+# TRIAL 2 WITHOUT MASS AS COVARIATE
+#run AICprobs script
 source("AICprobabilities.R")
 source("generic models-binomial glm 3-FF.R")
 AICs <- sort(summary$AIC)
@@ -558,126 +320,119 @@ AICs <- AICs[1:top]
 models <- models_init$ix[1:top]
 probs <- models_init$x[1:top]
 rbind(AICs, models, probs)
-
-#run AICprobs script
-source("AICprobabilities.R")
-source("generic models-binomial glm 4-FF.R")
-AICs <- sort(summary$AIC)
-models <- sort(P, decreasing=TRUE, index.return=TRUE)
-
-AICs <- AICs[1:4]
-models <- models$ix[1:4]
-rbind(AICs, models) # top models and their AIC values
 ```
 
-m7 <- glm(formula = R ~ A + D, family = binomial, data = data)
-m4 <- glm(formula = R ~ D, family = binomial, data = data)
-m9 <- glm(formula = R ~ B + D, family = binomial, data = data)
-m12 <- glm(formula = R ~ A + B + D, family = binomial, data = data)
+m2 <- glm(formula = R ~ B, family = binomial, data = data)
+m4 <- glm(formula = R ~ A + B, family = binomial, data = data)
+m6 <- glm(formula = R ~ B + C, family = binomial, data = data)
+m7 <- glm(formula = R ~ A + B + C, family = binomial, data = data)
+m8 <- glm(formula = R ~ A * B, family = binomial, data = data)
+m10 <- glm(formula = R ~ B * C, family = binomial, data = data)
 
 ```{r}
-anova(m7, m4, test="Chisq") # Removing A does not improve fit
-anova(m7, m9, test="Chisq") # Replacing A with B does improve fit
-anova(m9, m12, test="Chisq") #Adding A does not improve fit
+anova(m2, m4, test="Chisq") # Adding A does not improve fit
+anova(m2, m6, test="Chisq") # Adding C does not improve fit
+anova(m2, m7, test="Chisq") # Adding A and B does not improve fit
+anova(m2, m8, test="Chisq") # Adding an A*B interaction term does not improve fit
+anova(m2, m10, test="Chisq") # Adding a B*C interaction term does not improve fit
 ```
 
 ```{r}
-model_T2 <-glm(flew_b~sex_c + mass, family=binomial, data=data_T2)
+model_T2 <-glm(flew_b~sex_c, family=binomial, data=data_T2)
 summary(model_T2)
 ```
 
-* mass is the only significant and strong effect
+* sex is the only significant and strong effect, so that if you are female you are much less likely to disperse/fly
 
 ```{r}
 ## Consider covariates
-model_T2_final <-glmer(flew_b~sex_c + mass + (1|population), family=binomial, data=data_T2)
+model_T2_final <-glmer(flew_b~sex_c + (1|population), family=binomial, data=data_T2)
 summary(model_T2_final)
 ## Did not change effect estimates or improve fit
 ```
 
-## Plotting T2 
-
 ```{r}
-plot(data_T2$mass, data_T2$flew_b)
+# TRIAL 2 MASS AS COVARIATE
+
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+data_T2 <-data_all[data_all$trial_type=="T2",]
+
+# Recentering
+data_T2$lat_c<-data_T2$latitude-mean(data_T2$latitude)
+data_T2$sym_dist<-abs(data_T2$latitude-25.49197)
+data_T2$mass_c <- data_T2$mass-mean(data_T2$mass, na.rm=TRUE) 
+
+R = data_T2$flew_b
+A = data_T2$host_c
+B = data_T2$sex_c
+C = data_T2$sym_dist
+D = data_T2$mass_c # as a covariate 
+
+data<-data.frame(R, A, B, C, D)
+head(data) #kable()
+
+# Automatic stepwise functions using AIC to decide between models
+model.null <- glm(R~1, family=binomial, data = data_T2)
+model.large <-glm(R~A*B*C*D, family=binomial, data=data_T2)
+
+# Backwards
+#step(model.large, direction = "backward")
 ```
 
 ```{r}
-# no missing mass during T2 trials
-cat_data4 <- categorize_data(data_T2, all_of("mass"), all_of("flew_b"),  0.010, 0.015, 0.025) # not working so well right now so wrote it all out below for now:
+# TRIAL 2 WITHOUT MASS AS COVARIATE
+#run AICprobs script
+source("AICprobabilities.R")
+source("generic models-binomial glm 4-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
 
+AICs <- AICs[1:top]
+models <- models_init$ix[1:top]
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
 ```
+m7 <- glm(formula = R ~ A + D, family = binomial, data = data)
+m4 <- glm(formula = R ~ D, family = binomial, data = data)
+m9 <- glm(formula = R ~ B + D, family = binomial, data = data)
+m12 <- glm(formula = R ~ A + B + D, family = binomial, data = data)
 ```{r}
-##### TRIAL 2 DATA: Observed proportions of yes flew by mass #############
-
-# group x values into categories and calculate the sample of proportion of flight for each category
-df <- select(data_T2, mass, flew_b)
-df <- df[order(df$mass),]
-
-mass_interval <- 0.010
-bins <- round(max(df$mass) / mass_interval)
-
-iterations = bins
-variables = + 3
-matrix <- matrix(ncol=variables, nrow=iterations)
-
-#here2
-i <- 0.015
-f <- 0.025
-for (b in 1:bins) {
-  matrix[b,1] <- f
-  
-  binned_df <- filter(df, mass < f & mass > i)
-  flew_n <- binned_df$flew_b
-  successes <- sum(flew_n)
-  n_cases <- nrow(binned_df)
-  sample_prop <- successes / n_cases
-  matrix[b,2] <- n_cases
-  matrix[b,3] <-sample_prop
-  
-  cat("Cases:", n_cases, end="\t")
-  cat("Sample Proportion:", sample_prop, end="\n")
-  
-  i <- i + 0.010
-  f <- f + 0.010
-}
-
-cat_data4 <- as.data.frame(matrix)
-colnames(cat_data4) <- c("Mass", "Number of Cases", "Sample Proportion")
-cat_data4
-
-NaN_rows <- subset(cat_data4, is.na(cat_data4$`Sample Proportion`))
-NaN_rows
-# 339, 48, and 342 have no mass and were tested on the same date
-cat_data4 <- setdiff(cat_data4, NaN_rows)
-
-cat_data4
+anova(m7, m4, test="Chisq") # Removing A does improve fit (neg Dev)
+anova(m7, m9, test="Chisq") # REplacing A with B does improve fit (neg Dev)
+anova(m7, m12, test="Chisq") # Adding B does not improve fit
+anova(m4, m9, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
-fit<-lm(flew_b~mass, data=data_T2) 
-coeff <- coefficients(summary(fit))
-
-eq <- paste0("portion_flew = ", round(coeff[1],3),
-             ifelse(sign(coeff[2])==1, " + ", " - "), 
-             abs(round(coeff[2],3)), "*mass")
-
-plot(as.matrix(cat_data4[1]), 
-     as.matrix(cat_data4[3]),
-     ylab="Sample Proportion of Yes Flew", 
-     xlab="Mass (g)", 
-     main="Observed proportions of yes flew by mass")
-abline(coeff[1], coeff[2], col="blue")
-mtext(eq, side=4)
+model_T2_mass <-glm(flew_b~mass_c, family=binomial, data=data_T2)
+summary(model_T2_mass)
 ```
 
-# Spliting by Sex (due to strong effect of mass)
+* mass is the only significant and extremely strong effect, so that if you are heavy you are much less likely to disperse/fly
 
 ```{r}
+## Consider covariates
+model_T2_mass_final <-glmer(flew_b~mass_c + (1|population), family=binomial, data=data_T2)
+summary(model_T2_mass_final)
+## Did not change effect estimates or improve fit
+```
+
+
+Mass is really dominating everything, so let's split by sex after looking at Trial 2.
+
+# ------------------------------------------------------------------------------------
+
+# SPLITTING BY SEX (due to strong effect of mass)
+
+```{r}
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
 data_fem <- data_all[data_all$sex=="F",]
-data_male <- data_all[data_all$sex=="M",]
 ```
 
-## Female: GLM Binomial Modeling 
+## FEMALE: GLM Binomial Modeling 
 
 ```{r}
 ####### Marginal effect of chamber B-4 (ah this again!)
@@ -691,6 +446,11 @@ summary(glm(flew_b~min_from_IncStart, data=data_fem, family=binomial))
 ```
 
 ```{r}
+# Recentering
+data_fem$lat_c<-data_fem$latitude-mean(data_fem$latitude)
+data_fem$sym_dist<-abs(data_fem$latitude-25.49197)
+data_fem$mass_c <- data_fem$mass-mean(data_fem$mass, na.rm=TRUE) 
+
 R = data_fem$flew_b
 A = data_fem$host_c
 B = data_fem$sym_dist
@@ -716,20 +476,24 @@ best_fit <- glm(formula = R ~ 1, family = binomial, data = data_fem)
 AIC:266.3
 
 ```{r}
+# FEM DATA WITHOUT MASS AS COVARIATE
 #run AICprobs script
 source("AICprobabilities.R")
 source("generic models-binomial glm 2-FF.R")
 AICs <- sort(summary$AIC)
-models <- sort(P, decreasing=TRUE, index.return=TRUE)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:4]
-models <- models$ix[1:4]
-rbind(AICs, models) # top models and their AIC values
+AICs <- AICs[1:top]
+models <- models_init$ix[1:top]
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # why does m5 show up if it doesn't exist?
 ```
 
 m1 <- glm(formula = R ~ A, family = binomial, data = data) *host*
 m2 <- glm(formula = R ~ B, family = binomial, data = data) *sym_dist*
 m3 <- glm(formula = R ~ A + B, family = binomial, data = data) *host and sym_dist*
+m4 <- glm(formula = R ~ A * B, family = binomial, data = data) *host x sym_dist*
 
 ```{r}
 anova(m1, m2, test="Chisq") # Replacing A with B improves fit 
@@ -748,57 +512,93 @@ summary(model_fem)
 ## Consider covariates
 model_fem_final <-glmer(flew_b~sym_dist + (1|population) + (1|trial_type), family=binomial, data=data_fem) # boundary (singular) fit: see ?isSingular
 summary(model_fem_final)
-## Barely changed effect estimates but does not improve fit
+## Barely changed effect estimates and does not improve fit
 ```
 
-## Plotting Female Data
+```{r}
+# FEM DATA: MASS AS COVARIATE 
 
-```{r fig.width=5, fig.height=3}
-plot(data_fem$sym_dist, data_fem$flew_b)
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+data_fem <- data_all[data_all$sex=="F",]
 
-fem_sum <-aggregate(flew_b~host_plant*sym_dist, data=data_fem, FUN=mean)
-fem_sum
+# Recentering
+data_fem$lat_c<-data_fem$latitude-mean(data_fem$latitude)
+data_fem$sym_dist<-abs(data_fem$latitude-25.49197)
+data_fem$mass_c <- data_fem$mass-mean(data_fem$mass, na.rm=TRUE) 
 
-par(mar=c(6.5, 5.5, 5.5, 9.5), xpd=TRUE) # Add extra space to right of plot area; change clipping to figure
-plot(agg$flew_b~fem_sum$sym_dist, 
-     pch=c(19,22)[as.factor(fem_sum$host_plant)],
-     main="Observed Data",
-     xlab = "Distance from Sympatric Zone (°)",
-     ylab= "Proportion Flew", # K. elegans = Squares C.corindum = circles
-     #sub=eq_glmer
-     ) 
-legend("topright",
-       legend = c("C.corindum","K.elegans"),
-       inset=c(-0.23,0.2),
-       pch = c(19,22),
-       title="Groups")
+R = data_fem$flew_b
+A = data_fem$host_c
+B = data_fem$sym_dist
+C = data_fem$mass_c
 
+
+data<-data.frame(R, A, B, C)
+head(data) #kable()
+
+# Automatic stepwise functions using AIC to decide between models
+model.null <- glm(R~1, family=binomial, data = data_fem)
+model.large <-glm(R~A*B*C, family=binomial, data = data_fem)
+
+# Backwards
+#step(model.large, direction = "backward")
 ```
 
 
 ```{r}
-cat_data5 <- categorize_data(data_fem, all_of("sym_dist"), all_of("flew_b"),  0.1, 0, 0.05) 
+#run AICprobs script
+source("AICprobabilities.R")
+source("generic models-binomial glm 3-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
 
-fit_fem <- lm(flew_b~sym_dist, data=data_fem) 
-coefff <- coefficients(summary(fit_fem))
-
-eq <- paste0("portion_flew = ", round(coefff[1],3),
-             ifelse(sign(coefff[2])==1, " + ", " - "), 
-             abs(round(coefff[2],3)), "*sym_dist")
-
-plot(as.matrix(cat_data5[1]), 
-     as.matrix(cat_data5[3]),
-     ylab="Sample Proportion of Yes Flew", 
-     xlab="Distance From Sympatric Zone (°)", 
-     main="Observed proportions of yes flew by distance from sympatric zone")
-abline(coefff[1], coefff[2], col="blue")
-mtext(eq, side=4)
+AICs <- AICs[1:top]
+models <- models_init$ix[1:top]
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
 ```
 
-## Male: GLM Binomial Modeling 
+m3 <- glm(formula = R ~ C, family = binomial, data = data)
+m6 <- glm(formula = R ~ B + C, family = binomial, data = data)
+m5 <- glm(formula = R ~ A + C, family = binomial, data = data)
+m7 <- glm(formula = R ~ A + B + C, family = binomial, data = data)
+m9 <- glm(formula = R ~ A * C, family = binomial, data = data)
+m10 <- glm(formula = R ~ B * C, family = binomial, data = data)
+m12 <- glm(formula = R ~ A * C + B, family = binomial, data = data)
 
 ```{r}
-data_male
+anova(m3, m6, test="Chisq") # Adding B does not improve fit
+anova(m3, m5, test="Chisq") # Adding A does not improve fit
+anova(m3, m7, test="Chisq") # Adding A and B does not improve fit
+anova(m3, m9, test="Chisq") # Adding A*C interaction does not improve fit
+anova(m3, m10, test="Chisq") # Adding B*C interaction does not improve fit
+anova(m3, m12, test="Chisq") # Adding A*C and B does not improve fit
+```
+
+```{r}
+model_fem_mass <-glm(flew_b~mass_c, family=binomial, data=data_fem)
+summary(model_fem_mass) 
+```
+
+* large effect of mass, where the heavier the bug is the less likely the bus will fly/disperse.
+
+```{r}
+## Consider covariates
+model_fem_mass_final <-glmer(flew_b~mass_c + (1|population) + (1|trial_type), family=binomial, data=data_fem) # boundary (singular) fit: see ?isSingular
+summary(model_fem_mass_final)
+## Did not change effect estimates and does not improve fit
+```
+
+## MALE: GLM Binomial Modeling 
+
+```{r}
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+data_male <- data_all[data_all$sex=="M",]
+```
+
+```{r}
 ####### No effect of chamber B-4 
 summary(glm(flew_b~chamber, data=data_male, family=binomial))
 
@@ -812,19 +612,31 @@ summary(glm(flew_b~min_from_IncStart, data=data_male, family=binomial))
 ```
 
 ```{r}
+# MALE DATA WITHOUT MASS AS COVARIATE
+
+# Remove any missing masses
+data_male <- data_male %>%
+  filter(!is.na(mass))
+
+# Recentering
+data_male$lat_c<-data_male$latitude-mean(data_male$latitude)
+data_male$sym_dist<-abs(data_male$latitude-25.49197)
+data_male$mass_c <- data_male$mass-mean(data_male$mass, na.rm=TRUE) 
+
 R = data_male$flew_b
 A = data_male$host_c
 B = data_male$sym_dist
+#C = data_male$mass_c # as a covariate 
+##I would not compete these against each other - because mass is determined in part by A, B, and C, I would not add it until after we've tested the other three.
 
 data<-data.frame(R, A, B)
-head(data) #kable()
 
 # Automatic stepwise functions using AIC to decide between models
-model.null <- glm(R~1, family=binomial, data = data_male)
-model.large <-glm(R~A*B, family=binomial, data = data_male)
+model.null <- glm(R~1, family=binomial, data=data)
+model.large <-glm(R~A*B, family=binomial, data=data)
 
 # Backwards
-#step(model.large, direction = "backward")
+#m_backwards <- step(model.large, direction = "backward")
 ```
 
 ```{r}
@@ -832,31 +644,32 @@ model.large <-glm(R~A*B, family=binomial, data = data_male)
 #step(model.null, scope = ~ (A*B), direction = "forward")
 ```
 
-For forwards and backwards:
-
-best_fit <- glm(formula = R ~ A, family = binomial, data = data_male)
-AIC: 511.9
-
 ```{r}
 #run AICprobs script
 source("AICprobabilities.R")
 source("generic models-binomial glm 2-FF.R")
 AICs <- sort(summary$AIC)
-models <- sort(P, decreasing=TRUE, index.return=TRUE)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:4]
-models <- models$ix[1:4]
-rbind(AICs, models) # top models and their AIC values
+AICs <- AICs[1:top]
+models <- models_init$ix[1:top]
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # why does m5 show up if it doesn't exist?
 ```
 
-m1 <- glm(formula = R ~ A, family = binomial, data = data) *host*
-m3 <- glm(formula = R ~ A + B, family = binomial, data = data) *host and sym_dist*
-m4 <- glm(formula = R ~ A * B, family = binomial, data = data) *host and sym_dist interaction - most complex model*
+m1 <- glm(formula = R ~ A, family = binomial, data = data) *host_c*
+m3 <- glm(formula = R ~ A + B, family = binomial, data = data)
+m4 <- glm(formula = R ~ A * B, family = binomial, data = data)
+m2 <- glm(formula = R ~ B, family = binomial, data = data) *sym_dist*
 
 ```{r}
 anova(m1, m3, test="Chisq") # Adding B does not improve fit 
 anova(m1, m4, test="Chisq") # Adding A*B does not improve fit
 anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
+anova(m1, m2, test="Chisq") # Replacing A with B does improve fit
+anova(m2, m3, test="Chisq") 
+anova(m2, m4, test="Chisq") 
 ```
 
 ```{r}
@@ -870,58 +683,125 @@ summary(model_male)
 ## Consider covariates
 model_male_final <-glmer(flew_b~host_c + (1|population) + (1|trial_type), family=binomial, data=data_male) # no error
 summary(model_male_final)
-## Changed the effect slightly and improved the model and in turn made host notsignificant...
-```
-
-## Plotting Male Data
-
-```{r fig.width=5, fig.height=3}
-plot(data_male$sym_dist, data_male$flew_b)
-
-male_sum <-aggregate(flew_b~host_plant*sym_dist, data=data_male, FUN=mean)
-male_sum
-
-par(mar=c(6.5, 5.5, 5.5, 9.5), xpd=TRUE) # Add extra space to right of plot area; change clipping to figure
-plot(agg$flew_b~male_sum$sym_dist, 
-     pch=c(19,22)[as.factor(male_sum$host_plant)],
-     main="Observed Data",
-     xlab = "Distance from Sympatric Zone (°)",
-     ylab= "Proportion Flew", # K. elegans = Squares C.corindum = circles
-     #sub=eq_glmer
-     ) 
-legend("topright",
-       legend = c("C.corindum","K.elegans"),
-       inset=c(-0.23,0.2),
-       pch = c(19,22),
-       title="Groups")
-
+## Q: Changed the effect slightly and improved the model and in turn made host notsignificant...
 ```
 
 
 ```{r}
-cat_data6 <- categorize_data(data_male, all_of("sym_dist"), all_of("flew_b"),  0.1, 0, 0.05) 
+# MALE DATA WITH MASS AS COVARIATE
 
-fit_male <- lm(flew_b~sym_dist, data=data_male) 
-coeffm <- coefficients(summary(fit_male))
-coeffm
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+data_male <- data_all[data_all$sex=="M",]
 
-eq <- paste0("portion_flew = ", round(coeffm[1],3),
-             ifelse(sign(coeffm[2])==1, " + ", " - "), 
-             abs(round(coeffm[2],3)), "*sym_dist")
+# Remove any missing masses
+data_male <- data_male %>%
+  filter(!is.na(mass))
 
-plot(as.matrix(cat_data6[1]), 
-     as.matrix(cat_data6[3]),
-     ylab="Sample Proportion of Yes Flew", 
-     xlab="Distance From Sympatric Zone (°)", 
-     main="Observed proportions of yes flew by distance from sympatric zone")
-abline(coeffm[1], coeffm[2], col="blue")
-mtext(eq, side=4)
+# Recentering
+data_male$lat_c<-data_male$latitude-mean(data_male$latitude)
+data_male$sym_dist<-abs(data_male$latitude-25.49197)
+data_male$mass_c <- data_male$mass-mean(data_male$mass, na.rm=TRUE) 
+
+R = data_male$flew_b
+A = data_male$host_c
+B = data_male$sym_dist
+C = data_male$mass_c # as a covariate 
+##I would not compete these against each other - because mass is determined in part by A, B, and C, I would not add it until after we've tested the other three.
+
+data<-data.frame(R, A, B, C)
+
+# Automatic stepwise functions using AIC to decide between models
+model.null <- glm(R~1, family=binomial, data=data)
+model.large <-glm(R~A*B*C, family=binomial, data=data)
+
+# Backwards
+#m_backwards <- step(model.large, direction = "backward")
+```
+
+```{r}
+#run AICprobs script
+source("AICprobabilities.R")
+source("generic models-binomial glm 3-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- models_init$ix[1:top]
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+m5 <- glm(formula = R ~ A + C, family = binomial, data = data) *host + mass*
+m7 <- glm(formula = R ~ A + B + C, family = binomial, data = data)
+m13 <- glm(formula = R ~ B * C + A, family = binomial, data = data)
+m9 <- glm(formula = R ~ A * C, family = binomial, data = data)
+m16 <- glm(formula = R ~ A * C + B * C, family = binomial, data = data)
+m11 <- glm(formula = R ~ A * B + C, family = binomial, data = data)
+m12 <- glm(formula = R ~ A * C + B, family = binomial, data = data)
+m15 <- glm(formula = R ~ A * B + B * C, family = binomial, data = data)
+
+```{r}
+anova(m5, m7, test="Chisq") # Adding B does not improve fit 
+anova(m5, m13, test="Chisq") # Adding B*C does not improve fit
+anova(m5, m9, test="Chisq") # Adding A*C does not improve fit
+anova(m5, m16, test="Chisq") # Adding A*c and B*C does not improve fit
+anova(m5, m11, test="Chisq") # Adding A*B does not improve fit
+anova(m5, m12, test="Chisq") # Adding A*C and B does not improve fit
+anova(m5, m15, test="Chisq") # Adding A*B and B*C does not irmpve fit
+```
+
+```{r}
+model_male_mass <-glm(flew_b~host_c + mass_c, family=binomial, data=data_male)
+summary(model_male_mass)
+```
+
+* Strong negative effect if from GRT
+* Strong negative effect of mass, that if weigh more then less likely to disperse
+
+```{r}
+## Consider covariates
+model_male_mass_final <-glmer(flew_b~host_c + mass_c+ (1|population) + (1|trial_type), family=binomial, data=data_male) # no error
+summary(model_male_mass_final)
+## Changed the effects slightly and in turn made host notsignificant...
 ```
 
 
-## Other factors I have not addressed - egg laying which is specific to females, males have an effect of test date, and mass effects for males and females. 
+**SUMMARY: Other factors I have not addressed - egg laying which is specific to females, males have an effect of test date, and mass effects for both males and females.**
 
-Let's add these as covariates...
+
+# ----------------------------------------------------------------------------------
+
+# ADDING NEW COVARIATES TO SEX SPLIT
+
+Let's add these other measurements as covariates...
+
+```{r}
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+data_fem <- data_all[data_all$sex=="F",]
+data_male <- data_all[data_all$sex=="M",]
+
+# Recentering --> can create a script for this --> recentering on groups
+
+data_male$lat_c<-data_male$latitude - mean(data_male$latitude)
+data_male$sym_dist<-abs(data_male$latitude-25.49197)
+data_male$mass_c <- data_male$mass - mean(data_male$mass, na.rm=TRUE) 
+data_male$beak_c <- data_male$beak-mean(data_male$beak, na.rm=TRUE)
+data_male$thorax_c <- data_male$thorax-mean(data_male$thorax, na.rm=TRUE)
+data_male$body_c <- data_male$body-mean(data_male$body, na.rm=TRUE) 
+data_male$wing_c <- data_male$wing-mean(data_male$wing, na.rm=TRUE) 
+
+data_fem$lat_c<-data_fem$latitude - mean(data_fem$latitude)
+data_fem$sym_dist<-abs(data_fem$latitude-25.49197)
+data_fem$mass_c <- data_fem$mass - mean(data_fem$mass, na.rm=TRUE) 
+data_fem$beak_c <- data_fem$beak-mean(data_fem$beak, na.rm=TRUE)
+data_fem$thorax_c <- data_fem$thorax-mean(data_fem$thorax, na.rm=TRUE)
+data_fem$body_c <- data_fem$body-mean(data_fem$body, na.rm=TRUE) 
+data_fem$wing_c <- data_fem$wing-mean(data_fem$wing, na.rm=TRUE) 
+
+```
 
 ```{r}
 # Biological Effects:
@@ -940,7 +820,7 @@ summary(glm(flew_b~eggs_b, data=data_fem, family=binomial))  #F | Effect of whet
 
 ####### BEAK LENGTH
 summary(glm(flew_b~beak_c, data=data_fem, family=binomial)) # F | Effect of beak length
-summary(glm(flew_b~beak_c, data=data_male, family=binomial)) # M | Effect of beak length
+summary(glm(flew_b~beak_c, data=data_male, family=binomial)) # M | No effect of beak length
 
 ####### THORAX LENGTH
 summary(glm(flew_b~thorax_c, data=data_fem, family=binomial)) # F | No effect of thorax length
@@ -962,8 +842,9 @@ summary(glm(flew_b~wing_c, data=data_male, family=binomial)) # M | Effect of win
 # Female Data | Remodeling with new covariates 
 
 ```{r}
-missing_mass <- subset(data_fem, is.na(data_fem$mass))
-data_fem <- setdiff(data_fem, missing_mass)
+# Remove any missing masses
+data_fem <- data_fem %>%
+  filter(!is.na(mass))
 
 R = data_fem$flew_b
 A = data_fem$host_c
@@ -1002,17 +883,18 @@ AIC: 222.4
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R")
 AICs <- sort(summary$AIC)
-models <- sort(P, decreasing=TRUE, index.return=TRUE)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:4]
-models <- models$ix[1:4]
-rbind(AICs, models) # top models and their AIC values
+AICs <- AICs[1:top]
+models <- models_init$ix[1:top]
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
 ```
 
 m4 <-  glm(formula = R ~ D, family = binomial, data = data) *eggs_b*
 m20 <- glm(formula = R ~ B * D, family = binomial, data = data) *sym_dist x eggs_b*
 m9 <- glm(formula = R ~ B + D, family = binomial, data = data) *sym_dist and eggs_b*
-m10 <-  glm(formula = R ~ C + D, family = binomial, data = data) *mass and eggs_b*
 
 ```{r}
 anova(m4, m20, test="Chisq") # Replacing B with B*D does not improve fit
@@ -1027,16 +909,23 @@ summary(fem_model)
 
 * Strong negative effect if laid eggs that day
 
+Looks like eggs are overpowering mass in this modeling example
+
 ```{r}
 ffem_model<-glmer(flew_b~eggs_b + (1|population) + (1|trial_type), family=binomial, data=data_male) # no error
 summary(ffem_model) # still a strong negative effect if laid eggs that day
 ```
 
-Host seems to not be effecing female flight...let's remove it
+Host seems to not be effecing female flight...let's remove it and replace it with total_eggs laid
 
 ```{r}
-missing_mass <- subset(data_fem, is.na(data_fem$mass))
-data_fem <- setdiff(data_fem, missing_mass)
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+data_fem <- data_all[data_all$sex=="F",]
+
+# Remove any missing masses
+data_fem <- data_fem %>%
+  filter(!is.na(mass))
 
 R = data_fem$flew_b
 A = data_fem$total_eggs_c
@@ -1065,74 +954,83 @@ model.large <-glm(R~A*B*C*D, family=binomial, data = data)
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R")
 AICs <- sort(summary$AIC)
-models <- sort(P, decreasing=TRUE, index.return=TRUE)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:4]
-models <- models$ix[1:4]
-rbind(AICs, models) # top models and their AIC values
+AICs <- AICs[1:top]
+models <- models_init$ix[1:top]
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+
+# error? "models are not all fitted to the same number of observations"
 ```
 
 m43 <-  glm(formula = R ~ A * B + B * D, family = binomial, data = data) *total_eggs_c, sym_dist, eggs_b*
 m72 <- glm(formula = R ~ A * B + A * D + B * D, family = binomial, data = data) *total_eggs_c, sym_dist, eggs_b*
 m50 <- glm(formula = R ~ A * D + B * D, family = binomial, data = data) *total_eggs_c, sym_dist, eggs_b*
-m18 <-   glm(formula = R ~ A * D, family = binomial, data = data) *total_eggs_c and eggs_b*
 
 ```{r}
 anova(m43, m72, test="Chisq") # Replacing B*D with A*D does not improve fit
 anova(m43, m50, test="Chisq") # Replacing A*B with A*D does improve fit
-anova(m50, m18, test="Chisq") # Removing B*D does improve fit
+anova(m50, m72, test="Chisq") # Adding A*B does not improve fit
+m50
 ```
 
 ```{r}
-fem_model<-glm(flew_b~total_eggs_c*eggs_b, family=binomial, data=data_fem) # strong negative effect from eggs_b, no other effects (although these two interactions are basically the same thing, not sure which to use)
+fem_model<-glm(flew_b~total_eggs_c*eggs_b + sym_dist*eggs_b, family=binomial, data=data_fem) 
 summary(fem_model)
 ```
 
+* strong negative effect from eggs_b alone, no other significant effects 
+
 ```{r}
-ffem_model<-glmer(flew_b~eggs_b*total_eggs_c + (1|population) + (1|trial_type), family=binomial, data=data_fem) # no error
+ffem_model<-glmer(flew_b~total_eggs_c*eggs_b + sym_dist*eggs_b + (1|population) + (1|trial_type), family=binomial, data=data_fem) 
 summary(ffem_model) 
+# did not change effects or improve the fit
 ```
 
-
-```{r fig.width=7, fig.height=2.5}
-pf1 <- as.grob(expression(
-  plot(data_fem$flew_b, data_fem$total_eggs)))
-# seems like if you generally laid less eggs you flew, but a lot of females laid few and also didn't fly
-pf2 <- as.grob(expression(
-  plot(data_fem$mass, data_fem$total_eggs)))
-pf3 <- as.grob(expression(
-  plot(data_fem$sym_dist,data_fem$total_eggs)))
-grid.arrange(pf1,pf2,pf3, ncol=3)
-```
 
 # Male Data | Remodeling with new covariates 
 
-
 ```{r}
+source("clean_flight_data.R")
+data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+data_male <- data_all[data_all$sex=="M",]
+
+# Remove any missing masses
+data_male <- data_male %>%
+  filter(!is.na(mass))
+
+# Recentering --> can create a script for this --> recentering on groups
+
+data_male$lat_c<-data_male$latitude - mean(data_male$latitude)
+data_male$sym_dist<-abs(data_male$latitude-25.49197)
+data_male$mass_c <- data_male$mass - mean(data_male$mass, na.rm=TRUE) 
+data_male$beak_c <- data_male$beak-mean(data_male$beak, na.rm=TRUE)
+data_male$thorax_c <- data_male$thorax-mean(data_male$thorax, na.rm=TRUE)
+data_male$body_c <- data_male$body-mean(data_male$body, na.rm=TRUE) 
+data_male$wing_c <- data_male$wing-mean(data_male$wing, na.rm=TRUE) 
+
 # recap of covariates with significant effects
-summary(glm(flew_b~days_from_start_c, data=data_male, family=binomial))
-summary(glm(flew_b~mass_c, data=data_male, family=binomial)) 
+summary(glm(flew_b~days_from_start_c, data=data_male, family=binomial)) # days_from_start_c
+summary(glm(flew_b~mass_c, data=data_male, family=binomial)) # mass_c
 ```
 
 ```{r}
-missing_mass <- subset(data_male, is.na(data_male$mass))
-data_male <- setdiff(data_male, missing_mass)
-
 R = data_male$flew_b
 A = data_male$host_c
 B = data_male$sym_dist
-C = data_male$mass_c # would I need to recenter based on data split?
-D = data_male$days_from_start_c
+C = data_male$mass_c
+D = data_male$days_from_start_c 
 
 data<-data.frame(R, A, B, C, D)
-head(data) #kable()
 
 # Automatic stepwise functions using AIC to decide between models
-model.null <- glm(R~1, family=binomial, data = data_male)
-model.large <-glm(R~A*B*C*D, family=binomial, data = data_male)
+model.null <- glm(R~1, family=binomial, data=data)
+model.large <-glm(R~A*B*C*D, family=binomial, data=data)
 
 # Backwards
-#step(model.large, direction = "backward")
+#m_backwards <- step(model.large, direction = "backward")
 ```
 
 ```{r}
@@ -1145,11 +1043,13 @@ model.large <-glm(R~A*B*C*D, family=binomial, data = data_male)
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R")
 AICs <- sort(summary$AIC)
-models <- sort(P, decreasing=TRUE, index.return=TRUE)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:4]
-models <- models$ix[1:4]
-rbind(AICs, models) # top models and their AIC values
+AICs <- AICs[1:top]
+models <- models_init$ix[1:top]
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
 ```
 
 m13 <-  glm(formula = R ~ A + C + D, family = binomial, data = data) *host, mass, days_from_start*
@@ -1159,20 +1059,33 @@ m15 <- glm(formula = R ~ A + B + C + D, family = binomial, data = data) *host, s
 ```{r}
 anova(m13, m27, test="Chisq") # Adding A*D does not improve fit
 anova(m13, m15, test="Chisq") # Adding B effect does not improve fit
+m13
 ```
+R = data_male$flew_b
+A = data_male$host_c
+B = data_male$sym_dist
+C = data_male$mass_c
+D = data_male$days_from_start_c 
 
 ```{r}
 male_model1<-glm(flew_b~host_c + mass_c + days_from_start_c, family=binomial, data=data_male) 
-male_model2<-glmer(flew_b~host_c + mass_c + days_from_start_c + (1|population) + (1|trial_type), family=binomial,
-                   data=data_male) 
-summary(male_model1) # strong negative effect from mass, strong negative effect of host_c, strong negative effect of days_from_start_c
-summary(male_model2) # strong negative effect from mass and days_from_start but now marginal effect from host
-
-# less likely to fly if you are from GRT, have more mass, and fly later (older bug..?)
+summary(male_model1) 
 ```
+
+* strong negative effect from mass;
+* strong negative effect of host_c;
+* strong negative effect of days_from_start_c;
 
 ```{r}
-plot(data_male$mass, data_male$flew_b) # only a few large ones...really driving this but need to go back and check in the morphology if it's a typo or a a big male, but beside that looks pretty 50-50
+male_model2<-glmer(flew_b~host_c + mass_c + days_from_start_c + (1|population) + (1|trial_type), family=binomial,
+                   data=data_male) 
+summary(male_model2) 
+# did not improve fit but did change the effect significance
 ```
+* strong negative effect from mass;
+* strong negative effect for days_from_start;
+* but now marginal effect from host
+
+* less likely to fly if you are from GRT, have more mass, and fly later (older bug..?)
 
 
