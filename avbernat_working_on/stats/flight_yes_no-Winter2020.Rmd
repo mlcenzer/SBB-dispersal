@@ -11,10 +11,11 @@ output: html_document
 rm(list=ls())
 setwd("~/Desktop/Rstats-winter2020/")
 
-library(datetime)
 library(lme4)
 library(lubridate)
 library(broom)
+library(dplyr)
+library(glmnet)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -24,8 +25,11 @@ knitr::opts_chunk$set(echo = TRUE)
 Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice in the flight mill and observed from 8 AM to (5-8 PM) each day.
 
 ```{r}
-data_all<-read.csv("main_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
-data_all<-data_all[data_all$flew!="",]
+#data_all<-read.csv("complete_flight_data-Winter2020.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+#data_all<-data_all[data_all$flew!="",]
+
+data_all<-read.csv("complete_flight_data-Winter2020.csv", header=TRUE, sep=",", stringsAsFactors=FALSE)
+#data_all<-read.csv("main_data.csv", header=TRUE)
 ```
 
 # Recoding column values
@@ -35,7 +39,7 @@ data_all$flew_b<-0
 data_all$flew_b[data_all$flew=="Y"]<-1
 
 data_all$host_c[data_all$host_plant=="K.elegans"]<-1
-data_all$host_c[data_all$host_plant=="C. corindum" | data_all$host_plant=="C. corindum "]<- -1
+data_all$host_c[data_all$host_plant=="C. corindum"]<- -1
 
 data_all$sex_c<--1
 data_all$sex_c[data_all$sex=="F"]<-1
@@ -55,6 +59,11 @@ data_all$min_from_start <- as.integer(data_all$total_duration / 60)
 data_all$days_from_start <- 0
 data_all$test_date <- as_date(data_all$test_date)
 dates <- sort(unique(data_all$test_date))
+
+data_all$wing_morph <- 0
+data_all$wing_morph[data_all$w_morph=="L"]<-1 
+data_all$wing_morph[data_all$w_morph=="LS"]<- 2
+
 
 for (i in 1:length(dates)){
   day_diff <- dates[i] - dates[1]
@@ -79,14 +88,49 @@ This model will not converge because of singularity in the random factor ID and 
 ## All trials
 
 ```{r}
+# Experimental Set-Up Covariates:
+
 ####### No effect of chamber
-tidy(glm(flew_b~chamber, data=data_all, family=binomial))
+summary(glm(flew_b~chamber, data=data_all, family=binomial))
 
 ####### Effect of test date
-tidy(glm(flew_b~days_from_start, data=data_all, family=binomial))
+summary(glm(flew_b~days_from_start, data=data_all, family=binomial))
 
 ####### Effect of test time
-tidy(glm(flew_b~min_from_start, data=data_all, family=binomial))
+summary(glm(flew_b~min_from_start, data=data_all, family=binomial))
+
+```
+
+```{r}
+# Biological Effects:
+
+####### Effect of mass
+summary(glm(flew_b~mass, data=data_all, family=binomial))
+
+####### Effect of number of eggs laid
+summary(glm(flew_b~total_eggs, data=data_all, family=binomial))
+
+####### Effect of whether eggs were laid or not
+summary(glm(flew_b~eggs_b, data=data_all, family=binomial))
+```
+
+```{r}
+# Morphology Effects:
+
+####### Effect of beak length
+summary(glm(flew_b~beak, data=data_all, family=binomial))
+
+####### Effect of thorax length
+summary(glm(flew_b~thorax, data=data_all, family=binomial))
+
+####### Effect of body length
+summary(glm(flew_b~body, data=data_all, family=binomial))
+
+####### No effect of wing length
+summary(glm(flew_b~wing, data=data_all, family=binomial))
+
+####### No effect of wing morph (check how annotated the wing morph)
+summary(glm(flew_b~wing_morph, data=data_all, family=binomial)) # but close p val = 0.0512
 
 ```
 
@@ -107,7 +151,7 @@ tidy(glm(flew_b~min_from_start, data=data_T1, family=binomial))
 
 ```
 
-If random factor is significant, what do you do?
+# min_from_start as covariate 
 
 ```{r}
 R = data_T1$flew_b
@@ -117,32 +161,31 @@ C = data_T1$sym_dist
 D = data_T1$min_from_start # as a covariate 
 
 data<-data.frame(R, A, B, C, D)
-#data<-data.frame(R, A, B, C)
 head(data) #kable()
 
 # Automatic stepwise functions using AIC to decide between models
-model.null <- glm(R~1, family=binomial, data = data_T1)
-model.large <-glm(R~A*B*C*D, family=binomial, data=data_T1)
+model.null <- glm(R~1, family=binomial, data=data)
+model.large <-glm(R~A*B*C*D, family=binomial, data=data)
 
 # Backwards
-#step(model.large, direction = "backward")
+#m_backwards <- step(model.large, direction = "backward")
 ```
 
 For backwards selection:
 
 - # Warning message: glm.fit: fitted probabilities numerically 0 or 1 occurred (https://stats.stackexchange.com/questions/11109/how-to-deal-with-perfect-separation-in-logistic-regression). Seems to be happening for the saturated model only. And that is why the backwards selection chooses the saturated model...
 
-- Minimum AIC value from the backwards selection function:  m_backwards <- glm(formula = R ~ A + B + C + D + A:B + A:C + A:D + B:D + C:D + A:B:D + A:C:D, family = binomial, data = data), AIC: 325.2
+- Minimum AIC value from the backwards selection function:  m_backwards <- glm(formula = R ~ A + B + C + D + A:B + A:D + B:D + C:D + A:B:D, family = binomial, data = data), AIC: 323.47
 
 ```{r}
 # Forwards
-#step(model.null, scope = ~ (A*B*C*D), direction = "forward")
+#m_forwards <- step(model.null, scope = ~ A*B*C*D, direction = "forward")
 ```
+
 For forwards selection:
 
-- Minimum AIC value from the forwards selection function:  m_forwards <- glm(formula = R ~ D + B, family = binomial, data = data), AIC: 337.1
+- Minimum AIC value from the forwards selection function:  m_forwards <- glm(formula = R ~ D + B, family = binomial, data = data_T1), AIC: 332.14
 
-    
 ```{r}
 #run AICprobs script
 source("AICprobabilities.R")
@@ -153,6 +196,81 @@ models <- sort(P, decreasing=TRUE, index.return=TRUE)
 AICs <- AICs[1:4]
 models <- models$ix[1:4]
 rbind(AICs, models) # top models and their AIC values
+```
+- Warning message: glm.fit: fitted probabilities numerically 0 or 1 occurred
+
+The issue of 0/1 probabilities: it means your problem has separation or quasi-separation (a subset of the data that is predicted perfectly and may be running a subset of the coefficients out to infinity). That can cause problems, so you will want to look at the coefficients (especially those that are large and have large uncertainty intervals) and at data with probability scores near zero or one (or link-scores with large absolute values).
+
+https://community.rstudio.com/t/logistic-regression-model-glm-fit-fitted-probabilities-numerically-0-or-1-occurred/9828 ==> suggests giving glmnet a try - it introduces a regularization/constraints that can help a bit and should be performant.
+
+glmnet documentation: https://www.rdocumentation.org/packages/glmnet/versions/2.0-16/topics/glmnet
+
+Best technique = use all the variables in the model but restrict the coefficients (explained around 7 min: https://www.youtube.com/watch?v=BU2gjoLPfDc) --> Ridge regression vs. Lasso regression
+
+glmnet and coordinate descent; solve the Lasso problem by ...
+
+(1) coordinate descent which means you got a whole bunch of parameters given a value of lambda with a cost parameter and what we're going to do is optimize each parameter seperately holding all the others fixed and cycle around until the cofficients stablize. This is efficient.
+(2) do this on a grid of lambda values, from  lambda max to lambda min 
+(3) can do this with a variety of loss functions and additive penalties 
+
+
+**Features of glmnet (18 minutes into video):**
+(i) models (including binomial)
+(ii) elastic net penalty includes ridge and lasso, and hybrids in between
+(iii) speed
+(iv) can handle large number of variables p
+(v) cross validation functions for all models
+(vi) can allow for spare matrix formats for X, and hence massive
+(vii) can provide lower and upper bounds for each coefficient e.g. positive lasso
+(viii) offsets (often used in Poisson models), penalty strengths (zero penalty means a variable is always in the model), observation weights allowed, can fit no-intercept models, session-wise parameters (using glmnet.options)
+
+Source 1: https://drsimonj.svbtle.com/ridge-regression-with-glmnet
+Source 2: https://community.rstudio.com/t/logistic-regression-model-glm-fit-fitted-probabilities-numerically-0-or-1-occurred/9828/14
+Source 3: https://www.youtube.com/watch?v=BU2gjoLPfDc
+Source 4: https://web.stanford.edu/~hastie/Papers/Glmnet_Vignette.pdf
+
+```{r}
+#?glmnet 
+# Glmnet is a package that fits a generalized linear model via penalized maximum likelihood.
+
+x <- data %>% 
+  select(A,B,C,D) %>% 
+  data.matrix()
+y <- data$R
+
+fit <- glmnet(x,y, family="binomial", alpha=1) # alpha = 1 for lasso, 0 for ridge
+fit # as decrease lambda, the degrees of freedom increases
+plot(fit, label=TRUE) # coefficient profile (that's plotted by the l1 norm of the coefficient vector) - 4 = D and 3 = 3 are near 0
+
+```
+
+The axis above indicates the number of nonzero coefficients at the current λ, which is the effective degrees of freedom (df ) for the lasso.
+
+```{r}
+summary(fit) # extract all of the fitted models
+lambda.1se <- coef(fit,s=0.1) # extract coefficients at a single value of lambda
+lambda.1se
+```
+
+lambda.1se gives the most regularized model such that error is within one standard error of the minimum
+
+```{r}
+# cross-validation curve
+cv.fit <- cv.glmnet(x,y, family="binomial")
+plot(cv.fit) 
+```
+Large error bars.
+
+The lowest point in the curve indicates the optimal lambda: the log value of lambda that best minimizes the error in cross-validation. We can extract this values as:
+
+```{r}
+opt_lambda <- cv.fit$lambda.min
+opt_lambda
+```
+
+```{r}
+lambda.min <- coef(cv.fit, s = opt_lambda)
+lambda.min # removes C
 ```
 
 m23 <- glm(formula = R ~ A * B + D, family = binomial, data = data)
@@ -166,15 +284,17 @@ anova(m23, m43, test="Chisq") ## Replacing the A*D interaction with the B*D inte
 anova(m23, m73, test="Chisq") ## Adding the A*D and C*D interaction does not improve fit
 ```
 
+Comparing models: Because the changes in deviance are all positive, meaning that Model 2 had a higher deviance value, which suggests that the Model 1 fits better Model 2.
+
 ```{r}
 model_T1<-glm(flew_b~host_c*sex_c + min_from_start, family=binomial, data=data_T1)
-tidy(model_T1)
+summary(model_T1)
 ```
 
 * No detectable effect of being from GRT; 
 * no longer a strong negative effect of being far from the sympatric zone; 
-* strong negative effect of being female;
-* positive effect of a bug's trial start time. 
+* strong negative effect of being female that if F then less likely to be dispersive
+* positive effect of a bug's trial start time, that if later in the day, then more likely to be dispersive.
 * strong positive interaction between sex and host plant, such that the positive effects of being on GRT are stronger if you're female
 
 ```{r}
@@ -186,6 +306,262 @@ model_T1_final <-glmer(flew_b~host_c*sex_c + min_from_start + (1|population),
 tidy(model_T1_final)
 ## Did not change effect estimates or improve model fit
 ```
+Should I add ID as a random factor?
+
+# mass as covariate 
+
+```{r}
+# Missing mass for some (3 NA)
+missing_mass <- subset(data_T1, is.na(data_T1$mass))
+missing_mass
+# 339, 48, and 342 have no mass and were tested on the same date
+data_T1 <- setdiff(data_T1, missing_mass)
+
+R = data_T1$flew_b
+A = data_T1$host_c
+B = data_T1$sex_c
+C = data_T1$sym_dist
+D = data_T1$mass# as a covariate 
+
+data<-data.frame(R, A, B, C, D)
+head(data) #kable()
+
+# Automatic stepwise functions using AIC to decide between models
+model.null <- glm(R~1, family=binomial, data = data)
+model.large <-glm(R~A*B*C*D, family=binomial, data=data)
+
+# Backwards
+#step(model.large, direction = "backward")
+```
+For backwards selection:
+
+- Minimum AIC value from the backwards selection function:  m_backwards <- glm(formula = R ~ A + B + C + D + B:C + A:D + B:D + C:D + B:C:D, family = binomial, data = data_T1), family = binomial, data = data), AIC: 407.1
+
+```{r}
+# Forwards
+#m_forwards <- step(model.null, scope = ~ (A*B*C*D), direction = "forward")
+```
+
+For forwards selection:
+
+- Minimum AIC value from the forwards selection function:  m_forwards <- glm(formula = R ~ D + B, family = binomial, data = data_T1), AIC: 408.54
+
+```{r}
+#run AICprobs script
+source("AICprobabilities.R")
+source("generic models-binomial glm 4-FF.R")
+AICs <- sort(summary$AIC)
+models <- sort(P, decreasing=TRUE, index.return=TRUE)
+
+AICs <- AICs[1:4]
+models <- models$ix[1:4]
+rbind(AICs, models) # top models and their AIC values
+```
+
+m50 <- glm(formula = R ~ A * D + B * D, family = binomial, data = data)
+m26 <- glm(formula = R ~ A * D + B, family = binomial, data = data)
+m43 <- glm(formula = R ~R ~ A * B + B * D, family = binomial, data = data)
+m72 <- glm(formula = R ~ A * B + A * D + B * D, family = binomial, data = data)
+
+```{r}
+anova(m50, m26, test="Chisq") ## The B*D interaction does improve fit (neg Dev)
+anova(m26, m43, test="Chisq") ## Adding the B*D and replacing A*D with A*B interaction does not improve fit
+anova(m26, m73, test="Chisq") ## Adding the A*B and B*D interaction does not improve fit
+
+# lost C again
+```
+
+Comparing models: 
+m50 vs. m26: Becuse the change in deviance is negative, meaning that the Model 2 had a lower deviance value (pvalue = 1), which suggests that Model 2 fits better than Model 1.
+m26 vs. m50: Change in deviance is positive
+m26 vs. m73: Change in deviance in positive 
+
+```{r}
+model_T1<-glm(flew_b~host_c*mass + sex_c, family=binomial, data=data_T1) # mass*host interaction 
+summary(model_T1)
+```
+
+* no longer a strong negative effect of being far from the sympatric zone; 
+* No detectable effect of mass, but has a large estimate...
+* strong negative effect if from GRT, less likely to be dispersive if from GRT
+* host*mass ineraction shows a very strong positive effect, such that if from GRT and have large mass then more likely to be dispersive (but seems like more is going on)
+* strong negative effect of being female, that if female then less likely to be dispersive
+
+What to do with mass then? Try adding it as a single effect and as an interaction term between host plant and mass, etc.
+
+```{r}
+# Missing mass for some (3 NA)
+missing_mass <- subset(data_T1, is.na(data_T1$mass))
+missing_mass
+# 339, 48, and 342 have no mass and were tested on the same date
+data_T1 <- setdiff(data_T1, missing_mass)
+
+R = data_T1$flew_b
+A = data_T1$host_c
+B = data_T1$sex_c
+C = data_T1$sym_dist
+D = data_T1$min_from_start # as a covariate 
+E = data_T1$mass
+
+data<-data.frame(R, A, B, C, D, E)
+head(data) #kable()
+```
+
+Previous top models:
+
+m23 <- glm(formula = R ~ A * B + D, family = binomial, data = data) 
+m26 <- glm(formula = R ~ A * E + B, family = binomial, data = data)
+
+Let's compare them to
+
+m30 <- glm(formula = R ~ A * B + D + E, family = binomial, data = data)
+m31 <- glm(formula = R ~ A * E + D + E, family = binomial, data = data)
+m32 <- glm(formula = R ~ A * B + A * E + D + E, family = binomial, data = data)
+m33 <- glm(formula = R ~ A * B + A * E + B * E + D, family = binomial, data = data) 
+m34 <- glm(formula = R ~ A * B + A * E + B * E + D + C, family = binomial, data = data)
+
+m35 <- glm(formula = R ~ A * B + A * E + B * E + D + A * B * E, family = binomial, data = data)
+m36 <- glm(formula = R ~ A * B + A * E + B * E + D + C + A * B * E, family = binomial, data = data)
+m37 <- glm(formula = R ~ A * B + A * E + B * E + D + A * B * D, family = binomial, data = data)
+m38 <- glm(formula = R ~ A * B + A * E + B * E + D + C + A * B * D, family = binomial, data = data)
+
+m39 <- glm(formula = R ~ A * B + A * E + B * E + A * B * D + A * B * E, family = binomial, data = data)
+m40 <- glm(formula = R ~ A * B + A * E + B * E + A * B * D + D * B * E, family = binomial, data = data)
+m41 <- glm(formula = R ~ A * B + A * E + B * E + A * B * D + A * B * C, family = binomial, data = data)
+m42 <- glm(formula = R ~ A * B + A * E + B * E + A * B * D + D * B * C, family = binomial, data = data)
+
+m43 <- glm(formula = R ~ A * B + A * E + B * E + A * B * D + D * B * E + A * D * E, family = binomial, data = data)
+
+```{r}
+m0 <- glm(R~1, data=data, family=binomial)
+m23 <- glm(formula = R ~ A * B + D, family = binomial, data = data)
+m26 <- glm(formula = R ~ A * E + B, family = binomial, data = data)
+
+m30 <- glm(formula = R ~ A * E + D + E, family = binomial, data = data)
+m31 <- glm(formula = R ~ A * B + D + E, family = binomial, data = data)
+m32 <- glm(formula = R ~ A * B + A * E + D + E, family = binomial, data = data)
+m33 <- glm(formula = R ~ A * B + A * E + B * E + D, family = binomial, data = data) 
+m34 <- glm(formula = R ~ A * B + A * E + B * E + D + C, family = binomial, data = data)
+
+m35 <- glm(formula = R ~ A * B + A * E + B * E + D + A*B*E, family = binomial, data = data)
+m36 <- glm(formula = R ~ A * B + A * E + B * E + D + C + A*B*E, family = binomial, data = data)
+
+m37 <- glm(formula = R ~ A * B + A * E + B * E + A*B*D, family = binomial, data = data)
+m38 <- glm(formula = R ~ A * B + A * E + B * E + C + A*B*D, family = binomial, data = data)
+
+m39 <- glm(formula = R ~ A * B + A * E + B * E + A*B*D + A*B*E, family = binomial, data = data)
+m40 <- glm(formula = R ~ A * B + A * E + B * E + A*B*D + D*B*E, family = binomial, data = data)
+m41 <- glm(formula = R ~ A * B + A * E + B * E + A*B*D + A*B*C, family = binomial, data = data)
+m42 <- glm(formula = R ~ A * B + A * E + B * E + A*B*D + D*B*C, family = binomial, data = data)
+
+m43 <- glm(formula = R ~ A * B + A * E + B * E + A*B*D + D*B*E + A*D*E, family = binomial, data = data)
+
+# Identify top models using AIC
+summary<-AIC(m23,m26,m30,m31,m32,m33,m34,m35,m36,m37,m38,m39,m40,m41,m42,m43,m0)
+summary <- cbind(model = rownames(summary), summary)
+rownames(summary) <- 1:nrow(summary)
+summary <- summary[order(summary$AIC),]
+
+# Want the largest probability
+source("AICprobabilities.R")
+P<-AICprobs(summary$AIC)
+probs <- sort(P, decreasing=TRUE) # we want the largest one of these
+summary <- cbind(probs, summary)
+summary_table <- as.data.frame(summary)
+summary_table
+```
+
+```{r}
+# Model Comparisons
+anova(m23, m31, test="Chisq") # Adding E effect and replacing A*B with A*E interaction term does not improve fit
+anova(m23, m32, test="Chisq") # Adding E effect and A*E effect does not improve fit
+anova(m23, m30, test="Chisq") # Neg dev; adding E effect does improve fit
+anova(m30, m26, test="Chisq") # Large neg deviance; A*E and simplier model is a better fit than A*B interaction and more effects
+anova(m30, m33, test="Chisq") # Model 2 significantly better fit with B*E interaction
+anova(m33, m34, test="Chisq") # Adding C (sym_dis) effect does not improve fit 
+anova(m33, m36, test="Chisq") # Adding three term interaction A*B*E and removing C effect does not improve fit
+anova(m33, m35, test="Chisq") # Adding three term interaction A*B*E does not improve fit 
+anova(m33, m37, test="Chisq") # Model 2 significantly better fit after adding three term interaction A*B*D amd removing C interaction
+anova(m37, m38, test="Chisq") # adding C effect does not improve fit
+anova(m37, m39, test="Chisq") # adding A*B*E interaction does not improve fit
+anova(m37, m40, test="Chisq") # adding D*B*E interaction does not improve fit
+anova(m37, m41, test="Chisq") # adding A*B*C interaction does not improve fit
+anova(m37, m42, test="Chisq") # adding D*B*C interaction does not improve fit
+anova(m37, m43, test="Chisq") # adding D*B*E and A*D*E interactions does not improve it
+
+# seems like more complicated models will not explain/fit the data better
+```
+
+Best fitting model:
+
+m37 <- glm(formula = R ~ A * B + A * E + B * E + D + A * B * D, family = binomial, data = data)
+
+```{r}
+model_T1<-glm(flew_b~host_c*mass + sex_c*mass + min_from_start + host_c*sex_c*min_from_start, family=binomial, data=data_T1)
+summary(model_T1)
+```
+
+Warrning: glm.fit: fitted probabilities numerically 0 or 1 occurred ==> probably because of the host* min_rom *start effect is so small...
+
+* still no effect of being far from the sympatric zone; 
+* Only marginal effects left. This includes:
+(i) min_from_start (+)
+(ii) mass*sex (+++)
+(iii) host*sex (--)
+(iv) host * sex * min_from_start (+)
+
+All these marginal effects are biological components to soapberry bug dispersability. Where large effects between mass * sex and host * sex. If female and heavier, more likely to be dispersive, if female and from GRT then less likely to be dispersive...
+
+
+```{r}
+summary <-aggregate(flew_b~host_c*mass + sex_c*mass + min_from_start + host_c*sex_c*min_from_start, data=data_T1, FUN=mean)
+## Consider covariates
+
+model_T1_final <-glmer(flew_b~host_c*mass + sex_c*mass + min_from_start + host_c*sex_c*min_from_start + (1|population), family=binomial, data=data_T1)
+isSingular(model_T1_final)
+
+summary(model_T1_final)
+## Did not change effect estimates or improve model fit
+```
+Error: Some predictor variables are on very different scales: consider rescalingboundary (singular) fit: see ?isSingular
+
+```{r}
+# Glmnet - fits a generalized linear model via penalized maximum likelihood.
+data
+x <- data %>% 
+  select(A,B,C,D,E) %>% 
+  data.matrix()
+y <- data$R
+
+fit <- glmnet(x,y, family="binomial", alpha=1) # alpha = 1 for lasso, 0 for ridge
+fit # as decrease lambda, the degrees of freedom increases
+plot(fit, label=TRUE) # coefficient profile (that's plotted by the l1 norm of the coefficient vector) - 4 = D and 3 = C are near 0.
+
+```
+
+# total_eggs and eggs_b as covariate
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ## T2
 
