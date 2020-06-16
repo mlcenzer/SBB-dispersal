@@ -5,19 +5,17 @@ date: "4/17/2020"
 output: html_document
 ---
 
-# Winter 2020 Flight Trials 
-
 ```{r setup, include=FALSE}
 rm(list=ls())
 setwd("~/Desktop/Rstats-winter2020/")
 
 # For Modeling
 library(lme4)
+#library(glmnet)
 
 # For Data Summaries and Manipulation
 library(jtools)
 library(dplyr)
-library(glmnet)
 library(mosaic)
 
 # For Date and Time Objects 
@@ -33,185 +31,190 @@ ggplot2::theme_set(ggplot2::theme_bw())
 ggplot2::theme_update(panel.grid.major = ggplot2::element_line(colour = "grey75"))
 ```
 
-# Reading the data
+## Winter 2020 Flight Trials: Mass Modeling {.tabset}
 
-Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice in the flight mill and observed from 8 AM to (5-8 PM) each day.
+Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice for multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. Used multivariate (lm) and mixed effect modeling (lmer) to analyze the mass results.
 
-```{r}
-#data_all<-read.csv("complete_flight_data-Winter2020.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
-#data_all<-data_all[data_all$flew!="",]
-data_all<-read.csv("complete_flight_data-Winter2020.csv", header=TRUE, sep=",", stringsAsFactors=FALSE)
-```
+### All Data
 
-# Recoding column values
+#### Reading the data
 
 ```{r}
-data_all <- subset(data_all, select = -c(channel_num, channel_letter, NOTES,duration_check))
+source("clean_flight_data.R") # Script that loads and cleans up the data
+source("regression_output.R") # A script that cleans up regression outputs and prints in color
+source("regression_output2.R") # A script that cleans up regression outputs and prints in black and white
 
-# Mass
-data_all$mass_c <- data_all$mass-mean(data_all$mass, na.rm=TRUE) 
-
-# Host
-data_all$host_c[data_all$host_plant=="K.elegans"]<-1
-data_all$host_c[data_all$host_plant=="C. corindum"]<- -1
-
-# Sex
-data_all$sex_c<--1
-data_all$sex_c[data_all$sex=="F"]<-1
-
-# Distance From Sympatric Zone
-data_all$lat_c<-data_all$latitude-mean(data_all$latitude)
-data_all$sym_dist<-abs(data_all$latitude-25.49197)
-
-# Morphology
-
-# Wing Morph
-data_all$w_morph_c <- 0
-data_all$w_morph_c[data_all$w_morph=="L"] <- 1 
-data_all$w_morph_c[data_all$w_morph=="LS"]<- -1
-
-# Beak Length
-data_all$beak_c <- data_all$beak-mean(data_all$beak, na.rm=TRUE)
-
-# Thorax Length
-data_all$thorax_c <- data_all$thorax-mean(data_all$thorax, na.rm=TRUE)
-
-# Body Length
-data_all$body_c <- data_all$body-mean(data_all$body, na.rm=TRUE)
-
-# Wing Length
-data_all$wing_c <- data_all$wing-mean(data_all$wing, na.rm=TRUE)
-
-####################################################################################
-
-# Yes-No Flew
-data_all$flew_b<-0
-data_all$flew_b[data_all$flew=="Y"]<-1
-
-# Yes-No Eggs on Flight Trial Day
-data_all$eggs_b<-0
-data_all$eggs_b[data_all$EWM=="Y"]<-1
-
-# ID
-data_all$ID<-as.factor(data_all$ID)
-
-# Flight Duration (minutes)
-data_all$minute_duration <- 0
-data_all$minute_duration <- as.integer(data_all$total_duration / 60)
-data_all$minute_duration_c <- data_all$minute_duration-mean(data_all$minute_duration)
-
-# Minutes From When Incubator Lights Turned On
-t_IncLights_turn_on <- 8 # AM
-data_all$min_from_IncStart <- 0
-for(row in 1:length(data_all$ID)){
-  time <- chron(times=data_all$time_start[row])
-	minute<- minutes(time)
-	hour <- hours(time)
-	data_all$min_from_IncStart[row] <- 60*(hour - t_IncLights_turn_on) + minute
-} 
-data_all$min_from_IncStart_c <- data_all$min_from_IncStart-mean(data_all$min_from_IncStart)
-
-# Days From Starting Time
-data_all$days_from_start <- 0
-data_all$test_date <- as_date(data_all$test_date) 
-dates <- sort(unique(data_all$test_date))
-
-for (i in 1:length(dates)){
-  day_diff <- dates[i] - dates[1]
-  for (r in 1:length(data_all$test_date)){
-    if (data_all$test_date[r] == dates[i]) {
-      data_all$days_from_start[r] = day_diff }
-  }
-}
-
-data_all$days_from_start_c <- data_all$days_from_start-mean(data_all$days_from_start)
-
-# Chamber
-chambers <- sort(unique(data_all$chamber))
-recode <- c(1,2,3,4,-1,-2,-3,-4)
-data_all$chamber_c <- 0
-for (i in seq(1:length(chambers))) {
-  data_all$chamber_c[data_all$chamber==chambers[i]] <- recode[i]
-}
-
-#Trial Type
-data_all$trial_type_b <- 0
-data_all$trial_type_b[data_all$trial_type=="T1"] <- 1
-data_all$trial_type_b[data_all$trial_type=="T2"] <- 2
+data_all <- read_flight_data("all_flight_data-Winter2020.csv")
+data_tested <- data_all[data_all$tested == "yes",]
 ```
 
-# T1 vs. T2 Mass Histograms
-
-```{r, fig.width=6, fig.height=2.5}
-data_T1 <- filter(data_all, trial_type == "T1")
-data_T2 <- filter(data_all, trial_type == "T2")
-h1 <- as.grob(expression(hist(data_T1$mass, main="Trial 1", xlab= "Mass (g)")))
-h2 <- as.grob(expression(hist(data_T2$mass, main="Trial 2", xlab = "Mass (g)")))
-hist(data_all$mass, xlab="Mass (g)", main="Soapberry Bug Mass Histogram")
-
-grid.arrange(h1, h2, ncol=2)
-```
+#### Testing Models and Covariates
 
 ```{r}
-h <- gf_histogram(~mass, data=data_all, xlab="Mass (g)", ylab="Count",
-             title="Soapberry Bug Mass Histogram", fill=~trial_type) %>%
-    gf_theme(theme = theme_minimal() )
-h
-# Uncomment below to save graph:
-#ggsave("Mass-Hist-splitbyTrial", plot = h, device="jpeg",width = 5, height = 3)
+####Check for convergence without splitting by trial type
+test_model<-lmer(mass~host_c*sex_c*sym_dist+ (1|trial_type) + (1|ID), data=data_tested) 
+summary(test_model)
+getME(test_model, "lower")
 ```
 
-# Trial 1: Mass by Sex, Host Plant and Distance from Sympatric Zone 
+**Experimental Set-Up Effects**
 
-```{r, fig.width=6, fig.height=2.5}
-p1 <- as.grob(expression(
-  plot(data_T1$sex_c, data_T1$mass, ylab="Mass (g)", xlab="Sex")))
-p2 <- as.grob(expression(
-  plot(data_T1$host_c, data_T1$mass, ylab="Mass (g)", xlab="Host")))
-p3 <- as.grob(expression(
-  plot(data_T1$sym_dist, data_T1$mass, ylab="Mass (g)", 
-       xlab="Distance From Sympatric Zone"))) 
-p.all <- gf_point(mass ~ sym_dist, data = data_T1, 
-                  color = ~host_c, ylab="Mass (g)", 
-                  xlab="Distance From Sympatric Zone", 
-                  alpha = ~sex_c) # GRT = blue, BV = black
-p.all
+```{r echo=FALSE}
+###### No effect of chamber
+tidy_regression_bw(lmer(mass_c~chamber + (1|ID) + (1|trial_type), data=data_tested)) # shouldn't matter because this measurement was taken seperate from the chamber.
 
-g <- grid.arrange(p1,p2,p3, ncol=3, top= "Trial 1")
+####### No effect of test date
+tidy_regression_bw(lmer(mass_c~days_from_start_c + (1|ID) + (1|trial_type), data=data_tested)) # t val = 1.975
 
-# Uncomment below to save graph:
-# ggsave("Massbysex,host,symp_zone", plot = g, device="jpeg", width = 9, height = 4)
-# If Female and From GRT and farther from HS then have more mass.
+####### No effect of test time
+tidy_regression_bw(lmer(mass_c~min_from_IncStart_c + (1|ID) + (1|trial_type), data=data_tested)) 
 ```
 
-# Trial 1: Mass by Morphology
+**Biological Effects**
+
+```{r, echo=FALSE}
+####### Effect of number of eggs laid
+tidy_regression_bw(lmer(mass_c~total_eggs + (1|ID), data=data_tested)) # model didn't converge with (1|trial_type)
+
+####### Effect of whether eggs were laid or not
+tidy_regression_bw(lmer(mass_c~eggs_b + (1|ID) + (1|trial_type), data=data_tested))
+```
+
+**Morphology Effects**
+
+```{r, echo=FALSE}
+####### Effect of beak length
+tidy_regression_bw(lmer(mass_c~beak_c + (1|ID), data=data_tested)) # model didn't converge with (1|trial_type)
+
+####### Effect of thorax length
+tidy_regression_bw(lmer(mass_c~thorax_c + (1|ID) + (1|trial_type), data=data_tested))
+
+####### Effect of body length
+tidy_regression_bw(lmer(mass_c~body_c + (1|ID) + (1|trial_type), data=data_tested))
+
+####### Effect of wing length
+tidy_regression_bw(lmer(mass_c~wing_c + (1|ID) + (1|trial_type), data=data_tested))
+
+####### No effect of wing morph (check how annotated the wing morph) - don't include it b/c almost all tested bugs are long-winged
+```
+
+#### All Data | lmer() A=host, B=sex, C=sym_dist, X=ID, Y=trial_type, Z=chamber 
 
 ```{r}
-# Q: How would I use morphology as covariates?
+data<-data.frame(R=data_tested$mass_c, 
+                 A=data_tested$host_c, 
+                 B=data_tested$sex_c, 
+                 C=data_tested$sym_dist, 
+                 X=data_tested$ID, Y=data_tested$trial_type)
 
-p4 <- as.grob(expression(
-  plot(data_T1$body, data_T1$mass, ylab="Mass (g)", xlab="Body (mm)")))
-p5 <- as.grob(expression(
-  plot(data_T1$beak, data_T1$mass, ylab="Mass (g)", xlab="Beak (mm)")))
-p6 <- as.grob(expression(
-  plot(data_T1$thorax, data_T1$mass, ylab="Mass (g)", xlab="Throax (mm)")))
-p7 <- as.grob(expression(
-  plot(data_T1$wing, data_T1$mass, ylab="Mass (g)", xlab="Wing (mm)")))
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 2-RF + 3-FF.R") # 1 model failed to converge
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
 
-g2 <- grid.arrange(p4,p5,p6,p7, ncol=2, top="Trial 1")
-
-# Uncomment below to save graph:
-#ggsave("MassbyMorphology", plot = g2, device="jpeg", width = 9, height = 7)
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # holds a combined 96% probability 
 ```
 
-# Trial 1 and 2: Flight Duration by Mass
+- m38 <- R ~ B + (1|X) + (1|Y) *effect of sex and the random effects of trial type and ID*
+
+```{r}
+model_alldata <- lmer(mass_c ~ sex_c + (1|ID) + (1|trial_type), data=data_tested)
+tidy_regression_bw(model_alldata)
+```
+
+#### Morphology Modeling
+
+```{r}
+data<-data.frame(R=data_tested$mass_c, 
+                 A=data_tested$beak_c, 
+                 B=data_tested$thorax_c, 
+                 C=data_tested$body_c, 
+                 D=data_tested$wing_c,
+                 X=data_tested$ID, Y=data_tested$trial_type)
+data <- data %>%
+  filter(!is.na(C))
+
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 2-RF + 4-FF.R") # multiple models failed to converge
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+- m275 <- R ~ A * D + B * C + (1 | X) + (1 | Y)
+- 309 <-  R ~ A * D + B * C + B * D + (1 | X) + (1 | Y)
+- 300 <- R ~ A * B + B * C + B * D + (1 | X) + (1 | Y)
+                 
+```{r}
+allmorph_model <- lmer(mass_c ~ beak_c * wing_c + thorax_c * body_c + (1 | ID) + (1 | trial_type), data=data_tested)
+tidy_regression_bw(allmorph_model)
+```
+
+* positive effect of beak length, where the longer the beak the heavier the bug
+* negative effect of wing length, where the longer the wing the lighter the bug
+* positive effect of thorax length, where the longer the thorax the heavier the bug
+* positive effect of body length, where the longer the body the heavier the bug
+* negative effect of beak_c:wing_c, where if wing longer and body longer, then bug lighter *(might be worth it to just do a wing-to-body effect instead)*
+* positive effect of thorax_c:body_c, where the longer the thorax and body, the heavier the bug
+
+```{r}
+#wing2body
+data_tested$wing2body <- data_tested$wing / data_tested$body
+data_tested$wing2body_c <- data_tested$wing2body - mean(data_tested$wing2body, na.rm=TRUE)
+
+data<-data.frame(R=data_tested$mass_c, 
+                 A=data_tested$beak_c, 
+                 B=data_tested$thorax_c, 
+                 C=data_tested$wing2body_c,
+                 X=data_tested$ID, Y=data_tested$trial_type)
+data <- data %>%
+  filter(!is.na(A))
+
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 2-RF + 3-FF.R") # 4 models failed to converge
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+m48 <- R ~ A * C + B + (1 | X) + (1 | Y)
+m52 <- R ~ A * C + B * C + (1 | X) + (1 | Y)
+
+```{r}
+anova(m48, m52, test="Chisq") # Adding B*C interaction does not improve fit
+```
+```{r}
+allmorph_model <- lmer(mass_c ~ beak_c * wing2body_c + thorax_c + (1 | ID) + (1 | trial_type), data=data_tested)
+tidy_regression_bw(allmorph_model)
+```
+* positive effect of beak, where the longer beak the heavier the bug
+* negative effect of wing2body, where the longer the wing to body the lighter the bug
+* positive effect of thorax, where the longer the thorax the heavier the bug
+* negative beak*wing2body interaction, where the longer the beak and longer the wingtobody, the lighter the bug
+
+### All Data Plotting 
+
+#### Flight Duration by Mass
 
 ```{r fig.width=6, fig.height=2.5}
-# Look into what effects how long a bug flies for (aka. distance is another way to do that, which that file has already been written by Meredith). 
 
 #pdf("massby-flightduration.pdf") # alternative way to save graph
 flight_p1 <- as.grob(expression(
-  plot(data_all$mass,data_all$minute_duration, 
+  plot(data_tested$mass,data_tested$minute_duration, 
           main = "All Trials",
           xlab = "Mass (g)", 
           ylab = "Flight duration (min)") %>% 
@@ -220,7 +223,7 @@ flight_p1 <- as.grob(expression(
   abline(v=0.075, col="red")              
 #dev.off() # alt way to save graph
 ))
-yes_fly <- filter(data_all, flew_b == 1)
+yes_fly <- filter(data_tested, flew_b == 1)
 flight_p2 <- as.grob(expression(
   plot(yes_fly$mass,yes_fly$minute_duration, 
                   main = "All Trials, only bugs that flew (yes_flew)",
@@ -240,151 +243,143 @@ flight_p3 <- as.grob(expression(
   abline(v=0.075, col="red")
 ))
 
-grob1 <- as.grob(expression(flight_p))
+grob1 <- as.grob(expression(flight_p1))
 
 grid.arrange(flight_p1, flight_p2, flight_p3, ncol=3)
 ```
 
-# Lmer() with Mass as a Response Variables and Sex, Host Plant, and Sym_Dist as Explanatory Variables
+#### Plotting mass vs. sym_dist * host * sex
 
 ```{r}
-####Check for convergence without splitting by trial type...
-# Q: ...but is mass Gaussian in our population of only long-winged individuals?
+# filter out missing masses
+data_tested <- data_tested %>%
+  filter(!is.na(mass_c))
 
-test_model<-lmer(mass~host_c*sex_c*sym_dist+ (1|trial_type) + (1|ID), data=data_all) 
-summary(test_model)
-getME(test_model, "lower")
-```
-
-```{r}
-# Testing some covariates:
-
-###### No effect of chamber
-summary(lmer(mass~chamber + (1|ID) + (1|trial_type), data=data_all)) 
-
-####### No effect of test date
-summary(lmer(mass~days_from_start + (1|ID) + (1|trial_type), data=data_all)) # t val = 1.975
-
-####### No effect of test time
-summary(lmer(mass~min_from_IncStart + (1|ID) + (1|trial_type), data=data_all)) 
-```
-
-
-```{r}
-data<-data.frame(R=data_all$mass, 
-                 A=data_all$host_c, 
-                 B=data_all$sex_c, 
-                 C=data_all$sym_dist, 
-                 X=data_all$ID, Y=data_all$trial_type, Z=data_all$chamber)
-
-source("AICprobabilities.R")
-source("generic models-gaussian glmer 2-RF + 3-FF.R") #still use this even though did not converge?
-sort(summary$AIC) # model failed to converge 
-sort(P, decreasing=TRUE, index.return=TRUE)
-```
-
-m38 <- R ~ B + (1|X) + (1|Y) *effect of sex and the random effects of trial type and ID*
-m40 <- R ~ A + B + (1|X) + (1|Y) *effect of host, sex, and the random effects of trial type and ID*
-m42 <- R ~ B + C + (1|X) + (1|Y) *effect of sex, sym_dist, and the random effects of trial type and ID*
-
-```{r}
-anova(m38, m40, test="Chiq") # m40 is significant, better fit
-anova(m38, m42, test="Chiq")
-anova(m40, m42, test="Chiq") # m40 better fit
-```
-
-```{r}
-# Comparing Models Visually - not necessary just thought it was neat
-# https://cran.r-project.org/web/packages/jtools/vignettes/summ.html
-
-library(broom.mixed)
-plot_summs(m40, m38, m42, scale = TRUE)
-plot_summs(m40, m38, m42, scale = TRUE, plot.distributions = TRUE)
-```
-
-```{r}
-m40<-lmer(R~A + B + (1|X) + (1|Y), data=data)
-summary(m40) # Sex is the strongest effect, so let's split by sex
-
-# Does adding chamber improve fit?
-chamber_model<-lmer(R~A + B + (1|X) + (1|Y) + (1|Z), data=data) # boundary (singular) fit: see ?isSingular
-summary(chamber_model)
-
-AIC(m40)
-AIC(chamber_model)### It doesn't, since the model with the lowest AIC score is preferred and that is m40.
-```
-
-# Plotting the Best-Fit Model
-
-```{r}
-coef40 <- coef(summary(m40))
-```
-
-```{r}
-# Not a good showing graph, but makes a summary
-p <- gf_point(mass ~ sym_dist, data = data_T1,
+p <- gf_point(mass ~ sym_dist, data = data_tested,
                   color = ~host_plant, 
-                  size = ~sex, # GRT = blue, BV = black
+                  alpha = ~sex, 
                   ylab="Mass (g)", 
-                  xlab="Distance From Sympatric Zone") 
+                  xlab="Distance From Sympatric Zone")
 p
 ```
 
-
-```{r, fig.width=6, fig.height=2.5}
-summary40<-aggregate(mass~sex*host_plant*sym_dist, data=data_all, FUN=mean)
-
-eq_lmer = paste0("mass = ", round(coef40[1],3), "*sex + ", round(coef40[3],3), "*host_plant + ", round(coef40[2],3), " + (1|ID) + (1|trial_type)")
-eq_lmer
+```{r}
+#, fig.width=6, fig.height=2.5}
+summary<-aggregate(mass~sex*host_plant*sym_dist, data=data_all, FUN=mean)
 
 # Uncomment below to save graph
 
 #pdf("lm-mass-model.pdf", width=9, height=6)
 
-plot(summary40$mass~summary40$sym_dist, 
-     col=c(1,2)[as.factor(summary40$sex)], # Female = Black, Male = Red
-     pch=c(19,22)[as.factor(summary40$host_plant)],
+plot(summary$mass~summary$sym_dist, 
+     col=c(1,2)[as.factor(summary$sex)], # Female = Black, Male = Red
+     pch=c(19,22)[as.factor(summary$host_plant)],
      main="Observed Data",
      xlab = "Distance from Sympatric Zone (°)",
      ylab= "Mass (g)", # K. elegans = Squares C.corindum = circles
-     sub=eq_lmer) 
+     ) 
 legend("topright",
        legend = c("C.corindum and F","K.elegans and M"),
        col=c(1,2),
        pch = c(19,22))
-abline(coef40[1], coef40[3], lty = 2) # sex - dotted
-abline(coef40[1], coef40[2]) # host_plant
 
 #dev.off()
 ```
 
+#### Plotting best-fit model (m38) | lmer(mass ~ sex)
+
 ```{r}
+#, fig.width=2.8, fig.height=2.3}
 # Uncomment below to save graphs 
+# For both graphs: need to add xaxt="n" inside plot function to make the customized x-axis
+
 #pdf("lm-massbysex-model.pdf", width=6, height=6)
-eq_sex = paste0("mass = ", round(coef40[1],3), "*sex + ", round(coef40[3],3))
-plot(data_T1$sex_c, data_T1$mass, ylab="Mass (g)", xlab="Sex", main=eq_sex)
-abline(coef40[1], coef40[3])
+source("plotting-lm2.R") 
+lm_plot(data_tested, "sex_c","mass_c", "Sex", "Mass (g)", "Mass by Sex") 
+axis(1, at = seq(-1,1,.5),labels=c("M", " ", " ", " ", "F"))
 #dev.off()
 
 #pdf("lm-massbyhost-model.pdf", width=6, height=6)
-eq_sex = paste0("mass = ", round(coef40[1],3), "*host + ", round(coef40[2],3))
-plot(data_T1$host_c, data_T1$mass, ylab="Mass (g)", xlab="Sex", main=eq_sex)
-abline(coef40[1], coef40[2])
+lm_plot(data_tested, "host_c","mass_c", "Host Plant", "Mass (g)", "Mass by Host Plant") 
+axis(1, at = seq(-1,1,.5),labels=c("BV", " ", " ", " ", "GRT"))
 #dev.off()
-
 ```
 
-# Male vs. Female 
+#### Morphology Plots 
+
+The following plots are nonlinear - it's worth exploring this nonlinear relationship with a polynomial regression.
+
+```{r}
+p <- gf_point(mass ~ wing, data = data_tested,
+                  color = ~thorax, 
+                  alpha = ~body, 
+                  size = ~beak,
+                  ylab="Mass (g)", 
+                  xlab="Wing (mm)")
+ggsave("MassbyMorphology-alldata_gf", plot = p, device="jpeg", width = 9, height = 7)
+```
+
+
+```{r}
+p1 <- gf_point(mass ~ wing2body, data = data_tested,
+                  ylab="Mass (g)", 
+                  xlab="Wing-to-Body Ratio") %>%
+  gf_lm(alpha=0.2)
+p2 <- gf_point(mass ~ wing2body, data = data_tested,
+                  color = ~thorax, 
+                  alpha = ~beak, 
+                  ylab="Mass (g)", 
+                  xlab="Wing-to-Body Ratio") %>%
+  gf_lm(alpha=0.2)
+p3 <- gf_point(mass ~ thorax, data = data_tested,
+                  color = ~wing2body, 
+                  alpha = ~beak, 
+                  ylab="Mass (g)", 
+                  xlab="Thorax (mm)") %>%
+  gf_lm(alpha=0.2)
+p4 <- gf_point(mass ~ beak, data = data_tested,
+                  color = ~wing2body, 
+                  alpha = ~thorax, 
+                  ylab="Mass (g)", 
+                  xlab="Beak (mm)") %>%
+  gf_lm(alpha=0.2)
+g <- grid.arrange(p1,p2,p3,p4, ncol=2, top="All Data")
+#ggsave("MassbyMorphology-alldata2", plot = g, device="jpeg", width = 9, height = 7)
+#ggsave("MassbyMorphology-alldata2-lm", plot = g, device="jpeg", width = 12, height = 7)
+```
+
+```{r}
+p5 <- as.grob(expression(
+  plot(data_tested$body, data_tested$mass, ylab="Mass (g)", xlab="Body (mm)")))
+p6 <- as.grob(expression(
+  plot(data_tested$beak, data_tested$mass, ylab="Mass (g)", xlab="Beak (mm)")))
+p7 <- as.grob(expression(
+  plot(data_tested$thorax, data_tested$mass, ylab="Mass (g)", xlab="Throax (mm)")))
+p8 <- as.grob(expression(
+  plot(data_tested$wing, data_tested$mass, ylab="Mass (g)", xlab="Wing (mm)")))
+
+g2 <- grid.arrange(p4,p5,p6,p7, ncol=2, top="All Data")
+
+# Uncomment below to save graph:
+#ggsave("MassbyMorphology-alldata", plot = g2, device="jpeg", width = 9, height = 7)
+
+p9 <- plot(data_tested$wing2body, data_tested$mass, ylab="Mass (g)", xlab="Wing-to-Body Ratio", main="All Data")
+```
+
+More gf_point explanations: https://cran.r-project.org/web/packages/ggformula/vignettes/ggformula-blog.html
+
+
+### Female vs. Male Histograms
 
 ```{r, fig.width=8, fig.height=2.5}
 # Had twice as many males as females.
-data_fem <- filter(data_all, sex == "F") # 208 obs
-data_male <- filter(data_all, sex == "M") # 406 obs 
+data_fem <- filter(data_tested, sex == "F") # 208 obs
+data_male <- filter(data_tested, sex == "M") # 406 obs 
 
-data_fem1 <- filter(data_T1, sex == "F") # 115 obs
-data_fem2 <- filter(data_T2, sex == "F") # 93 obs
-data_male1 <- filter(data_T1, sex == "M") # 219 obs
-data_male2 <- filter(data_T2, sex == "M") # 187 obs
+data_fem1 <- filter(data_tested, sex == "F") # 115 obs
+data_fem2 <- filter(data_tested, sex == "F") # 93 obs
+data_male1 <- filter(data_tested, sex == "M") # 219 obs
+data_male2 <- filter(data_tested, sex == "M") # 187 obs
 
 h3 <- as.grob(expression(hist(data_fem1$mass, main="Females Trial 1", xlab= "Mass (g)")))
 h4 <- as.grob(expression(hist(data_fem2$mass, main="Females Trial 2", xlab= "Mass (g)")))
@@ -398,129 +393,786 @@ grid.arrange(h7,h8,ncol=2)
 grid.arrange(h3,h4,h5,h6,ncol=4)
 ```
 
-# Lmer() with Mass as a Response Variables and Host Plant and Sym_Dist as Explanatory Variables
+
+### Females
+
+#### Reading the data
 
 ```{r}
-####Check for convergence after spliting by sex but without splitting by trial type
-test_model2<-lmer(mass~host_c*sym_dist+ (1|trial_type) + (1|ID), data=data_fem) 
-test_model3<-lmer(mass~host_c*sym_dist+ (1|trial_type) + (1|ID), data=data_male) 
+source("clean_flight_data.R") # Script that loads and cleans up the data
+source("regression_output.R") # A script that cleans up regression outputs and prints in color
+source("regression_output2.R") # A script that cleans up regression outputs and prints in black and white
 
-#getME(test_model2, "lower")
-#getME(test_model3, "lower")
+data_all <- read_flight_data("all_flight_data-Winter2020.csv")
+data_tested <- data_all[data_all$tested == "yes",]
 
-summary(test_model2)
-summary(test_model3)
+# filter out missing masses
+data_tested <- data_tested %>%
+  filter(!is.na(mass_c))
+
+data_fem <- data_tested[data_tested$sex=="F",]
+```
+
+#### Testing Covariates
+
+**Experimental Set-Up Effects**
+
+```{r echo=FALSE}
+###### No effect of chamber
+tidy_regression_bw(lmer(mass_c~chamber + (1|ID) + (1|trial_type), data=data_fem)) # shouldn't matter because this measurement was taken seperate from the chamber.
+
+####### Effect of test date
+tidy_regression_bw(lmer(mass_c~days_from_start_c + (1|ID), data=data_fem)) # t val = 2.38 - makes sense because female mass would fluctuate the most
+
+####### No effect of test time
+tidy_regression_bw(lmer(mass_c~min_from_IncStart_c + (1|ID) + (1|trial_type), data=data_fem)) 
+```
+
+**Biological Effects**
+
+```{r, echo=FALSE}
+####### Effect of number of eggs laid
+tidy_regression_bw(lmer(mass_c~total_eggs + (1|ID) + (1|trial_type), data=data_fem)) 
+
+####### Effect of whether eggs were laid or not
+tidy_regression_bw(lmer(mass_c~eggs_b + (1|ID), data=data_fem))
+```
+
+**Morphology Effects**
+
+```{r, echo=FALSE}
+####### Effect of beak length
+tidy_regression_bw(lmer(mass_c~beak_c + (1|ID) + (1|trial_type), data=data_fem)) # model didn't converge with (1|trial_type)
+
+####### Effect of thorax length
+tidy_regression_bw(lmer(mass_c~thorax_c + (1|ID) + (1|trial_type), data=data_fem))
+
+####### Effect of body length
+tidy_regression_bw(lmer(mass_c~body_c + (1|ID) + (1|trial_type), data=data_fem))
+
+####### Effect of wing length
+tidy_regression_bw(lmer(mass_c~wing_c + (1|ID) + (1|trial_type), data=data_fem))
+
+####### No effect of wing morph (check how annotated the wing morph) - don't include it b/c almost all tested bugs are long-winged
+```
+
+#### Female Data | lmer() A=host, B=sex, C=sym_dist, X=ID, Y=trial_type, Z=chamber 
+
+```{r}
+data<-data.frame(R=data_fem$mass_c, 
+                 A=data_fem$host_c, 
+                 B=data_fem$sym_dist,
+                 X=data_fem$ID, Y=data_fem$population)
+
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 2-RF + 2-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+- m0 <- R ~ (1 | X)
+- m10 <-  R ~ (1 | X) + (1 | Y)
+
+```{r}
+anova(m0, m10, test="Chisq") # Adding (1|Y) does not improve fit
 ```
 
 ```{r}
-# Testing some covariates:
-
-####### No effect of chamber
-summary(lmer(mass~chamber + (1|ID) + (1|trial_type), data=data_fem)) 
-summary(lmer(mass~chamber + (1|ID) + (1|trial_type), data=data_male)) 
-
-####### No effect overall effect; but test date more an effect for females than males males probably because after give birth, mass changes and this data considers trials 1 and 2.
-summary(lmer(mass~days_from_start + (1|ID) + (1|trial_type), data=data_fem)) # boundary (singular) fit: see ?isSingular: t value = 2.379
-summary(lmer(mass~days_from_start + (1|ID) + (1|trial_type), data=data_male)) # t value = 0.652
-
-#######No effect of test time
-summary(lmer(mass~min_from_IncStart + (1|ID) + (1|trial_type), data=data_fem))  # t value = 0.597
-summary(lmer(mass~min_from_IncStart + (1|ID) + (1|trial_type), data=data_male)) # t value = -1.975
-
+femm_model <- lmer(mass_c ~ (1|ID), data=data_fem)
+tidy_regression_bw(femm_model)
 ```
 
-Would be interesting to plot day 1  vs. day 2 for females: plot the differences between two mass points (see variation in mass) and days that passed between one measurement to the next? 
+Let's add eggs:
 
 ```{r}
+data<-data.frame(R=data_fem$mass_c, 
+                 A=data_fem$host_c, 
+                 B=data_fem$sym_dist,
+                 C=data_fem$eggs_b,
+                 X=data_fem$ID)
 
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 1-RF + 3-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # holds a combined 98% probability 
 ```
 
-# Males: Finding Best-Fit Model
+- m3 <-  R ~ C + (1 | X)
 
 ```{r}
-data<-data.frame(R=data_male$mass, 
+femm_model <- lmer(mass_c ~ eggs_b + (1|ID), data=data_fem)
+tidy_regression_bw(femm_model)
+```
+
+```{r}
+data<-data.frame(R=data_fem$mass_c, 
+                 A=data_fem$host_c, 
+                 B=data_fem$sym_dist,
+                 C=data_fem$eggs_b,
+                 D=data_fem$total_eggs_c,
+                 X=data_fem$ID)
+data <- data %>%
+  filter(!is.na(D))
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 1-RF + 4-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+- m3 <-  R ~ C + (1 | X)
+- m10 <- R ~ C + D + (1 | X)
+
+```{r}
+anova(m3, m10, test="Chisq") # Adding D marginally improves the fit
+```
+
+```{r}
+femm_model <- lmer(mass_c ~ eggs_b + (1|ID), data=data_fem)
+tidy_regression_bw(femm_model)
+```
+
+* Positive effect of eggs laid on test day where if a female bug laid eggs on her test day, she weighed more.
+
+#### Morphology Modeling
+
+```{r}
+data<-data.frame(R=data_fem$mass_c, 
+                 A=data_fem$beak_c, 
+                 B=data_fem$thorax_c,
+                 C=data_fem$wing_c,
+                 D=data_fem$body_c,
+                 X=data_fem$ID, Y=data_fem$trial_type) 
+data <- data %>%
+  filter(!is.na(A))
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 2-RF + 4-FF.R") # 8 models failed
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) 
+# holds a combined 94% probability when remove (1|trial_type)
+```
+
+- m228 <- R ~ B + (1 | X)
+- m2 <- R ~ B + (1 | X)
+
+```{r}
+femm_morph_model <- lmer(mass_c ~ thorax_c + (1|ID) + (1| trial_type), data=data_fem)
+tidy_regression_bw(femm_morph_model)
+```
+
+* positive effect of thorax length where the longer the thorax the more the female bug weighed. (probably b/c that's where all the muscle mass is held).
+
+### Plotting Female Data
+
+#### Sym Distance
+
+```{r}
+p <- gf_point(mass ~ sym_dist, data = data_fem, 
+                  color = ~host_plant, 
+                  ylab="Mass (g)", 
+                  xlab="Distance From Sympatric Zone")
+p
+```
+
+#### Eggs
+
+```{r}
+#, fig.width=2.8, fig.height=2.3}
+data_eggs <- data_fem %>%
+  filter(!is.na(total_eggs))
+source("plotting-lm.R") 
+lm_plot(data_eggs, "total_eggs_c", "mass_c", "Total Eggs Laid", "Mass (g)", "Mass by Total Eggs Laid")
+source("plotting-lm2.R") 
+lm_plot(data_fem, "eggs_b", "mass_c", "Eggs Laid", "Mass (g)", "Mass by Egg Laid on Test Day")
+axis(1, at = seq(-1,1,.5),labels=c(" ", " ", "M ", " ", "F"))
+```
+
+#### Morphology
+
+```{r}
+#, fig.width=2.8, fig.height=2.3}
+
+source("plotting-lm.R") 
+
+lm_plot(data_fem, "thorax_c", "mass_c", "Thorax Length (mm)", "Mass (g)", "Mass by Thorax Length")
+lm_plot(data_fem, "wing_c", "mass_c", "Wing Length (mm)", "Mass (g)", "Mass by Wing Length")
+lm_plot(data_fem, "body_c", "mass_c", "Body Length (mm)", "Mass (g)", "Mass by Body Length")
+lm_plot(data_fem, "beak_c", "mass_c", "Beak Length (mm)", "Mass (g)", "Mass by Beak Length")
+```
+
+### Males
+
+#### Reading the data
+
+```{r}
+source("clean_flight_data.R") # Script that loads and cleans up the data
+source("regression_output.R") # A script that cleans up regression outputs and prints in color
+source("regression_output2.R") # A script that cleans up regression outputs and prints in black and white
+
+data_all <- read_flight_data("all_flight_data-Winter2020.csv")
+data_tested <- data_all[data_all$tested == "yes",]
+
+# filter out missing masses
+data_tested <- data_tested %>%
+  filter(!is.na(mass_c))
+
+data_male <- data_tested[data_tested$sex=="M",]
+```
+
+#### Testing Covariates
+
+**Experimental Set-Up Effects**
+
+```{r echo=FALSE}
+###### No effect of chamber
+tidy_regression_bw(lmer(mass_c~chamber + (1|ID), data=data_male)) # shouldn't matter because this measurement was taken seperate from the chamber.
+
+####### No effect of test date
+tidy_regression_bw(lmer(mass_c~days_from_start_c + (1|ID) + (1|trial_type), data=data_male))
+
+####### No effect of test time
+tidy_regression_bw(lmer(mass_c~min_from_IncStart_c + (1|ID) + (1|trial_type), data=data_male)) 
+```
+
+**Biological Effects** - none b/c males don't lay eggs
+
+**Morphology Effects**
+
+```{r, echo=FALSE}
+####### Effect of beak length
+tidy_regression_bw(lmer(mass_c~beak_c + (1|ID) + (1|trial_type), data=data_male)) 
+
+####### Effect of thorax length
+tidy_regression_bw(lmer(mass_c~thorax_c + (1|ID) + (1|trial_type), data=data_male))
+
+####### Effect of body length
+tidy_regression_bw(lmer(mass_c~body_c + (1|ID) + (1|trial_type), data=data_male))
+
+####### Effect of wing length
+tidy_regression_bw(lmer(mass_c~wing_c + (1|ID) + (1|trial_type), data=data_male))
+
+####### No effect of wing morph (check how annotated the wing morph) - don't include it b/c almost all tested bugs are long-winged
+```
+
+#### Male Data | lmer() A=host, B=sym_dist, X=ID, Y=trial_type
+
+```{r}
+data<-data.frame(R=data_male$mass_c, 
                  A=data_male$host_c, 
                  B=data_male$sym_dist,
-                 X=data_male$ID, Y=data_male$trial_type, Z=data_male$chamber)
+                 X=data_male$ID, Y=data_male$trial_type)
 
 source("AICprobabilities.R")
-source("generic models-gaussian glmer 2-RF + 2-FF.R") #still use this even though did not converge?
-sort(summary$AIC) # model failed to converge 
-sort(P, decreasing=TRUE, index.return=TRUE)
+source("generic models-gaussian glmer 2-RF + 2-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # holds 98% of the probability
 ```
 
-Male:
-m10<-lmer(R ~ (1 | X) + (1 | Y), data=data) *contains only the random effects of trial type and ID*
-m11<-lmer(R ~ A + (1 | X) + (1 | Y), data=data) *effect of host_c and random effects of trial type and ID*
-m12<-lmer(R ~ B + (1 | X) + (1 | Y), data=data) *effect of sym_dist and random effects of trial type and ID*
-
+- m10 <- R ~ (1 | X) + (1 | Y)
 
 ```{r}
-anova(m10, m11, test="Chiq") # m11 better fit
-anova(m10, m12, test="Chiq") # m10 better fit
-anova(m11, m12, test="Chiq") # m12 better fit
+male_model <- lmer(mass_c ~ (1 | ID) + (1 | trial_type), data=data_male)
+tidy_regression_bw(male_model)
+```
+
+#### Morphology Modeling
+
+```{r}
+data<-data.frame(R=data_male$mass_c, 
+                 A=data_male$beak_c, 
+                 B=data_male$thorax_c,
+                 C=data_male$wing_c,
+                 D=data_male$body_c,
+                 X=data_male$ID) # multiple models failed if add Y=data_male$trialtype
+data <- data %>%
+  filter(!is.na(A))
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 1-RF + 4-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # m5 holds 89% of probability
+```
+
+- m5 <- R ~ A + B + (1 | X)
+- m7 <-  R ~ A + D + (1 | X)
+
+```{r}
+anova(m5, m7, test="Chisq") # Replacing B with D does not improve fit
 ```
 
 ```{r}
-m11<-lmer(R ~ A + (1 | X) + (1 | Y), data=data)
-summary(m11) # sym_dist, tvalue = -2.619
-
-# Does adding chamber improve fit?
-chamber_model<-lmer(R ~ A + (1 | X) + (1 | Y)+ (1|Z), data=data) # boundary (singular) fit: see ?isSingular
-summary(chamber_model)
-
-AIC(m11)
-AIC(chamber_model)### It doesn't, since the model with the lowest AIC score is preferred and that is m11.
+male_morph_model <- lmer(mass_c ~ beak_c + thorax_c + (1|ID), data=data_male)
+tidy_regression_bw(male_morph_model)
 ```
 
-# Females
+* positive effect of beak length, where the longer the beak the heavier the bug
+* positive effect of thorax length, where the longer the thorax the heavier the bug
+
+### Plotting Male Data
 
 ```{r}
-data<-data.frame(R=data_fem$mass, 
-                 A=data_fem$host_c, 
-                 B=data_fem$sym_dist, 
-                 X=data_fem$ID, Y=data_fem$trial_type, Z=data_fem$chamber)
+data_mmale <- data_male %>%
+  filter(!is.na(thorax))
+p1 <- gf_point(mass ~ sym_dist, data = data_mmale, 
+                  color = ~host_plant, 
+                  ylab="Mass (g)", 
+                  xlab="Distance From Sympatric Zone")
+p1
+```
+
+```{r}
+#, fig.width=2.8, fig.height=2.3}
+source("plotting-lm.R") 
+lm_plot(data_mmale, "thorax_c", "mass_c", "Thorax Length (mm)", "Mass (g)", "Mass by Thorax Length")
+lm_plot(data_mmale, "wing_c", "mass_c", "Wing Length (mm)", "Mass (g)", "Mass by Wing Length")
+lm_plot(data_mmale, "body_c", "mass_c", "Body Length (mm)", "Mass (g)", "Mass by Body Length")
+lm_plot(data_mmale, "beak_c", "mass_c", "Beak Length (mm)", "Mass (g)", "Mass by Beak Length")
+```
+
+```{r}
+# , fig.width=2.8, fig.height=2.3}
+p.morph <- gf_point(mass ~ thorax, data = data_mmale, 
+                  alpha = ~beak, 
+                  ylab="Mass (g)", 
+                  xlab="Thoarx Length (mm)")
+p.morph
+```
+
+### Trial 1
+
+#### Reading the data
+
+```{r}
+source("clean_flight_data.R") # Script that loads and cleans up the data
+source("regression_output.R") # A script that cleans up regression outputs and prints in color
+source("regression_output2.R") # A script that cleans up regression outputs and prints in black and white
+
+data_all <- read_flight_data("all_flight_data-Winter2020.csv")
+data_tested <- data_all[data_all$tested == "yes",]
+
+# filter out missing masses
+data_tested <- data_tested %>%
+  filter(!is.na(mass_c))
+
+data_T1 <- filter(data_tested, trial_type == "T1")
+```
+
+#### Testing Covariates
+
+**Experimental Set-Up Effects**
+
+```{r echo=FALSE}
+###### No effect of chamber
+tidy_regression_bw(lmer(mass_c~chamber + (1|ID), data=data_T1)) # (1|population) variance near zero so can remove
+
+####### No effect of test date
+tidy_regression_bw(lmer(mass_c~days_from_start_c + (1|ID), data=data_T1))
+
+####### No effect of test time
+tidy_regression_bw(lmer(mass_c~min_from_IncStart_c + (1|chamber), data=data_T1)) 
+```
+
+**Biological Effects**
+
+```{r, echo=FALSE}
+####### Effect of number of eggs laid
+tidy_regression_bw(lmer(mass_c~total_eggs + (1|ID), data=data_T1)) 
+
+####### Effect of whether eggs were laid or not
+tidy_regression_bw(lmer(mass_c~eggs_b + (1|chamber), data=data_T1))
+```
+
+**Morphology Effects**
+
+```{r, echo=FALSE}
+####### Effect of beak length
+tidy_regression_bw(lmer(mass_c~beak_c + (1|ID), data=data_T1)) 
+
+####### Effect of thorax length
+tidy_regression_bw(lmer(mass_c~thorax_c + (1|ID), data=data_T1))
+
+####### Effect of body length
+tidy_regression_bw(lmer(mass_c~body_c + (1|ID), data=data_T1))
+
+####### Effect of wing length
+tidy_regression_bw(lmer(mass_c~wing_c + (1|ID), data=data_T1))
+
+####### No effect of wing morph (check how annotated the wing morph) - don't include it b/c almost all tested bugs are long-winged
+```
+
+#### Sex * Host * Sym_Dist Modeling
+
+```{r}
+data<-data.frame(R=data_T1$mass_c, 
+                 A=data_T1$host_c, 
+                 B=data_T1$sym_dist,
+                 C=data_T1$sex_c,
+                 X=data_T1$min_from_IncStart_c)
 
 source("AICprobabilities.R")
-source("generic models-gaussian glmer 2-RF + 2-FF.R") 
-sort(summary$AIC) # model failed to converge 
-sort(P, decreasing=TRUE, index.return=TRUE)
+source("generic models-gaussian glmer 1-RF + 3-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # holds 99% of the probability
 ```
 
-Male:
-m10<-lmer(R ~ (1 | X) + (1 | Y), data=data) *contains only the random effects of trial type and ID*
-m12<-lmer(R ~ B + (1 | X) + (1 | Y), data=data) *effect of sym_dist and random effects of trial type and ID*
-m11<-lmer(R ~ A + (1 | X) + (1 | Y), data=data) *effect of host_plant and random effects of trial type and ID*
+- m3 <- R ~ C + (1 | X)
+
+```{r}
+T1_model <- lmer(mass_c ~ sex_c + (1|min_from_IncStart_c), data=data_T1)
+tidy_regression_bw(T1_model)
+```
+
+* positive effect of sex, where if female then weigh more
+
+#### Morphology Modeling
+
+```{r}
+data<-data.frame(R=data_T1$mass_c, 
+                 A=data_T1$beak_c, 
+                 B=data_T1$thorax_c,
+                 C=data_T1$body_c,
+                 D=data_T1$wing_c,
+                 X=data_T1$days_from_start_c)
+data <- data %>%
+  filter(!is.na(A))
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 1-RF + 4-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # holds 99% of the probability
+```
+
+- m49 <- R ~ A * D + B * C + (1 | X)
+- m83 <- R ~ A * D + B * C + B * D + (1 | X)
+- m74 <- R ~ A * B + B * C + B * D + (1 | X)
+
+```{r}
+T1_morph_model <- lmer(mass_c ~ beak_c * wing_c + thorax_c * body_c + (1 | days_from_start_c), data=data_T1)
+tidy_regression_bw(T1_morph_model)
+```
+
+```{r}
+#wing2body
+data_T1$wing2body <- data_T1$wing / data_T1$body
+data_T1$wing2body_c <- data_T1$wing2body - mean(data_T1$wing2body, na.rm=TRUE)
+
+data<-data.frame(R=data_T1$mass_c, 
+                 A=data_T1$beak_c, 
+                 B=data_T1$thorax_c,
+                 C=data_T1$wing2body_c,
+                 X=data_T1$days_from_start_c)
+data <- data %>%
+  filter(!is.na(A))
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 1-RF + 3-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # holds 99% of the probability
+```
+
+- m12 <- R ~ A * C + B + (1 | X)
+- m16 <- R ~ A * C + B * C + (1 | X)
+- m15 <- R ~ B * C + A + (1 | X)
+
+```{r}
+anova(m12, m16, test="Chisq") # Adding B*C interaction does not improve fit
+```
+
+```{r}
+T1_morph_model <- lmer(mass_c ~ beak_c * wing2body_c + thorax_c + (1 | days_from_start_c), data=data_T1)
+tidy_regression_bw(T1_morph_model)
+```
+
+### Trial 2
+
+#### Reading the data
+
+```{r}
+source("clean_flight_data.R") # Script that loads and cleans up the data
+source("regression_output.R") # A script that cleans up regression outputs and prints in color
+source("regression_output2.R") # A script that cleans up regression outputs and prints in black and white
+
+data_all <- read_flight_data("all_flight_data-Winter2020.csv")
+data_tested <- data_all[data_all$tested == "yes",]
+
+# filter out missing masses
+data_tested <- data_tested %>%
+  filter(!is.na(mass_c))
+
+data_T2 <- filter(data_tested, trial_type == "T2")
+```
+
+```{r echo=FALSE}
+###### No effect of chamber
+tidy_regression_bw(lmer(mass_c~chamber + (1|min_from_IncStart_c), data=data_T2))
+
+####### No effect of test date
+tidy_regression_bw(lmer(mass_c~days_from_start_c + (1|min_from_IncStart_c), data=data_T2))
+
+####### No effect of test time
+tidy_regression_bw(lmer(mass_c~min_from_IncStart_c + (1|chamber), data=data_T2)) 
+```
+
+**Biological Effects**
+
+```{r, echo=FALSE}
+####### Effect of number of eggs laid
+tidy_regression_bw(lmer(mass_c~total_eggs + (1|days_from_start_c), data=data_T2)) 
+
+####### Effect of whether eggs were laid or not
+tidy_regression_bw(lmer(mass_c~eggs_b + (1|days_from_start_c), data=data_T2))
+```
+
+**Morphology Effects**
+
+```{r, echo=FALSE}
+####### Effect of beak length
+tidy_regression_bw(lmer(mass_c~beak_c + (1|days_from_start_c), data=data_T2)) 
+
+####### Effect of thorax length
+tidy_regression_bw(lmer(mass_c~thorax_c + (1|days_from_start_c), data=data_T2))
+
+####### Effect of body length
+tidy_regression_bw(lmer(mass_c~body_c + (1|days_from_start_c), data=data_T2))
+
+####### Effect of wing length
+tidy_regression_bw(lmer(mass_c~wing_c + (1|days_from_start_c), data=data_T2))
+
+####### No effect of wing morph (check how annotated the wing morph) - don't include it b/c almost all tested bugs are long-winged
+```
+
+#### Sex * Host * Sym_Dist Modeling
+
+```{r}
+data<-data.frame(R=data_T2$mass_c, 
+                 A=data_T2$host_c, 
+                 B=data_T2$sym_dist,
+                 C=data_T2$sex_c,
+                 X=data_T2$days_from_start_c)
+
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 1-RF + 3-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # holds 99% of the probability
+```
 
 
 ```{r}
-anova(m10, m12, test="Chiq") # m10 better fit
-anova(m10, m11, test="Chiq") # m10 better fit
-anova(m11, m12, test="Chiq") # m11 better fit
+T2_model <- lmer(mass_c ~ sex_c + (1|days_from_start_c), data=data_T2)
+tidy_regression_bw(T2_model)
+```
+
+#### Morphology Modeling
+
+```{r}
+data<-data.frame(R=data_T2$mass_c, 
+                 A=data_T2$beak_c, 
+                 B=data_T2$thorax_c,
+                 C=data_T2$body_c,
+                 D=data_T2$wing_c,
+                 X=data_T2$days_from_start_c)
+data <- data %>%
+  filter(!is.na(A))
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 1-RF + 4-FF.R") # 1 model failed to converge
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # holds 99% of the probability
+```
+
+- m49 <- R ~ A * D + B * C + (1 | X)
+- m62 <- R ~ A * D + B * D + C + (1 | X)
+```{r}
+T2_morph_model <- lmer(mass_c ~ beak_c*wing_c + thorax_c*body_c + (1|days_from_start_c), data=data_T2)
+tidy_regression_bw(T2_morph_model)
 ```
 
 ```{r}
-m10<-lmer(R ~ (1 | X) + (1 | Y), data=data)
-summary(m10) # sym_dist, tvalue = -2.454
+#wing2body
+data_T2$wing2body <- data_T2$wing / data_T2$body
+data_T2$wing2body_c <- data_T2$wing2body - mean(data_T2$wing2body, na.rm=TRUE)
 
-# Does adding chamber improve fit?
-chamber_model<-lmer(R ~ (1 | X) + (1 | Y)+ (1|Z), data=data) # boundary (singular) fit: see ?isSingular
-summary(chamber_model)
+data<-data.frame(R=data_T2$mass_c, 
+                 A=data_T2$beak_c, 
+                 B=data_T2$thorax_c,
+                 C=data_T2$wing2body_c,
+                 X=data_T2$days_from_start_c)
+data <- data %>%
+  filter(!is.na(A))
+source("AICprobabilities.R")
+source("generic models-gaussian glmer 1-RF + 3-FF.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
 
-AIC(m10)
-AIC(chamber_model)### It doesn't, since the model with the lowest AIC score is preferred and that is m10
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) 
 ```
 
-# Trial 1: Split by Male and Female. 
+- m7 <- R ~ A + B + C + (1 | X)
+- m12 <- R ~ A * C + B + (1 | X)
+- m16 <- R ~ A * C + B * C + (1 | X)
+- m13 <- R ~ B * C + A + (1 | X)
 
 ```{r}
-test_model4<-lmer(mass~host_c*sym_dist + (1|ID), data=data_fem1) 
-test_model5<-lmer(mass~host_c*sym_dist + (1|ID), data=data_fem2) # Error: number of levels of each grouping factor must be < number of observations
-test_model6<-lmer(mass~host_c*sym_dist + (1|ID), data=data_male1) 
-test_model7<-lmer(mass~host_c*sym_dist + (1|ID), data=data_male2) # Error: number of levels of each grouping factor must be < number of observations 
-summary(test_model4)
-summary(test_model5)
-summary(test_model6)
-summary(test_model7)
+anova(m7, m12, test="Chisq") # Adding A*C does improve the fit
+anova(m12, m16, test="Chisq") # Adding B*C intercation does not improve fit
+anova(m7, m13, test="Chisq") # Adding B*C interaction does not improve fit
+```
+
+```{r}
+T2_morph_model <- lmer(mass_c ~ beak_c*wing2body_c + thorax_c + (1|days_from_start_c), data=data_T2)
+tidy_regression_bw(T2_morph_model)
+```
+
+* positive effect of beak length, where the longer beak the heavier the bug
+* negative effect of wing2body ratio, where the larger the ratio, the lighter the bug.
+* positive effect of thorax, where the longer the thorax the heavier the bug
+* negative effect of beak*wing2body ratio where the longer the beak and ratio, the lighter the bug.
+
+### T1 vs. T2 Plotting
+
+#### Histograms 
+
+```{r} 
+#, fig.width=6, fig.height=2.5}
+data_T1 <- filter(data_tested, trial_type == "T1")
+data_T2 <- filter(data_tested, trial_type == "T2")
+h1 <- as.grob(expression(hist(data_T1$mass, main="Trial 1", xlab= "Mass (g)")))
+h2 <- as.grob(expression(hist(data_T2$mass, main="Trial 2", xlab = "Mass (g)")))
+hist(data_all$mass, xlab="Mass (g)", main="Soapberry Bug Mass Histogram")
+
+grid.arrange(h1, h2, ncol=2)
+```
+
+```{r}
+h <- gf_histogram(~mass, data=data_tested, xlab="Mass (g)", ylab="Count",
+             title="Soapberry Bug Mass Histogram", fill=~trial_type) %>%
+    gf_theme(theme = theme_minimal() )
+h
+# Uncomment below to save graph:
+#ggsave("Mass-Hist-splitbyTrial", plot = h, device="jpeg",width = 5, height = 3)
+```
+
+#### Trial 1: Mass by Sex, Host Plant and Distance from Sympatric Zone 
+
+```{r, fig.width=6, fig.height=2.5}
+p1 <- as.grob(expression(
+  plot(data_T1$sex_c, data_T1$mass, ylab="Mass (g)", xlab="Sex")))
+p2 <- as.grob(expression(
+  plot(data_T1$host_c, data_T1$mass, ylab="Mass (g)", xlab="Host")))
+p3 <- as.grob(expression(
+  plot(data_T1$sym_dist, data_T1$mass, ylab="Mass (g)", 
+       xlab="Distance From Sympatric Zone"))) 
+p.all <- gf_point(mass ~ sym_dist, data = data_T1,
+                  color = ~host_c, ylab="Mass (g)", 
+                  xlab="Distance From Sympatric Zone", 
+                  alpha = ~sex_c) # GRT = blue, BV = black
+p.all
+
+g <- grid.arrange(p1,p2,p3, ncol=3, top= "Trial 1")
+
+# Uncomment below to save graph:
+# ggsave("Massbysex,host,symp_zone", plot = g, device="jpeg", width = 9, height = 4)
+# If Female and From GRT and farther from HS then have more mass.
+```
+
+#### Trial 1: Mass by Morphology
+
+```{r}
+p4 <- as.grob(expression(
+  plot(data_T1$body, data_T1$mass, ylab="Mass (g)", xlab="Body (mm)")))
+p5 <- as.grob(expression(
+  plot(data_T1$beak, data_T1$mass, ylab="Mass (g)", xlab="Beak (mm)")))
+p6 <- as.grob(expression(
+  plot(data_T1$thorax, data_T1$mass, ylab="Mass (g)", xlab="Throax (mm)")))
+p7 <- as.grob(expression(
+  plot(data_T1$wing, data_T1$mass, ylab="Mass (g)", xlab="Wing (mm)")))
+
+g2 <- grid.arrange(p4,p5,p6,p7, ncol=2, top="Trial 1")
+
+# Uncomment below to save graph:
+#ggsave("MassbyMorphologyT2", plot = g2, device="jpeg", width = 9, height = 7)
+```
+
+#### Trial 2: Mass by Morphology
+
+```{r}
+p8 <- as.grob(expression(
+  plot(data_T2$body, data_T2$mass, ylab="Mass (g)", xlab="Body (mm)")))
+p9 <- as.grob(expression(
+  plot(data_T2$beak, data_T2$mass, ylab="Mass (g)", xlab="Beak (mm)")))
+p10 <- as.grob(expression(
+  plot(data_T2$thorax, data_T2$mass, ylab="Mass (g)", xlab="Throax (mm)")))
+p11 <- as.grob(expression(
+  plot(data_T2$wing, data_T2$mass, ylab="Mass (g)", xlab="Wing (mm)")))
+
+g3 <- grid.arrange(p8,p9,p10,p11, ncol=2, top="Trial 2")
+
+# Uncomment below to save graph:
+#ggsave("MassbyMorphologyT2", plot = g3, device="jpeg", width = 9, height = 7)
 ```
 
