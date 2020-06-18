@@ -1,9 +1,20 @@
-# Formats the output of regressions into a quickly legible output 
+# A function that formats the output of regressions into a quickly legible output 
 
-tidy_regression <- function(fit) {
+###############################################################################################
+# FUNCTION: tidy_regression | Formats the output of regressions into a quickly legible output
+#                             in color or in black-and-white 
+#
+# INPUT: the fitted model by the functions lm, glm, lmer, or glmer and a Boolean, is_color,
+#        which is color if TRUE and black-and-whtie if FALSE
+#
+# OUTPUT: spits out the effects, their coefficients, and their test statistic (t- or p-values).
+#
+###############################################################################################
+
+tidy_regression <- function(fit, is_color) {
   
   n_col <- length(as.data.frame(summary(fit)$coefficients))
-  pvals <- summary(fit)$coefficients[,n_col]
+  test_stat <- summary(fit)$coefficients[,n_col] # test_statistic: p-value (multivariate) or t-value (mixed effect)
   coeffs <- summary(fit)$coefficients[,1] 
   AIC <- summary(fit)$aic # for multivariate modeling
   aic <- summary(fit)$AICtab[1] # for mixed effect modeling
@@ -11,7 +22,7 @@ tidy_regression <- function(fit) {
   cat(name, end="\n")
   cat("AIC: ", AIC, aic, end="\n")
   
-  table <- as.data.frame(cbind(coeffs, pvals))
+  table <- as.data.frame(cbind(coeffs, test_stat))
   table <- cbind(fixed_effect = rownames(table), table)
   rownames(table) <- 1:nrow(table)
   as.character(table$fixed_effect[1])
@@ -26,30 +37,34 @@ tidy_regression <- function(fit) {
     
     if (coeff < 0) {
       cat(table$fixed_effect[i], "\t")
-      cat("coeff: ", paste0("\033[0;", color=31, "m", coeff ,"\033[0m","\t"))
+      if (is_color) {
+        cat("coeff: ", paste0("\033[0;", color=32, "m",coeff,"\033[0m","\t"))
+      } else {cat("coeff: ", paste0(coeff, "\t")) }
       if (n_col < 4) {
-        cat("tval: ", table$pvals[i])
+        cat("tval: ", table$test_stat[i])
         cat('\n')
       }
       else {
-        if (table$pvals[i] < 0.05){
-          cat("Pr(>|t|): ", table$pvals[i], "*")} 
-        else {cat("Pr(>|t|): ", table$pvals[i])}
+        if (table$test_stat[i] < 0.05){
+          cat("Pr(>|t|): ", table$test_stat[i], "*")} 
+        else {cat("Pr(>|t|): ", table$test_stat[i])}
         cat('\n')
       }
     }
     
     if (coeff > 0) {
       cat(table$fixed_effect[i], "\t")
-      cat("coeff: ", paste0("\033[0;", color=32, "m",coeff,"\033[0m","\t"))
+      if (is_color) {
+        cat("coeff: ", paste0("\033[0;", color=32, "m",coeff,"\033[0m","\t"))
+      } else {cat("coeff: ", paste0(coeff, "\t")) }
       if (n_col < 4) {
-        cat("tval: ", table$pvals[i])
+        cat("tval: ", table$test_stat[i])
         cat('\n')
       }
       else {
-        if (table$pvals[i] < 0.05){
-          cat("Pr(>|t|): ", table$pvals[i], "*")} 
-        else {cat("Pr(>|t|): ", table$pvals[i])}
+        if (table$test_stat[i] < 0.05){
+          cat("Pr(>|t|): ", table$test_stat[i], "*")} 
+        else {cat("Pr(>|t|): ", table$test_stat[i])}
         cat('\n')
       }
     }

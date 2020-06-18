@@ -39,12 +39,15 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 **Cleaning the Data**
 
 ```{r}
+rm(list=ls())
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
 source("clean_flight_data.R") # Script that loads and cleans up the data
-source("regression_output.R") # A script that cleans up regression outputs and prints in color
-source("regression_output2.R") # A script that cleans up regression outputs and prints in black and white
+source("regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
+source("center_flight_data.R")
 
-data_all <- read_flight_data("all_flight_data-Winter2020.csv")
-data_tested <- data_all[data_all$tested == "yes",]
+data <- read_flight_data("all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
 ```
 
 <a id="testing"></a>
@@ -62,42 +65,42 @@ getME(model, "lower")
 
 ```{r, echo=FALSE}
 ####### No effect of chamber
-tidy_regression_bw(glm(flew_b~chamber, data=data_tested, family=binomial))
+tidy_regression(glm(flew_b~chamber, data=data_tested, family=binomial), is_color=output_col)
 
 ####### Effect of test date (but no effect of test date when you split between T1 and T2)
-tidy_regression_bw(glm(flew_b~days_from_start_c, data=data_tested, family=binomial))
+tidy_regression(glm(flew_b~days_from_start_c, data=data_tested, family=binomial), is_color=output_col)
 
 ####### No effect of test time
-tidy_regression_bw(glm(flew_b~min_from_IncStart_c, data=data_tested, family=binomial))
+tidy_regression(glm(flew_b~min_from_IncStart_c, data=data_tested, family=binomial), is_color=output_col)
 ```
 
 **Biological Effects**
 
 ```{r, echo=FALSE}
 ####### (Strong) Effect of mass
-tidy_regression_bw(glm(flew_b~mass_c, data=data_tested, family=binomial))
+tidy_regression(glm(flew_b~mass_c, data=data_tested, family=binomial), is_color=output_col)
 
 ####### Effect of number of eggs laid
-tidy_regression_bw(glm(flew_b~total_eggs, data=data_tested, family=binomial))
+tidy_regression(glm(flew_b~total_eggs, data=data_tested, family=binomial), is_color=output_col)
 
 ####### Effect of whether eggs were laid or not
-tidy_regression_bw(glm(flew_b~eggs_b, data=data_tested, family=binomial))
+tidy_regression(glm(flew_b~eggs_b, data=data_tested, family=binomial), is_color=output_col)
 ```
 
 **Morphology Effects**
 
 ```{r, echo=FALSE}
 ####### Effect of beak length
-tidy_regression_bw(glm(flew_b~beak_c, data=data_tested, family=binomial))
+tidy_regression(glm(flew_b~beak_c, data=data_tested, family=binomial), is_color=output_col)
 
 ####### Effect of thorax length
-tidy_regression_bw(glm(flew_b~thorax_c, data=data_tested, family=binomial))
+tidy_regression(glm(flew_b~thorax_c, data=data_tested, family=binomial), is_color=output_col)
 
 ####### Effect of body length
-tidy_regression_bw(glm(flew_b~body_c, data=data_tested, family=binomial))
+tidy_regression(glm(flew_b~body_c, data=data_tested, family=binomial), is_color=output_col)
 
 ####### No effect of wing length
-tidy_regression_bw(glm(flew_b~wing_c, data=data_tested, family=binomial))
+tidy_regression(glm(flew_b~wing_c, data=data_tested, family=binomial), is_color=output_col)
 
 ####### No effect of wing morph (check how annotated the wing morph) - don't include it
 #tidy_regression_bw(glm(flew_b~w_morph_c, data=data_all, family=binomial))
@@ -124,14 +127,18 @@ tidy_regression_bw(glm(flew_b~wing_c, data=data_tested, family=binomial))
 **Cleaning the Data**
 
 ```{r}
-source("clean_flight_data.R")
-source("regression_output.R")
-source("regression_output2.R")
+rm(list=ls())
+output_col = FALSE 
+source("clean_flight_data.R") 
+source("regression_output.R") 
+source("center_flight_data.R")
 
-data_all <- read_flight_data("all_flight_data-Winter2020.csv")
-data_tested <- data_all[data_all$tested == "yes",]
+data <- read_flight_data("all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
 
 data_T1 <-data_tested[data_tested$trial_type=="T1",]
+data_T1 <- center_data(data_T1)
 ```
 
 <a id="exp_effects"></a>
@@ -140,36 +147,36 @@ data_T1 <-data_tested[data_tested$trial_type=="T1",]
 
 ```{r echo=FALSE}
 ####### No effect of chamber
-tidy_regression_bw(glm(flew_b~chamber, data=data_T1, family=binomial))
+tidy_regression(glm(flew_b~chamber, data=data_T1, family=binomial), is_color=output_col)
 
 ####### No effect of test date
-tidy_regression_bw(glm(flew_b~days_from_start_c, data=data_T1, family=binomial))
+tidy_regression(glm(flew_b~days_from_start_c, data=data_T1, family=binomial), is_color=output_col)
 
 ####### No effect of test time
-tidy_regression_bw(glm(flew_b~min_from_IncStart, data=data_T1, family=binomial))
+tidy_regression(glm(flew_b~min_from_IncStart, data=data_T1, family=binomial), is_color=output_col)
 ```
 
 **Biological Effects**
 
 ```{r, echo=FALSE}
 ####### (Strong) Effect of mass
-tidy_regression_bw(glm(flew_b~mass_c, data=data_T1, family=binomial))
+tidy_regression(glm(flew_b~mass_c, data=data_T1, family=binomial), is_color=output_col)
 ```
 
 **Morphology Effects**
 
 ```{r, echo=FALSE}
 ####### Effect of beak length
-tidy_regression_bw(glm(flew_b~beak_c, data=data_T1, family=binomial))
+tidy_regression(glm(flew_b~beak_c, data=data_T1, family=binomial), is_color=output_col)
 
 ####### Effect of thorax length
-tidy_regression_bw(glm(flew_b~thorax_c, data=data_T1, family=binomial))
+tidy_regression(glm(flew_b~thorax_c, data=data_T1, family=binomial), is_color=output_col)
 
-####### No effect of body length
-tidy_regression_bw(glm(flew_b~body_c, data=data_T1, family=binomial))
+####### Marginal effect of body length
+tidy_regression(glm(flew_b~body_c, data=data_T1, family=binomial), is_color=output_col)
 
 ####### No effect of wing length
-tidy_regression_bw(glm(flew_b~wing_c, data=data_T1, family=binomial))
+tidy_regression(glm(flew_b~wing_c, data=data_T1, family=binomial), is_color=output_col)
 ```
 
 <a id="glmertesting1"></a>
@@ -188,22 +195,16 @@ However, (1|population) and (1|days_from_start_c) does matter when doing the mor
 # Remove any missing masses
 data_T1 <- data_T1 %>%
   filter(!is.na(mass))
-
-# Recentering
-data_T1$lat_c<-data_T1$latitude-mean(data_T1$latitude)
-data_T1$sym_dist<-abs(data_T1$latitude-25.49197)
-data_T1$mass_c <- data_T1$mass-mean(data_T1$mass, na.rm=TRUE) 
+data_T1 <- center_data(data_T1)
 
 R = data_T1$flew_b
 A = data_T1$host_c
 B = data_T1$sex_c
 C = data_T1$sym_dist
-D = data_T1$mass_c # as a covariate 
+D = data_T1$mass_c 
 
 data<-data.frame(R, A, B, C, D)
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glm 3-FF.R")
 AICs <- sort(summary$AIC)
@@ -232,7 +233,7 @@ anova(m11, m14, test="Chisq") ## Adding A*C interaction does not improve fit
 
 ```{r}
 model_T1<-glm(flew_b~sex_c*host_c, family=binomial, data=data_T1)
-tidy_regression(model_T1)
+tidy_regression(model_T1, is_color=output_col)
 ```
 * strong negative effect of sex, where if you are female you are less likely to fly.
 * no longer an effect of host or distance from sympatric zone. (last season there was)
@@ -246,7 +247,7 @@ tidy_regression(model_T1)
 
 ```{r}
 model_T1_cov<-glm(flew_b~host_c*sex_c + mass_c, family=binomial, data=data_T1)
-tidy_regression(model_T1_cov)
+tidy_regression(model_T1_cov, is_color=output_col)
 ```
 
 * strong negative effect of mass that subsumes the sex effect
@@ -270,12 +271,12 @@ probs <- models_init$x[1:top]
 rbind(AICs, models, probs)
 ```
 
-- m26 <- glm(formula = R ~ A * D + B, family = binomial, data = data)
 - m63 <- glm(formula = R ~ A * D + C * D + B, family = binomial, data = data)
+- m26 <- glm(formula = R ~ A * D + B, family = binomial, data = data)
 
 ```{r echo=FALSE}
 model_T1_m <- glm(flew_b~host_c*mass_c + sex_c, family=binomial, data=data_T1)
-tidy_regression_bw(model_T1_m)
+tidy_regression(model_T1_m, is_color=output_col)
 ```
 
 What this basically looks like is if you have sex* host, you don't need mass*host, and vice-versa, but you need one.
@@ -286,23 +287,21 @@ What this basically looks like is if you have sex* host, you don't need mass*hos
 * host*sex interaction shows a strong positive effect, such that if from GRT and are female then more likely to be dispersive
 * marginal effect of sex, where if you are female you are less likely to fly
 
+```{r}
+model_T1_m <- glm(flew_b~host_c*mass_c + sym_dist*mass_c + sex_c, family=binomial, data=data_T1)
+tidy_regression(model_T1_m, is_color=output_col)
+```
+* no effect by anything other than host*mass
+
 <a id="morph1"></a>
 
 #### Morphology 
 
 ```{r}
-# Remove any missing masses
+data_T1 <-data_tested[data_tested$trial_type=="T1",]
 data_T1 <- data_T1 %>%
-  filter(!is.na(mass))
-
-# Recentering
-data_T1$lat_c<-data_T1$latitude-mean(data_T1$latitude)
-data_T1$sym_dist<-abs(data_T1$latitude-25.49197)
-data_T1$mass_c <- data_T1$mass-mean(data_T1$mass, na.rm=TRUE) 
-data_T1$beak_c <- data_T1$beak-mean(data_T1$beak, na.rm=TRUE)
-data_T1$thorax_c <- data_T1$thorax-mean(data_T1$thorax, na.rm=TRUE)
-data_T1$body_c <- data_T1$body-mean(data_T1$body, na.rm=TRUE) 
-data_T1$wing_c <- data_T1$wing-mean(data_T1$wing, na.rm=TRUE) 
+  filter(!is.na(body))
+data_T1 <- center_data(data_T1)
 
 R = data_T1$flew_b
 A = data_T1$beak_c
@@ -311,11 +310,7 @@ C = data_T1$body_c
 D = data_T1$wing_c 
 
 data<-data.frame(R, A, B, C, D)
-data <- data %>%
-  filter(!is.na(A))
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R")
 AICs <- sort(summary$AIC)
@@ -328,22 +323,23 @@ probs <- models_init$x[1:top]
 rbind(AICs, models, probs)
 ```
 
-- m53 <- glm(formula = R ~ B * C + C * D, family = binomial, data = data)
+- m61 <-glm(formula = R ~ A * C + C * D + B, family = binomial, data = data)
 
 ```{r}
-morph_model <- glm(formula = flew_b ~ thorax_c * body_c + body_c * wing_c, family = binomial, data = data_T1)
-tidy_regression_bw(morph_model)
+morph_model <- glm(formula = flew_b ~ beak_c * body_c + body_c * wing_c + thorax_c, family = binomial, data = data_T1)
+tidy_regression(morph_model, is_color=output_col)
 ```
 
 * strong negative effect of thorax length, where the longer the thorax, the less likely the bug will fly.
-* strong negative effect of body length, where the longer the body, the less likely the bug will fly.
 * strong positive effect of wing length, where the longer the wings, the more likely the bug will fly.
-* no significant thorax*body interaction effect
-* marginal negative effect of body*wing, where the longer the body and the longer the wing, the less likely the bug will fly. We know body and wing are closely correlated to one another, so the could cancel each other out. Meaning, that if you have a longer body then you have more mass and even if you have the wings to fly you'll be less likely to fly.
+* no significant beak effect
+* no significant body effect
+* no significant beak*body interaction effect
+* negative effect of body*wing, where the longer the body and the longer the wing, the less likely the bug will fly. We know body and wing are closely correlated to one another, so the could cancel each other out. Meaning, that if you have a longer body then you have more mass and even if you have the wings to fly you'll be less likely to fly.
 
 ```{r}
-morph_modelglmer <- glmer(formula = flew_b ~ thorax_c * body_c + body_c * wing_c + (1| population) + (1|days_from_start_c), family = binomial, data = data_T1) # variance of (1| chamber) essentially 0
-tidy_regression_bw(morph_modelglmer) # did change the coefficients slightly, but not a better fit
+morph_modelglmer <- glmer(formula = flew_b ~ thorax_c * body_c + body_c * wing_c + (1| population), family = binomial, data = data_T1) 
+tidy_regression(morph_modelglmer, is_color=output_col) # did change the coefficients slightly, but not a better fit
 ```
 
 ### Trial 2
@@ -365,14 +361,18 @@ tidy_regression_bw(morph_modelglmer) # did change the coefficients slightly, but
 **Cleaning the Data**
 
 ```{r}
+rm(list=ls())
+output_col = FALSE 
 source("clean_flight_data.R")
-source("regression_output.R")
-source("regression_output2.R")
+source("regression_output.R") 
+source("center_flight_data.R")
 
-data_all <- read_flight_data("all_flight_data-Winter2020.csv")
-data_tested <- data_all[data_all$tested == "yes",]
+data <- read_flight_data("all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
 
 data_T2 <-data_tested[data_tested$trial_type=="T2",]
+data_T2 <- center_data(data_T2)
 ```
 
 <a id="experimental_effects"></a>
@@ -381,36 +381,36 @@ data_T2 <-data_tested[data_tested$trial_type=="T2",]
 
 ```{r echo=FALSE}
 ####### No effect of chamber
-tidy_regression_bw(glm(flew_b~chamber, data=data_T2, family=binomial))
+tidy_regression(glm(flew_b~chamber, data=data_T2, family=binomial), is_color=output_col)
 
 ####### No effect of test date
-tidy_regression_bw(glm(flew_b~days_from_start_c, data=data_T2, family=binomial))
+tidy_regression(glm(flew_b~days_from_start_c, data=data_T2, family=binomial), is_color=output_col)
 
 ####### No effect of test time
-tidy_regression_bw(glm(flew_b~min_from_IncStart, data=data_T2, family=binomial))
+tidy_regression(glm(flew_b~min_from_IncStart, data=data_T2, family=binomial), is_color=output_col)
 ```
 
 **Biological Effects**
 
 ```{r, echo=FALSE}
 ####### (Strong) Effect of mass
-tidy_regression_bw(glm(flew_b~mass_c, data=data_T2, family=binomial))
+tidy_regression(glm(flew_b~mass_c, data=data_T2, family=binomial), is_color=output_col)
 ```
 
 **Morphology Effects**
 
 ```{r, echo=FALSE}
 ####### Effect of beak length
-tidy_regression_bw(glm(flew_b~beak_c, data=data_T2, family=binomial))
+tidy_regression(glm(flew_b~beak_c, data=data_T2, family=binomial), is_color=output_col)
 
 ####### Effect of thorax length
-tidy_regression_bw(glm(flew_b~thorax_c, data=data_T2, family=binomial))
+tidy_regression(glm(flew_b~thorax_c, data=data_T2, family=binomial), is_color=output_col)
 
 ####### Effect of body length
-tidy_regression_bw(glm(flew_b~body_c, data=data_T2, family=binomial))
+tidy_regression(glm(flew_b~body_c, data=data_T2, family=binomial), is_color=output_col)
 
 ####### No effect of wing length
-tidy_regression_bw(glm(flew_b~wing_c, data=data_T2, family=binomial))
+tidy_regression(glm(flew_b~wing_c, data=data_T2, family=binomial), is_color=output_col)
 ```
 
 <a id="wo_mass"></a>
@@ -423,15 +423,9 @@ tidy_regression_bw(glm(flew_b~wing_c, data=data_T2, family=binomial))
 
 However, no error is thrown when included in the morphology analyses.
 
-
 #### Without Mass
 
 ```{r}
-# Recentering
-data_T2$lat_c<-data_T2$latitude-mean(data_T2$latitude)
-data_T2$sym_dist<-abs(data_T2$latitude-25.49197)
-data_T2$mass_c <- data_T2$mass-mean(data_T2$mass, na.rm=TRUE) 
-
 R = data_T2$flew_b
 A = data_T2$host_c
 B = data_T2$sex_c
@@ -439,9 +433,7 @@ C = data_T2$sym_dist
 D = data_T2$mass_c # as a covariate 
 
 data<-data.frame(R, A, B, C, D)
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glm 3-FF.R")
 AICs <- sort(summary$AIC)
@@ -472,7 +464,7 @@ anova(m6, m10, test="Chisq") # Adding a B*C interaction term does not improve fi
 
 ```{r echo=FALSE}
 model_T2 <-glm(flew_b~sex_c, family=binomial, data=data_T2)
-tidy_regression_bw(model_T2)
+tidy_regression(model_T2, is_color=output_col)
 ```
 
 * sex is the only significant and strong effect, so that if you are female you are much less likely to disperse/fly
@@ -501,14 +493,13 @@ rbind(AICs, models, probs)
 
 ```{r}
 anova(m7, m4, test="Chisq") # Removing A does improve fit (neg Dev)
-anova(m7, m9, test="Chisq") # Replacing A with B does improve fit (neg Dev)
 anova(m7, m12, test="Chisq") # Adding B does not improve fit
 anova(m4, m9, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
 model_T2_mass <-glm(flew_b~mass_c, family=binomial, data=data_T2)
-tidy_regression_bw(model_T2_mass)
+tidy_regression(model_T2_mass, is_color=output_col)
 ```
 
 * mass is the only significant and extremely strong effect, so that if you are heavy you are much less likely to disperse/fly
@@ -520,18 +511,12 @@ Mass is really dominating everything, so let's split by sex after looking at Tri
 #### Morphology 
 
 ```{r}
-# Remove any missing masses
+# Remove any missing masses and morphology measurements
 data_T2 <- data_T2 %>%
-  filter(!is.na(mass))
+  filter(!is.na(mass))  %>%
+  filter(!is.na(body))
 
-# Recentering
-data_T2$lat_c<-data_T2$latitude-mean(data_T2$latitude)
-data_T2$sym_dist<-abs(data_T2$latitude-25.49197)
-data_T2$mass_c <- data_T2$mass-mean(data_T2$mass, na.rm=TRUE) 
-data_T2$beak_c <- data_T2$beak-mean(data_T2$beak, na.rm=TRUE)
-data_T2$thorax_c <- data_T2$thorax-mean(data_T2$thorax, na.rm=TRUE)
-data_T2$body_c <- data_T2$body-mean(data_T2$body, na.rm=TRUE) 
-data_T2$wing_c <- data_T2$wing-mean(data_T2$wing, na.rm=TRUE) 
+data_T2 <- center_data(data_T2)
 
 R = data_T2$flew_b
 A = data_T2$beak_c
@@ -540,11 +525,7 @@ C = data_T2$body_c
 D = data_T2$wing_c 
 
 data<-data.frame(R, A, B, C, D)
-data <- data %>%
-  filter(!is.na(A))
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R")
 AICs <- sort(summary$AIC)
@@ -557,30 +538,29 @@ probs <- models_init$x[1:top]
 rbind(AICs, models, probs)
 ```
 
+- m54 <- glm(formula = R ~ B * D + C * D, family = binomial, data = data)
+- m85 <- glm(formula = R ~ A * D + B * D + C * D, family = binomial, data = data)
 - m51 <- glm(formula = R ~ A * D + C * D, family = binomial, data = data)
 - m63 <- glm(formula = R ~ A * D + C * D + B, family = binomial, data = data)
-- m84 <- glm(formula = R ~ A * D + B * C + C * D, family = binomial, data = data)
-- m85 <- glm(formula = R ~ A * D + B * D + C * D, family = binomial, data = data)
-- m79 <- glm(formula = R ~ A * C + A * D + C * D, family = binomial, data = data)
 
 ```{r}
+anova(m63, m85, test="Chisq") # Adding B*D does not improve fit
 anova(m51, m63, test="Chisq") # Adding B does not improve fit
-anova(m63, m84, test="Chisq") # Adding B*C interaction does not improve fit
 ```
 
 ```{r}
-morph_model_T2 <- glm(formula = flew_b ~ beak_c * wing_c + body_c * wing_c, family = binomial, data = data_T2)
-tidy_regression_bw(morph_model_T2)
+morph_model_T2 <- glm(flew_b ~ thorax_c * wing_c + body_c * wing_c, family = binomial, data = data_T2)
+tidy_regression(morph_model_T2, is_color=output_col)
 ```
-* no effect of beak length
+* no effect of thorax length
 * positive effect of wing length, where if wing longer then bug more likely to fly
-* negative effect of body length, where if body longer then bug less likely to fly
-* negative wing*body length interaction, where if body longer and wing longer then bug less likely to fly (possibly because weighs more).
-* positive effect of beak*wing length where if beak length longer and wing longer, then bug more likely to fly
+* no effect of body length 
+* positive effect of thorax*wing, where the longer the thorax and wing the more likely the bug will fly
+* negative effect of wing and body where the longer the wing and body the less liekly the bug will fly
 
 ```{r}
-morph_model_T2glmer <- glmer(formula = flew_b ~ beak_c * wing_c + body_c * wing_c + (1|population) + (1|chamber), family = binomial, data = data_T2) # (1|days_from_start_c) variance = 0, chamber didn not have variance at 0
-tidy_regression_bw(morph_model_T2glmer) # changed coefficients slightly, but did not improve the fit of the model.
+morph_model_T2glmer <- glmer(flew_b ~ thorax_c * wing_c + body_c * wing_c + (1|chamber), family = binomial, data = data_T2) # (1|days_from_start_c) and (1|population)variance = 0, chamber did not have variance at 0
+tidy_regression(morph_model_T2glmer, is_color=output_col) # changed coefficients slightly, but did not improve the fit of the model.
 ```
 
 ### Females
@@ -603,21 +583,23 @@ tidy_regression_bw(morph_model_T2glmer) # changed coefficients slightly, but did
 
 * [glmer() A=beak, B=thorax, C=body, D=wing X=ID](#glmer_morph)
 
-* [glmer() A=beak, B=thorax, C=body, D=wing X=trial_type](#glmer_morph2)
-
 <a id="cleanup_data"></a>
 
 **Cleaning the Data**
 
 ```{r}
+rm(list=ls())
+output_col = FALSE 
 source("clean_flight_data.R")
-source("regression_output.R")
-source("regression_output2.R")
+source("regression_output.R") 
+source("center_flight_data.R")
 
-data_all <- read_flight_data("all_flight_data-Winter2020.csv")
-data_tested <- data_all[data_all$tested == "yes",]
+data <- read_flight_data("all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
 
 data_fem <- data_tested[data_tested$sex=="F",]
+data_fem <- center_data(data_fem)
 ```
 
 <a id="expset-up_effects"></a>
@@ -626,42 +608,42 @@ data_fem <- data_tested[data_tested$sex=="F",]
 
 ```{r echo=FALSE}
 ####### Marginal effect of chamber B-4 (ah this again!)
-tidy_regression_bw(glm(flew_b~chamber, data=data_fem, family=binomial))
+tidy_regression(glm(flew_b~chamber, data=data_fem, family=binomial), is_color=output_col)
 
 ####### No effect of test date
-tidy_regression_bw(glm(flew_b~days_from_start, data=data_fem, family=binomial))
+tidy_regression(glm(flew_b~days_from_start, data=data_fem, family=binomial), is_color=output_col)
 
 ####### No effect of test time
-tidy_regression_bw(glm(flew_b~min_from_IncStart, data=data_fem, family=binomial))
+tidy_regression(glm(flew_b~min_from_IncStart, data=data_fem, family=binomial), is_color=output_col)
 ```
 
 **Biological Effects**
 
 ```{r echo=FALSE}
 ####### (Strong) Effect of mass  
-tidy_regression_bw(glm(flew_b~mass_c, data=data_fem, family=binomial))
+tidy_regression(glm(flew_b~mass_c, data=data_fem, family=binomial), is_color=output_col)
 
 ####### Effect of number of eggs laid
-tidy_regression_bw(glm(flew_b~total_eggs_c, data=data_fem, family=binomial)) 
+tidy_regression(glm(flew_b~total_eggs_c, data=data_fem, family=binomial), is_color=output_col) 
 
 ####### Effect of whether eggs were laid or not
-tidy_regression_bw(glm(flew_b~eggs_b, data=data_fem, family=binomial)) 
+tidy_regression(glm(flew_b~eggs_b, data=data_fem, family=binomial), is_color=output_col) 
 ```
 
 **Morphology Effects**
 
 ```{r echo=FALSE}
 ####### Effect of beak length
-tidy_regression_bw(glm(flew_b~beak_c, data=data_fem, family=binomial))  
+tidy_regression(glm(flew_b~beak_c, data=data_fem, family=binomial), is_color=output_col)  
 
 ####### No effect of thorax length
-tidy_regression_bw(glm(flew_b~thorax_c, data=data_fem, family=binomial)) 
+tidy_regression(glm(flew_b~thorax_c, data=data_fem, family=binomial), is_color=output_col) 
 
 ####### Effect of body length
-tidy_regression_bw(glm(flew_b~body_c, data=data_fem, family=binomial)) 
+tidy_regression(glm(flew_b~body_c, data=data_fem, family=binomial), is_color=output_col) 
 
 ####### Effect of wing length
-tidy_regression_bw(glm(flew_b~wing_c, data=data_fem, family=binomial)) 
+tidy_regression(glm(flew_b~wing_c, data=data_fem, family=binomial), is_color=output_col) 
 ```
 
 <a id="without.mass"></a>
@@ -669,25 +651,13 @@ tidy_regression_bw(glm(flew_b~wing_c, data=data_fem, family=binomial))
 #### Without Mass
 
 ```{r}
-# Recentering
-data_fem$lat_c<-data_fem$latitude - mean(data_fem$latitude)
-data_fem$sym_dist<-abs(data_fem$latitude-25.49197)
-data_fem$mass_c <- data_fem$mass - mean(data_fem$mass, na.rm=TRUE) 
-data_fem$beak_c <- data_fem$beak-mean(data_fem$beak, na.rm=TRUE)
-data_fem$thorax_c <- data_fem$thorax-mean(data_fem$thorax, na.rm=TRUE)
-data_fem$body_c <- data_fem$body-mean(data_fem$body, na.rm=TRUE) 
-data_fem$wing_c <- data_fem$wing-mean(data_fem$wing, na.rm=TRUE) 
-
-
 R = data_fem$flew_b
 A = data_fem$host_c
 B = data_fem$sym_dist
 C = data_fem$mass_c
 
 data<-data.frame(R, A, B, C)
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glm 2-FF.R")
 AICs <- sort(summary$AIC)
@@ -715,15 +685,24 @@ anova(m2, m3, test="Chisq") # Adding A does not improve fit
 
 ```{r echo=FALSE}
 model_fem <-glm(flew_b~1, family=binomial, data=data_fem)
-tidy_regression_bw(model_fem) 
+tidy_regression(model_fem, is_color=output_col) 
 ```
 
 <a id="with.mass"></a>
 
 #### With Mass
 ```{r}
-data <- data %>%
-  filter(!is.na(C))
+data_fem <- data_tested[data_tested$sex=="F",]
+data_fem <- data_fem %>%
+  filter(!is.na(mass))
+data_fem <- center_data(data_fem)
+
+R = data_fem$flew_b
+A = data_fem$host_c
+B = data_fem$sym_dist
+C = data_fem$mass_c
+
+data<-data.frame(R, A, B, C)
 
 source("AICprobabilities.R")
 source("generic models-binomial glm 3-FF.R")
@@ -757,34 +736,26 @@ anova(m6, m10, test="Chisq") # Adding B*C does not improve fit
 
 ```{r echo=FALSE}
 model_fem_mass <-glm(flew_b~mass_c, family=binomial, data=data_fem)
-tidy_regression_bw(model_fem_mass) 
+tidy_regression(model_fem_mass, is_color=output_col) 
 ```
 
-* large effect of mass, where the heavier the bug is the less likely the bus will fly/disperse.
+* large negative effect of mass, where the heavier the bug is the less likely the bus will fly/disperse.
 
 <a id="glmer"></a>
 
 #### Chamber B-4 was significant: Consider for females: A=host, B=mass, X=ID, Y=chamber
 
 ```{r}
-# Recentering
-data_fem$lat_c<-data_fem$latitude-mean(data_fem$latitude)
-data_fem$sym_dist<-abs(data_fem$latitude-25.49197)
-data_fem$mass_c <- data_fem$mass-mean(data_fem$mass, na.rm=TRUE) 
-
 R = data_fem$flew_b
 A = data_fem$host_c
 B = data_fem$sym_dist
 C = data_fem$mass_c
 X = data_fem$ID # this has a high variance  
-Y = data_fem$chamber # variance is zero for this so can remove it
+#Y = data_fem$trial_type
+#Y = data_fem$chamber # variance is zero for this so can remove it or replace it
 
-data<-data.frame(R, A, B, C, X, Y)
-data <- data %>%
-  filter(!is.na(C))
-```
+data<-data.frame(R, A, B, C, X)
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glmer 1 RF + 3-FF.R") # 3 models didn't converge
 AICs <- sort(summary$AIC)
@@ -812,16 +783,12 @@ anova(m13, m16, test="Chisq") # Adding B*C interaction does not improve fit
 ```
 
 ```{r}
-data_fem_mass <- data_fem %>%
-  filter(!is.na(mass_c))
-model_fem_ME <-glmer(flew_b~sym_dist*mass_c + (1|ID), family=binomial, data=data_fem_mass)
-tidy_regression_bw(model_fem_ME) 
+model_fem_ME <-glmer(flew_b~sym_dist*mass_c + (1|ID), family=binomial, data=data_fem)
+tidy_regression(model_fem_ME, is_color=output_col) 
 ```
 
-Coefficients are way too huge and at different scales. Could help rescaling?
+Coefficients are way too huge and at different scales. And mass no longer significant? 
 
-* large negative effect of mass is not significant anymore
-* marginal negative effect of sym_dist
 * large negative effect of sym_dist*mass_c
 
 <a id="eggs"></a>
@@ -829,10 +796,6 @@ Coefficients are way too huge and at different scales. Could help rescaling?
 #### Eggs
 
 ```{r}
-# Remove any missing masses
-data_fem <- data_fem %>%
-  filter(!is.na(mass))
-
 R = data_fem$flew_b
 A = data_fem$host_c
 B = data_fem$sym_dist
@@ -840,9 +803,7 @@ C = data_fem$mass_c
 D = data_fem$eggs_b
   
 data<-data.frame(R, A, B, C, D)
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R")
 AICs <- sort(summary$AIC)
@@ -868,7 +829,7 @@ anova(m4, m7, test="Chisq") # Adding A does not improve fit
 
 ```{r}
 fem_model<-glm(flew_b~eggs_b, family=binomial, data=data_fem)
-tidy_regression_bw(fem_model)
+tidy_regression(fem_model, is_color=output_col)
 ```
 
 * Strong negative effect if laid eggs that day
@@ -877,28 +838,26 @@ Looks like eggs are overpowering mass in this modeling example
 
 ```{r}
 ffem_model<-glmer(flew_b~eggs_b + (1|ID), family=binomial, data=data_fem) 
-tidy_regression_bw(ffem_model) # model fits better, still a strong negative effect if laid eggs that day
+tidy_regression(ffem_model, is_color=output_col) # model fits better, still a strong negative effect if laid eggs that day
 ```
 
 Host seems to not be effecing female flight...let's remove it and replace it with total_eggs laid
 
 ```{r}
-# Remove any missing masses
-data_fem <- data_fem %>%
+data_fem <- data_tested[data_tested$sex=="F",]
+data_eggs <- data_fem %>%
+  filter(!is.na(total_eggs)) %>%
   filter(!is.na(mass))
+data_eggs <- center_data(data_eggs)
 
-R = data_fem$flew_b
-A = data_fem$host_c
-B = data_fem$sym_dist
-C = data_fem$mass_c
-D = data_fem$total_eggs_c
-  
+R = data_eggs$flew_b
+A = data_eggs$host_c
+B = data_eggs$sym_dist
+C = data_eggs$mass_c
+D = data_eggs$total_eggs_c
+
 data<-data.frame(R, A, B, C, D)
-data <- data %>%
-  filter(!is.na(D))
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R")
 AICs <- sort(summary$AIC)
@@ -912,9 +871,9 @@ rbind(AICs, models, probs)
 ```
 
 - m4 <-  glm(formula = R ~ D, family = binomial, data = data) 
-- m7 <- glm(formula = R ~ A + D, family = binomial, data = data)
 - m9 <- glm(formula = R ~ B + D, family = binomial, data = data)
 - m10 <- glm(formula = R ~ C + D, family = binomial, data = data)
+- m7 <- glm(formula = R ~ A + D, family = binomial, data = data)
 
 ```{r}
 anova(m4, m9, test="Chisq") # Adding B does not improve fit
@@ -924,35 +883,33 @@ anova(m4, m7, test="Chisq") # Adding A does not improve fit
 
 ```{r}
 egg_model<-glm(flew_b~total_eggs_c, family=binomial, data=data_fem)
-tidy_regression_bw(egg_model)
+tidy_regression(egg_model, is_color=output_col)
 ```
 
 * Negative effect of total eggs laid, where if more eggs laid, then less likely to fly.
 
 ```{r}
 egg_modelglmer<-glmer(flew_b~total_eggs_c + (1|ID), family=binomial, data=data_fem) 
-tidy_regression_bw(egg_modelglmer) # model fits better and still a strong negative effect if laid eggs that day
+tidy_regression(egg_modelglmer, is_color=output_col) # model fits better and still a strong negative effect if laid eggs that day
 ```
 
 Check total_eggs_c and eggs_b together and then use glmer() with ID as a random effect. 
 
 ```{r}
-# Remove any missing masses
-data_fem <- data_fem %>%
+data_fem <- data_tested[data_tested$sex=="F",]
+data_eggs <- data_fem %>%
+  filter(!is.na(total_eggs)) %>%
   filter(!is.na(mass))
+data_eggs <- center_data(data_eggs)
 
-R = data_fem$flew_b
-A = data_fem$total_eggs_c
-B = data_fem$sym_dist
-C = data_fem$mass_c
-D = data_fem$eggs_b
+R = data_eggs$flew_b
+A = data_eggs$total_eggs_c
+B = data_eggs$sym_dist
+C = data_eggs$mass_c
+D = data_eggs$eggs_b
 
 data<-data.frame(R, A, B, C, D)
-data <- data %>%
-  filter(!is.na(A))
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R")
 AICs <- sort(summary$AIC)
@@ -975,7 +932,7 @@ anova(m7, m18, test="Chisq") # Adding A*D does not improve fit
 
 ```{r}
 fem_model<-glm(flew_b~total_eggs_c + eggs_b, family=binomial, data=data_fem) 
-tidy_regression_bw(fem_model)
+tidy_regression(fem_model, is_color=output_col)
 ```
 
 * strong negative effect from eggs_b
@@ -983,7 +940,7 @@ tidy_regression_bw(fem_model)
 
 ```{r}
 ffem_model<-glmer(flew_b~total_eggs_c + eggs_b + (1|ID), family=binomial, data=data_fem) 
-tidy_regression_bw(ffem_model) # model fit improved and total_eggs_c no longer significant.
+tidy_regression(ffem_model, is_color=output_col) # model fit improved and total_eggs_c no longer significant.
 ```
 
 Thus, eggs_b is the better predictor of whether a bug flew that day.
@@ -1006,9 +963,7 @@ C = data_fem$body_c
 D = data_fem$wing_c 
 
 data<-data.frame(R, A, B, C, D)
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R") 
 AICs <- sort(summary$AIC)
@@ -1028,7 +983,7 @@ anova(m12, m11, test="Chisq") # Replacing C with D does not improve fit
 
 ```{r}
 morph_fem_model <- glm(flew_b ~ beak_c + thorax_c + wing_c, data=data_fem)
-tidy_regression_bw(morph_fem_model)
+tidy_regression(morph_fem_model, is_color=output_col)
 ```
 * Positive effect of beak length, where the longer the beak length the more likely to fly.
 * Negative thorax length, where the longer the thorax length the less likely to fly. Suprised because isn't that where the muscle is stored?
@@ -1038,60 +993,13 @@ tidy_regression_bw(morph_fem_model)
 morph_fem_modelglmer <- glmer(flew_b ~ beak_c + thorax_c + wing_c + (1|trial_type) + (1|chamber), data=data_fem, family=binomial) # variance of population and days_from_start_c = 0
 morph_fem_modelglmer2 <- glmer(flew_b ~ beak_c + thorax_c + wing_c + (1|ID), data=data_fem, family=binomial)
 
-tidy_regression_bw(morph_fem_modelglmer) # better fitted model; coefficients changed a lot, but all still significant 
-tidy_regression_bw(morph_fem_modelglmer2) #even better fitted model; effects now marginal and coefficients changed. 
+tidy_regression(morph_fem_modelglmer, is_color=output_col) # better fitted model; coefficients changed a lot, but all still significant 
+tidy_regression(morph_fem_modelglmer2, is_color=output_col) #even better fitted model; effects now marginal and coefficients changed. 
 ```
 
 Worth running a glmer() script.
 
 <a id="glmer_morph"></a>
-
-#### Consider for females morph: A=beak, B=thorax, C=body, D=wing X=ID
-
-```{r}
-R = data_fem$flew_b
-A = data_fem$beak_c
-B = data_fem$thorax_c
-C = data_fem$body_c
-D = data_fem$wing_c
-X = data_fem$ID # you would think it's the same as ID, but not
-
-data<-data.frame(R, A, B, C, D, X)
-```
-
-```{r}
-source("AICprobabilities.R")
-source("generic models-binomial glmer 1-RF + 4-FF.R") # multiple models (about 70) failed to converge whether I used ID (there were scaling suggestions too)
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
-```
-
-- m0 <- R ~ 1 + (1 | X)
-- m1 <- R ~ A + (1 | X)
-- m3 <- R ~ C + (1 | X)
-- m4 <- R ~ D + (1 | X)
-
-```{r}
-anova(m0, m1, test="Chisq") # Adding A does not improve fit
-anova(m0, m3, test="Chisq") # Adding C does not improve fit
-anova(m0, m4, test="Chisq") # Adding D does not improve fit
-```
-
-Best model is the null model.
-
-```{r}
-best.fem.morph <- glmer(flew_b ~ 1 + (1|ID), data=data_fem, family=binomial) 
-tidy_regression_bw(best.fem.morph) 
-```
-
-
-<a id="glmer_morph2"></a>
 
 #### Consider for females morph: A=beak, B=thorax, C=body, D=wing X=trial_type
 
@@ -1101,14 +1009,16 @@ A = data_fem$beak_c
 B = data_fem$thorax_c
 C = data_fem$body_c
 D = data_fem$wing_c
-X = data_fem$trial_type # you would think it's the same as ID, but not
+X = data_fem$trial_type
+#Y = data_fem$ID# you would think it's the same as ID, but not
+# less models failed to converge if use trial type than ID (~42 with ID vs.16 trial_type) 
+# you also get a different set of top models if you use trial_type or ID
+# could do both but way too many models fail to converge and takes a while to run
 
 data<-data.frame(R, A, B, C, D, X)
-```
 
-```{r}
 source("AICprobabilities.R")
-source("generic models-binomial glmer 1-RF + 4-FF.R") # less multiple models failed to converge whether I used trial_type but many still did 
+source("generic models-binomial glmer 1-RF + 4-FF.R")
 AICs <- sort(summary$AIC)
 models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
 top <- length(models_init$x[which(models_init$x>0.05)])
@@ -1122,18 +1032,19 @@ rbind(AICs, models, probs)
 - m12 <- R ~ A + B + D + (1 | X)
 - m11 <-  R ~ A + B + C + (1 | X)
 
-Results mimic the multivariate results. 
-
 ```{r}
-anova(m12, m11, test="Chisq") # Replacing D with C does not improve fit
+anova(m11, m12, test="Chisq") # replacing C with D improves fit
 ```
 
 ```{r}
-best.fem.morph2 <- glmer(flew_b ~ beak_c + thorax_c + wing_c + (1|trial_type), data=data_fem, family=binomial) 
-tidy_regression_bw(best.fem.morph2) # better model than morph_fem_modelglmer, which includes (1|chamber)
+best.fem.morph <- glmer(flew_b ~ beak_c + thorax_c + wing_c + (1|trial_type), data=data_fem, family=binomial) 
+tidy_regression(best.fem.morph, is_color=output_col) 
 ```
 
-This strange sensitivity between trial_type and ID could be because there may be bugs that were tested twice in the same trial? If that's fixed then could see if trial_type leads to the same best fit model as ID.
+* positive effect of beak length, where the longer the beak the more likely the female bug will fly
+* negative effect of thorax length, where the longer the thorax the less likely the female bug will fly
+* positive effect of wing length, where the longer the wing the more likely the female bug will fly
+
 
 ### Males
 
@@ -1160,14 +1071,18 @@ This strange sensitivity between trial_type and ID could be because there may be
 **Cleaning Data**
 
 ```{r}
+rm(list=ls())
+output_col = FALSE 
 source("clean_flight_data.R")
-source("regression_output.R")
-source("regression_output2.R")
+source("regression_output.R") 
+source("center_flight_data.R")
 
-data_all <- read_flight_data("all_flight_data-Winter2020.csv")
-data_tested <- data_all[data_all$tested == "yes",]
+data <- read_flight_data("all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
 
 data_male <- data_tested[data_tested$sex=="M",]
+data_male <- center_data(data_male)
 ```
 
 <a id="expsetup_effects"></a>
@@ -1176,13 +1091,13 @@ data_male <- data_tested[data_tested$sex=="M",]
 
 ```{r echo=FALSE}
 ####### No effect of chamber
-tidy_regression_bw(glm(flew_b~chamber, data=data_male, family=binomial))
+tidy_regression(glm(flew_b~chamber, data=data_male, family=binomial), is_color=output_col)
 
 ####### Effect of test date (as seen in the data_all)
-tidy_regression_bw(glm(flew_b~days_from_start_c, data=data_male, family=binomial))
+tidy_regression(glm(flew_b~days_from_start_c, data=data_male, family=binomial), is_color=output_col)
 
 ####### No effect of test time (but close p = 0.09443)
-tidy_regression_bw(glm(flew_b~min_from_IncStart, data=data_male, family=binomial))
+tidy_regression(glm(flew_b~min_from_IncStart, data=data_male, family=binomial), is_color=output_col)
 
 # seems like males are very time sensitive
 ```
@@ -1191,23 +1106,23 @@ tidy_regression_bw(glm(flew_b~min_from_IncStart, data=data_male, family=binomial
 
 ```{r echo=FALSE}
 ####### (Strong) Effect of mass 
-tidy_regression_bw(glm(flew_b~mass_c, data=data_male, family=binomial)) 
+tidy_regression(glm(flew_b~mass_c, data=data_male, family=binomial), is_color=output_col) 
 ```
 
 **Morphology Effects**
 
 ```{r echo=FALSE}
 ####### No effect of beak length
-tidy_regression_bw(glm(flew_b~beak_c, data=data_male, family=binomial))
+tidy_regression(glm(flew_b~beak_c, data=data_male, family=binomial), is_color=output_col)
 
 ####### No effect of thorax length
-tidy_regression_bw(glm(flew_b~thorax_c, data=data_male, family=binomial)) 
+tidy_regression(glm(flew_b~thorax_c, data=data_male, family=binomial), is_color=output_col) 
 
 ####### No effect of body length
-tidy_regression_bw(glm(flew_b~body_c, data=data_male, family=binomial)) 
+tidy_regression(glm(flew_b~body_c, data=data_male, family=binomial), is_color=output_col) 
 
 ####### Effect of wing length
-tidy_regression_bw(glm(flew_b~wing_c, data=data_male, family=binomial)) 
+tidy_regression(glm(flew_b~wing_c, data=data_male, family=binomial), is_color=output_col) 
 ```
 
 <a id="no.mass"></a>
@@ -1218,15 +1133,7 @@ tidy_regression_bw(glm(flew_b~wing_c, data=data_male, family=binomial))
 # Remove any missing masses
 data_male <- data_male %>%
   filter(!is.na(mass))
-
-# Recentering
-data_male$lat_c<-data_male$latitude - mean(data_male$latitude)
-data_male$sym_dist<-abs(data_male$latitude-25.49197)
-data_male$mass_c <- data_male$mass - mean(data_male$mass, na.rm=TRUE) 
-data_male$beak_c <- data_male$beak-mean(data_male$beak, na.rm=TRUE)
-data_male$thorax_c <- data_male$thorax-mean(data_male$thorax, na.rm=TRUE)
-data_male$body_c <- data_male$body-mean(data_male$body, na.rm=TRUE) 
-data_male$wing_c <- data_male$wing-mean(data_male$wing, na.rm=TRUE) 
+data_male <- center_data(data_male)
 
 R = data_male$flew_b
 A = data_male$host_c
@@ -1234,9 +1141,7 @@ B = data_male$sym_dist
 C = data_male$mass_c 
 
 data<-data.frame(R, A, B, C)
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glm 2-FF.R")
 AICs <- sort(summary$AIC)
@@ -1264,15 +1169,15 @@ anova(m0, m2, test="Chisq") # Adding B does not improve fit
 
 ```{r echo=FALSE}
 model_male<-glm(flew_b~host_c, family=binomial, data=data_male)
-tidy_regression_bw(model_male)
+tidy_regression(model_male, is_color=output_col)
 ```
 
-* Strong negative effect if from GRT
+* Negative effect if from GRT
 
 ```{r}
 ## Consider covariates
-model_male_final <-glmer(flew_b~host_c + (1|population) + (1|trial_type), family=binomial, data=data_male) # no error but get singular fit error when use ID
-tidy_regression_bw(model_male_final)
+model_male_final <-glmer(flew_b~host_c + (1|population) + (1|trial_type), family=binomial, data=data_male) 
+tidy_regression(model_male_final, is_color=output_col)
 ## Changed the effect slightly and improved the model and in turn made host not significant...
 ```
 
@@ -1310,7 +1215,7 @@ anova(m5, m9, test="Chisq") # Adding A*C does not improve fit
 
 ```{r echo=FALSE}
 model_male_mass <-glm(flew_b~host_c + mass_c, family=binomial, data=data_male)
-tidy_regression_bw(model_male_mass)
+tidy_regression(model_male_mass, is_color=output_col)
 ```
 
 * Strong negative effect if from GRT
@@ -1322,8 +1227,8 @@ model_male_mass_final <-glmer(flew_b~host_c + mass_c+ (1|population) + (1|trial_
 
 model_male_mass_final2 <-glmer(flew_b~host_c + mass_c+ (1|population) + (1|trial_type), family=binomial, data=data_male)
 
-tidy_regression_bw(model_male_mass_final)
-tidy_regression_bw(model_male_mass_final2)
+tidy_regression(model_male_mass_final, is_color=output_col)
+tidy_regression(model_male_mass_final2, is_color=output_col)
 ## Changed the effects slightly and in turn made host not significant but not a better fitting model.
 ```
 
@@ -1342,9 +1247,7 @@ C = data_male$mass_c
 X = data_male$days_from_start_c 
 
 data<-data.frame(R, A, B, C, X)
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glmer 1 RF + 3-FF.R")
 AICs <- sort(summary$AIC)
@@ -1375,17 +1278,17 @@ anova(m7, m11, test="Chisq") # Adding A*B does not improve fit
 
 ```{r}
 male_model1<-glmer(flew_b~host_c + mass_c + (1|days_from_start_c), family=binomial, data=data_male) 
-tidy_regression_bw(male_model1) 
+tidy_regression(male_model1, is_color=output_col) 
 ```
 
 * strong negative effect from mass;
-* strong negative effect of host_c;
+* negative effect of host;
 
 Also, when you include days_from_start_c as a fixed effect, this is the top model:
 
 ```{r}
 male_model1<-glm(flew_b~host_c + mass_c + days_from_start_c, family=binomial, data=data_male) 
-tidy_regression_bw(male_model1) 
+tidy_regression(male_model1, is_color=output_col) 
 ```
 
 * less likely to fly if you are from GRT, have more mass, and fly later (older bug..?)
@@ -1395,6 +1298,12 @@ tidy_regression_bw(male_model1)
 #### Morphology
 
 ```{r}
+data_male <- data_tested[data_tested$sex=="M",]
+data_male <- data_male %>%
+  filter(!is.na(mass)) %>%
+  filter(!is.na(body))
+data_male <- center_data(data_male)
+
 R = data_male$flew_b
 A = data_male$beak_c
 B = data_male$thorax_c
@@ -1402,11 +1311,7 @@ C = data_male$body_c
 D = data_male$wing_c 
 
 data<-data.frame(R, A, B, C, D)
-data <- data %>%
-  filter(!is.na(A))
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glm 4-FF.R")
 AICs <- sort(summary$AIC)
@@ -1419,18 +1324,16 @@ probs <- models_init$x[1:top]
 rbind(AICs, models, probs)
 ```
 
-- m107 <- glm(formula = R ~ A * B + A * C + A * D + B * C + C * D, family = binomial, data = data)
 - m93 <- glm(formula = R ~ A * B + A * C + A * D + C * D, family = binomial, data = data)
 - m73 <- glm(formula = R ~ A * B + A * D + C * D, family = binomial, data = data)
+- m107 <- glm(formula = R ~ A * B + A * C + A * D + B * C + C * D, family = binomial, data = data)
 - m98 <- glm(formula = R ~ A * B + A * D + B * C + C * D, family = binomial, data = data)
 - m99 <- glm(formula = R ~ A * B + A * D + B * D + C * D, family = binomial, data = data)
-- m108 <- glm(formula = R ~ A * B + A * C + A * D + B * D + C * D, family = binomial, data = data)
-- m112 <- glm(formula = R ~ A * B + A * C + A * D + B * C + B * D + C * D, family = binomial, data = data)
 - m89 <-  glm(formula = R ~ A * C + A * D + C * D + B, family = binomial, data = data)
 
 ```{r}
-male_morph<-glm(flew_b~ beak_c * thorax_c + beak_c * body_c + beak_c * wing_c + thorax_c * body_c + body_c * wing_c, family=binomial, data=data_male) 
-tidy_regression_bw(male_morph) 
+male_morph<-glm(flew_b~ beak_c * thorax_c + beak_c * body_c + beak_c * wing_c + body_c * wing_c, family=binomial, data=data_male) 
+tidy_regression(male_morph, is_color=output_col) 
 ```
 
 * no effect of beak length
@@ -1438,14 +1341,14 @@ tidy_regression_bw(male_morph)
 * negative effect of thorax length, where if longer thorax then less likely to fly
 * positive effect of wing length, where if longer wing then more likely to fly
 
-* no effect of beak*body
-* no effect of thorax*body
-* negative effect of beak*thorax, where if beak and thorax longer then less likely to fly
+* no effect of beak*thorax
+* no effect of eak*body
 * negative effect of body*wing where if longer body and wing then less likely to fly
+* positive effect of beak*wing where if longer beak and wing then more likely to fly
 
 ```{r}
-male_morph.glmer <- glmer(flew_b~ beak_c * thorax_c + beak_c * body_c + beak_c * wing_c + thorax_c * body_c + body_c * wing_c + (1|chamber), family=binomial, data=data_male) # model failed to converge with ID, trial_type, days_from_start_c, while singular fit for chamber
-tidy_regression_bw(male_morph.glmer) # model does not improve fit
+male_morph.glmer <- glmer(flew_b ~ beak_c * thorax_c + beak_c * body_c + beak_c * wing_c + body_c * wing_c + (1|chamber), family=binomial, data=data_male) # model failed to converge with ID, trial_type, days_from_start_c, while singular fit for chamber
+tidy_regression(male_morph.glmer, is_color=output_col) # model does not improve fit
 ```
 
 <a id="morph_glmer"></a>
@@ -1464,11 +1367,7 @@ Y = data_male$ID #3-4 models failed to converge when 2 RFs (either ID or trail_t
 # a lot of models failed to converge with ID and days_from_start_c, less models failed to converge with trial_type when included thorax length
 
 data<-data.frame(R, A, B, C, X, Y)
-data <- data %>%
-  filter(!is.na(A))
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glmer 2 RF + 3-FF.R")
 AICs <- sort(summary$AIC)
@@ -1481,19 +1380,19 @@ probs <- models_init$x[1:top]
 rbind(AICs, models, probs)
 ```
 
-- m56 <-  R ~ A * B * C + (1 | X) + (1 | Y)
 - m37 <- R ~ A * B * C + (1 | Y)
+- m56 <-  R ~ A * B * C + (1 | X) + (1 | Y)
 
 ```{r}
 anova(m37, m56, test="Chisq") # Adding (1|X) does not improve fit
 ```
 
 ```{r}
-male_morph.glmer <- glmer(flew_b ~ beak_c * body_c * wing_c + (1|ID), family=binomial, data=data_male) # model failed to converge if use (1|ID) but not if use (1|days_from_start_c)
-male_morph.glmer2 <- glmer(flew_b ~ beak_c * body_c * wing_c + (1|days_from_start_c), family=binomial, data=data_male) # model failed to converge if use (1|ID) but not if use (1|days_from_start_c)
+male_morph.glmer <- glmer(flew_b ~ beak_c * body_c * wing_c + (1|ID), family=binomial, data=data_male) # model failed to converge if use (1|ID) but not if use (1|trial_type)
+male_morph.glmer2 <- glmer(flew_b ~ beak_c * body_c * wing_c + (1|trial_type), family=binomial, data=data_male) 
 
-tidy_regression_bw(male_morph.glmer) # best fit model from glmer()
-tidy_regression_bw(male_morph.glmer2) # model does not improve fit
+tidy_regression(male_morph.glmer, is_color=output_col) # best fit model from glmer()
+tidy_regression(male_morph.glmer2, is_color=output_col) # model does not improve fit
 ```
 
 There was no single effect of beak length again. It does show up in the interactions...but it might be worth removing it all together? Try it out real fast below:
@@ -1512,11 +1411,7 @@ X = data_male$days_from_start_c
 Y = data_male$ID 
 
 data<-data.frame(R, A, B, X, Y)
-data <- data %>%
-  filter(!is.na(A))
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glmer 2-RF + 2-FF.R")
 AICs <- sort(summary$AIC)
@@ -1538,7 +1433,7 @@ anova(m9, m14, test="Chisq") # Adding (1|X) does not improve fit
 
 ```{r}
 male_morph.glmer <- glmer(flew_b ~ body_c * wing_c + (1|ID), family=binomial, data=data_male) 
-tidy_regression_bw(male_morph.glmer) # best fit model from glmer()
+tidy_regression(male_morph.glmer, is_color=output_col) # best fit model from glmer()
 ```
 
 * no effect of wing or body individually
@@ -1551,20 +1446,13 @@ Test a  wing-to-body measurement:
 #### glmer() A=wing/body, X=days_from_start, Y=ID
 
 ```{r}
-data_male$wing2body <- data_male$wing/data_male$body
-data_male$wing2body_c <- data_male$wing2body - mean(data_male$wing2body, na.rm=TRUE)
-
 R = data_male$flew_b
 A = data_male$wing2body_c 
 X = data_male$days_from_start_c 
 Y = data_male$ID 
 
 data<-data.frame(R, A, B, X, Y)
-data <- data %>%
-  filter(!is.na(A))
-```
 
-```{r}
 source("AICprobabilities.R")
 source("generic models-binomial glmer 2-RF + 1-FF.R")
 AICs <- sort(summary$AIC)
@@ -1576,18 +1464,17 @@ models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
 probs <- models_init$x[1:top]
 rbind(AICs, models, probs)
 ```
-
+- m5 <- R ~ A + (1 | X) + (1 | Y)
+- m4 <- R ~ A + (1 | Y)
 ```{r}
 anova(m4, m5, test="Chisq") # Adding (1|X) does not improve fit
 ```
 
 ```{r}
 male_morph.glmer <- glmer(flew_b ~ wing2body_c + (1|ID), family=binomial, data=data_male) 
-tidy_regression_bw(male_morph.glmer) # best fit model from glmer()
+tidy_regression(male_morph.glmer, is_color=output_col) # best fit model from glmer()
 ```
 
 * strong positive effect of wing2body, where if you have more wing to body, then more likely to fly
-
-
 
 
