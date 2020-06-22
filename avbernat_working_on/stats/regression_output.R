@@ -46,7 +46,9 @@ tidy_regression <- function(fit, is_color) {
       }
       else {
         if (table$test_stat[i] < 0.05){
-          cat("Pr(>|t|): ", table$test_stat[i], "*")} 
+          cat("Pr(>|t|): ", table$test_stat[i], "*")}
+        else if (table$test_stat[i] < 0.10 && table$test_stat[i] > 0.05){
+          cat("Pr(>|t|): ", table$test_stat[i], ".")} 
         else {cat("Pr(>|t|): ", table$test_stat[i])}
         cat('\n')
       }
@@ -64,6 +66,8 @@ tidy_regression <- function(fit, is_color) {
       else {
         if (table$test_stat[i] < 0.05){
           cat("Pr(>|t|): ", table$test_stat[i], "*")} 
+        else if (table$test_stat[i] < 0.10 && table$test_stat[i] > 0.05){
+          cat("Pr(>|t|): ", table$test_stat[i], ".")} 
         else {cat("Pr(>|t|): ", table$test_stat[i])}
         cat('\n')
       }
