@@ -1,0 +1,628 @@
+---
+title: 'Modeling Flight Distance'
+author: "Anastasia Bernat"
+date: "5/4/2020"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+setwd("~/Desktop/Rstats-winter2020/")
+
+library(lme4)
+library(rethinking)
+
+library(lubridate)
+library(dplyr)
+library(tidyselect)
+library(stringr)
+
+library(ggplot2)
+library(glmnet)
+library(ggplotify)
+library(gridExtra)
+library(ggformula)
+library(randomcoloR)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Winter 2020 Flight Trials: Distance Flight Modeling {.tabset}
+
+Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice for multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. Used multivariate (glm) and mixed effect modeling (glmer) to analyze the flight results.
+
+### All Data
+
+**Cleaning the Data**
+
+```{r}
+rm(list=ls())
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
+source("clean_flight_data.R") # Script that loads and cleans up the data
+source("regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
+source("center_flight_data.R")
+
+data <- read_flight_data("all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+
+### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)
+data_flew <- data_tested[data_tested$flew_b == 1, ]
+data_flew <- data_flew[data_flew$distance > 0, ]
+data_flew <- center_data(data_flew)
+
+###Break up by trial type
+d_T1 <-data_flew[data_flew$trial_type=="T1",] 
+d_T1 <- center_data(d_T1)
+d_T2 <-data_flew[data_flew$trial_type=="T2",]
+d_T2 <- center_data(d_T2)
+
+###Break up by sex 
+d_fem <-data_flew[data_flew$sex=="F",] 
+d_fem <- center_data(d_fem)
+d_male <-data_flew[data_flew$sex=="M",]
+d_male <- center_data(d_male)
+```
+
+### All Data Plots
+
+```{r}
+h1 <-  as.grob(expression(
+  hist(data_flew$distance)))
+p1 <- as.grob(expression(
+  plot(distance ~ mass_c, data=data_flew)))
+p2 <- as.grob(expression(
+  plot(distance ~ days_from_start_c, data=data_flew)))
+p3 <- as.grob(expression(
+  plot(distance ~ min_from_IncStart, data=data_flew)))
+p4 <- as.grob(expression(
+  plot(distance ~ wing_c, data=data_flew)))
+p5 <- as.grob(expression(
+  plot(distance ~ beak_c, data=data_flew)))
+p6 <- as.grob(expression(
+  plot(distance ~ thorax_c, data=data_flew)))
+p7 <- as.grob(expression(
+  plot(distance ~ body_c, data=data_flew)))
+
+grid.arrange(h1,p1,p2,p3,p4,p5,p6,p7, ncol=3)
+```
+
+```{r}
+gf_point(distance~sym_dist, col=~host_plant, alpha=~sex_c, data=data_flew) 
+summary <- aggregate(distance~sym_dist*sex*host_plant, data=data_flew, FUN=mean)
+plot(summary$distance~summary$sym_dist, 
+     col=c(1,2)[as.factor(summary$sex)], # Female = Black, Male = Red
+     pch=c(19,22)[as.factor(summary$host_plant)], # Filled circle is GRT, Open square is BV
+     main="Observed Data: distance ~ sex*host_plant*sym_dist",
+     xlab = "Distance from Sympatric Zone (°)",
+     ylab= "Distance Flew", 
+     #sub=eq_glmer
+     ) 
+legend("topright",
+       legend = c("F and K.elegans", "M and C.corindum", "F and C.corindum","M and K.elegans"),
+       #inset=c(-0.27,0.2),
+       col= 1:2,
+       pch = c(0,16,19),
+       title="Groups")
+p <- ggplot(data_flew, aes(x=sym_dist, y=distance, color=host_plant)) + 
+  geom_violin()
+p + stat_summary(fun=mean, geom="point", shape=23, size=2)
+```
+
+### Trial 1
+
+[Testing link and covariates](#test)
+
+[Without Mass](#wo.mass)
+
+[With Mass](#w.mass)
+
+[Min From Inc Start ](#timestart)
+
+[Morphology](#morph)
+
+<a id="test"></a>
+
+**Testing link functions**
+
+```{r}
+model_test<-glm(distance~chamber, data=d_T1, family=Gamma(link="log")) #equivalent to using log link function in Gamma is to log transform distance, except it won't fuss about non-0 values
+summary(model_test)
+plot(model_test)
+```
+
+**Testing experimental covariates**
+```{r}
+####### Effect of chamber A-4
+d_T1$chamber <- relevel(d_T1$chamber, ref="A-2")
+tidy_regression(glm(distance~chamber, data=d_T1, family=Gamma(link="log")), is_color=output_col)
+
+####### No effect of test date
+tidy_regression(glm(distance~days_from_start_c, data=d_T1, family=Gamma(link="log")), is_color=output_col)
+
+####### Effect of Minutes from IncStart time
+tidy_regression(glm(distance~min_from_IncStart_c, data=d_T1, family=Gamma(link="log")), is_color=output_col)
+```
+
+<a id="wo.mass"></a>
+
+**Without Mass**
+
+```{r warning=FALSE}
+data<-data.frame(R=d_T1$distance, A=d_T1$host_c, B=d_T1$sex_c, C=d_T1$sym_dist, X=d_T1$chamber)
+
+source("AICprobabilities.R")
+source("generic models-Gamma glmer 3-FF log link.R") # 9 models failed to converge
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs) # No model with chamber was in the top 5.
+```
+
+- m2 <- glm(formula = R ~ B, family = Gamma(link = "log"), data = data)
+- m6 <- glm(formula = R ~ B + C, family = Gamma(link = "log"), data = data)
+- m4 <- glm(formula = R ~ A + B, family = Gamma(link = "log"), data = data)
+- m1 <- glm(formula = R ~ A, family = Gamma(link = "log"), data = data)
+- m3 <- glm(formula = R ~ C, family = Gamma(link = "log"), data = data)
+
+```{r}
+anova(m2, m6, test="Chisq") # Adding C does not improve fit
+anova(m2, m4, test="Chisq") # Adding A does not improve fit
+```
+
+```{r}
+best.fit <- glm(distance ~ sex_c, family = Gamma(link = "log"), data = d_T1)
+tidy_regression(best.fit, is_color=output_col)
+```
+
+* marginal positive effect of sex, where if F then longer dispersal distances
+
+<a id="w.mass"></a>
+
+**With Mass**
+
+```{r warning=FALSE}
+data<-data.frame(R=d_T1$distance, A=d_T1$host_c, B=d_T1$sex_c, C=d_T1$sym_dist, D=d_T1$mass_c, X=d_T1$chamber)
+
+source("AICprobabilities.R")
+source("generic models-Gamma glmer 4-FF log link.R") # most models failed to converge
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+- m20 <- R ~ B * D + (1 | X)
+- m30 <- R ~ B * D + A + (1 | X)
+- m31 <- R ~ B * D + C + (1 | X)
+- m50 <- R ~ A * D + B * D + (1 | X)
+
+```{r}
+anova(m20, m30, test="Chisq") # Adding A does not improve fit
+anova(m20, m31, test="Chisq") # Adding C does not improve fit
+anova(m30, m50, test="Chisq") # Adding A*D does not improve fit
+```
+
+```{r}
+best.fit <- glm(distance ~ sex_c * mass_c, family = Gamma(link = "log"), data = d_T1) # model failed to converge using glmer and (1|chamber)
+tidy_regression(best.fit, is_color=output_col)
+```
+* positive effect of sex where 
+* no effect of mass
+* negative effect of sex*mass where if female and heavy then less likely to disperse far
+
+<a id="timestart"></a>
+
+**Min From Inc Start**
+
+```{r warning=FALSE}
+data<-data.frame(R=d_T1$distance, A=d_T1$min_from_IncStart_c, B=d_T1$sex_c, C=d_T1$sym_dist, D=d_T1$mass_c, X=d_T1$chamber)
+
+source("AICprobabilities.R")
+source("generic models-Gamma glmer 4-FF log link.R") # most models failed to converge
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+- m94 <- R ~ A * B + A * C + B * C + B * D + (1 | X)
+- m43 <- R ~ A * B + B * D + (1 | X)
+- m96 <- R ~ A * B + A * C + B * D + C * D + (1 | X)
+
+```{r}
+best.fit <- glmer(distance ~ min_from_IncStart_c * sex_c + min_from_IncStart_c * sym_dist + sex_c * sym_dist + sex_c * mass_c + (1|chamber), family = Gamma(link = "log"), data = d_T1) # model failed to converge
+tidy_regression(best.fit, is_color=output_col)
+```
+
+* no effect of min from start
+* positive effect from sex where if F then more likely to disperse far
+* no effect of sym_dist
+* no effect of mass
+
+* negative effect of min from start*sex, where if F and tested late in the day then less likely to disperse far
+* negative effect of min from start*sym_dist, where if from GRT and tested late in the day then less likely to disperse far
+* marginal negative effect of sex*sym dist, where if F and from GRT then less likely to disperse far
+* strong negative effect of mass*sex, where if F and heavy then much less likely to disperse far
+
+<a id="morph"></a>
+
+**Morphology**
+
+```{r warning=FALSE}
+d_T1 <- d_T1 %>%
+  filter(!is.na(mass))
+d_T1 <- center_data(d_T1)
+
+data<-data.frame(R=d_T1$distance, A=d_T1$body_c, B=d_T1$wing_c, C=d_T1$thorax_c, D=d_T1$beak_c, X=d_T1$chamber) # singular fit if run with min_from_IncStart meaning the variance is near 0
+
+source("AICprobabilities.R")
+source("generic models-Gamma glmer 4-FF log link.R") # most models failed to converge
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+- m1 <- R ~ A + (1 | X)
+- m7 <-  R ~ A + D + (1 | X)
+- m2 <- R ~ B + (1 | X)
+- m6 <- R ~ A + C + (1 | X)
+
+```{r}
+anova(m1, m7, test="Chisq") # Adding D does not improve fit
+anova(m1, m6, test="Chisq") # Adding C does not improve fit
+```
+
+```{r}
+best.fit <- glmer(distance ~ body_c + (1|chamber), family = Gamma(link = "log"), data = d_T1) # model failed to converge
+tidy_regression(best.fit, is_color=output_col)
+```
+* positive effect of body length where the longer the body the more likely the bug disperse farther
+
+```{r warning=FALSE}
+d_T1 <- d_T1 %>%
+  filter(!is.na(mass))
+d_T1 <- center_data(d_T1)
+
+data<-data.frame(R=d_T1$distance, A=d_T1$wing2body_c, B=d_T1$thorax_c, C=d_T1$beak_c, X=d_T1$chamber) 
+
+source("AICprobabilities.R")
+source("generic models-Gamma glmer 3-FF log link.R") # about 3 models failed to converge
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+- m2 <- glm(formula = R ~ B, family = Gamma(link = "log"), data = data)
+- m3 <- glm(formula = R ~ C, family = Gamma(link = "log"), data = data)
+- m4 <- glm(formula = R ~ A + B, family = Gamma(link = "log"), data = data)
+- m6 <- glm(formula = R ~ B + C, family = Gamma(link = "log"), data = data)
+- m5 <- glm(formula = R ~ A + C, family = Gamma(link = "log"), data = data)
+- m9 <- glm(formula = R ~ A * C, family = Gamma(link = "log"), data = data)
+
+```{r}
+anova(m2, m4, test="Chisq") # Adding A does not improve fit
+anova(m2, m6, test="Chisq") # Adding C does not improve fit
+anova(m3, m6, test="Chisq") # Adding B does not improve fit
+anova(m5, m9, test="Chisq") # Adding A*C does not improve fit
+```
+
+```{r}
+best.fit <- glm(distance ~ thorax_c, family = Gamma(link = "log"), data = d_T1) # model failed to converge
+tidy_regression(best.fit, is_color=output_col)
+```
+
+* positive effect of thorax length, where the longer the length the farther the dispersal
+
+### Trial 1 Plots 
+
+```{r}
+h1 <-  as.grob(expression(
+  hist(d_T1$distance)))
+p1 <- as.grob(expression(
+  plot(distance ~ mass_c, data=d_T1)))
+p2 <- as.grob(expression(
+  plot(distance ~ days_from_start_c, data=d_T1)))
+p3 <- as.grob(expression(
+  plot(distance ~ min_from_IncStart, data=d_T1)))
+p4 <- as.grob(expression(
+  plot(distance ~ wing_c, data=d_T1)))
+p5 <- as.grob(expression(
+  plot(distance ~ beak_c, data=d_T1)))
+p6 <- as.grob(expression(
+  plot(distance ~ thorax_c, data=d_T1)))
+p7 <- as.grob(expression(
+  plot(distance ~ body_c, data=d_T1)))
+
+grid.arrange(h1,p1,p2,p3,p4,p5,p6,p7, ncol=3)
+```
+
+```{r}
+gf_point(distance~sym_dist, col=~host_plant, alpha=~sex_c, data=d_T1) 
+summary <- aggregate(distance~sym_dist*sex*host_plant, data=d_T1, FUN=mean)
+plot(summary$distance~summary$sym_dist, 
+     col=c(1,2)[as.factor(summary$sex)], # Female = Black, Male = Red
+     pch=c(19,22)[as.factor(summary$host_plant)], # Filled circle is GRT, Open square is BV
+     main="T1 Observed Data: distance ~ sex*host_plant*sym_dist",
+     xlab = "Distance from Sympatric Zone (°)",
+     ylab= "Distance Flew", 
+     #sub=eq_glmer
+     ) 
+legend("topright",
+       legend = c("F and K.elegans", "M and C.corindum", "F and C.corindum","M and K.elegans"),
+       #inset=c(-0.27,0.2),
+       col= 1:2,
+       pch = c(0,16,19),
+       title="Groups")
+```
+
+### Trial 2
+
+[Testing link and covariates](#test2)
+
+[Without Mass](#wo.mass2)
+
+[With Mass](#w.mass2)
+
+[Morphology](#morph2)
+
+<a id="test2"></a>
+
+**Testing link functions**
+
+```{r}
+model_test<-glm(distance~chamber, data=d_T2, family=Gamma(link="log")) 
+summary(model_test)
+plot(model_test)
+```
+
+**Testing experimental Covariates**
+
+```{r}
+####### No effect of chamber.
+tidy_regression(glm(distance~chamber, data=d_T2, family=Gamma(link="log")), is_color=output_col)
+
+####### No effect of test date
+tidy_regression(glm(distance~days_from_start, data=d_T2, family=Gamma(link="log")), is_color=output_col)
+
+####### No effect of Minutes from IncStart time
+tidy_regression(glm(distance~min_from_IncStart, data=d_T2, family=Gamma(link="log")), is_color=output_col)
+```
+
+<a id="wo.mass2"></a>
+
+**Without Mass**
+
+```{r warning=FALSE}
+data<-data.frame(R=d_T2$distance, A=d_T2$host_c, B=d_T2$sex_c, C=d_T2$sym_dist, X=d_T2$chamber)
+
+source("AICprobabilities.R")
+source("generic models-Gamma glmer 3-FF log link.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE) # singular fit warning b/c chamber var close to 0
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+- m1 <- glm(formula = R ~ A, family = Gamma(link = "log"), data = data)
+- m3 <- glm(formula = R ~ C, family = Gamma(link = "log"), data = data)
+- m2 <- glm(formula = R ~ B, family = Gamma(link = "log"), data = data)
+- m4 <- glm(formula = R ~ A + B, family = Gamma(link = "log"), data = data)
+- m5 <- glm(formula = R ~ A + C, family = Gamma(link = "log"), data = data)
+- m6 <- glm(formula = R ~ B + C, family = Gamma(link = "log"), data = data)
+- m0 <- R ~ 1 + (1 | X)
+
+```{r}
+anova(m0, m1, test="Chisq") # Adding A improves fit
+anova(m1, m4, test="Chisq") # Adding B does not improve fit
+anova(m1, m5, test="Chisq") # Adding C does not improve fit
+```
+
+```{r}
+best.fit <- glm(distance ~ host_c, family = Gamma(link = "log"), data = d_T2) 
+tidy_regression(best.fit, is_color=output_col)
+```
+
+*no effect of host plant
+
+<a id="w.mass2"></a>
+
+**With Mass**
+
+```{r warning=FALSE}
+data<-data.frame(R=d_T2$distance, A=d_T2$host_c, B=d_T2$sex_c, C=d_T2$sym_dist, D=d_T2$mass_c, X=d_T2$chamber)
+
+source("AICprobabilities.R")
+source("generic models-Gamma glmer 4-FF log link.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE) # singular fit warning b/c chamber var close to 0
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+- m0 <- R ~ 1 + (1 | X)
+- m4 <- R ~ D + (1 | X)
+- m1 <- R ~ A + (1 | X)
+- m9 <- R ~ B + D + (1 | X)
+- m3 <- R ~ C + (1 | X)
+- m2 <- R ~ B + (1 | X)
+- m20 <- R ~ B * D + (1 | X)
+
+```{r}
+anova(m0, m4, test="Chisq") # Adding D does not improve fit
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
+anova(m0, m3, test="Chisq") # Ading  C does not improve fit
+anova(m0, m2, test="Chisq") # Adding B does not improve fit; null model the best model
+```
+
+```{r}
+best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_T2) 
+tidy_regression(best.fit, is_color=output_col)
+```
+
+<a id="morph2"></a>
+
+**Morphology**
+
+```{r warning=FALSE}
+d_T2 <- d_T2 %>%
+  filter(!is.na(body))
+d_T2 <- center_data(d_T2)
+
+data<-data.frame(R=d_T2$distance, A=d_T2$body_c, B=d_T2$wing_c, C=d_T2$thorax_c, D=d_T2$beak_c, X=d_T2$chamber)
+
+source("AICprobabilities.R")
+source("generic models-Gamma glmer 4-FF log link.R")
+AICs <- sort(summary$AIC)
+models_init <- sort(P, decreasing=TRUE, index.return=TRUE) # singular fit warning b/c chamber var close to 0
+top <- length(models_init$x[which(models_init$x>0.05)])
+
+AICs <- AICs[1:top]
+models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
+probs <- models_init$x[1:top]
+rbind(AICs, models, probs)
+```
+
+null model is the best model again
+
+```{r}
+best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_T2) 
+tidy_regression(best.fit, is_color=output_col)
+```
+
+```{r warning=FALSE}
+d_T2 <- d_T2 %>%
+  filter(!is.na(body))
+d_T2 <- center_data(d_T2)
+
+data<-data.frame(R=d_T2$distance, A=d_T2$wing2body, B=d_T2$thorax_c, C=d_T2$beak_c, X=d_T2$chamber)
+
+source("AICprobabilities.R")
+#source("generic models-Gamma glmer 3-FF log link.R") # doesn't work for T2 but does for T1
+```
+
+
+### Trial 2 Plots
+
+```{r}
+h1 <-  as.grob(expression(
+  hist(d_T2$distance)))
+p1 <- as.grob(expression(
+  plot(distance ~ mass_c, data=d_T2)))
+p2 <- as.grob(expression(
+  plot(distance ~ days_from_start_c, data=d_T2)))
+p3 <- as.grob(expression(
+  plot(distance ~ min_from_IncStart, data=d_T2)))
+p4 <- as.grob(expression(
+  plot(distance ~ wing_c, data=d_T2)))
+p5 <- as.grob(expression(
+  plot(distance ~ beak_c, data=d_T2)))
+p6 <- as.grob(expression(
+  plot(distance ~ thorax_c, data=d_T2)))
+p7 <- as.grob(expression(
+  plot(distance ~ body_c, data=d_T2)))
+
+grid.arrange(h1,p1,p2,p3,p4,p5,p6,p7, ncol=3)
+```
+
+
+```{r}
+gf_point(distance~sym_dist, col=~host_plant, alpha=~sex_c, data=d_T2) 
+summary <- aggregate(distance~sym_dist*sex*host_plant, data=d_T2, FUN=mean)
+plot(summary$distance~summary$sym_dist, 
+     col=c(1,2)[as.factor(summary$sex)], # Female = Black, Male = Red
+     pch=c(19,22)[as.factor(summary$host_plant)], # Filled circle is GRT, Open square is BV
+     main="T2 Observed Data: distance ~ sex*host_plant*sym_dist",
+     xlab = "Distance from Sympatric Zone (°)",
+     ylab= "Distance Flew", 
+     #sub=eq_glmer
+     ) 
+legend("topright",
+       legend = c("F and K.elegans", "M and C.corindum", "F and C.corindum","M and K.elegans"),
+       #inset=c(-0.27,0.2),
+       col= 1:2,
+       pch = c(0,16,19),
+       title="Groups")
+```
+
+### Females & Males
+
+[Females](#females)
+
+[Males](#males)
+
+<a id="females"></a>
+
+#### Females
+
+**Testing link functions**
+
+```{r}
+model_test<-glm(distance~chamber, data=d_fem, family=Gamma(link="log")) # glm.fit algorithm did not converge
+summary(model_test)
+plot(model_test)
+```
+
+**Testing covariates**
+
+```{r}
+####### Effect of chamber A-1, B-2, B-4 (also algorithm did not converge)
+d_fem$chamber <- relevel(d_fem$chamber, ref="A-2")
+tidy_regression(glm(distance~chamber, data=d_fem, family=Gamma(link="log")), is_color=output_col)
+
+####### No effect of test date
+tidy_regression(glm(distance~days_from_start, data=d_fem, family=Gamma(link="log")), is_color=output_col)
+
+####### Marginal effect of Minutes from IncStart time
+tidy_regression(glm(distance~min_from_IncStart, data=d_fem, family=Gamma(link="log")), is_color=output_col)
+
+#### No effect of eggs laid
+tidy_regression(glm(distance~eggs_b, data=d_fem, family=Gamma(link="log")), is_color=output_col)
+
+### No effect of total eggs laid
+tidy_regression(glm(distance~total_eggs, data=d_fem, family=Gamma(link="log")), is_color=output_col)
+
+```
+
+<a id="males"></a>
+
+#### Males 
+
+**Testing link functions**
+
+```{r}
+model_test<-glm(distance~chamber, data=d_male, family=Gamma(link="log")) # did converge
+summary(model_test)
+plot(model_test)
+```

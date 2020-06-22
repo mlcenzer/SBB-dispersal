@@ -32,6 +32,14 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 
 ### All Data
 
+[Cleaning Data](#clean)
+
+[lmer() A=host, B=sex, C=sym_dist, X=ID, Y=trial_type, Z=chamber](#lmer1)
+
+[Morphology](#morph)
+
+<a id="clean"></a>
+
 #### Reading the data
 
 ```{r}
@@ -45,6 +53,8 @@ data <- read_flight_data("all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
 ```
+
+<a id="test"></a>
 
 #### Testing Models and Covariates
 
@@ -96,6 +106,8 @@ tidy_regression(lmer(mass_c~wing_c + (1|ID) + (1|trial_type), data=data_tested),
 ####### No effect of wing morph (check how annotated the wing morph) - don't include it b/c almost all tested bugs are long-winged
 ```
 
+<a id="lmer1"></a>
+
 #### All Data | lmer() A=host, B=sex, C=sym_dist, X=ID, Y=trial_type, Z=chamber 
 
 ```{r, warning=FALSE}
@@ -125,6 +137,8 @@ tidy_regression(model_alldata, is_color=output_col)
 ```
 
 * positive effect of sex, where if Female then weigh more.
+
+<a id="morph"></a>
 
 #### Morphology Modeling
 
@@ -399,6 +413,8 @@ lm_polyplot(d, "beak", "mass", "Beak Length (mm)", "Mass (g)", "Mass by Beak Len
 
 More gf_point explanations: https://cran.r-project.org/web/packages/ggformula/vignettes/ggformula-blog.html
 
+Try an exponential line next: https://www.theanalysisfactor.com/r-tutorial-5/
+
 
 ### Female vs. Male Histograms
 
@@ -427,6 +443,16 @@ grid.arrange(h3,h4,h5,h6,ncol=4)
 
 ### Females
 
+[Cleaning Data](#cleandata)
+
+[Testing Covariates](#testf)
+
+[lmer() A=host, B=sex, C=sym_dist, X=ID, Y=trial_type, Z=chamber](#lmerf)
+
+[Morphology](#morphf)
+
+<a id="cleandata"></a>
+
 #### Reading the data
 
 ```{r}
@@ -447,6 +473,8 @@ data_tested <- data_tested %>%
 data_fem <- data_tested[data_tested$sex=="F",]
 data_fem <- center_data(data_fem)
 ```
+
+<a id="testf"></a>
 
 #### Testing Covariates
 
@@ -488,6 +516,8 @@ tidy_regression(lmer(mass_c~body_c + (1|ID) + (1|trial_type), data=data_fem), is
 ####### Effect of wing length
 tidy_regression(lmer(mass_c~wing_c + (1|ID) + (1|trial_type), data=data_fem), is_color=output_col)
 ```
+
+<a id="lmerf"></a>
 
 #### Female Data | lmer() A=host, B=sex, C=sym_dist, X=ID, Y=trial_type, Z=chamber 
 
@@ -587,6 +617,8 @@ tidy_regression(femm_model, is_color=output_col)
 * Positive effect of eggs laid on test day where if a female bug laid eggs on her test day, she weighed more.
 * Positive effect of total eggs laid where if a female bug laid more eggs overall, she weighed more.
 
+<a id="morphf"></a>
+
 #### Morphology Modeling
 
 ```{r, warning=FALSE}
@@ -669,6 +701,16 @@ lm_polyplot(data_fem, "beak_c", "mass_c", "Beak Length (mm)", "Mass (g)", "Mass 
 
 ### Males
 
+[Cleaning Data](#cleandatam)
+
+[Testing Covariates](#testm)
+
+[lmer() A=host, B=sym_dist, X=ID, Y=trial_type](#lmerm)
+
+[Morphology1](#morphm)
+
+<a id="cleandatam"></a>
+
 #### Reading the data
 
 ```{r}
@@ -685,6 +727,8 @@ data_tested <- data[[2]]
 data_male <- data_tested[data_tested$sex=="M",]
 data_male <- center_data(data_male)
 ```
+
+<a id="testm"></a>
 
 #### Testing Covariates
 
@@ -719,6 +763,8 @@ tidy_regression(lmer(mass_c~body_c + (1|ID), data=data_male), is_color=output_co
 tidy_regression(lmer(mass_c~wing_c + (1|ID) + (1|trial_type), data=data_male), is_color=output_col)
 ```
 
+<a id="lmerm"></a>
+
 #### Male Data | lmer() A=host, B=sym_dist, X=ID, Y=trial_type
 
 ```{r, warning= FALSE}
@@ -745,6 +791,8 @@ rbind(AICs, models, probs) # holds 98% of the probability
 male_model <- lmer(mass_c ~ (1 | ID) + (1 | trial_type), data=data_male)
 tidy_regression(male_model, is_color=output_col)
 ```
+
+<a id="morphm"></a>
 
 #### Morphology Modeling
 
@@ -812,6 +860,16 @@ p.morph
 
 ### Trial 1
 
+[Cleaning Data](#cleanT1)
+
+[Testing Covariates](#testT1)
+
+[Sex * Host * Sym_Dist Modeling](#modelT1)
+
+[Morphology](#morphT1)
+
+<a id="cleanT1"></a>
+
 #### Reading the data
 
 ```{r}
@@ -832,6 +890,8 @@ data_tested <- data_tested %>%
 data_T1 <- filter(data_tested, trial_type == "T1")
 data_T1 <- center_data(data_T1)
 ```
+
+<a id="testT1"></a>
 
 #### Testing Covariates
 
@@ -874,6 +934,8 @@ tidy_regression(lmer(mass_c~body_c + (1|ID), data=data_T1), is_color=output_col)
 tidy_regression(lmer(mass_c~wing_c + (1|ID), data=data_T1), is_color=output_col)
 ```
 
+<a id="modelT1"></a>
+
 #### Sex * Host * Sym_Dist Modeling
 
 ```{r, warning=FALSE}
@@ -903,6 +965,8 @@ tidy_regression(T1_model, is_color=output_col)
 ```
 
 * positive effect of sex, where if female then weigh more
+
+<a id="morphT1"></a>
 
 #### Morphology Modeling
 
@@ -970,6 +1034,16 @@ tidy_regression(T1_morph_model, is_color=output_col)
 
 ### Trial 2
 
+[Cleaning Data](#cleanT2)
+
+[Testing Covariates](#testT1)
+
+[Sex * Host * Sym_Dist Modeling](#modelT2)
+
+[Morphology](#morphT1)
+
+<a id="cleanT2"></a>
+
 #### Reading the data
 
 ```{r}
@@ -990,6 +1064,10 @@ data_tested <- data_tested %>%
 data_T2 <- filter(data_tested, trial_type == "T2")
 data_T2 <- center_data(data_T2)
 ```
+
+<a id="testT2"></a>
+
+**Testing Experimental Effects**
 
 ```{r echo=FALSE}
 ###### No effect of chamber
@@ -1028,6 +1106,8 @@ tidy_regression(lmer(mass_c~body_c + (1|population), data=data_T2), is_color=out
 tidy_regression(lmer(mass_c~wing_c + (1|population), data=data_T2), is_color=output_col)
 ```
 
+<a id="modelT2"></a>
+
 #### Sex * Host * Sym_Dist Modeling
 
 ```{r, warning=FALSE}
@@ -1057,6 +1137,8 @@ tidy_regression(T2_model, is_color=output_col)
 ```
 
 * Positive effect of sex, where if female then weigh more.
+
+<a id="moprhT2"></a>
 
 #### Morphology Modeling
 

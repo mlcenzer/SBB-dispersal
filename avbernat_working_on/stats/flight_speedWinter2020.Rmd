@@ -29,11 +29,23 @@ library(randomcoloR)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Winter 2020 Flight Trials: Binomial Flight Modeling {.tabset}
+## Winter 2020 Flight Trials: Spped Flight Modeling {.tabset}
 
 Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice for multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. Used multivariate (glm) and mixed effect modeling (glmer) to analyze the flight results.
 
 ### All Flyers
+
+[Cleaning Data](#clean)
+
+[Testing Covariates](#test)
+
+[Without Mass](#wo.mass)
+
+[With Mass](#w.mass)
+
+[Morphology](#morph)
+
+<a id="clean"></a>
 
 **Cleaning the Data**
 
@@ -74,6 +86,8 @@ data_flew <- data_flew_all %>%
 data_flew <- center_data(data_flew)
 ```
 
+<a id="test"></a>
+
 **Testing Models and Covariates**
 
 ```{r}
@@ -95,6 +109,8 @@ tidy_regression(lmer(average_speed~days_from_start + (1|chamber), data=data_flew
 tidy_regression(lmer(average_speed~min_from_IncStart + (1|trial_type), data=data_flew), is_color=output_col)
 
 ```
+
+<a id="wo.mass"></a>
 
 **Without Mass**
 
@@ -124,6 +140,8 @@ Top model (holding a 95% probability) contains only the random effects of trial 
 speed_model <- lmer(average_speed ~ (1 | trial_type), data=data_flew)
 tidy_regression(speed_model, is_color=output_col)
 ```
+
+<a id="w.mass"></a>
 
 **With Mass**
 
@@ -166,6 +184,8 @@ tidy_regression(speed_model, is_color=output_col)
 ```
 
 * possibly marginal? effect of mass...
+
+<a id="morph"></a>
 
 **Morphology**
 
@@ -258,6 +278,18 @@ lm_plot(data_flew, "beak_c", "average_speed", "Beak Length (mm)", "Average Speed
 
 ### Continuous Flyers
 
+[Cleaning Data](#cleandata)
+
+[Testing Covariates](#testing)
+
+[Without Mass](#wo.massc)
+
+[With Mass](#w.massc)
+
+[Morphology](#morphc)
+
+<a id="cleandata"></a>
+
 **Cleaning the data**
 
 ```{r}
@@ -281,6 +313,8 @@ dC<-data_flew[data_flew$flight_type=="C",] # this exclusdes BC or CB flyers
 dC <- center_data(dC)
 ```
 
+<a id="testing"></a>
+
 **Testing Models and Covariates**
 
 ```{r}
@@ -301,6 +335,8 @@ tidy_regression(lmer(average_speed~days_from_start + (1|ID), data=dC), is_color=
 ####### No effect of test time
 tidy_regression(lmer(average_speed~min_from_IncStart + (1|ID), data=dC), is_color=output_col)
 ```
+
+<a id="wo.massc"></a>
 
 **Without Mass**
 
@@ -341,6 +377,8 @@ tidy_regression(continuous_model, is_color=output_col)
 
 *marginal? effect of sex_c, where if a female continuous-flyer bug then more likely to fly faster on average 
 
+<a id="w.massc"></a>
+
 **With Mass**
 
 ```{r}
@@ -377,6 +415,8 @@ tidy_regression(continuous_model, is_color=output_col)
 * no effect of sex_c
 * no effect of mass_c
 * negative effect of sex_c*mass_c, where if female and heavier, then slower avg speed (make sense because probably due to egg-laying)
+
+<a id="morphc"></a>
 
 **Morphology**
 
@@ -440,7 +480,6 @@ tidy_regression(continuous_morph_model, is_color=output_col)
 gf_histogram(~average_speed,data=dC)
 ```
 
-
 ```{r}
 source("plotting-lm.R")
 source("plotting-lm2.R")
@@ -475,6 +514,18 @@ lm_plot(dC, "beak_c", "average_speed", "Beak Length (mm)", "Average Speed (m/s)"
 
 ### Bursters
 
+[Cleaning Data](#cleanthedata)
+
+[Testing Covariates](#testingcov)
+
+[Without Mass](#wo.massb)
+
+[With Mass](#w.massb)
+
+[Morphology](#morphb)
+
+<a id="cleanthedata"></a>
+
 **Cleaning the data**
 
 ```{r}
@@ -500,6 +551,8 @@ dB<-data_flew[data_flew$flight_type=="B",] # this exclusdes BC or CB flyers
 dB <- center_data(dB)
 ```
 
+<a id="testingcov"></a>
+
 **Testing Models and Covariates**
 
 ```{r}
@@ -520,6 +573,8 @@ tidy_regression(lmer(average_speed~days_from_start + (1|ID), data=dB), is_color=
 ####### No effect of test time
 tidy_regression(lmer(average_speed~min_from_IncStart + (1|trial_type), data=dB), is_color=output_col)
 ```
+
+<a id="wo.massb"></a>
 
 **Without Mass**
 
@@ -555,6 +610,8 @@ anova(m0, m36, test="Chisq") # Adding Y does not improve the fit
 burster_model <- lmer(average_speed ~ (1|ID), data=dB) # null model the best fit model
 tidy_regression(burster_model, is_color=output_col)
 ```
+
+<a id="w.massb"></a>
 
 **With Mass**
 
@@ -596,6 +653,8 @@ anova(m226, m230, test="Chisq") # Adding D does not improve fit
 burster_model <- lmer(average_speed ~ (1|chamber), data=dB) # null model the best fit model
 tidy_regression(burster_model, is_color=output_col)
 ```
+
+<a id="morphb"></a>
 
 **Morphology**
 
@@ -642,6 +701,7 @@ tidy_regression(burster_morph_model, is_color=output_col)
 ```
 
 ### Burster Plots
+
 ```{r}
 gf_histogram(~average_speed,data=dB)
 ```
