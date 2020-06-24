@@ -38,7 +38,7 @@ tidy_regression <- function(fit, is_color) {
     if (coeff < 0) {
       cat(table$fixed_effect[i], "\t")
       if (is_color) {
-        cat("coeff: ", paste0("\033[0;", color=32, "m",coeff,"\033[0m","\t"))
+        cat("coeff: ", paste0("\033[0;", color=31, "m",coeff,"\033[0m","\t"))
       } else {cat("coeff: ", paste0(coeff, "\t")) }
       if (n_col < 4) {
         cat("tval: ", table$test_stat[i])
