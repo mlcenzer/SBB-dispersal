@@ -14,8 +14,6 @@ setwd("~/Desktop/Rstats-winter2020/")
 library(lme4)
 library(rethinking)
 
-library(lubridate)
-library(chron)
 library(dplyr)
 library(tidyselect)
 library(stringr)
@@ -52,11 +50,11 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 ```{r}
 rm(list=ls())
 output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
-source("clean_flight_data.R") # Script that loads and cleans up the data
-source("regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
-source("center_flight_data.R")
+source("src/clean_flight_data.R") # Script that loads and cleans up the data
+source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
+source("src/center_flight_data.R")
 
-data <- read_flight_data("all_flight_data-Winter2020.csv")
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
 
@@ -121,8 +119,8 @@ data<-data.frame(R=data_flew$average_speed,
                  C=data_flew$sym_dist, 
                  X=data_flew$trial_type)
 
-source("AICprobabilities.R")
-source("generic models-gaussian glmer 1-RF + 3-FF.R") 
+source("src/AICprobabilities.R")
+source("src/generic models-gaussian glmer 1-RF + 3-FF.R") 
 AICs <- sort(summary$AIC)
 models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
 top <- length(models_init$x[which(models_init$x>0.05)])
@@ -157,8 +155,8 @@ data<-data.frame(R=data_flew$average_speed,
                  D=data_flew$mass_c,
                  X=data_flew$chamber) 
 
-source("AICprobabilities.R")
-source("generic models-gaussian glmer 1-RF + 4-FF.R") 
+source("src/AICprobabilities.R")
+source("src/generic models-gaussian glmer 1-RF + 4-FF.R") 
 AICs <- sort(summary$AIC)
 models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
 top <- length(models_init$x[which(models_init$x>0.05)])
@@ -201,8 +199,8 @@ data<-data.frame(R=data_flew$average_speed,
                  C=data_flew$body_c, 
                  D=data_flew$wing_c,
                  X=data_flew$chamber) # 5 models failed to converge
-source("AICprobabilities.R")
-source("generic models-gaussian glmer 1-RF + 4-FF.R") 
+source("src/AICprobabilities.R")
+source("src/generic models-gaussian glmer 1-RF + 4-FF.R") 
 AICs <- sort(summary$AIC)
 models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
 top <- length(models_init$x[which(models_init$x>0.05)])
@@ -246,8 +244,8 @@ gf_histogram(~average_speed,data=data_flew, col=~flight_type) # after filtering 
 ```
 
 ```{r}
-source("plotting-lm.R")
-source("plotting-lm2.R")
+source("src/plotting-lm.R")
+source("src/plotting-lm2.R")
 ```
 
 ```{r echo=FALSE, warning=FALSE}
@@ -295,11 +293,11 @@ lm_plot(data_flew, "beak_c", "average_speed", "Beak Length (mm)", "Average Speed
 ```{r}
 rm(list=ls())
 output_col = FALSE 
-source("clean_flight_data.R") 
-source("regression_output.R")
-source("center_flight_data.R")
+source("src/clean_flight_data.R") 
+source("src/regression_output.R") 
+source("src/center_flight_data.R")
 
-data <- read_flight_data("all_flight_data-Winter2020.csv")
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
 
@@ -347,8 +345,8 @@ data<-data.frame(R=dC$average_speed,
                  C=dC$sym_dist, 
                  X=dC$ID, Y=dC$chamber)
 
-source("AICprobabilities.R")
-source("generic models-gaussian glmer 2-RF + 3-FF.R") 
+source("src/AICprobabilities.R")
+source("src/generic models-gaussian glmer 2-RF + 3-FF.R") 
 AICs <- sort(summary$AIC)
 models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
 top <- length(models_init$x[which(models_init$x>0.05)])
@@ -389,8 +387,8 @@ data<-data.frame(R=dC$average_speed,
                  D=dC$mass_c,
                  X=dC$ID, Y=dC$chamber)
 
-source("AICprobabilities.R")
-source("generic models-gaussian glmer 2-RF + 4-FF.R") # 4 models failed
+source("src/AICprobabilities.R")
+source("src/generic models-gaussian glmer 2-RF + 4-FF.R") # 4 models failed
 AICs <- sort(summary$AIC)
 models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
 top <- length(models_init$x[which(models_init$x>0.05)])
@@ -433,8 +431,8 @@ data<-data.frame(R=dC$average_speed,
                  D=dC$wing_c,
                  X=dC$ID, Y=dC$chamber) # 8 models failed to converge
 
-source("AICprobabilities.R")
-source("generic models-gaussian glmer 2-RF + 4-FF.R") 
+source("src/AICprobabilities.R")
+source("src/generic models-gaussian glmer 2-RF + 4-FF.R") 
 AICs <- sort(summary$AIC)
 models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
 top <- length(models_init$x[which(models_init$x>0.05)])
@@ -481,8 +479,8 @@ gf_histogram(~average_speed,data=dC)
 ```
 
 ```{r}
-source("plotting-lm.R")
-source("plotting-lm2.R")
+source("src/plotting-lm.R")
+source("src/plotting-lm2.R")
 ```
 
 ```{r echo=FALSE, warning=FALSE}
@@ -531,11 +529,11 @@ lm_plot(dC, "beak_c", "average_speed", "Beak Length (mm)", "Average Speed (m/s)"
 ```{r}
 rm(list=ls())
 output_col = FALSE 
-source("clean_flight_data.R") 
-source("regression_output.R")
-source("center_flight_data.R")
+source("src/clean_flight_data.R") 
+source("src/regression_output.R") 
+source("src/center_flight_data.R")
 
-data <- read_flight_data("all_flight_data-Winter2020.csv")
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
 
@@ -585,8 +583,8 @@ data<-data.frame(R=dB$average_speed,
                  C=dB$sym_dist, 
                  X=dB$ID, Y=dB$trial_type) 
 
-source("AICprobabilities.R")
-source("generic models-gaussian glmer 2-RF + 3-FF.R") # 1 model failed to converge
+source("src/AICprobabilities.R")
+source("src/generic models-gaussian glmer 2-RF + 3-FF.R") # 1 model failed to converge
 AICs <- sort(summary$AIC)
 models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
 top <- length(models_init$x[which(models_init$x>0.05)])
@@ -623,8 +621,8 @@ data<-data.frame(R=dB$average_speed,
                  D=dB$mass_c,
                  X=dB$trial_type, Y=dB$chamber)
 
-source("AICprobabilities.R")
-source("generic models-gaussian glmer 2-RF + 4-FF.R") 
+source("src/AICprobabilities.R")
+source("src/generic models-gaussian glmer 2-RF + 4-FF.R") 
 AICs <- sort(summary$AIC)
 models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
 top <- length(models_init$x[which(models_init$x>0.05)])
@@ -671,8 +669,8 @@ data<-data.frame(R=dB$average_speed,
                  D=dB$wing_c,
                  X=dB$trial_type, Y=dB$chamber) 
 
-source("AICprobabilities.R")
-source("generic models-gaussian glmer 2-RF + 4-FF.R") 
+source("src/AICprobabilities.R")
+source("src/generic models-gaussian glmer 2-RF + 4-FF.R") 
 AICs <- sort(summary$AIC)
 models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
 top <- length(models_init$x[which(models_init$x>0.05)])
@@ -708,8 +706,8 @@ gf_histogram(~average_speed,data=dB)
 
 
 ```{r}
-source("plotting-lm.R")
-source("plotting-lm2.R")
+source("src/plotting-lm.R")
+source("src/plotting-lm2.R")
 ```
 
 ```{r echo=FALSE, warning=FALSE}
