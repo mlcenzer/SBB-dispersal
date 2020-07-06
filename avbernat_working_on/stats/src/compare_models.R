@@ -21,7 +21,7 @@ model_comparisonsAIC <- function(model_selection_filepath){
   cat("\n")
   for (m_num in unlist(models)) {
     
-    if (m_num == max(index(summary))) {
+    if (m_num == max(nrow(summary))) {
       m <- paste0("m", 0)
     }
     else {m <- paste0("m", m_num)}

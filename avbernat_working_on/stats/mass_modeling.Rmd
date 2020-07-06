@@ -117,19 +117,9 @@ data<-data.frame(R=data_tested$mass_c,
                  C=data_tested$sym_dist, 
                  X=data_tested$ID, Y=data_tested$trial_type)
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 3-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) # holds a combined 96% probability 
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
 ```
-
-- m38 <- R ~ B + (1|X) + (1|Y) *effect of sex and the random effects of trial type and ID*
 
 ```{r}
 model_alldata <- lmer(mass_c ~ sex_c + (1|ID) + (1|trial_type), data=data_tested)
@@ -152,20 +142,10 @@ data<-data.frame(R=data_tested$mass_c,
 data <- data %>%
   filter(!is.na(C))
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 4-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) # top model holds a combined 92% probability 
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
 ```
 
-- m275 <- R ~ A * D + B * C + (1 | X) + (1 | Y)
-                 
 ```{r}
 allmorph_model <- lmer(mass_c ~ beak_c * wing_c + thorax_c * body_c + (1 | ID) + (1 | trial_type), data=data_tested)
 tidy_regression(allmorph_model, is_color=output_col)
@@ -187,26 +167,15 @@ data<-data.frame(R=data_tested$mass_c,
 data <- data %>%
   filter(!is.na(A))
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
 ```
-
-- m48 <- R ~ A * C + B + (1 | X) + (1 | Y)
-- m52 <- R ~ A * C + B * C + (1 | X) + (1 | Y)
-- m49 <- R ~ B * C + A + (1 | X) + (1 | Y)
 
 ```{r}
 anova(m48, m52, test="Chisq") # Adding B*C interaction does not improve fit
 anova(m48, m49, test="Chisq") # Replacing B with A does not improve fit
 ```
+
 ```{r}
 allmorph_model <- lmer(mass_c ~ beak_c * wing2body_c + thorax_c + (1 | ID) + (1 | trial_type), data=data_tested)
 tidy_regression(allmorph_model, is_color=output_col)
@@ -527,20 +496,9 @@ data<-data.frame(R=data_fem$mass_c,
                  B=data_fem$sym_dist,
                  X=data_fem$ID, Y=data_fem$population)
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 2-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 2-FF.R")
 ```
-
-- m0 <- R ~ (1 | X)
-- m10 <-  R ~ (1 | X) + (1 | Y)
 
 ```{r}
 anova(m0, m10, test="Chisq") # Adding (1|Y) does not improve fit
@@ -560,19 +518,9 @@ data<-data.frame(R=data_fem$mass_c,
                  C=data_fem$eggs_b,
                  X=data_fem$ID)
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) # holds a combined 98% probability 
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
 ```
-
-- m3 <-  R ~ C + (1 | X)
 
 ```{r}
 femm_model <- lmer(mass_c ~ eggs_b + (1|ID), data=data_fem)
@@ -590,20 +538,11 @@ data<-data.frame(R=data_fem$mass_c,
                  X=data_fem$ID)
 data <- data %>%
   filter(!is.na(D))
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
 ```
 
-- m3 <-  R ~ C + (1 | X)
-- m10 <- R ~ C + D + (1 | X)
 
 ```{r}
 anova(m3, m10, test="Chisq") # Adding D improves the fit
@@ -630,20 +569,10 @@ data<-data.frame(R=data_fem$mass_c,
                  X=data_fem$ID, Y=data_fem$trial_type) 
 data <- data %>%
   filter(!is.na(A))
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 4-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) 
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
 ```
-
-- m228 <- R ~ B + (1 | X)
-- m2 <- R ~ B + (1 | X)
 
 ```{r}
 femm_morph_model <- lmer(mass_c ~ thorax_c + (1|ID) + (1| trial_type), data=data_fem)
@@ -773,19 +702,9 @@ data<-data.frame(R=data_male$mass_c,
                  B=data_male$sym_dist,
                  X=data_male$ID, Y=data_male$trial_type)
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 2-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) # holds 98% of the probability
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 2-FF.R")
 ```
-
-- m10 <- R ~ (1 | X) + (1 | Y)
 
 ```{r}
 male_model <- lmer(mass_c ~ (1 | ID) + (1 | trial_type), data=data_male)
@@ -805,19 +724,10 @@ data<-data.frame(R=data_male$mass_c,
                  X=data_male$ID) # multiple models failed if add Y=data_male$trialtype
 data <- data %>%
   filter(!is.na(A))
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) # m5 holds 93% of probability
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
 ```
-
-- m5 <- R ~ A + B + (1 | X)
 
 ```{r}
 male_morph_model <- lmer(mass_c ~ beak_c + thorax_c + (1|ID), data=data_male)
@@ -888,6 +798,7 @@ data_tested <- data_tested %>%
   filter(!is.na(mass_c))
 
 data_T1 <- filter(data_tested, trial_type == "T1")
+data_T2 <- filter(data_tested, trial_type == "T2")
 data_T1 <- center_data(data_T1)
 ```
 
@@ -945,19 +856,9 @@ data<-data.frame(R=data_T1$mass_c,
                  C=data_T1$sex_c,
                  X=data_T1$min_from_IncStart_c)
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) # holds 99% of the probability
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
 ```
-
-- m3 <- R ~ C + (1 | X)
 
 ```{r}
 T1_model <- lmer(mass_c ~ sex_c + (1|min_from_IncStart_c), data=data_T1)
@@ -979,20 +880,10 @@ data<-data.frame(R=data_T1$mass_c,
                  X=data_T1$days_from_start_c)
 data <- data %>%
   filter(!is.na(A))
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
 ```
-
-- m49 <- R ~ A * D + B * C + (1 | X)
-- m83 <- R ~ A * D + B * C + B * D + (1 | X)
 
 ```{r}
 T1_morph_model <- lmer(mass_c ~ beak_c * wing_c + thorax_c * body_c + (1 | days_from_start_c), data=data_T1)
@@ -1007,24 +898,13 @@ data<-data.frame(R=data_T1$mass_c,
                  X=data_T1$days_from_start_c)
 data <- data %>%
   filter(!is.na(A))
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) 
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
 ```
-
-- m12 <- R ~ A * C + B + (1 | X)
-- m16 <- R ~ A * C + B * C + (1 | X)
-- m15 <- R ~ B * C + A + (1 | X)
 
 ```{r}
 anova(m12, m16, test="Chisq") # Adding B*C interaction does not improve fit
+anova(m12, m13, test="Chisq") # Replacing B with A does not improve fit
 ```
 
 ```{r}
@@ -1117,19 +997,9 @@ data<-data.frame(R=data_T2$mass_c,
                  C=data_T2$sex_c,
                  X=data_T2$population)
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) # holds 98% of the probability
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
 ```
-
-- m3 <- R ~ C + (1 | X)
 
 ```{r}
 T2_model <- lmer(mass_c ~ sex_c + (1|population), data=data_T2)
@@ -1151,20 +1021,10 @@ data<-data.frame(R=data_T2$mass_c,
                  X=data_T2$days_from_start_c)
 data <- data %>%
   filter(!is.na(A))
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 4-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
 ```
-
-- m49 <- R ~ A * D + B * C + (1 | X)
-- m62 <- R ~ A * D + B * D + C + (1 | X)
 
 ```{r}
 T2_morph_model <- lmer(mass_c ~ beak_c*wing_c + thorax_c*body_c + (1|days_from_start_c), data=data_T2)
@@ -1179,23 +1039,10 @@ data<-data.frame(R=data_T2$mass_c,
                  X=data_T2$population)
 data <- data %>%
   filter(!is.na(A))
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) 
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
 ```
-
-- m12 <- R ~ A * C + B + (1 | X)
-- m7 <- R ~ A + B + C + (1 | X)
-- m13 <- R ~ B * C + A + (1 | X)
-- m16 <- R ~ A * C + B * C + (1 | X)
-
 
 ```{r}
 anova(m7, m12, test="Chisq") # Adding A*C does improve the fit
