@@ -150,23 +150,9 @@ tidy_regression(glm(distance~min_from_IncStart_c, data=d_T1, family=Gamma(link="
 ```{r warning=FALSE}
 data<-data.frame(R=d_T1$distance, A=d_T1$host_c, B=d_T1$sex_c, C=d_T1$sym_dist, X=d_T1$chamber)
 
-source("src/AICprobabilities.R")
-source("src/generic models-Gamma glmer 3-FF log link.R") # 9 models failed to converge
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) # No model with chamber was in the top 5.
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R")
 ```
-
-- m2 <- glm(formula = R ~ B, family = Gamma(link = "log"), data = data)
-- m6 <- glm(formula = R ~ B + C, family = Gamma(link = "log"), data = data)
-- m4 <- glm(formula = R ~ A + B, family = Gamma(link = "log"), data = data)
-- m1 <- glm(formula = R ~ A, family = Gamma(link = "log"), data = data)
-- m3 <- glm(formula = R ~ C, family = Gamma(link = "log"), data = data)
 
 ```{r}
 anova(m2, m6, test="Chisq") # Adding C does not improve fit
@@ -187,22 +173,9 @@ tidy_regression(best.fit, is_color=output_col)
 ```{r warning=FALSE}
 data<-data.frame(R=d_T1$distance, A=d_T1$host_c, B=d_T1$sex_c, C=d_T1$sym_dist, D=d_T1$mass_c, X=d_T1$chamber)
 
-source("src/AICprobabilities.R")
-source("src/generic models-Gamma glmer 4-FF log link.R") # most models failed to converge
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")
 ```
-
-- m20 <- R ~ B * D + (1 | X)
-- m30 <- R ~ B * D + A + (1 | X)
-- m31 <- R ~ B * D + C + (1 | X)
-- m50 <- R ~ A * D + B * D + (1 | X)
 
 ```{r}
 anova(m20, m30, test="Chisq") # Adding A does not improve fit
@@ -225,21 +198,9 @@ tidy_regression(best.fit, is_color=output_col)
 ```{r warning=FALSE}
 data<-data.frame(R=d_T1$distance, A=d_T1$min_from_IncStart_c, B=d_T1$sex_c, C=d_T1$sym_dist, D=d_T1$mass_c, X=d_T1$chamber)
 
-source("src/AICprobabilities.R")
-source("src/generic models-Gamma glmer 4-FF log link.R") # most models failed to converge
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")
 ```
-
-- m94 <- R ~ A * B + A * C + B * C + B * D + (1 | X)
-- m43 <- R ~ A * B + B * D + (1 | X)
-- m96 <- R ~ A * B + A * C + B * D + C * D + (1 | X)
 
 ```{r}
 best.fit <- glmer(distance ~ min_from_IncStart_c * sex_c + min_from_IncStart_c * sym_dist + sex_c * sym_dist + sex_c * mass_c + (1|chamber), family = Gamma(link = "log"), data = d_T1) # model failed to converge
@@ -267,22 +228,9 @@ d_T1 <- center_data(d_T1)
 
 data<-data.frame(R=d_T1$distance, A=d_T1$body_c, B=d_T1$wing_c, C=d_T1$thorax_c, D=d_T1$beak_c, X=d_T1$chamber) # singular fit if run with min_from_IncStart meaning the variance is near 0
 
-source("src/AICprobabilities.R")
-source("src/generic models-Gamma glmer 4-FF log link.R") # most models failed to converge
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")
 ```
-
-- m1 <- R ~ A + (1 | X)
-- m7 <-  R ~ A + D + (1 | X)
-- m2 <- R ~ B + (1 | X)
-- m6 <- R ~ A + C + (1 | X)
 
 ```{r}
 anova(m1, m7, test="Chisq") # Adding D does not improve fit
@@ -302,24 +250,9 @@ d_T1 <- center_data(d_T1)
 
 data<-data.frame(R=d_T1$distance, A=d_T1$wing2body_c, B=d_T1$thorax_c, C=d_T1$beak_c, X=d_T1$chamber) 
 
-source("src/AICprobabilities.R")
-source("src/generic models-Gamma glmer 3-FF log link.R") # about 3 models failed to converge
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R") # about 3 models failed to converge
 ```
-
-- m2 <- glm(formula = R ~ B, family = Gamma(link = "log"), data = data)
-- m3 <- glm(formula = R ~ C, family = Gamma(link = "log"), data = data)
-- m4 <- glm(formula = R ~ A + B, family = Gamma(link = "log"), data = data)
-- m6 <- glm(formula = R ~ B + C, family = Gamma(link = "log"), data = data)
-- m5 <- glm(formula = R ~ A + C, family = Gamma(link = "log"), data = data)
-- m9 <- glm(formula = R ~ A * C, family = Gamma(link = "log"), data = data)
 
 ```{r}
 anova(m2, m4, test="Chisq") # Adding A does not improve fit
@@ -417,25 +350,9 @@ tidy_regression(glm(distance~min_from_IncStart, data=d_T2, family=Gamma(link="lo
 ```{r warning=FALSE}
 data<-data.frame(R=d_T2$distance, A=d_T2$host_c, B=d_T2$sex_c, C=d_T2$sym_dist, X=d_T2$chamber)
 
-source("src/AICprobabilities.R")
-source("src/generic models-Gamma glmer 3-FF log link.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE) # singular fit warning b/c chamber var close to 0
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R")
 ```
-
-- m1 <- glm(formula = R ~ A, family = Gamma(link = "log"), data = data)
-- m3 <- glm(formula = R ~ C, family = Gamma(link = "log"), data = data)
-- m2 <- glm(formula = R ~ B, family = Gamma(link = "log"), data = data)
-- m4 <- glm(formula = R ~ A + B, family = Gamma(link = "log"), data = data)
-- m5 <- glm(formula = R ~ A + C, family = Gamma(link = "log"), data = data)
-- m6 <- glm(formula = R ~ B + C, family = Gamma(link = "log"), data = data)
-- m0 <- R ~ 1 + (1 | X)
 
 ```{r}
 anova(m0, m1, test="Chisq") # Adding A improves fit
@@ -454,27 +371,12 @@ tidy_regression(best.fit, is_color=output_col)
 
 **With Mass**
 
-```{r warning=FALSE}
+```{r warning=FALSE, message=FALSE}
 data<-data.frame(R=d_T2$distance, A=d_T2$host_c, B=d_T2$sex_c, C=d_T2$sym_dist, D=d_T2$mass_c, X=d_T2$chamber)
 
-source("src/AICprobabilities.R")
-source("src/generic models-Gamma glmer 4-FF log link.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE) # singular fit warning b/c chamber var close to 0
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")
 ```
-- m0 <- R ~ 1 + (1 | X)
-- m4 <- R ~ D + (1 | X)
-- m1 <- R ~ A + (1 | X)
-- m9 <- R ~ B + D + (1 | X)
-- m3 <- R ~ C + (1 | X)
-- m2 <- R ~ B + (1 | X)
-- m20 <- R ~ B * D + (1 | X)
 
 ```{r}
 anova(m0, m4, test="Chisq") # Adding D does not improve fit
@@ -492,26 +394,17 @@ tidy_regression(best.fit, is_color=output_col)
 
 **Morphology**
 
-```{r warning=FALSE}
+```{r warning=FALSE, message=FALSE}
 d_T2 <- d_T2 %>%
   filter(!is.na(body))
 d_T2 <- center_data(d_T2)
 
 data<-data.frame(R=d_T2$distance, A=d_T2$body_c, B=d_T2$wing_c, C=d_T2$thorax_c, D=d_T2$beak_c, X=d_T2$chamber)
 
-source("src/AICprobabilities.R")
-source("src/generic models-Gamma glmer 4-FF log link.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE) # singular fit warning b/c chamber var close to 0
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")
 ```
 
-null model is the best model again
 
 ```{r}
 best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_T2) 
@@ -525,8 +418,9 @@ d_T2 <- center_data(d_T2)
 
 data<-data.frame(R=d_T2$distance, A=d_T2$wing2body, B=d_T2$thorax_c, C=d_T2$beak_c, X=d_T2$chamber)
 
-source("src/AICprobabilities.R")
-#source("generic models-Gamma glmer 3-FF log link.R") # doesn't work for T2 but does for T1
+source("src/compare_models.R")
+# model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R")
+# doesn't work for T2 but does for T1
 ```
 
 

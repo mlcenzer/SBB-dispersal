@@ -27,7 +27,7 @@ library(randomcoloR)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Winter 2020 Flight Trials: Spped Flight Modeling {.tabset}
+## Winter 2020 Flight Trials: Speed Flight Modeling {.tabset}
 
 Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice for multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. Used multivariate (glm) and mixed effect modeling (glmer) to analyze the flight results.
 
@@ -119,16 +119,8 @@ data<-data.frame(R=data_flew$average_speed,
                  C=data_flew$sym_dist, 
                  X=data_flew$trial_type)
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 3-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
 ```
 Top model (holding a 95% probability) contains only the random effects of trial type; no effects of host, sex, or distance from the sympatric zone on speed
 
@@ -155,20 +147,10 @@ data<-data.frame(R=data_flew$average_speed,
                  D=data_flew$mass_c,
                  X=data_flew$chamber) 
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 4-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
 ```
 
-- m4 <- R ~ D + (1 | X)
-- m0 <- R ~ 1 + (1 | X)
 
 ```{r}
 anova(m0, m4, test="Chisq") # Adding D does improve fit
@@ -199,27 +181,10 @@ data<-data.frame(R=data_flew$average_speed,
                  C=data_flew$body_c, 
                  D=data_flew$wing_c,
                  X=data_flew$chamber) # 5 models failed to converge
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 1-RF + 4-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
 
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
 ```
-
-- m2 <- R ~ B + (1 | X)
-- m4 <- R ~ D + (1 | X)
-- m0 <- R ~ 1 + (1 | X)
-- m3 <-  R ~ C + (1 | X)
-
-- m115 <- R ~ B + (1 | Y)
-- m113 <- R ~ 1 + (1 | Y)
-- m228 <- R ~ B + (1 | X) + (1 | Y)
-- m226 <- R ~ 1 + (1 | X) + (1 | Y)
 
 ```{r}
 anova(m0, m2, test="Chisq") # Adding B does improve fit
@@ -345,22 +310,9 @@ data<-data.frame(R=dC$average_speed,
                  C=dC$sym_dist, 
                  X=dC$ID, Y=dC$chamber)
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 3-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
 ```
-
-- m18 <- R ~ (1 | Y)
-- m36 <- R ~ (1 | X) + (1 | Y)
-- m20 <- R ~ B + (1 | Y)
-- m38 <- R ~ B + (1 | X) + (1 | Y)
 
 ```{r}
 anova(m18, m36, test="Chisq") # Adding (1|X) does not improve fit
@@ -387,20 +339,9 @@ data<-data.frame(R=dC$average_speed,
                  D=dC$mass_c,
                  X=dC$ID, Y=dC$chamber)
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 4-FF.R") # 4 models failed
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) # top two models have combined prob of 89%
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
 ```
-
-- m133 <- R ~ B * D + (1 | Y)
-- m246 <- R ~ B * D + (1 | X) + (1 | Y)
 
 ```{r}
 anova(m133, m246, test="Chisq") # Adding (1|X) does not improve fit
@@ -431,26 +372,9 @@ data<-data.frame(R=dC$average_speed,
                  D=dC$wing_c,
                  X=dC$ID, Y=dC$chamber) # 8 models failed to converge
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 4-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
 ```
-
-- m115 <- R ~ B + (1 | Y)
-- m228 <- R ~ B + (1 | X) + (1 | Y)
-- m113 <- R ~ 1 + (1 | Y)
-- m116 <- R ~ C + (1 | Y)
-- m117 <- R ~ D + (1 | Y)
-- m226 <- R ~ 1 + (1 | X) + (1 | Y)
-- m229 <- R ~ C + (1 | X) + (1 | Y)
-- m230 <- R ~ D + (1 | X) + (1 | Y)
 
 ```{r}
 anova(m115, m228, test="Chisq") # Adding (1|X) does not improve fit
@@ -583,21 +507,9 @@ data<-data.frame(R=dB$average_speed,
                  C=dB$sym_dist, 
                  X=dB$ID, Y=dB$trial_type) 
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 3-FF.R") # 1 model failed to converge
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
 ```
-
-- m18 <- R ~ (1 | Y)
-- m0 <- R ~ (1 | X)
-- m36 <- R ~ (1 | X) + (1 | Y)
 
 ```{r}
 anova(m18, m0, test="Chisq") # Replacing Y with X improves the fit
@@ -621,24 +533,9 @@ data<-data.frame(R=dB$average_speed,
                  D=dB$mass_c,
                  X=dB$trial_type, Y=dB$chamber)
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 4-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs) # top two models have combined prob of 92%
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
 ```
-
-- m113 <- R ~ 1 + (1 | Y)
-- m117 <- R ~ D + (1 | Y)
-- m226 <- R ~ 1 + (1 | X) + (1 | Y)
-- m0 <-  R ~ 1 + (1 | X)
-- m230 <- R ~ D + (1 | X) + (1 | Y)
-- m4 <- R ~ D + (1 | X)
 
 ```{r}
 anova(m113, m117, test="Chisq") # Adding D does not improve fit
@@ -669,16 +566,8 @@ data<-data.frame(R=dB$average_speed,
                  D=dB$wing_c,
                  X=dB$trial_type, Y=dB$chamber) 
 
-source("src/AICprobabilities.R")
-source("src/generic models-gaussian glmer 2-RF + 4-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
 ```
 
 - m113 <- R ~ 1 + (1 | Y)
