@@ -202,25 +202,9 @@ D = data_T1$mass_c
 
 data<-data.frame(R, A, B, C, D)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
 ```
-
-**All models with  >0.05 probability.**
-
-- m8 <- glm(formula = R ~ A * B, family = binomial, data = data)
-- m11 <- glm(formula = R ~ A * B + C, family = binomial, data = data)
-- m15 <- glm(formula = R ~ A * B + B * C, family = binomial, data = data)
-- m2 <- glm(formula = R ~ B, family = binomial, data = data)
-- m14 <- glm(formula = R ~ A * B + A * C, family = binomial, data = data)
 
 ```{r}
 anova(m8, m11, test="Chisq") ## Adding C does not improve fit
@@ -256,20 +240,9 @@ tidy_regression(model_T1_cov, is_color=output_col)
 #### With Mass
 
 ```{r}
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
-
-- m63 <- glm(formula = R ~ A * D + C * D + B, family = binomial, data = data)
-- m26 <- glm(formula = R ~ A * D + B, family = binomial, data = data)
 
 ```{r echo=FALSE}
 model_T1_m <- glm(flew_b~host_c*mass_c + sex_c, family=binomial, data=data_T1)
@@ -308,19 +281,9 @@ D = data_T1$wing_c
 
 data<-data.frame(R, A, B, C, D)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
-
-- m61 <-glm(formula = R ~ A * C + C * D + B, family = binomial, data = data)
 
 ```{r}
 morph_model <- glm(formula = flew_b ~ beak_c * body_c + body_c * wing_c + thorax_c, family = binomial, data = data_T1)
@@ -431,24 +394,9 @@ D = data_T2$mass_c # as a covariate
 
 data<-data.frame(R, A, B, C, D)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
 ```
-
-- m2 <- glm(formula = R ~ B, family = binomial, data = data)
-- m4 <- glm(formula = R ~ A + B, family = binomial, data = data)
-- m6 <- glm(formula = R ~ B + C, family = binomial, data = data)
-- m7 <- glm(formula = R ~ A + B + C, family = binomial, data = data)
-- m8 <- glm(formula = R ~ A * B, family = binomial, data = data)
-- m10 <- glm(formula = R ~ B * C, family = binomial, data = data)
 
 ```{r}
 anova(m2, m4, test="Chisq") # Adding A does not improve fit
@@ -471,22 +419,9 @@ tidy_regression(model_T2, is_color=output_col)
 #### With Mass
 
 ```{r}
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
-
-- m7 <- glm(formula = R ~ A + D, family = binomial, data = data)
-- m4 <- glm(formula = R ~ D, family = binomial, data = data)
-- m9 <- glm(formula = R ~ B + D, family = binomial, data = data)
-- m12 <- glm(formula = R ~ A + B + D, family = binomial, data = data)
 
 ```{r}
 anova(m7, m4, test="Chisq") # Removing A does improve fit (neg Dev)
@@ -523,22 +458,9 @@ D = data_T2$wing_c
 
 data<-data.frame(R, A, B, C, D)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
-
-- m54 <- glm(formula = R ~ B * D + C * D, family = binomial, data = data)
-- m85 <- glm(formula = R ~ A * D + B * D + C * D, family = binomial, data = data)
-- m51 <- glm(formula = R ~ A * D + C * D, family = binomial, data = data)
-- m63 <- glm(formula = R ~ A * D + C * D + B, family = binomial, data = data)
 
 ```{r}
 anova(m63, m85, test="Chisq") # Adding B*D does not improve fit
@@ -655,23 +577,9 @@ C = data_fem$mass_c
 
 data<-data.frame(R, A, B, C)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 2-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 2-FF.R")
 ```
-
-- m0 <- glm(formula = R ~ 1, family = binomial, data = data)
-- m1 <- glm(formula = R ~ A, family = binomial, data = data) *host*
-- m2 <- glm(formula = R ~ B, family = binomial, data = data) *sym_dist*
-- m3 <- glm(formula = R ~ A + B, family = binomial, data = data) *host and sym_dist*
-- m4 <- glm(formula = R ~ A * B, family = binomial, data = data) *host x sym_dist*
 
 ```{r}
 anova(m0, m1, test="Chisq") # Adding A does not improve fit
@@ -701,25 +609,9 @@ C = data_fem$mass_c
 
 data<-data.frame(R, A, B, C)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
 ```
-
-- m3 <- glm(formula = R ~ C, family = binomial, data = data)
-- m6 <- glm(formula = R ~ B + C, family = binomial, data = data)
-- m5 <- glm(formula = R ~ A + C, family = binomial, data = data)
-- m7 <- glm(formula = R ~ A + B + C, family = binomial, data = data)
-- m9 <- glm(formula = R ~ A * C, family = binomial, data = data)
-- m12 <- glm(formula = R ~ A * C + B, family = binomial, data = data)
-- m10 <- glm(formula = R ~ B * C, family = binomial, data = data)
 
 ```{r}
 anova(m3, m6, test="Chisq") # Adding B does not improve fit
@@ -753,25 +645,9 @@ X = data_fem$ID # this has a high variance
 
 data<-data.frame(R, A, B, C, X)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glmer 1 RF + 3-FF.R") # 3 models didn't converge
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glmer 1 RF + 3-FF.R")
 ```
-
-- m10 <- R ~ B * C + (1 | X)
-- m9 <- R ~ A * C + (1 | X)
-- m12 <- R ~ A * C + B + (1 | X)
-- m13 <- R ~ B * C + A + (1 | X)
-- m16 <- R ~ A * C + B * C + (1 | X)
-- m3 <- R ~ C + (1 | X)
-- m14 <- R ~ A * B + A * C + (1 | X)
 
 ```{r}
 anova(m10, m13, test="Chisq") # Adding A does not improve fit
@@ -801,22 +677,9 @@ D = data_fem$eggs_b
   
 data<-data.frame(R, A, B, C, D)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
-
-- m4 <-  glm(formula = R ~ D, family = binomial, data = data) *eggs_b*
-- m9 <- glm(formula = R ~ B + D, family = binomial, data = data) *sym_dist and eggs_b*
-- m10 <- glm(formula = R ~ C + D, family = binomial, data = data)
-- m7 <- glm(formula = R ~ A + D, family = binomial, data = data)
 
 ```{r}
 anova(m4, m9, test="Chisq") # Adding B does not improve fit
@@ -855,22 +718,9 @@ D = data_eggs$total_eggs_c
 
 data<-data.frame(R, A, B, C, D)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
-
-- m4 <-  glm(formula = R ~ D, family = binomial, data = data) 
-- m9 <- glm(formula = R ~ B + D, family = binomial, data = data)
-- m10 <- glm(formula = R ~ C + D, family = binomial, data = data)
-- m7 <- glm(formula = R ~ A + D, family = binomial, data = data)
 
 ```{r}
 anova(m4, m9, test="Chisq") # Adding B does not improve fit
@@ -907,21 +757,9 @@ D = data_eggs$eggs_b
 
 data<-data.frame(R, A, B, C, D)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
-
-- m18 <-  glm(formula = R ~ A * D, family = binomial, data = data)
-- m7 <- glm(formula = R ~ A + D, family = binomial, data = data)
-- m50 <- glm(formula = R ~ A * D + B * D, family = binomial, data = data)
 
 ```{r}
 anova(m7, m18, test="Chisq") # Adding A*D does not improve fit
@@ -961,19 +799,10 @@ D = data_fem$wing_c
 
 data<-data.frame(R, A, B, C, D)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 4-FF.R") 
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
-- m12 <- glm(formula = R ~ A + B + D, family = binomial, data = data)
-- m11 <- glm(formula = R ~ A + B + C, family = binomial, data = data)
+
 ```{r}
 anova(m12, m11, test="Chisq") # Replacing C with D does not improve fit
 ```
@@ -1014,20 +843,9 @@ X = data_fem$trial_type
 
 data<-data.frame(R, A, B, C, D, X)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glmer 1-RF + 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glmer 1-RF + 4-FF.R")
 ```
-
-- m12 <- R ~ A + B + D + (1 | X)
-- m11 <-  R ~ A + B + C + (1 | X)
 
 ```{r}
 anova(m11, m12, test="Chisq") # replacing C with D improves fit
@@ -1139,23 +957,9 @@ C = data_male$mass_c
 
 data<-data.frame(R, A, B, C)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 2-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 2-FF.R")
 ```
-
-- m1 <- glm(formula = R ~ A, family = binomial, data = data) *host_c*
-- m3 <- glm(formula = R ~ A + B, family = binomial, data = data)
-- m4 <- glm(formula = R ~ A * B, family = binomial, data = data)
-- m0 <- glm(formula = R ~ 1, family = binomial, data = data)
-- m2 <- glm(formula = R ~ B, family = binomial, data = data) *sym_dist*
 
 ```{r}
 anova(m0, m1, test="Chisq") # Adding A does improve fit
@@ -1183,26 +987,9 @@ tidy_regression(model_male_final, is_color=output_col)
 #### With Mass
 
 ```{r}
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
 ```
-
-- m5 <- glm(formula = R ~ A + C, family = binomial, data = data) *host + mass*
-- m7 <- glm(formula = R ~ A + B + C, family = binomial, data = data)
-- m13 <- glm(formula = R ~ B * C + A, family = binomial, data = data)
-- m11 <- glm(formula = R ~ A * B + C, family = binomial, data = data)
-- m9 <- glm(formula = R ~ A * C, family = binomial, data = data)
-- m16 <- glm(formula = R ~ A * C + B * C, family = binomial, data = data)
-- m12 <- glm(formula = R ~ A * C + B, family = binomial, data = data)
-- m15 <- glm(formula = R ~ A * B + B * C, family = binomial, data = data)
 
 ```{r}
 anova(m5, m7, test="Chisq") # Adding B does not improve fit 
@@ -1245,26 +1032,9 @@ X = data_male$days_from_start_c
 
 data<-data.frame(R, A, B, C, X)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glmer 1 RF + 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glmer 1 RF + 3-FF.R")
 ```
-
-- m5 <- R ~ A + C + (1 | X)
-- m7 <- R ~ A + B + C + (1 | X)
-- m13 <- R ~ B * C + A + (1 | X)
-- m16 <- R ~ A * C + B * C + (1 | X)
-- m9 <- R ~ A * C + (1 | X)
-- m11 <- R ~ A * B + C + (1 | X)
-- m12 <-  R ~ A * C + B + (1 | X)
-- m15 <- R ~ A * B + B * C + (1 | X)
 
 ```{r}
 anova(m5, m7, test="Chisq") # Adding B does not improve fit
@@ -1309,24 +1079,9 @@ D = data_male$wing_c
 
 data<-data.frame(R, A, B, C, D)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glm 4-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
-
-- m93 <- glm(formula = R ~ A * B + A * C + A * D + C * D, family = binomial, data = data)
-- m73 <- glm(formula = R ~ A * B + A * D + C * D, family = binomial, data = data)
-- m107 <- glm(formula = R ~ A * B + A * C + A * D + B * C + C * D, family = binomial, data = data)
-- m98 <- glm(formula = R ~ A * B + A * D + B * C + C * D, family = binomial, data = data)
-- m99 <- glm(formula = R ~ A * B + A * D + B * D + C * D, family = binomial, data = data)
-- m89 <-  glm(formula = R ~ A * C + A * D + C * D + B, family = binomial, data = data)
 
 ```{r}
 male_morph<-glm(flew_b~ beak_c * thorax_c + beak_c * body_c + beak_c * wing_c + body_c * wing_c, family=binomial, data=data_male) 
@@ -1365,20 +1120,9 @@ Y = data_male$ID #3-4 models failed to converge when 2 RFs (either ID or trail_t
 
 data<-data.frame(R, A, B, C, X, Y)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glmer 2 RF + 3-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glmer 2 RF + 3-FF.R")
 ```
-
-- m37 <- R ~ A * B * C + (1 | Y)
-- m56 <-  R ~ A * B * C + (1 | X) + (1 | Y)
 
 ```{r}
 anova(m37, m56, test="Chisq") # Adding (1|X) does not improve fit
@@ -1409,20 +1153,9 @@ Y = data_male$ID
 
 data<-data.frame(R, A, B, X, Y)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glmer 2-RF + 2-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glmer 2-RF + 2-FF.R")
 ```
-
-- m9 <- R ~ A * B + (1 | Y)
-- m14 <- R ~ A * B + (1 | X) + (1 | Y)
 
 ```{r}
 anova(m9, m14, test="Chisq") # Adding (1|X) does not improve fit
@@ -1450,19 +1183,10 @@ Y = data_male$ID
 
 data<-data.frame(R, A, B, X, Y)
 
-source("src/AICprobabilities.R")
-source("src/generic models-binomial glmer 2-RF + 1-FF.R")
-AICs <- sort(summary$AIC)
-models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
-top <- length(models_init$x[which(models_init$x>0.05)])
-
-AICs <- AICs[1:top]
-models <- lapply(models_init$ix[1:top],1,FUN=as.integer)
-probs <- models_init$x[1:top]
-rbind(AICs, models, probs)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glmer 2-RF + 1-FF.R")
 ```
-- m5 <- R ~ A + (1 | X) + (1 | Y)
-- m4 <- R ~ A + (1 | Y)
+
 ```{r}
 anova(m4, m5, test="Chisq") # Adding (1|X) does not improve fit
 ```
@@ -1473,5 +1197,3 @@ tidy_regression(male_morph.glmer, is_color=output_col) # best fit model from glm
 ```
 
 * strong positive effect of wing2body, where if you have more wing to body, then more likely to fly
-
-
