@@ -169,7 +169,7 @@ tidy_regression(glm(flew_b~beak_c, data=data_T1, family=binomial), is_color=outp
 ####### Effect of thorax length
 tidy_regression(glm(flew_b~thorax_c, data=data_T1, family=binomial), is_color=output_col)
 
-####### Marginal effect of body length
+####### No effect of body length
 tidy_regression(glm(flew_b~body_c, data=data_T1, family=binomial), is_color=output_col)
 
 ####### No effect of wing length
@@ -218,7 +218,7 @@ tidy_regression(model_T1, is_color=output_col)
 ```
 * strong negative effect of sex, where if you are female you are less likely to fly.
 * no longer an effect of host or distance from sympatric zone. (last season there was)
-* strong interaction between sex and host where if female and from GRT, then less likely to fly.
+* strong positive effect of sex and host where if female and from GRT, then less likely to fly.
 
 **Before adding mass, we can see that:**
 
@@ -233,6 +233,7 @@ tidy_regression(model_T1_cov, is_color=output_col)
 
 * strong negative effect of mass that subsumes the sex effect
 * no direct effect of host plant
+* no direct effect of sex
 * host*sex interaction shows a strong positive effect, such that if from GRT and are female then more likely to be dispersive
 
 <a id="with_mass"></a>
@@ -244,7 +245,7 @@ source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
 
-```{r echo=FALSE}
+```{r}
 model_T1_m <- glm(flew_b~host_c*mass_c + sex_c, family=binomial, data=data_T1)
 tidy_regression(model_T1_m, is_color=output_col)
 ```
@@ -286,19 +287,18 @@ model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
 
 ```{r}
-morph_model <- glm(formula = flew_b ~ beak_c * body_c + body_c * wing_c + thorax_c, family = binomial, data = data_T1)
+morph_model <- glm(flew_b ~ body_c * wing_c + thorax_c, family = binomial, data = data_T1)
 tidy_regression(morph_model, is_color=output_col)
 ```
 
-* strong negative effect of thorax length, where the longer the thorax, the less likely the bug will fly.
-* strong positive effect of wing length, where the longer the wings, the more likely the bug will fly.
-* no significant beak effect
-* no significant body effect
-* no significant beak*body interaction effect
-* negative effect of body*wing, where the longer the body and the longer the wing, the less likely the bug will fly. We know body and wing are closely correlated to one another, so the could cancel each other out. Meaning, that if you have a longer body then you have more mass and even if you have the wings to fly you'll be less likely to fly.
+* marginal negative effect of body where the larger the body the less likely to fly
+* strong positive effect of wing length where the longer the wing, the more likely to fly
+* storng negative effect of thorax where the larger the thorasxs, the less likely to fly
+
+* no effect of body*wing. We know body and wing are closely correlated to one another, so the could cancel each other out. Meaning, that if you have a longer body then you have more mass and even if you have the wings to fly you'll be less likely to fly.
 
 ```{r}
-morph_modelglmer <- glmer(formula = flew_b ~ thorax_c * body_c + body_c * wing_c + (1| population), family = binomial, data = data_T1) 
+morph_modelglmer <- glmer(formula = flew_b ~ body_c * wing_c + thorax_c + (1| population), family = binomial, data = data_T1) 
 tidy_regression(morph_modelglmer, is_color=output_col) # did change the coefficients slightly, but not a better fit
 ```
 
@@ -407,7 +407,7 @@ anova(m4, m8, test="Chisq") # Adding an A*B interaction term does not improve fi
 anova(m6, m10, test="Chisq") # Adding a B*C interaction term does not improve fit
 ```
 
-```{r echo=FALSE}
+```{r}
 model_T2 <-glm(flew_b~sex_c, family=binomial, data=data_T2)
 tidy_regression(model_T2, is_color=output_col)
 ```
@@ -424,7 +424,7 @@ model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
 
 ```{r}
-anova(m7, m4, test="Chisq") # Removing A does improve fit (neg Dev)
+anova(m4, m7, test="Chisq") # Adding A does not improve fit
 anova(m7, m12, test="Chisq") # Adding B does not improve fit
 anova(m4, m9, test="Chisq") # Adding B does not improve fit
 ```
@@ -468,17 +468,18 @@ anova(m51, m63, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
-morph_model_T2 <- glm(flew_b ~ thorax_c * wing_c + body_c * wing_c, family = binomial, data = data_T2)
+morph_model_T2 <- glm(flew_b ~ beak_c * wing_c + body_c * wing_c, family = binomial, data = data_T2)
 tidy_regression(morph_model_T2, is_color=output_col)
 ```
-* no effect of thorax length
+
+* no effect of beak length
 * positive effect of wing length, where if wing longer then bug more likely to fly
-* no effect of body length 
-* positive effect of thorax*wing, where the longer the thorax and wing the more likely the bug will fly
-* negative effect of wing and body where the longer the wing and body the less liekly the bug will fly
+* negative effect of body, where the longer the body the less likely the bug is to fly
+* positive effect of beak:wing where the longer the beak and wing the more likely the bug is to fly
+* negative effect of wing and body where the longer the wing and body the less likely the bug is to fly
 
 ```{r}
-morph_model_T2glmer <- glmer(flew_b ~ thorax_c * wing_c + body_c * wing_c + (1|chamber), family = binomial, data = data_T2) # (1|days_from_start_c) and (1|population)variance = 0, chamber did not have variance at 0
+morph_model_T2glmer <- glmer(flew_b ~ beak_c * wing_c + body_c * wing_c + (1|chamber), family = binomial, data = data_T2) # (1|days_from_start_c) and (1|population)variance = 0, chamber did not have variance at 0
 tidy_regression(morph_model_T2glmer, is_color=output_col) # changed coefficients slightly, but did not improve the fit of the model.
 ```
 
