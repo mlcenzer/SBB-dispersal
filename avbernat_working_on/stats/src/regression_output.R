@@ -17,7 +17,7 @@ tidy_regression <- function(fit, is_color) {
   n_col <- length(as.data.frame(summary(fit)$coefficients))
   test_stat <- summary(fit)$coefficients[,n_col] # test_statistic: p-value (multivariate) or t-value (mixed effect)
   coeffs <- summary(fit)$coefficients[,1] 
-  AIC <- summary(fit)$aic # for multivariate modeling
+  AIC <- AIC(fit) # for multivariate modeling
   aic <- summary(fit)$AICtab[1] # for mixed effect modeling
   name <- as.character(summary(fit)$call)
   cat(name, end="\n")

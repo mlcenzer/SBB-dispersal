@@ -54,8 +54,12 @@ read_flight_data<-function(filename){
     d_T1 <- d[d["trial_type"] == "T1",] # trials <- unique(d["trial_type"])[[1]] --> turn into a for loop for when we have more trials
     d_T2 <- d[d["trial_type"] == "T2",]
     
+    data_tested$trial_type_og <- data_tested$trial_type
+    trial_col <- which( colnames(data_tested)=="trial_type" )
+    all_trial_col <- which( colnames(data_all)=="trial_type" )
+    
     duplicates1 <- d_T1[duplicated(d_T1$ID),][[1]]
-    duplicates2 <- d_T2[duplicated(d_T2$ID),] [[1]]
+    duplicates2 <- d_T2[duplicated(d_T2$ID),][[1]]
     
     if (length(duplicates1) > 0) {
       #cat("Bugs tested twice in the trial type T1:")
@@ -63,34 +67,23 @@ read_flight_data<-function(filename){
       #print(dups1)
       for (dup1 in dups1) {
         duprows1 <- d_T1[d_T1["ID"] == dup1,]
-        duprows1$trial_type[2] <- "T2"          # reassign T1 as T2 for second row
-        d_T2[nrow(d_T2) + 1,] = duprows1[2,]    # moved d_T1 rows to d_T2
-        row_rm <- duprows1$filename[2]          # remove row in T1 based on filename, because removing by row index is not consistent
         row_index_rm <- as.integer(rownames(duprows1))[2]
-        #cat("Removing d_T1 rows at indicies : ", row_index_rm, end="\n")
-        d_T1 <- d_T1[!(d_T1$filename == row_rm),]
+        data_tested[row_index_rm, trial_col] <- "T2"        # replace T1 with T2 for the duplicated ID
+        data_all[row_index_rm, all_trial_col] <- "T2"
+        #cat("Removing duplicated rows at indicies : ", row_index_rm, end="\n")
       }
     }
     if (length(duplicates2) > 0) {
-      #print("Bugs tested twice in the trial type T2")
+      cat("Bugs tested twice in the trial type T2:")
       dups2 <- as.integer(as.character(duplicates2))
-      #print(dups2)
+      print(dups2)
       for (dup2 in dups2) {
         duprows2 <- d_T2[d_T2["ID"] == dup2,]
-        duprows2$trial_type[1] <- "T1"          # reassign T2 as T1 for first row
-        d_T1[nrow(d_T1) + 1,] = duprows2[1,]    # moved d_T2 rows to d_T1
-        row_rm <- duprows2$filename[1] 
-        row_index_rm <- as.integer(rownames(duprows2))[1]
-        #cat("Removing d_T2 rows at indicies : ", row_index_rm, end="\n")
-        d_T2 <- d_T2[!(d_T2$filename == row_rm),]
+        row_index_rm <- as.integer(rownames(duprows2))[2]
+        data_tested[row_index_rm, trial_col] <- "T1"        # replace T2 with T1 for the duplicated ID
+        data_all[row_index_rm, all_trial_col] <- "T1"
       }
     }
-    
-    df <- rbind(d_T1, d_T2)                   # recombine with clean T1 vs. T2 seperation
-    
-    
-    data_tested$trial_type_og <- data_tested$trial_type
-    data_tested$trial_type <- df$trial_type
     
     return(list(data_all, data_tested))
     

@@ -59,6 +59,13 @@ source("src/center_flight_data.R")
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
+
+data_tested <- data_tested[data_tested$trial_type=="T1",] # only the unique values pulled for those tested
+data_tested <- center_data(data_tested)
+
+data_all <- data_all %>%
+  filter(trial_type != "T2")
+data_all <- center_data(data_all)
 ```
 
 <a id="testing"></a>
@@ -68,14 +75,11 @@ data_tested <- data[[2]]
 **Experimental Set-Up Effects**
 
 ```{r echo=FALSE}
-###### No effect of chamber
-tidy_regression(lmer(thorax_c~chamber + (1|trial_type), data=data_tested), is_color=output_col) 
-
 ####### No effect of test date
-tidy_regression(lmer(thorax_c~days_from_start_c+ (1|trial_type), data=data_tested), is_color=output_col)
+tidy_regression(lm(thorax_c~days_from_start_c, data=data_tested), is_color=output_col)
 
 ####### No effect of test time
-tidy_regression(lmer(thorax_c~min_from_IncStart_c + (1|trial_type), data=data_tested), is_color=output_col) 
+tidy_regression(lm(thorax_c~min_from_IncStart_c, data=data_tested), is_color=output_col) 
 ```
 
 <a id="thorax"></a>
@@ -88,25 +92,27 @@ tidy_regression(lmer(thorax_c~min_from_IncStart_c + (1|trial_type), data=data_te
 data<-data.frame(R=data_tested$thorax_c, 
                  A=data_tested$host_c, 
                  B=data_tested$sex_c, 
-                 C=data_tested$sym_dist, 
-                 X=data_tested$trial_type, Y=data_tested$chamber)
+                 C=data_tested$sym_dist)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
 ```
 
 ```{r}
-anova(m7, m43, test="Chisq") # Adding (1|Y) does not improve fit
+anova(m7, m11, test="Chisq") # Adding A*B marginally improves fit
+anova(m7, m12, test="Chisq") # Adding A*C does not improve fit
 ```
 
 ```{r}
-best.fit.thorax <- lmer(thorax_c ~ host_c + sex_c + sym_dist + (1|trial_type), data=data_tested)
+best.fit.thorax <- lm(thorax_c ~ host_c * sex_c + sym_dist, data=data_tested)
 tidy_regression(best.fit.thorax, is_color=output_col)
 ```
 
 * negative effect of host plant where if from GRT then smaller thorax length
 * strong positive effect of sex where if Female then larger thorax length
 * positive effect of sym_dist where if farther from Homestead, then longer thorax length
+
+* positive marginal effect of host*sex where if Female and from GRT then larger body
 
 <a id="body"></a>
 
@@ -116,22 +122,18 @@ tidy_regression(best.fit.thorax, is_color=output_col)
 data<-data.frame(R=data_tested$body_c, 
                  A=data_tested$host_c, 
                  B=data_tested$sex_c, 
-                 C=data_tested$sym_dist, 
-                 X=data_tested$trial_type, Y=data_tested$chamber)
+                 C=data_tested$sym_dist)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
 ```
 
 ```{r}
-anova(m11, m29, test="Chisq") # Replacing X with Y does improve fit
-anova(m29, m33, test="Chisq") # Adding B*C marginally improves fit
-anova(m11, m15, test="Chisq") # Adding B*C marginally improves fit
-anova(m15, m33, test="Chisq") # Replacing X with Y does improve fit
+anova(m11, m15, test="Chisq") # Adding B*C does not improve fit
 ```
 
 ```{r}
-best.fit.body <- lmer(body_c ~ host_c * sex_c + sym_dist + (1 | chamber), data=data_tested)
+best.fit.body <- lm(body_c ~ host_c * sex_c + sym_dist, data=data_tested)
 tidy_regression(best.fit.body, is_color=output_col)
 ```
 
@@ -150,30 +152,26 @@ data<-data.frame(R=data_tested$wing_c,
                  A=data_tested$host_c, 
                  B=data_tested$sex_c, 
                  C=data_tested$sym_dist, 
-                 D=data_tested$thorax_c,
-                 X=data_tested$trial_type, Y=data_tested$chamber)
+                 D=data_tested$thorax_c)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 4-FF.R")
 ```
 
 ```{r}
-anova(m72, m185, test="Chisq") # Replacing X with Y does not improve fit
-anova(m72, m298, test="Chisq") # Adding Y does not improve fit
+best.fit.wing <- lm(wing_c ~ host_c * sex_c + host_c * thorax_c + sex_c * thorax_c + sym_dist * thorax_c, data=data_tested)
+tidy_regression(best.fit.wing, is_color=output_col) 
 ```
 
-```{r}
-best.fit.wing <- lmer(body_c ~ host_c * sex_c + host_c * thorax_c + sex_c * thorax_c + (1 | trial_type), data=data_tested)
-tidy_regression(best.fit.wing, is_color=output_col)
-```
-
-* no effect of host
-* positive effect of sex where if Female then have longer wings
+* positive effect of host where if from GRT then have longer wings
+* no effect of sex
 * strong positive effect of thorax where the longer the thorax, the longer the wings
+* no effect of sym_dist
 
 * positive effect of host*sex where if Female and from GRT then have longer wings
-* negative effect of host*thorax where if from GRT and have logner thorax, then have longer wings
-* no effect of sex*thorax
+* no effect of host*thorax
+* positive effect of sex*thorax where if F and have longer thorax, then have longer wings
+* negative effect of sex*sym_dist where if F and farther from Homestead, then have shorter wings 
 
 <a id="beak"></a>
 
@@ -184,31 +182,25 @@ data<-data.frame(R=data_tested$beak_c,
                  A=data_tested$host_c, 
                  B=data_tested$sex_c, 
                  C=data_tested$sym_dist, 
-                 D=data_tested$thorax_c,
-                 X=data_tested$trial_type, Y=data_tested$chamber)
+                 D=data_tested$thorax_c)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 4-FF.R")
 ```
 
 ```{r}
-anova(m80, m193, test="Chisq") # Replacing X with Y does not improve fit
-anova(m80, m306, test="Chisq") # Adding Y does not improve fit
-```
-
-```{r}
-best.fit.beak <- lmer(body_c ~ host_c * sym_dist + sex_c * sym_dist + sex_c * thorax_c + (1 | trial_type), data=data_tested)
+best.fit.beak <- lm(beak_c ~ host_c * sym_dist + sex_c * sym_dist + sex_c * thorax_c, data=data_tested)
 tidy_regression(best.fit.beak, is_color=output_col)
 ```
 
-* positive effect of host where if from GRT then have longer beak
-* no effect of sym_dist
-* no effect of sex
+* negative effect of host where if from GRT then have shorter beak
+* negative effect of sym_dist where if farther from Homestead then have shorter beak
+* positive effect of beak length where if Female then have longer beak
 * strong positive effect of thorax where the longer the thorax the longer the beak
 
-* no effect of host*sym_dist
-* no effect of sym_dist*sex
-* no effect of sex*thorax
+* maringal positive effect of host*sym_dist where if from GRT and farther from Homeasted then have longer beak
+* negative effect of sym_dist*sex where if farther from Homestead and Female then have shorter beak
+* positive effect of sex*thorax where if Female and have larger thorax then have longer beak
 
 ### All Data Plots
 
@@ -233,8 +225,6 @@ gf_point(thorax_c ~ sym_dist, col=~host_c, alpha=~sex_c, data=data_all)
 
 [Reading Data](#data_cleanF)
 
-[Testing Covariates](#testingF)
-
 Comparing Models:
 
 * [Thorax](#thoraxF)
@@ -258,25 +248,15 @@ data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
 
+data_tested <- data_tested[data_tested$trial_type=="T1",] # only the unique values pulled for those tested
+data_tested <- center_data(data_tested)
+
+data_all <- data_all %>%
+  filter(trial_type != "T2")
+data_all <- center_data(data_all)
+
 data_fem <- data_tested[data_tested$sex=="F",]
 data_fem <- center_data(data_fem)
-```
-
-<a id="testingF"></a>
-
-#### Testing Models and Covariates
-
-**Experimental Set-Up Effects**
-
-```{r echo=FALSE}
-###### Marginal effect of chambers B-2 and B-3
-tidy_regression(lmer(thorax_c~chamber + (1|trial_type), data=data_fem), is_color=output_col) 
-
-####### No effect of test date
-tidy_regression(lmer(thorax_c~days_from_start_c+ (1|trial_type), data=data_fem), is_color=output_col)
-
-####### No effect of test time
-tidy_regression(lmer(thorax_c~min_from_IncStart_c + (1|trial_type), data=data_fem), is_color=output_col) 
 ```
 
 <a id="thoraxF"></a>
@@ -288,15 +268,19 @@ tidy_regression(lmer(thorax_c~min_from_IncStart_c + (1|trial_type), data=data_fe
 ```{r, warning=FALSE, message=FALSE}
 data<-data.frame(R=data_fem$thorax_c, 
                  A=data_fem$host_c, 
-                 B=data_fem$sym_dist, 
-                 X=data_fem$trial_type, Y=data_fem$chamber)
+                 B=data_fem$sym_dist)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 2-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-FF.R")
 ```
 
 ```{r}
-best.fem.thorax <- lmer(thorax_c ~ (1|chamber), data=data_fem)
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
+```
+
+```{r}
+best.fem.thorax <- lm(thorax_c ~ 1, data=data_fem)
 tidy_regression(best.fem.thorax, is_color=output_col)
 ```
 
@@ -307,24 +291,19 @@ tidy_regression(best.fem.thorax, is_color=output_col)
 ```{r, warning=FALSE, message=FALSE}
 data<-data.frame(R=data_fem$body_c, 
                  A=data_fem$host_c, 
-                 B=data_fem$sym_dist,
-                 X=data_fem$trial_type, Y=data_fem$chamber)
+                 B=data_fem$sym_dist)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 2-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-FF.R")
 ```
 
 ```{r}
-anova(m0, m10, test="Chisq") # Adding Y marginally improves fit
-anova(m0, m6, test="Chisq") # Adding A does improve fit
-anova(m0, m7, test="Chisq") # Adding B does improve fit
-anova(m5, m6, test="Chisq") # Adding A does not improve fit
-anova(m5, m7, test="Chisq") # Adding B does not improve fit
-anova(m0, m5, test="Chisq") # Replacing Y with X improves fit
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r}
-best.fem.body <- lmer(body_c ~ (1 | trial_type), data=data_fem)
+best.fem.body <- lm(body_c ~ 1, data=data_fem)
 tidy_regression(best.fem.body, is_color=output_col)
 ```
 
@@ -336,21 +315,25 @@ tidy_regression(best.fem.body, is_color=output_col)
 data<-data.frame(R=data_fem$wing_c, 
                  A=data_fem$host_c, 
                  B=data_fem$sym_dist,
-                 C=data_fem$thorax_c,
-                 X=data_fem$trial_type)
+                 C=data_fem$thorax_c)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
+```
+```{r}
+anova(m13, m16, test="Chisq") # Adding A*C does not inprove fit
 ```
 
+
 ```{r}
-best.fem.wing <- lmer(wing_c ~ host_c * thorax_c + (1 | trial_type), data=data_fem)
+best.fem.wing <- lm(wing_c ~ sym_dist * thorax_c + host_c, data=data_fem)
 tidy_regression(best.fem.wing, is_color=output_col)
 ```
 
-* positive effect of host where if from GRT then longer wing
+
+* no effect of sym_dist
 * strong positive effect of thorax where the longer the thorax the longer the wing
-* negative effect of host*thorax where the longer the thorax and from GRT then the shorter the wing (conflicting interaction.)
+* negative effect of sym_dist*thorax where the longer the thorax and farther from Homestead then the shorter the wing
 
 <a id="beakF"></a>
 
@@ -360,27 +343,25 @@ tidy_regression(best.fem.wing, is_color=output_col)
 data<-data.frame(R=data_fem$beak_c, 
                  A=data_fem$host_c, 
                  B=data_fem$sym_dist,
-                 C=data_fem$thorax_c,
-                 X=data_fem$trial_type)
+                 C=data_fem$thorax_c)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
 ```
 
 ```{r}
-anova(m5, m7, test="Chisq") # Adding B does improve fit
+anova(m5, m7, test="Chisq") # Adding B marginally improves fit
 anova(m7, m11, test="Chisq") # Adding A*B does not improve fit
 ```
 
 ```{r}
-best.fem.beak <- lmer(beak_c ~ host_c + sym_dist + thorax_c + (1 | trial_type), data=data_fem)
+best.fem.beak <- lm(beak_c ~ host_c + sym_dist + thorax_c, data=data_fem)
 tidy_regression(best.fem.beak, is_color=output_col)
 ```
 
 * negative effect of host where if from GRT then the shorter the beak
-* marginal negative effect/no effect of sym_dist
-* strong positive effect of host where the longer the thorax, the longer the beak
-
+* marginal negative effect of sym_dist where the farther from Homestead the shorter the beak
+* strong positive effect of thorax where the longer the thorax, the longer the beak
 
 ### Female Plots
 
@@ -394,8 +375,6 @@ gf_point(thorax_c ~ sym_dist, col=~host_c, data=data_fem)
 ### Male Data 
 
 [Reading Data](#data_cleanM)
-
-[Testing Covariates](#testingM)
 
 Comparing Models:
 
@@ -420,25 +399,15 @@ data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
 
+data_tested <- data_tested[data_tested$trial_type=="T1",] # only the unique values pulled for those tested
+data_tested <- center_data(data_tested)
+
+data_all <- data_all %>%
+  filter(trial_type != "T2")
+data_all <- center_data(data_all)
+
 data_male <- data_tested[data_tested$sex=="M",]
 data_male <- center_data(data_male)
-```
-
-<a id="testingM"></a>
-
-#### Testing Models and Covariates
-
-**Experimental Set-Up Effects**
-
-```{r echo=FALSE}
-###### No effect of chamber
-tidy_regression(lmer(thorax_c~chamber + (1|trial_type), data=data_male), is_color=output_col) 
-
-####### No effect of test date
-tidy_regression(lmer(thorax_c~days_from_start_c+ (1|trial_type), data=data_male), is_color=output_col)
-
-####### No effect of test time
-tidy_regression(lmer(thorax_c~min_from_IncStart_c + (1|trial_type), data=data_male), is_color=output_col) 
 ```
 
 <a id="thoraxM"></a>
@@ -450,21 +419,18 @@ tidy_regression(lmer(thorax_c~min_from_IncStart_c + (1|trial_type), data=data_ma
 ```{r, warning=FALSE , message=FALSE}
 data<-data.frame(R=data_male$thorax_c, 
                  A=data_male$host_c, 
-                 B=data_male$sym_dist, 
-                 X=data_male$chamber, Y=data_male$trial_type)
+                 B=data_male$sym_dist)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 2-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-FF.R")
 ```
 
 ```{r}
-anova(m3, m13, test="Chisq") # adding (1|Y) does not improve fit
-anova(m3, m8, test="Chisq") # replacing X with Y does improve fit
-anova(m8, m13, test="Chisq") # Adding (1|X) does not improve fit
+anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
 ```
 
 ```{r}
-best.male.thorax <- lmer(thorax_c ~ host_c + sym_dist + (1|trial_type), data=data_male)
+best.male.thorax <- lm(thorax_c ~ host_c + sym_dist, data=data_male)
 tidy_regression(best.male.thorax, is_color=output_col)
 ```
 
@@ -478,21 +444,18 @@ tidy_regression(best.male.thorax, is_color=output_col)
 ```{r, warning=FALSE, message=FALSE}
 data<-data.frame(R=data_male$body_c, 
                  A=data_male$host_c, 
-                 B=data_male$sym_dist,
-                 X=data_male$chamber, Y=data_male$trial_type)
+                 B=data_male$sym_dist)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 2-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-FF.R")
 ```
 
 ```{r}
-anova(m3, m8, test="Chisq") # Replacing X with Y does not improve fit
 anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
-anova(m3, m13, test="Chisq") # Adding Y does not improve fit
 ```
 
 ```{r}
-best.male.body <- lmer(body_c ~ host_c + sym_dist + (1 | chamber), data=data_male)
+best.male.body <- lm(body_c ~ host_c + sym_dist, data=data_male)
 tidy_regression(best.male.body, is_color=output_col)
 ```
 
@@ -507,20 +470,19 @@ tidy_regression(best.male.body, is_color=output_col)
 data<-data.frame(R=data_male$wing_c, 
                  A=data_male$host_c, 
                  B=data_male$sym_dist,
-                 C=data_male$thorax_c,
-                 X=data_male$chamber, Y=data_male$trial_type)
+                 C=data_male$thorax_c)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
 ```
 
 ```{r}
-anova(m3, m21, test="Chisq") # Replacing X with Y does not improve fit
-anova(m3, m39, test="Chisq") # Adding Y does not improve fit
+anova(m3, m5, test="Chisq") # Adding A does not improve fit
+anova(m3, m6, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
-best.male.wing <- lmer(wing_c ~ thorax_c + (1 | chamber), data=data_male)
+best.male.wing <- lm(wing_c ~ thorax_c, data=data_male)
 tidy_regression(best.male.wing, is_color=output_col)
 ```
 
@@ -534,20 +496,18 @@ tidy_regression(best.male.wing, is_color=output_col)
 data<-data.frame(R=data_male$beak_c, 
                  A=data_male$host_c, 
                  B=data_male$sym_dist,
-                 C=data_male$thorax_c,
-                 X=data_male$chamber, Y=data_male$trial_type)
+                 C=data_male$thorax_c)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
 ```
 
 ```{r}
-anova(m5, m23, test="Chisq") # replacing X with Y does not improve fit
-anova(m5, m41, test="Chisq") # adding Y does not improve fit
+anova(m5, m9, test="Chisq") # adding A*C does not improve fit
 ```
 
 ```{r}
-best.male.beak <- lmer(wing_c ~ host_c + thorax_c + (1 | chamber), data=data_male)
+best.male.beak <- lm(wing_c ~ host_c + thorax_c, data=data_male)
 tidy_regression(best.male.beak, is_color=output_col)
 ```
 
