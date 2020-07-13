@@ -420,6 +420,8 @@ grid.arrange(h3,h4,h5,h6,ncol=4)
 
 [Morphology](#morphf)
 
+[Egg and Morphology](#eggmorph)
+
 <a id="cleandata"></a>
 
 #### Reading the data
@@ -580,6 +582,37 @@ tidy_regression(femm_morph_model, is_color=output_col)
 ```
 
 * positive effect of thorax length where the longer the thorax the more the female bug weighed. (probably b/c that's where all the muscle mass is held).
+
+<a id="eggmorph"></a>
+
+#### Eggs and Morphology 
+
+```{r, warning=FALSE, message=FALSE}
+data<-data.frame(R=data_fem$mass_c, 
+                 A=data_fem$eggs_b, 
+                 B=data_fem$thorax_c,
+                 C=data_fem$wing_c,
+                 D=data_fem$body_c,
+                 X=data_fem$ID, Y=data_fem$trial_type) 
+data <- data %>%
+  filter(!is.na(A)) %>%
+  filter(!is.na(B))
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+```
+
+```{r}
+anova(m5, m231, test="Chisq") # Adding Y does not improve fit
+```
+
+```{r}
+femm_eggmorph <- lmer(mass_c ~ eggs_b + thorax_c + (1|ID), data=data_fem)
+tidy_regression(femm_eggmorph, is_color=output_col)
+```
+
+* if female laid eggs that day, then mass is larger
+* the larger the thorax, the heavier the female
 
 ### Plotting Female Data
 
@@ -1142,4 +1175,3 @@ g3 <- grid.arrange(p8,p9,p10,p11, ncol=2, top="Trial 2")
 # Uncomment below to save graph:
 #ggsave("MassbyMorphologyT2", plot = g3, device="jpeg", width = 9, height = 7)
 ```
-

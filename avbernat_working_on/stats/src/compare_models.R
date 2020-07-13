@@ -8,6 +8,9 @@ model_comparisonsAIC <- function(model_selection_filepath){
   if (grepl("glmer", model_selection_filepath)) {
     using_glmer <- TRUE
   }
+  if (grepl("lmer", model_selection_filepath)) {
+    using_glmer <- TRUE
+  }
   
   AICs <- sort(summary$AIC)
   models_init <- sort(P, decreasing=TRUE, index.return=TRUE)
