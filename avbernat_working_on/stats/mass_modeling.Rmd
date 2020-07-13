@@ -843,10 +843,10 @@ data_T1 <- center_data(data_T1)
 
 ```{r echo=FALSE}
 ###### No effect of chamber
-tidy_regression(lmer(mass_c~chamber + (1|ID), data=data_T1), is_color=output_col) # (1|population) variance near zero so can remove
+tidy_regression(lmer(mass_c~chamber + (1|days_from_start_c), data=data_T1), is_color=output_col) # (1|population) variance near zero so can remove
 
 ####### No effect of test date
-tidy_regression(lmer(mass_c~days_from_start_c + (1|ID), data=data_T1), is_color=output_col)
+tidy_regression(lmer(mass_c~days_from_start_c + (1|chamber), data=data_T1), is_color=output_col)
 
 ####### No effect of test time
 tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|chamber), data=data_T1), is_color=output_col) 
@@ -856,7 +856,7 @@ tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|chamber), data=data_T1), is
 
 ```{r, echo=FALSE}
 ####### Effect of number of eggs laid
-tidy_regression(lmer(mass_c~total_eggs + (1|ID), data=data_T1), is_color=output_col) 
+tidy_regression(lmer(mass_c~total_eggs + (1|chamber), data=data_T1), is_color=output_col) 
 
 ####### Effect of whether eggs were laid or not
 tidy_regression(lmer(mass_c~eggs_b + (1|chamber), data=data_T1), is_color=output_col)
@@ -866,16 +866,16 @@ tidy_regression(lmer(mass_c~eggs_b + (1|chamber), data=data_T1), is_color=output
 
 ```{r, echo=FALSE}
 ####### Effect of beak length
-tidy_regression(lmer(mass_c~beak_c + (1|ID), data=data_T1), is_color=output_col) 
+tidy_regression(lmer(mass_c~beak_c + (1|chamber), data=data_T1), is_color=output_col) 
 
 ####### Effect of thorax length
-tidy_regression(lmer(mass_c~thorax_c + (1|ID), data=data_T1), is_color=output_col)
+tidy_regression(lmer(mass_c~thorax_c + (1|chamber), data=data_T1), is_color=output_col)
 
 ####### Effect of body length
-tidy_regression(lmer(mass_c~body_c + (1|ID), data=data_T1), is_color=output_col)
+tidy_regression(lmer(mass_c~body_c + (1|chamber), data=data_T1), is_color=output_col)
 
 ####### Effect of wing length
-tidy_regression(lmer(mass_c~wing_c + (1|ID), data=data_T1), is_color=output_col)
+tidy_regression(lmer(mass_c~wing_c + (1|chamber), data=data_T1), is_color=output_col)
 ```
 
 <a id="modelT1"></a>
