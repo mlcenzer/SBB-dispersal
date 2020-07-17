@@ -2,7 +2,7 @@ import csv
 import os
 import re
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 #************************************************************************************
 # Splitting flight trial txt files based on event markers.
@@ -21,11 +21,14 @@ from datetime import datetime
 #datapath = r"/Users/anastasiabernat/Desktop/dispersal_data/multiple_hours/multiple_hours_data_original2.csv"
 
 # Winter 2020
-datapath = r"/Users/anastasiabernat/Desktop/all_flight_trials-processed-April16.2020.csv"
+#datapath = r"/Users/anastasiabernat/Desktop/all_flight_trials-processed-April16.2020.csv"
+main_path = r"/Users/anastasiabernat/Desktop/flight-python-scripts-winter2020/data/"
+datapath = main_path + "all_flight_trials-processed-July14.2020.csv"
 
 first_flight_dict = {}
 current_flight_dict = {}
 individual_cut_off = {}
+individual_start_time = {}
 
 time_list = [] # Use this to find the max time value
 
@@ -49,10 +52,16 @@ with open(datapath, "r") as data_file:
             continue            
         if row['NOTES'].startswith('BUG: short') or row['NOTES'].startswith('solves'): # exceptions
             continue
+        
+        ind_start_time_str = row['test_date'] + ' ' + row["time_start"]
+        ind_start_time_obj = datetime.strptime(ind_start_time_str ,'%m.%d.%Y %H:%M:%S')
 
-        individual_time_str = row['time_end']
-        individual_time_obj = datetime.strptime(individual_time_str, '%H:%M:%S').time()
-        time_list.append(individual_time_obj)
+        if (ID, set_num, chamber) not in individual_start_time:
+            individual_start_time[(ID, set_num, chamber)] = ind_start_time_obj
+            
+        ind_end_time_str = row['time_end']
+        ind_end_time_obj = datetime.strptime(ind_end_time_str, '%H:%M:%S').time()
+        time_list.append(ind_end_time_obj)
         
         individual_datetime_str = row['test_date'] + ' ' + row['time_end']
         individual_datetime_obj = datetime.strptime(individual_datetime_str ,'%m.%d.%Y %H:%M:%S')
@@ -65,6 +74,7 @@ with open(datapath, "r") as data_file:
 ##print(first_flight_dict)
 ##print(current_flight_dict)
 ##print(individual_cut_off)
+##print(individual_start_time)
 
 max_time = max(time_list)
 ##print('Max time written down: ' + str(max_time))
@@ -77,7 +87,8 @@ max_time = max(time_list)
 #       and left.
 #************************************************************************************   
 
-filepath = r"/Users/anastasiabernat/Desktop/over_night_flyers-March30.2020.csv"
+#filepath = r"/Users/anastasiabernat/Desktop/over_night_flyers-March30.2020.csv"
+filepath = main_path + "over_night_flyers-March30.2020.csv"
 
 file_cut_off = {}
 
@@ -114,7 +125,8 @@ with open(filepath, "r") as overnight_file:
 
 # Winter 2020
 #path = r"/Users/anastasiabernat/Desktop/flight-files_final/"
-path = r"/Users/anastasiabernat/Desktop/original/"
+#path = r"/Users/anastasiabernat/Desktop/original/"
+path = r"/Users/anastasiabernat/Desktop/holder/"
 
 dir_list = sorted(os.listdir(path))
 
@@ -194,6 +206,7 @@ for file in dir_list:
             full_data.append(new_row)
 
     #with open(r"/Users/anastasiabernat/Desktop/winter2020_flight_files_to_split/" + file,"w") as output_file:
+    #with open(r"/Users/anastasiabernat/Desktop/holder/" + file,"w") as output_file:
     with open(r"/Users/anastasiabernat/Desktop/holder2/" + file,"w") as output_file:
         writer = csv.DictWriter(output_file, delimiter=',', fieldnames=new_row.keys())
         for r in full_data:
@@ -252,6 +265,20 @@ for f in dir_files:
                 chamber = channel_letter + str(channel)
                 datetime_str = row['datetime']
                 datetime_object = datetime.strptime(datetime_str,'%Y-%m-%d %H:%M:%S')
+
+                try:
+                    ID_num = round(float(ID))
+                    start_time_cut = individual_start_time[(ID_num, set_num, chamber)]
+                    end_time_cut = individual_cut_off[(ID_num, set_num, chamber)]
+                except KeyError:
+                    start_time_cut = datetime_object
+                    end_time_cut = datetime_object
+                    
+                if datetime_object < start_time_cut - timedelta(minutes=15): # Cut file whose file start time is 15 min
+                    continue                                                 # earlier than the bug start time
+
+                if datetime_object > end_time_cut + timedelta(minutes=15):
+                    continue
                 
                 if ID in end_IDs:
                     try:
@@ -262,7 +289,7 @@ for f in dir_files:
 
                     if datetime_object > individual_cut:
                         continue
-
+ 
                 new_row = {}
                 new_row['TBF'] = row['TBF']
                 new_row['voltage'] = row[str(channel)]
@@ -276,7 +303,7 @@ for f in dir_files:
     
         for key_ID, data in ID_data.items():
             print("     Making file for ID, " + str(key_ID))
-            with open(r"/Users/anastasiabernat/Desktop/holder4/" +
+            with open(r"/Users/anastasiabernat/Desktop/holder3/" +
                       os.path.basename(filename).split(".")[0] + str(channel) + '_' + str(key_ID) + ".txt","w") as output_file:
                 writer = csv.DictWriter(output_file, fieldnames=new_row.keys())
                 for r in data:

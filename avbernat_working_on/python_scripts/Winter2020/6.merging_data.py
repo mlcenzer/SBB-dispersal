@@ -2,6 +2,7 @@ import os
 import csv
 import re
 import pandas as pd
+import numpy as np
 
 
 from datetime import datetime, date
@@ -16,9 +17,10 @@ from datetime import datetime, date
 # Merge 1. Demographics data with flight trial data.
 #***************************************************************************************
 
-demographics_data = r"/Users/anastasiabernat/Desktop/demographic_data_winter2020.csv"
+main_path = r"/Users/anastasiabernat/Desktop/flight-python-scripts-winter2020/data/"
 
-trial_data = r"/Users/anastasiabernat/Desktop/all_flight_trials-time-processed-April21.2020.csv"
+demographics_data = main_path + "demographic_data_winter2020-coors.corrected.csv"
+trial_data = main_path + "all_flight_trials-time-processed-July14.2020.csv"
 
 county_dict = {"Gainesville": "Alachua",
                "Homestead": "Miami-Dade",
@@ -123,7 +125,7 @@ with open(trial_data, "r") as all_data:
 
 #print(full_data[0:5])
 
-outpath = r"/Users/anastasiabernat/Desktop/trial-demographics-data_winter2020.csv"
+outpath = main_path + "trial-demographics-data_winter2020.csv"
 
 with open(outpath, "w") as output_file:
     writer = csv.DictWriter(output_file, fieldnames = row_data.keys())
@@ -135,9 +137,10 @@ with open(outpath, "w") as output_file:
 # Merge 2. Trial-demographics data with flight_stats data.
 #***************************************************************************************
 
-path1 = r"/Users/anastasiabernat/Desktop/trial-demographics-data_winter2020.csv"
-path1copy = r"/Users/anastasiabernat/Desktop/trial-demographics-data_winter2020.csv"
-path2 = r"/Users/anastasiabernat/Desktop/flight_stats_summary_winter2020.csv"
+
+path1 = main_path + "trial-demographics-data_winter2020.csv"
+path1copy = main_path + "trial-demographics-data_winter2020.csv"
+path2 = main_path + "flight_stats_summary_winter2020.csv"
 
 df_trial_demo = pd.read_csv(path1)
 df_analyses = pd.read_csv(path2)
@@ -176,15 +179,15 @@ merged_data = pd.merge(left=df_analyses, right=df_trial_demo,
                        right_on=['ID', 'set_number', 'trial_type', 'chamber'],
                        how='inner')
 
-outpath = r"/Users/anastasiabernat/Desktop/analyses-trial-demo-data_winter2020.csv"
+outpath = main_path + "analyses-trial-demo-data_winter2020.csv"
 merged_data.to_csv(outpath, index=False, mode='w')
 
 #***************************************************************************************
 # Merge 3. Analyses-trial-demographics data with egg data.
 #***************************************************************************************
 
-egg_data = r"/Users/anastasiabernat/Desktop/egg_data-winter2020_clean.csv"
-main_data = r"/Users/anastasiabernat/Desktop/analyses-trial-demo-data_winter2020.csv"
+egg_data = main_path + "egg_data-winter2020_clean.csv"
+main_data = main_path + "analyses-trial-demo-data_winter2020.csv"
 
 egg_df = pd.read_csv(egg_data, parse_dates = ['date_collected'])
 egg_df_sums = egg_df.groupby('ID')['eggs'].sum().reset_index()
@@ -196,7 +199,7 @@ merged_eggs = pd.merge(left=egg_df, right=egg_df_sums, left_on=['ID'],
 merged_eggs['ID'] = merged_eggs['ID'].apply(str)
 merged_eggs['pop'] = merged_eggs['ID'].map(pop_dict)
 
-egg_outpath = r"/Users/anastasiabernat/Desktop/egg_data-winter2020_final.csv"
+egg_outpath = main_path + "egg_data-winter2020_final.csv"
 merged_eggs.to_csv(egg_outpath, index=False, mode='w')
 
 
@@ -204,7 +207,7 @@ main_df = pd.read_csv(main_data, parse_dates = ['test_date'])
 merged_data2 = pd.merge(left=main_df, right=egg_df_sums, left_on=['ID'],
                        right_on=['ID'], how='left')
 
-outpath2 = r"/Users/anastasiabernat/Desktop/main_data.csv"
+outpath2 = main_path + "main_data.csv"
 merged_data2.to_csv(outpath2, index=False, mode='w')
 
 # make a total eggs dict by ID
@@ -218,8 +221,8 @@ merged_data2.to_csv(outpath2, index=False, mode='w')
 # Merge 4. Egg-analyses-trial-demographics data with morphology data.
 #***************************************************************************************
 
-morphology_data = r"/Users/anastasiabernat/Desktop/morphology-flight-trials-Winter2020.csv"
-main_data = r"/Users/anastasiabernat/Desktop/main_data.csv"
+morphology_data = main_path + "morphology-flight-trials-Winter2020.csv"
+main_data = main_path + "main_data.csv"
 
 check_sex_dict = {} # Check if ID and sex match
 update_sex_dict = {} 
@@ -289,7 +292,7 @@ with open(main_data, "r") as main_data:
 
 #print(full_data[0:5])
 
-outpath = r"/Users/anastasiabernat/Desktop/complete_flight_data-Winter2020.csv"
+outpath = main_path + "complete_flight_data-Winter2020.csv"
 
 with open(outpath, "w") as output_file:
     writer = csv.DictWriter(output_file, fieldnames = r.keys())
@@ -298,5 +301,40 @@ with open(outpath, "w") as output_file:
         writer.writerow(r)
 
 
+#***************************************************************************************
+# Merge 5. Tested bugs with non-tested bugs  
+#***************************************************************************************
+
+tested_data = main_path + "complete_flight_data-Winter2020.csv"
+nontested_data = main_path + "not-tested-bugs-morphology-Winter2020.csv"
 
 
+df_tested = pd.read_csv(tested_data)
+df_nontested = pd.read_csv(nontested_data)
+df_nontested = df_nontested.drop(['month', 'year', 'months_since_start',
+                                  'season', 'diapause', 'field_date_collected',
+                                  'date_measured', 'date_recorded'], axis=1)
+
+vertical_merge = pd.concat([df_tested, df_nontested.rename(
+                                    columns={'pophost':'host_plant',
+                                             'lat': 'latitude',
+                                             'long': 'longitude',
+                                             'notes': 'morph_notes'})],
+                                               sort=True,
+                                               ignore_index=True)
+
+
+col_names_order = list(df_tested.columns)
+vertical_merge = vertical_merge[col_names_order]
+vertical_merge['tested'] = np.where(vertical_merge['ID'] > 0, 'yes', 'no')
+
+vertical_merge['ID'] = np.where(vertical_merge['ID'] > 0,
+                                vertical_merge['ID'], 0).astype(int)
+vertical_merge[('channel_num')] = np.where(vertical_merge['channel_num'] > 0,
+                                vertical_merge[('channel_num')], 0).astype(int)
+vertical_merge[('set_number')] = np.where(vertical_merge['set_number'] > 0,
+                                vertical_merge[('set_number')], 0).astype(int)
+
+
+flight_outpath = main_path + "all_flight_data-Winter2020.csv"
+vertical_merge.to_csv(flight_outpath, index=False, mode='w')

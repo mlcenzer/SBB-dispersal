@@ -12,7 +12,7 @@ import os
 #path = "/Users/anastasiabernat/Desktop/odd_text_files/"
 
 #Winter 2020
-path = r"/Users/anastasiabernat/Desktop/holder/"
+path = r"/Users/anastasiabernat/Desktop/winter2020_split_files/"
 
 dir_list = sorted(os.listdir(path))
 
@@ -118,7 +118,7 @@ for file in dir_list:
     # Define the filepath of the output file. Add more channels to the write command line if needed. 
     #************************************************************************************************************
     
-    folderpath = r"/Users/anastasiabernat/Desktop/stand_holder/standardized_peaks_"
+    folderpath = r"/Users/anastasiabernat/Desktop/winter2020_standardized_files/standardized_peaks_"
     OutputFile = open(folderpath + str(file), mode="w")
     for i in range(0, len(Lines)):
         OutputFile.write('%.2f' % time_column[i] + ", " +
