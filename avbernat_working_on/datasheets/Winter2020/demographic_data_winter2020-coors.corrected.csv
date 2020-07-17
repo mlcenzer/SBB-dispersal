@@ -49,16 +49,16 @@
 48,M,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
 49,M,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
 50,M,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
-51,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-52,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-53,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-54,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-55,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-56,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-57,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-58,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-59,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-60,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
+51,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+52,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+53,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+54,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+55,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+56,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+57,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+58,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+59,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+60,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
 61,M,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
 62,M,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
 63,F,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
@@ -89,11 +89,11 @@
 88,M,Gainesville,23rd & 8th,K.elegans,N,29.66200224,-82.347313,2.9.2020
 89,F,Gainesville,23rd & 8th,K.elegans,N,29.66200224,-82.347313,2.9.2020
 90,M,Gainesville,23rd & 8th,K.elegans,N,29.66200224,-82.347313,2.9.2020
-91,F,North Key Largo,Dynamite Docks,C. corindum,N,25.2866074,-80.5539224,2.3.2020
-92,F,North Key Largo,Dynamite Docks,C. corindum,N,25.2866074,-80.5539224,2.3.2020
-93,F,North Key Largo,Dynamite Docks,C. corindum,N,25.2866074,-80.5539224,2.3.2020
-94,M,North Key Largo,Dynamite Docks,C. corindum,N,25.2866074,-80.5539224,2.3.2020
-95,M,North Key Largo,Dynamite Docks,C. corindum,N,25.2866074,-80.5539224,2.3.2020
+91,F,North Key Largo,Dynamite Docks,C. corindum,N,25.286747,-80.290592,2.3.2020
+92,F,North Key Largo,Dynamite Docks,C. corindum,N,25.286747,-80.290592,2.3.2020
+93,F,North Key Largo,Dynamite Docks,C. corindum,N,25.286747,-80.290592,2.3.2020
+94,M,North Key Largo,Dynamite Docks,C. corindum,N,25.286747,-80.290592,2.3.2020
+95,M,North Key Largo,Dynamite Docks,C. corindum,N,25.286747,-80.290592,2.3.2020
 96,F,North Key Largo,MM165,C. corindum,N,25.2275238,-80.3283788,2.4.2020
 97,F,North Key Largo,MM165,C. corindum,N,25.2275238,-80.3283788,2.4.2020
 98,M,North Key Largo,MM165,C. corindum,N,25.2275238,-80.3283788,2.4.2020
@@ -144,11 +144,11 @@
 143,M,North Key Largo,MM165,C. corindum,N,25.2275238,-80.3283788,2.4.2020
 144,M,North Key Largo,MM165,C. corindum,N,25.2275238,-80.3283788,2.4.2020
 145,M,North Key Largo,MM165,C. corindum,N,25.2275238,-80.3283788,2.4.2020
-146,F,North Key Largo,Dynamite Docks,C. corindum,N,25.2866074,-80.5539224,2.3.2020
-147,F,North Key Largo,Dynamite Docks,C. corindum,N,25.2866074,-80.5539224,2.3.2020
-148,F,North Key Largo,Dynamite Docks,C. corindum,N,25.2866074,-80.5539224,2.3.2020
-149,F,North Key Largo,Dynamite Docks,C. corindum,N,25.2866074,-80.5539224,2.3.2020
-150,M,North Key Largo,Dynamite Docks,C. corindum,N,25.2866074,-80.5539224,2.3.2020
+146,F,North Key Largo,Dynamite Docks,C. corindum,N,25.286747,-80.290592,2.3.2020
+147,F,North Key Largo,Dynamite Docks,C. corindum,N,25.286747,-80.290592,2.3.2020
+148,F,North Key Largo,Dynamite Docks,C. corindum,N,25.286747,-80.290592,2.3.2020
+149,F,North Key Largo,Dynamite Docks,C. corindum,N,25.286747,-80.290592,2.3.2020
+150,M,North Key Largo,Dynamite Docks,C. corindum,N,25.286747,-80.290592,2.3.2020
 151,F,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
 152,M,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
 153,M,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
@@ -159,16 +159,16 @@
 158,M,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
 159,M,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
 160,F,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
-161,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-162,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-163,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-164,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-165,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-166,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-167,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-168,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-169,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-170,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
+161,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+162,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+163,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+164,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+165,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+166,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+167,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+168,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+169,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+170,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
 171,F,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
 172,F,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
 173,F,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
@@ -259,16 +259,16 @@
 258,M,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
 259,M,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
 260,F,Homestead,SW 296th St,K.elegans,N,25.491362,-80.485821,2.7.2020
-261,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-262,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-263,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-264,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-265,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-266,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-267,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-268,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-269,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-270,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
+261,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+262,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+263,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+264,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+265,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+266,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+267,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+268,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+269,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+270,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
 271,F,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
 272,F,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
 273,F,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
@@ -351,10 +351,10 @@
 358,M,North Key Largo,N. Dagny,C. corindum,N,25.1820931,-80.3631938,2.5.2020
 359,M,North Key Largo,N. Dagny,C. corindum,N,25.1820931,-80.3631938,2.5.2020
 360,F,North Key Largo,N. Dagny,C. corindum,N,25.1820931,-80.3631938,2.5.2020
-371,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-372,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-373,M,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
-374,F,Lake Placid,110N Main,K.elegans,N,26.298631,-81.36615,2.7.2020
+371,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+372,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+373,M,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
+374,F,Lake Placid,110N Main,K.elegans,N,27.298631,-81.36615,2.7.2020
 375,F,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
 376,M,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
 377,M,Lake Wales,Polk Ave,K.elegans,N,27.8967403,-81.5804654,2.7.2020
@@ -442,9 +442,9 @@
 464,F,North Key Largo,Dagny Trellis,C. corindum,Y,25.1755702,-80.36780089,2.5.2020
 465,F,North Key Largo,Dagny Trellis,C. corindum,Y,25.1755702,-80.36780089,2.5.2020
 466,M,North Key Largo,Dagny Trellis,C. corindum,Y,25.1755702,-80.36780089,2.5.2020
-467,M,North Key Largo,Dynamite Docks,C. corindum,Y,25.2866074,-80.5539224,2.3.2020
-468,F,North Key Largo,Dynamite Docks,C. corindum,Y,25.2866074,-80.5539224,2.3.2020
-469,M,North Key Largo,Dynamite Docks,C. corindum,Y,25.2866074,-80.5539224,2.3.2020
+467,M,North Key Largo,Dynamite Docks,C. corindum,Y,25.286747,-80.290592,2.3.2020
+468,F,North Key Largo,Dynamite Docks,C. corindum,Y,25.286747,-80.290592,2.3.2020
+469,M,North Key Largo,Dynamite Docks,C. corindum,Y,25.286747,-80.290592,2.3.2020
 470,F,North Key Largo,DD front,C. corindum,Y,25.2734885,-80.3040957,2.3.2020
 471,F,North Key Largo,Carysfort,C. corindum,Y,25.2565615,-80.3108042,2.4.2020
 472,F,North Key Largo,Carysfort,C. corindum,Y,25.2565615,-80.3108042,2.4.2020
