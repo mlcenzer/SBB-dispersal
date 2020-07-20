@@ -53,6 +53,7 @@ output_col = FALSE # Recommend changing this to TRUE if working in Base R or RSt
 source("src/clean_flight_data.R") # Script that loads and cleans up the data
 source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
 source("src/center_flight_data.R")
+source("get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -97,7 +98,7 @@ getME(test_model, "lower")
 #######testing some covariates:
 data_flew$chamber <- relevel(data_flew$chamber, ref="A-2")
 
-####### Effect of chamber B-4
+####### Effect of chamber B-2 and B-4
 tidy_regression(lmer(average_speed~chamber + (1|ID), data=data_flew), is_color=output_col) ###Possibly reductions in speed 
 
 ####### No effect of test date
@@ -122,9 +123,7 @@ data<-data.frame(R=data_flew$average_speed,
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
 ```
-Top model (holding a 95% probability) contains only the random effects of trial type; no effects of host, sex, or distance from the sympatric zone on speed
-
-- m18 <- lmer(R ~ (1 | Y), data=data)
+Top model (holding a 96% probability) contains only the random effects of trial type; no effects of host, sex, or distance from the sympatric zone on speed
 
 ```{r}
 speed_model <- lmer(average_speed ~ (1 | trial_type), data=data_flew)
@@ -157,13 +156,12 @@ anova(m0, m4, test="Chisq") # Adding D does improve fit
 # note: if use data_flew_all you get the null model as the best fit model
 ```
 
-
 ```{r}
 speed_model <- lmer(average_speed ~ mass_c + (1 | chamber), data=data_flew)
 tidy_regression(speed_model, is_color=output_col)
 ```
 
-* possibly marginal? effect of mass...
+* positive effect of mass, so that the heavier the bug, the faster the average speed
 
 <a id="morph"></a>
 
@@ -176,22 +174,19 @@ data_flew <- data_flew %>%
 data_flew <- center_data(data_flew)
 
 data<-data.frame(R=data_flew$average_speed,
-                 A=data_flew$beak_c, 
-                 B=data_flew$thorax_c, 
-                 C=data_flew$body_c, 
-                 D=data_flew$wing_c,
+                 A=data_flew$thorax_c, 
+                 B=data_flew$body_c, 
+                 C=data_flew$wing_c,
                  X=data_flew$chamber) # 5 models failed to converge
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
 ```
 
 ```{r}
+anova(m0, m1, test="Chisq") # Adding A does improve fit
 anova(m0, m2, test="Chisq") # Adding B does improve fit
-anova(m0, m4, test="Chisq") # Adding D does improve fit
 anova(m0, m3, test="Chisq") # Adding C does improve fit
-anova(m2, m4, test="Chisq")   
-anova(m2, m3, test="Chisq") # m2 the better fit model 
 ```
 
 ```{r}
@@ -261,6 +256,7 @@ output_col = FALSE
 source("src/clean_flight_data.R") 
 source("src/regression_output.R") 
 source("src/center_flight_data.R")
+source("get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -316,7 +312,7 @@ model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
 
 ```{r}
 anova(m18, m36, test="Chisq") # Adding (1|X) does not improve fit
-anova(m18, m20, test="Chisq") # Adding B does improve fit!
+anova(m18, m20, test="Chisq") # Adding B does improve fit
 anova(m20, m38, test="Chisq") # Adding (1|X) does not improve fit
 ```
 
@@ -325,7 +321,7 @@ continuous_model <- lmer(average_speed ~ sex_c + (1|chamber), data=dC)
 tidy_regression(continuous_model, is_color=output_col)
 ```
 
-*marginal? effect of sex_c, where if a female continuous-flyer bug then more likely to fly faster on average 
+* positive effect of sex_c, where if a female continuous-flyer bug then more likely to fly faster on average 
 
 <a id="w.massc"></a>
 
@@ -340,7 +336,8 @@ data<-data.frame(R=dC$average_speed,
                  X=dC$ID, Y=dC$chamber)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -366,27 +363,19 @@ dC <- dC %>%
 dC <- center_data(dC)
 
 data<-data.frame(R=dC$average_speed,
-                 A=dC$beak_c, 
-                 B=dC$thorax_c, 
-                 C=dC$body_c, 
-                 D=dC$wing_c,
-                 X=dC$ID, Y=dC$chamber) # 8 models failed to converge
+                 A=dC$thorax_c, 
+                 B=dC$body_c, 
+                 C=dC$wing_c,
+                 X=dC$ID, Y=dC$chamber) 
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-anova(m115, m228, test="Chisq") # Adding (1|X) does not improve fit
-anova(m113, m115, test="Chisq") # Adding B does improve fit
-anova(m113, m116, test="Chisq") # Adding C does improve fit
-anova(m113, m117, test="Chisq") # Adding D does improve fit
-
-anova(m115, m116, test="Chisq") # Replacing B with C improves fit
-anova(m115, m117, test="Chisq") # Replacing B with D improves fit
-anova(m117, m116, test="Chisq") # Replacing D with C improves fit
-
-# m115 best fit model?
+anova(m18, m19, test="Chisq") # Adding A improves fit
+anova(m19, m37, test="Chisq") # Adding Y does not improve fit 
 ```
 
 ```{r}
@@ -456,6 +445,7 @@ output_col = FALSE
 source("src/clean_flight_data.R") 
 source("src/regression_output.R") 
 source("src/center_flight_data.R")
+source("get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -486,7 +476,7 @@ getME(test_model, "lower")
 #######testing some covariates:
 dB$chamber <- relevel(dB$chamber, ref="A-2")
 
-####### No effect of chamber
+####### Maringal effect of chamber B-4
 tidy_regression(lmer(average_speed~chamber + (1|ID), data=dB), is_color=output_col)
 
 ####### No effect of test date
@@ -505,15 +495,16 @@ data<-data.frame(R=dB$average_speed,
                  A=dB$host_c, 
                  B=dB$sex_c, 
                  C=dB$sym_dist, 
-                 X=dB$ID, Y=dB$trial_type) 
+                 X=dB$ID, Y=dB$chamber) 
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R"))
+cat("Number of models that did not converge: ", length(errors$warnings))
 ```
 
 ```{r}
 anova(m18, m0, test="Chisq") # Replacing Y with X improves the fit
-anova(m0, m36, test="Chisq") # Adding Y does not improve the fit
+anova(m0, m36, test="Chisq") # Adding Y Marginally improves the fit
 ```
 
 ```{r}
@@ -534,7 +525,8 @@ data<-data.frame(R=dB$average_speed,
                  X=dB$trial_type, Y=dB$chamber)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R"))
+cat("Number of models that did not converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -560,24 +552,18 @@ dB <- dB %>%
 dB <- center_data(dB)
 
 data<-data.frame(R=dB$average_speed,
-                 A=dB$beak_c, 
-                 B=dB$thorax_c, 
-                 C=dB$body_c, 
-                 D=dB$wing_c,
+                 A=dB$thorax_c, 
+                 B=dB$body_c, 
+                 C=dB$wing_c,
                  X=dB$trial_type, Y=dB$chamber) 
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
 ```
 
-- m113 <- R ~ 1 + (1 | Y)
-- m226 <- R ~ 1 + (1 | X) + (1 | Y)
-- m0 <-  R ~ 1 + (1 | X)
-- m115 <- R ~ B + (1 | Y)
-
 ```{r}
-anova(m113, m115, test="Chisq") # Adding B marginally improves fit
-anova(m0, m226, test="Chisq") # Adding Y does not impove fit
+anova(m18, m19, test="Chisq") # Adding A does marginally improve fit
+anova(m0, m36, test="Chisq") # Adding Y does not impove fit
 ```
 
 ```{r}

@@ -40,6 +40,7 @@ output_col = FALSE # Recommend changing this to TRUE if working in Base R or RSt
 source("src/clean_flight_data.R") # Script that loads and cleans up the data
 source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
 source("src/center_flight_data.R")
+source("get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -164,17 +165,18 @@ best.fit <- glm(distance ~ sex_c, family = Gamma(link = "log"), data = d_T1)
 tidy_regression(best.fit, is_color=output_col)
 ```
 
-* marginal positive effect of sex, where if F then longer dispersal distances
+* no effect of sex
 
 <a id="w.mass"></a>
 
 **With Mass**
 
-```{r warning=FALSE}
+```{r}
 data<-data.frame(R=d_T1$distance, A=d_T1$host_c, B=d_T1$sex_c, C=d_T1$sym_dist, D=d_T1$mass_c, X=d_T1$chamber)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")) 
+cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
 ```
 
 ```{r}
@@ -187,7 +189,7 @@ anova(m30, m50, test="Chisq") # Adding A*D does not improve fit
 best.fit <- glm(distance ~ sex_c * mass_c, family = Gamma(link = "log"), data = d_T1) # model failed to converge using glmer and (1|chamber)
 tidy_regression(best.fit, is_color=output_col)
 ```
-* positive effect of sex where 
+* positive effect of sex where if F then more likely to disperse farther than M
 * no effect of mass
 * negative effect of sex*mass where if female and heavy then less likely to disperse far
 
@@ -195,11 +197,12 @@ tidy_regression(best.fit, is_color=output_col)
 
 **Min From Inc Start**
 
-```{r warning=FALSE}
+```{r}
 data<-data.frame(R=d_T1$distance, A=d_T1$min_from_IncStart_c, B=d_T1$sex_c, C=d_T1$sym_dist, D=d_T1$mass_c, X=d_T1$chamber)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
 ```
 
 ```{r}
@@ -221,19 +224,20 @@ tidy_regression(best.fit, is_color=output_col)
 
 **Morphology**
 
-```{r warning=FALSE}
+```{r}
 d_T1 <- d_T1 %>%
   filter(!is.na(mass))
 d_T1 <- center_data(d_T1)
 
-data<-data.frame(R=d_T1$distance, A=d_T1$body_c, B=d_T1$wing_c, C=d_T1$thorax_c, D=d_T1$beak_c, X=d_T1$chamber) # singular fit if run with min_from_IncStart meaning the variance is near 0
+data<-data.frame(R=d_T1$distance, A=d_T1$body_c, B=d_T1$wing_c, C=d_T1$thorax_c, X=d_T1$chamber) # singular fit if run with min_from_IncStart meaning the variance is near 0
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
 ```
 
 ```{r}
-anova(m1, m7, test="Chisq") # Adding D does not improve fit
+anova(m1, m4, test="Chisq") # Adding B does not improve fit
 anova(m1, m6, test="Chisq") # Adding C does not improve fit
 ```
 
@@ -243,22 +247,22 @@ tidy_regression(best.fit, is_color=output_col)
 ```
 * positive effect of body length where the longer the body the more likely the bug disperse farther
 
-```{r warning=FALSE}
+```{r}
 d_T1 <- d_T1 %>%
   filter(!is.na(mass))
 d_T1 <- center_data(d_T1)
 
-data<-data.frame(R=d_T1$distance, A=d_T1$wing2body_c, B=d_T1$thorax_c, C=d_T1$beak_c, X=d_T1$chamber) 
+data<-data.frame(R=d_T1$distance, A=d_T1$wing2body_c, B=d_T1$thorax_c, X=d_T1$chamber) 
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R") # about 3 models failed to converge
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 2-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
 ```
 
 ```{r}
 anova(m2, m4, test="Chisq") # Adding A does not improve fit
-anova(m2, m6, test="Chisq") # Adding C does not improve fit
-anova(m3, m6, test="Chisq") # Adding B does not improve fit
-anova(m5, m9, test="Chisq") # Adding A*C does not improve fit
+anova(m0, m2, test="Chisq") # Adding B does improve fit
+anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
 ```
 
 ```{r}
@@ -333,7 +337,7 @@ plot(model_test)
 **Testing experimental Covariates**
 
 ```{r}
-####### No effect of chamber.
+####### No effect of chamber
 tidy_regression(glm(distance~chamber, data=d_T2, family=Gamma(link="log")), is_color=output_col)
 
 ####### No effect of test date
@@ -347,35 +351,35 @@ tidy_regression(glm(distance~min_from_IncStart, data=d_T2, family=Gamma(link="lo
 
 **Without Mass**
 
-```{r warning=FALSE}
+```{r, message=FALSE}
 data<-data.frame(R=d_T2$distance, A=d_T2$host_c, B=d_T2$sex_c, C=d_T2$sym_dist, X=d_T2$chamber)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
 ```
 
 ```{r}
-anova(m0, m1, test="Chisq") # Adding A improves fit
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
 anova(m1, m4, test="Chisq") # Adding B does not improve fit
 anova(m1, m5, test="Chisq") # Adding C does not improve fit
 ```
 
 ```{r}
-best.fit <- glm(distance ~ host_c, family = Gamma(link = "log"), data = d_T2) 
+best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_T2) 
 tidy_regression(best.fit, is_color=output_col)
 ```
-
-*no effect of host plant
 
 <a id="w.mass2"></a>
 
 **With Mass**
 
-```{r warning=FALSE, message=FALSE}
+```{r, message=FALSE}
 data<-data.frame(R=d_T2$distance, A=d_T2$host_c, B=d_T2$sex_c, C=d_T2$sym_dist, D=d_T2$mass_c, X=d_T2$chamber)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
 ```
 
 ```{r}
@@ -394,17 +398,22 @@ tidy_regression(best.fit, is_color=output_col)
 
 **Morphology**
 
-```{r warning=FALSE, message=FALSE}
+```{r, message=FALSE}
 d_T2 <- d_T2 %>%
   filter(!is.na(body))
 d_T2 <- center_data(d_T2)
 
-data<-data.frame(R=d_T2$distance, A=d_T2$body_c, B=d_T2$wing_c, C=d_T2$thorax_c, D=d_T2$beak_c, X=d_T2$chamber)
+data<-data.frame(R=d_T2$distance, A=d_T2$body_c, B=d_T2$wing_c, C=d_T2$thorax_c, X=d_T2$chamber)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
 ```
 
+```{r}
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
+anova(m0, m3, test="Chisq") # Adding C does not improve fit
+```
 
 ```{r}
 best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_T2) 
@@ -416,13 +425,22 @@ d_T2 <- d_T2 %>%
   filter(!is.na(body))
 d_T2 <- center_data(d_T2)
 
-data<-data.frame(R=d_T2$distance, A=d_T2$wing2body, B=d_T2$thorax_c, C=d_T2$beak_c, X=d_T2$chamber)
+data<-data.frame(R=d_T2$distance, A=d_T2$wing2body, B=d_T2$thorax_c, X=d_T2$chamber)
 
 source("src/compare_models.R")
-# model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R")
-# doesn't work for T2 but does for T1
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 2-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
 ```
 
+```{r}
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
+anova(m0, m3, test="Chisq") # Adding C does not improve fit
+```
+
+```{r}
+best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_T2) 
+tidy_regression(best.fit, is_color=output_col)
+```
 
 ### Trial 2 Plots
 
@@ -467,15 +485,21 @@ legend("topright",
        title="Groups")
 ```
 
-### Females & Males
+### Females
 
-[Females](#females)
+[Testing Link Functions](#ftest)
 
-[Males](#males)
+[Without Mass](#fwomass)
 
-<a id="females"></a>
+[With Mass](#fmass)
 
-#### Females
+[Minutes from IncStart](#fmin)
+
+[Morphology](#fmorph)
+
+[Eggs](#feggs)
+
+<a id="ftest"></a>
 
 **Testing link functions**
 
@@ -488,7 +512,7 @@ plot(model_test)
 **Testing covariates**
 
 ```{r}
-####### Effect of chamber A-1, B-2, B-4 (also algorithm did not converge)
+####### Effect of chamber A-1, B-2, and marginal effect of B-4 (also algorithm did not converge)
 d_fem$chamber <- relevel(d_fem$chamber, ref="A-2")
 tidy_regression(glm(distance~chamber, data=d_fem, family=Gamma(link="log")), is_color=output_col)
 
@@ -506,14 +530,416 @@ tidy_regression(glm(distance~total_eggs, data=d_fem, family=Gamma(link="log")), 
 
 ```
 
-<a id="males"></a>
+<a id="fwomass"></a>
 
-#### Males 
+**Without Mass**
+
+```{r, message=FALSE}
+data<-data.frame(R=d_fem$distance, A=d_fem$host_c, B=d_fem$sex_c, C=d_fem$sym_dist, X=d_fem$chamber)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
+```
+
+```{r}
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
+anova(m0, m3, test="Chisq") # Adding C does not improve fit
+```
+
+```{r}
+best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_fem) 
+tidy_regression(best.fit, is_color=output_col)
+```
+
+<a id="fmass"></a>
+
+**With Mass**
+
+```{r, message=FALSE}
+data<-data.frame(R=d_fem$distance, A=d_fem$host_c, B=d_fem$sex_c, C=d_fem$sym_dist, D=d_fem$mass_c, X=d_fem$chamber)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")) 
+cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
+```
+
+```{r}
+anova(m4, m9, test="Chisq") # Adding B does not improve fit
+anova(m9, m20, test="Chisq") # Adding B*D does not improve fit
+```
+
+```{r}
+best.fit <- glm(distance ~ mass_c, family = Gamma(link = "log"), data = d_fem) 
+tidy_regression(best.fit, is_color=output_col)
+```
+
+* no effect of mass
+
+<a id="fmin"></a>
+
+**Min From Inc Start**
+
+```{r message=FALSE}
+data<-data.frame(R=d_fem$distance, A=d_fem$min_from_IncStart_c, B=d_fem$sex_c, C=d_fem$sym_dist, D=d_fem$mass_c, X=d_fem$chamber)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
+```
+
+```{r}
+anova(m4, m9, test="Chisq") # Adding B does not improve fit
+anova(m9, m20, test="Chisq") # Adding B*D does not improve fit
+```
+
+```{r}
+best.fit <- glm(distance ~ mass_c, family = Gamma(link = "log"), data = d_fem) 
+tidy_regression(best.fit, is_color=output_col)
+```
+
+* no effect of mass
+
+<a id="fmorph"></a>
+
+**Morphology**
+
+```{r message=FALSE}
+d_fem <- d_fem %>%
+  filter(!is.na(mass))
+d_fem <- center_data(d_fem)
+
+data<-data.frame(R=d_fem$distance, A=d_fem$body_c, B=d_fem$wing_c, C=d_fem$thorax_c, X=d_fem$chamber) 
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
+```
+
+```{r}
+anova(m13, m16, test="Chisq") # Adding A*C does not improve fit
+anova(m15, m16, test="Chisq") # Adding B*C does improve fit
+```
+
+```{r}
+best.fit <- glmer(distance ~ wing_c*thorax_c + body_c + (1|chamber), family = Gamma(link = "log"), data = d_fem) 
+tidy_regression(best.fit, is_color=output_col)
+```
+* no effect of wing length
+* positive effect of thorax where the wider the thorax, the more likely the bug will disperse farther
+* no effect of body
+* negative effect of wing*thorax where the wider the thorax and longer the wings, the more likely the bug will disperse shorter distances
+
+```{r message=FALSE}
+d_fem <- d_fem %>%
+  filter(!is.na(mass))
+d_fem <- center_data(d_fem)
+
+data<-data.frame(R=d_fem$distance, A=d_fem$wing2body, B=d_fem$thorax_c, X=d_fem$chamber)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 2-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
+```
+
+```{r}
+best.fit <- glmer(distance ~ wing2body*thorax_c + (1|chamber), family = Gamma(link = "log"), data = d_fem) 
+tidy_regression(best.fit, is_color=output_col) # the coeffients are crazy large
+```
+
+* no effect of wing2body
+* positive effect of thorax where the wider the thorax the more likely the bug flies far
+* negative effect of wing2body*thorax where the wider the thorax and longer the wings in comparison to the body, the less likely the bugs fly far (contradicting)
+
+<a id="feggs"></a>
+
+**Eggs**
+
+```{r message=FALSE}
+d_fem <- d_fem %>%
+  filter(!is.na(mass))
+d_fem <- center_data(d_fem)
+
+data<-data.frame(R=d_fem$distance, A=d_fem$eggs_b, B=d_fem$mass_c, C=d_fem$thorax_c, X=d_fem$chamber) # adding D=d_fem$wing2body_c leads to a massive converging error
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
+```
+
+```{r}
+anova(m13, m16, test="Chisq") # Adding A*C does not improve fit
+```
+
+```{r}
+best.fit <- glmer(distance ~  mass_c * thorax_c + eggs_b +  (1|chamber), family = Gamma(link = "log"), data = d_fem) 
+tidy_regression(best.fit, is_color=output_col) # the coeffients are crazy large
+```
+* negative effect of mass where the larger the mass the less likely the bug will disperse far
+* positive effect of thorax whre the wider the thorax the more likely the bug will disperse far
+* positive effect of eggs laid on test day where if female laid eggs then more likely to disperse far
+* negative effect of mass*thorax where if heavy and have a wide thorax then less likley to disperse far (conflicting)
+
+### Female Plots 
+
+```{r}
+h1 <-  as.grob(expression(
+  hist(d_fem$distance)))
+p1 <- as.grob(expression(
+  plot(distance ~ mass_c, data=d_fem)))
+p2 <- as.grob(expression(
+  plot(distance ~ days_from_start_c, data=d_fem)))
+p3 <- as.grob(expression(
+  plot(distance ~ min_from_IncStart, data=d_fem)))
+p4 <- as.grob(expression(
+  plot(distance ~ wing_c, data=d_fem)))
+p5 <- as.grob(expression(
+  plot(distance ~ beak_c, data=d_fem)))
+p6 <- as.grob(expression(
+  plot(distance ~ thorax_c, data=d_fem)))
+p7 <- as.grob(expression(
+  plot(distance ~ body_c, data=d_fem)))
+p8 <- as.grob(expression(
+  plot(distance ~ eggs_b, data=d_fem)))
+grid.arrange(h1,p1,p2,p3,p4,p5,p6,p7,p8, ncol=3)
+```
+
+```{r}
+gf_point(distance~sym_dist, col=~host_plant, alpha=~sex_c, data=d_fem) 
+summary <- aggregate(distance~sym_dist*sex*host_plant, data=d_fem, FUN=mean)
+plot(summary$distance~summary$sym_dist, 
+     #col=c(1,2)[as.factor(summary$sex)], # Female = Black, Male = Red
+     pch=c(19,22)[as.factor(summary$host_plant)], # Filled circle is GRT, Open square is BV
+     main="Female Observed Data: distance ~ sex*host_plant*sym_dist",
+     xlab = "Distance from Sympatric Zone (°)",
+     ylab= "Distance Flew", 
+     #sub=eq_glmer
+     ) 
+legend("topright",
+       legend = c("F and K.elegans","F and C.corindum"),
+       #inset=c(-0.27,0.2),
+       col= 1,
+       pch = c(0,16,19),
+       title="Groups")
+```
+
+### Males 
+
+[Testing Link Functions](#mtest)
+
+[Without Mass](#mwomass)
+
+[With Mass](#mmass)
+
+[Minutes from IncStart](#mmin)
+
+[Morphology](#mmorph)
+
+<a id="mtest"></a>
 
 **Testing link functions**
 
 ```{r}
-model_test<-glm(distance~chamber, data=d_male, family=Gamma(link="log")) # did converge
+model_test<-glm(distance~chamber, data=d_male, family=Gamma(link="log"))
 summary(model_test)
 plot(model_test)
+```
+
+**Testing covariates**
+
+```{r}
+####### Effect of chamber A-4
+d_male$chamber <- relevel(d_male$chamber, ref="A-2")
+tidy_regression(glm(distance~chamber, data=d_male, family=Gamma(link="log")), is_color=output_col)
+
+####### No effect of test date
+tidy_regression(glm(distance~days_from_start, data=d_male, family=Gamma(link="log")), is_color=output_col)
+
+####### Effect of Minutes from IncStart time
+tidy_regression(glm(distance~min_from_IncStart, data=d_male, family=Gamma(link="log")), is_color=output_col)
+
+#### No effect of eggs laid
+tidy_regression(glm(distance~eggs_b, data=d_male, family=Gamma(link="log")), is_color=output_col)
+
+### No effect of total eggs laid
+tidy_regression(glm(distance~total_eggs, data=d_male, family=Gamma(link="log")), is_color=output_col)
+
+```
+
+<a id="mwomass"></a>
+
+**Without Mass**
+
+```{r, message=FALSE}
+data<-data.frame(R=d_male$distance, A=d_male$host_c, B=d_male$sex_c, C=d_male$sym_dist, X=d_male$chamber)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
+```
+
+```{r}
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
+anova(m0, m3, test="Chisq") # Adding C does not improve fit
+```
+
+```{r}
+best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_male) 
+tidy_regression(best.fit, is_color=output_col)
+```
+
+<a id="mmass"></a>
+
+**With Mass**
+
+```{r, message=FALSE}
+data<-data.frame(R=d_male$distance, A=d_male$host_c, B=d_male$sex_c, C=d_male$sym_dist, D=d_male$mass_c, X=d_male$chamber)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")) 
+cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
+```
+
+```{r}
+best.fit <- glm(distance ~ mass_c, family = Gamma(link = "log"), data = d_male) 
+tidy_regression(best.fit, is_color=output_col)
+```
+
+* marginal positive effect of mass, where the heavier the male bug, the more likely the male bug flies far (this could be because of thorax wider so has more muscle power?)
+
+<a id="mmin"></a>
+
+**Min From Inc Start**
+
+```{r message=FALSE}
+data<-data.frame(R=d_male$distance, A=d_male$min_from_IncStart_c, B=d_male$sex_c, C=d_male$sym_dist, D=d_male$mass_c, X=d_male$chamber)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
+```
+
+```{r}
+best.fit <- glmer(distance ~ min_from_IncStart_c * mass_c + (1|chamber), family = Gamma(link = "log"), data = d_fem) 
+tidy_regression(best.fit, is_color=output_col)
+```
+
+* no significant effects - also the model doesn't make too much sense 
+
+<a id="mmorph"></a>
+
+**Morphology**
+
+```{r message=FALSE}
+d_male <- d_male %>%
+  filter(!is.na(mass))
+d_male <- center_data(d_male)
+
+data<-data.frame(R=d_male$distance, A=d_male$body_c, B=d_male$wing_c, C=d_male$thorax_c, X=d_male$chamber) 
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
+```
+
+```{r}
+anova(m9, m12, test="Chisq") # Adding B does not improve fit
+```
+
+```{r}
+best.fit <- glmer(distance ~ body_c*thorax_c + (1|chamber), family = Gamma(link = "log"), data = d_male) 
+tidy_regression(best.fit, is_color=output_col)
+```
+* positive effect of body, where the longer the body the more likely the bug will disperse farther
+* negative effect of thorax where the wider the thorax, the less likely the bug will disperse farther
+
+* negative effect of body*thorax where the wider the thorax and longer the body, the less likely the bug will disperse farther distances
+
+```{r message=FALSE}
+d_male <- d_male %>%
+  filter(!is.na(mass))
+d_male <- center_data(d_male)
+
+data<-data.frame(R=d_male$distance, A=d_male$wing2body, B=d_male$thorax_c, X=d_male$chamber)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 2-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
+```
+
+```{r}
+anova(m0, m2, test="Chisq") # Adding B marginally improves fit
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
+```
+
+```{r}
+best.fit <- glmer(distance ~ thorax_c + (1|chamber), family = Gamma(link = "log"), data = d_male) 
+tidy_regression(best.fit, is_color=output_col)
+```
+
+*marginal positive effect of thorax where the wider the thorax the more likely the bug will disperse far.
+
+```{r message=FALSE}
+d_male <- d_male %>%
+  filter(!is.na(mass))
+d_male <- center_data(d_male)
+
+data<-data.frame(R=d_male$distance, A=d_male$wing2body, B=d_male$thorax_c, C=d_male$mass_c, X=d_male$chamber)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
+```
+
+```{r}
+anova(m6, m10, test="Chisq") # Adding B*C marginally improves fit
+```
+
+```{r}
+best.fit <- glmer(distance ~ mass_c * thorax_c + (1|chamber), family = Gamma(link = "log"), data = d_male)  # model failed to converge
+tidy_regression(best.fit, is_color=output_col)
+```
+
+### Male Plots 
+
+```{r}
+h1 <-  as.grob(expression(
+  hist(d_male$distance)))
+p1 <- as.grob(expression(
+  plot(distance ~ mass_c, data=d_male)))
+p2 <- as.grob(expression(
+  plot(distance ~ days_from_start_c, data=d_male)))
+p3 <- as.grob(expression(
+  plot(distance ~ min_from_IncStart, data=d_male)))
+p4 <- as.grob(expression(
+  plot(distance ~ wing_c, data=d_male)))
+p5 <- as.grob(expression(
+  plot(distance ~ beak_c, data=d_male)))
+p6 <- as.grob(expression(
+  plot(distance ~ thorax_c, data=d_male)))
+p7 <- as.grob(expression(
+  plot(distance ~ body_c, data=d_male)))
+
+grid.arrange(h1,p1,p2,p3,p4,p5,p6,p7, ncol=3)
+```
+
+```{r}
+gf_point(distance~sym_dist, col=~host_plant, alpha=~sex_c, data=d_male) 
+summary <- aggregate(distance~sym_dist*sex*host_plant, data=d_male, FUN=mean)
+plot(summary$distance~summary$sym_dist, 
+     #col=c(1,2)[as.factor(summary$sex)], # Female = Black, Male = Red
+     pch=c(19,22)[as.factor(summary$host_plant)], # Filled circle is GRT, Open square is BV
+     main="Male Observed Data: distance ~ sex*host_plant*sym_dist",
+     xlab = "Distance from Sympatric Zone (°)",
+     ylab= "Distance Flew", 
+     #sub=eq_glmer
+     ) 
+legend("topright",
+       legend = c("M and K.elegans","M and C.corindum"),
+       #inset=c(-0.27,0.2),
+       col= 1,
+       pch = c(0,16,19),
+       title="Groups")
 ```
