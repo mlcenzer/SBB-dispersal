@@ -152,7 +152,8 @@ tidy_regression(glm(distance~min_from_IncStart_c, data=d_T1, family=Gamma(link="
 data<-data.frame(R=d_T1$distance, A=d_T1$host_c, B=d_T1$sex_c, C=d_T1$sym_dist, X=d_T1$chamber)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
 ```{r}
@@ -172,21 +173,29 @@ tidy_regression(best.fit, is_color=output_col)
 **With Mass**
 
 ```{r}
-data<-data.frame(R=d_T1$distance, A=d_T1$host_c, B=d_T1$sex_c, C=d_T1$sym_dist, D=d_T1$mass_c, X=d_T1$chamber)
+d_T1 <- d_T1 %>%
+  filter(!is.na(mass))
+d_T1 <- center_data(d_T1)
+
+#data<-data.frame(R=d_T1$distance, A=d_T1$host_c, B=d_T1$sex_c, C=d_T1$sym_dist_s, D=d_T1$mass_s, X=d_T1$chamber)
+data<-data.frame(R=d_T1$distance, A=d_T1$host_c, B=d_T1$sex_c, C=d_T1$mass_c, X=d_T1$chamber)
 
 source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")) 
-cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R")) 
+cat("Number of models that failed to converge:", length(errors$warnings)) # 50 models failed to converge if keep sym_dist_s, but it doesn't show up in top models so can remove it | After removing it get 3 models that fail to converge
 ```
 
 ```{r}
-anova(m20, m30, test="Chisq") # Adding A does not improve fit
-anova(m20, m31, test="Chisq") # Adding C does not improve fit
-anova(m30, m50, test="Chisq") # Adding A*D does not improve fit
+# anova(m20, m30, test="Chisq") # Adding A does not improve fit
+# anova(m20, m31, test="Chisq") # Adding C does not improve fit
+# anova(m30, m50, test="Chisq") # Adding A*D does not improve fit
+
+anova(m10, m13, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r}
 best.fit <- glm(distance ~ sex_c * mass_c, family = Gamma(link = "log"), data = d_T1) # model failed to converge using glmer and (1|chamber)
+#best.fit <- glmer(distance ~ sex_c * mass_s + (1|chamber), family = Gamma(link = "log"), data = d_T1)# model still fails to converge even when you standardize mass.
 tidy_regression(best.fit, is_color=output_col)
 ```
 * positive effect of sex where if F then more likely to disperse farther than M
@@ -198,27 +207,25 @@ tidy_regression(best.fit, is_color=output_col)
 **Min From Inc Start**
 
 ```{r}
-data<-data.frame(R=d_T1$distance, A=d_T1$min_from_IncStart_c, B=d_T1$sex_c, C=d_T1$sym_dist, D=d_T1$mass_c, X=d_T1$chamber)
+# sym dist and host isn't really showing up before so left them out
+# less models fail if use standardized variables and it fixes the scaling issues.
+data<-data.frame(R=d_T1$distance, A=d_T1$min_from_IncStart_s, B=d_T1$sex_c, C=d_T1$mass_s, X=d_T1$chamber)
 
 source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R"))
-cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) 
 ```
 
 ```{r}
-best.fit <- glmer(distance ~ min_from_IncStart_c * sex_c + min_from_IncStart_c * sym_dist + sex_c * sym_dist + sex_c * mass_c + (1|chamber), family = Gamma(link = "log"), data = d_T1) # model failed to converge
+best.fit <- glmer(distance ~ min_from_IncStart_s * sex_c + sex_c * mass_s  + (1|chamber), family = Gamma(link = "log"), data = d_T1) # converges! 
 tidy_regression(best.fit, is_color=output_col)
 ```
 
-* no effect of min from start
+* negative effect of min from start, where the later in the day the bug is tested, the less distance the bug will fly
 * positive effect from sex where if F then more likely to disperse far
-* no effect of sym_dist
 * no effect of mass
 
 * negative effect of min from start*sex, where if F and tested late in the day then less likely to disperse far
-* negative effect of min from start*sym_dist, where if from GRT and tested late in the day then less likely to disperse far
-* marginal negative effect of sex*sym dist, where if F and from GRT then less likely to disperse far
-* strong negative effect of mass*sex, where if F and heavy then much less likely to disperse far
 
 <a id="morph"></a>
 
@@ -226,7 +233,7 @@ tidy_regression(best.fit, is_color=output_col)
 
 ```{r}
 d_T1 <- d_T1 %>%
-  filter(!is.na(mass))
+  filter(!is.na(body))
 d_T1 <- center_data(d_T1)
 
 data<-data.frame(R=d_T1$distance, A=d_T1$body_c, B=d_T1$wing_c, C=d_T1$thorax_c, X=d_T1$chamber) # singular fit if run with min_from_IncStart meaning the variance is near 0
@@ -242,7 +249,7 @@ anova(m1, m6, test="Chisq") # Adding C does not improve fit
 ```
 
 ```{r}
-best.fit <- glmer(distance ~ body_c + (1|chamber), family = Gamma(link = "log"), data = d_T1) # model failed to converge
+best.fit <- glmer(distance ~ body_c + (1|chamber), family = Gamma(link = "log"), data = d_T1) # model failed to converge if body is centered or standardized
 tidy_regression(best.fit, is_color=output_col)
 ```
 * positive effect of body length where the longer the body the more likely the bug disperse farther
@@ -266,7 +273,7 @@ anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
 ```
 
 ```{r}
-best.fit <- glm(distance ~ thorax_c, family = Gamma(link = "log"), data = d_T1) # model failed to converge
+best.fit <- glmer(distance ~ thorax_c +(1|chamber), family = Gamma(link = "log"), data = d_T1) 
 tidy_regression(best.fit, is_color=output_col)
 ```
 
@@ -375,6 +382,10 @@ tidy_regression(best.fit, is_color=output_col)
 **With Mass**
 
 ```{r, message=FALSE}
+d_T2 <- d_T2 %>%
+  filter(!is.na(mass))
+d_T2 <- center_data(d_T2)
+
 data<-data.frame(R=d_T2$distance, A=d_T2$host_c, B=d_T2$sex_c, C=d_T2$sym_dist, D=d_T2$mass_c, X=d_T2$chamber)
 
 source("src/compare_models.R")
@@ -421,10 +432,6 @@ tidy_regression(best.fit, is_color=output_col)
 ```
 
 ```{r warning=FALSE}
-d_T2 <- d_T2 %>%
-  filter(!is.na(body))
-d_T2 <- center_data(d_T2)
-
 data<-data.frame(R=d_T2$distance, A=d_T2$wing2body, B=d_T2$thorax_c, X=d_T2$chamber)
 
 source("src/compare_models.R")
@@ -558,6 +565,10 @@ tidy_regression(best.fit, is_color=output_col)
 **With Mass**
 
 ```{r, message=FALSE}
+d_fem <- d_fem %>%
+  filter(!is.na(mass))
+d_fem <- center_data(d_fem)
+
 data<-data.frame(R=d_fem$distance, A=d_fem$host_c, B=d_fem$sym_dist, C=d_fem$mass_c, X=d_fem$chamber)
 
 source("src/compare_models.R")
@@ -582,24 +593,23 @@ tidy_regression(best.fit, is_color=output_col)
 **Min From Inc Start**
 
 ```{r message=FALSE}
-data<-data.frame(R=d_fem$distance, A=d_fem$min_from_IncStart_c, B=d_fem$sym_dist, C=d_fem$mass_c, X=d_fem$chamber)
+data<-data.frame(R=d_fem$distance, A=d_fem$min_from_IncStart_s, B=d_fem$sym_dist_s, C=d_fem$mass_s, X=d_fem$chamber)
 
 source("src/compare_models.R")
 errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
-cat("Number of models that failed to converge:", length(errors$warnings)) # 11 models failed to converge
+cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
 ```{r}
-anova(m3, m5, test="Chisq") # Adding C does not improve fit
-anova(m3, m6, test="Chisq") # Adding B does not improve fit
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
+anova(m0, m3, test="Chisq") # Adding C does not impove fit
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
-best.fit <- glm(distance ~ mass_c, family = Gamma(link = "log"), data = d_fem) 
+best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_fem) 
 tidy_regression(best.fit, is_color=output_col)
 ```
-
-* no effect of mass
 
 <a id="fmorph"></a>
 
@@ -795,11 +805,15 @@ tidy_regression(best.fit, is_color=output_col)
 **With Mass**
 
 ```{r, message=FALSE}
+d_male <- d_male %>%
+  filter(!is.na(mass))
+d_male <- center_data(d_male)
+
 data<-data.frame(R=d_male$distance, A=d_male$host_c, B=d_male$sym_dist, C=d_male$mass_c, X=d_male$chamber)
 
 source("src/compare_models.R")
 errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R")) 
-cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
+cat("Number of models that failed to converge:", length(errors$warnings)) 
 ```
 
 ```{r}
@@ -819,11 +833,11 @@ tidy_regression(best.fit, is_color=output_col)
 **Min From Inc Start**
 
 ```{r message=FALSE}
-data<-data.frame(R=d_male$distance, A=d_male$min_from_IncStart_c, B=d_male$sym_dist, C=d_male$mass_c, X=d_male$chamber)
+data<-data.frame(R=d_male$distance, A=d_male$min_from_IncStart_s, B=d_male$sym_dist_s, C=d_male$mass_s, X=d_male$chamber)
 
 source("src/compare_models.R")
 errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
-cat("Number of models that failed to converge:", length(errors$warnings)) # 25 models failed to converge
+cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
 ```{r}
@@ -836,7 +850,7 @@ anova(m0, m3, test="Chisq") # Adding C marginally improves fit
 ```
 
 ```{r}
-best.fit <- glmer(distance ~ mass_c + (1|chamber), family = Gamma(link = "log"), data = d_fem) 
+best.fit <- glmer(distance ~ mass_s + (1|chamber), family = Gamma(link = "log"), data = d_fem) 
 tidy_regression(best.fit, is_color=output_col)
 ```
 
@@ -848,7 +862,7 @@ tidy_regression(best.fit, is_color=output_col)
 
 ```{r message=FALSE}
 d_male <- d_male %>%
-  filter(!is.na(mass))
+  filter(!is.na(body))
 d_male <- center_data(d_male)
 
 data<-data.frame(R=d_male$distance, A=d_male$body_c, B=d_male$wing_c, C=d_male$thorax_c, X=d_male$chamber) 
@@ -863,7 +877,7 @@ anova(m9, m12, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
-best.fit <- glmer(distance ~ body_c*thorax_c + (1|chamber), family = Gamma(link = "log"), data = d_male) 
+best.fit <- glmer(distance ~ body_c*thorax_c + (1|chamber), family = Gamma(link = "log"), data = d_male)
 tidy_regression(best.fit, is_color=output_col)
 ```
 * positive effect of body, where the longer the body the more likely the bug will disperse farther
@@ -872,10 +886,6 @@ tidy_regression(best.fit, is_color=output_col)
 * negative effect of body*thorax where the wider the thorax and longer the body, the less likely the bug will disperse farther distances
 
 ```{r message=FALSE}
-d_male <- d_male %>%
-  filter(!is.na(mass))
-d_male <- center_data(d_male)
-
 data<-data.frame(R=d_male$distance, A=d_male$wing2body, B=d_male$thorax_c, X=d_male$chamber)
 
 source("src/compare_models.R")
@@ -896,11 +906,7 @@ tidy_regression(best.fit, is_color=output_col)
 *marginal positive effect of thorax where the wider the thorax the more likely the bug will disperse far.
 
 ```{r message=FALSE}
-d_male <- d_male %>%
-  filter(!is.na(mass))
-d_male <- center_data(d_male)
-
-data<-data.frame(R=d_male$distance, A=d_male$wing2body, B=d_male$thorax_c, C=d_male$mass_c, X=d_male$chamber)
+data<-data.frame(R=d_male$distance, A=d_male$wing2body_s, B=d_male$thorax_s, C=d_male$mass_s, X=d_male$chamber)
 
 source("src/compare_models.R")
 errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
@@ -908,13 +914,17 @@ cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
 ```{r}
-anova(m6, m10, test="Chisq") # Adding B*C marginally improves fit
+anova(m6, m10, test="Chisq") # Adding B*C improves fit
 ```
 
 ```{r}
-best.fit <- glmer(distance ~ mass_c * thorax_c + (1|chamber), family = Gamma(link = "log"), data = d_male)  # model failed to converge
+best.fit <- glmer(distance ~ mass_s * thorax_s + (1|chamber), family = Gamma(link = "log"), data = d_male)
 tidy_regression(best.fit, is_color=output_col)
 ```
+
+* no effect of mass
+* no effect of thorax
+* negative effect of thorax and mass where if weighs more and wider thorax, then less likely to disperse far.
 
 ### Male Plots 
 

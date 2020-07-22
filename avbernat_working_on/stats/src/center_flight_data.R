@@ -6,6 +6,7 @@ center_data <- function(d) {
   # Distance From Sympatric Zone
   d$lat_c<-d$latitude-mean(d$latitude)
   d$sym_dist<-abs(d$latitude-25.49197)
+  d$sym_dist_s <- (d$sym_dist - mean(d$sym_dist)) / sd(d$sym_dist)
 
   # Flight Duration (minutes)
   d$minute_duration <- 0
@@ -24,6 +25,7 @@ center_data <- function(d) {
     d$min_from_IncStart[row] <- 60*(hr - t_IncLights_turn_on) + min
   } 
   d$min_from_IncStart_c <- d$min_from_IncStart-mean(d$min_from_IncStart)
+  d$min_from_IncStart_s <- (d$min_from_IncStart-mean(d$min_from_IncStart)) / sd(d$min_from_IncStart)
   
   # Days From Starting Time
   d$days_from_start <- 0
@@ -43,6 +45,7 @@ center_data <- function(d) {
 
   # Mass
   d$mass_c <- d$mass-mean(d$mass, na.rm=TRUE) 
+  d$mass_s <- (d$mass-mean(d$mass, na.rm=TRUE)) / sd(d$mass, na.rm=TRUE)
   
   # Eggs
   d$total_eggs_c <- d$total_eggs-mean(d$total_eggs, na.rm=TRUE) 
@@ -54,6 +57,7 @@ center_data <- function(d) {
   
   # Thorax Length
   d$thorax_c <- d$thorax-mean(d$thorax, na.rm=TRUE)
+  d$thorax_s <- (d$thorax-mean(d$thorax, na.rm=TRUE)) / sd(d$thorax, na.rm=TRUE)
   
   # Body Length
   d$body_c <- d$body-mean(d$body, na.rm=TRUE)
@@ -64,6 +68,7 @@ center_data <- function(d) {
   #wing2body
   d$wing2body <- d$wing / d$body
   d$wing2body_c <- d$wing2body - mean(d$wing2body, na.rm=TRUE)
+  d$wing2body_s <- (d$wing2body - mean(d$wing2body, na.rm=TRUE)) / sd(d$wing2body, na.rm=TRUE)
   
   return(d)
 }
