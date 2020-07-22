@@ -535,10 +535,10 @@ tidy_regression(glm(distance~total_eggs, data=d_fem, family=Gamma(link="log")), 
 **Without Mass**
 
 ```{r, message=FALSE}
-data<-data.frame(R=d_fem$distance, A=d_fem$host_c, B=d_fem$sex_c, C=d_fem$sym_dist, X=d_fem$chamber)
+data<-data.frame(R=d_fem$distance, A=d_fem$host_c, B=d_fem$sym_dist, X=d_fem$chamber)
 
 source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 2-FF log link.R"))
 cat("Number of models that failed to converge:", length(errors$warnings)) 
 ```
 
@@ -558,16 +558,16 @@ tidy_regression(best.fit, is_color=output_col)
 **With Mass**
 
 ```{r, message=FALSE}
-data<-data.frame(R=d_fem$distance, A=d_fem$host_c, B=d_fem$sex_c, C=d_fem$sym_dist, D=d_fem$mass_c, X=d_fem$chamber)
+data<-data.frame(R=d_fem$distance, A=d_fem$host_c, B=d_fem$sym_dist, C=d_fem$mass_c, X=d_fem$chamber)
 
 source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")) 
-cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R")) 
+cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
 ```{r}
-anova(m4, m9, test="Chisq") # Adding B does not improve fit
-anova(m9, m20, test="Chisq") # Adding B*D does not improve fit
+anova(m3, m6, test="Chisq") # Adding B does not improve fit
+anova(m3, m5, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r}
@@ -582,16 +582,16 @@ tidy_regression(best.fit, is_color=output_col)
 **Min From Inc Start**
 
 ```{r message=FALSE}
-data<-data.frame(R=d_fem$distance, A=d_fem$min_from_IncStart_c, B=d_fem$sex_c, C=d_fem$sym_dist, D=d_fem$mass_c, X=d_fem$chamber)
+data<-data.frame(R=d_fem$distance, A=d_fem$min_from_IncStart_c, B=d_fem$sym_dist, C=d_fem$mass_c, X=d_fem$chamber)
 
 source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R"))
-cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) # 11 models failed to converge
 ```
 
 ```{r}
-anova(m4, m9, test="Chisq") # Adding B does not improve fit
-anova(m9, m20, test="Chisq") # Adding B*D does not improve fit
+anova(m3, m5, test="Chisq") # Adding C does not improve fit
+anova(m3, m6, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
@@ -772,10 +772,10 @@ tidy_regression(glm(distance~total_eggs, data=d_male, family=Gamma(link="log")),
 **Without Mass**
 
 ```{r, message=FALSE}
-data<-data.frame(R=d_male$distance, A=d_male$host_c, B=d_male$sex_c, C=d_male$sym_dist, X=d_male$chamber)
+data<-data.frame(R=d_male$distance, A=d_male$host_c, B=d_male$sym_dist, X=d_male$chamber)
 
 source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 2-FF log link.R"))
 cat("Number of models that failed to converge:", length(errors$warnings)) 
 ```
 
@@ -795,11 +795,16 @@ tidy_regression(best.fit, is_color=output_col)
 **With Mass**
 
 ```{r, message=FALSE}
-data<-data.frame(R=d_male$distance, A=d_male$host_c, B=d_male$sex_c, C=d_male$sym_dist, D=d_male$mass_c, X=d_male$chamber)
+data<-data.frame(R=d_male$distance, A=d_male$host_c, B=d_male$sym_dist, C=d_male$mass_c, X=d_male$chamber)
 
 source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R")) 
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R")) 
 cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
+```
+
+```{r}
+anova(m0, m3, test="Chisq") # Adding C marginally improves fit
+anova(m3, m5, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r}
@@ -814,19 +819,28 @@ tidy_regression(best.fit, is_color=output_col)
 **Min From Inc Start**
 
 ```{r message=FALSE}
-data<-data.frame(R=d_male$distance, A=d_male$min_from_IncStart_c, B=d_male$sex_c, C=d_male$sym_dist, D=d_male$mass_c, X=d_male$chamber)
+data<-data.frame(R=d_male$distance, A=d_male$min_from_IncStart_c, B=d_male$sym_dist, C=d_male$mass_c, X=d_male$chamber)
 
 source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 4-FF log link.R"))
-cat("Number of models that failed to converge:", length(errors$warnings)) # a lot of models failed to converge
+errors <- withWarnings(model_comparisonsAIC("src/generic models-Gamma glmer 3-FF log link.R"))
+cat("Number of models that failed to converge:", length(errors$warnings)) # 25 models failed to converge
 ```
 
 ```{r}
-best.fit <- glmer(distance ~ min_from_IncStart_c * mass_c + (1|chamber), family = Gamma(link = "log"), data = d_fem) 
+anova(m5, m9, test="Chisq") # adding A*C does not improve fit
+anova(m3, m5, test="Chisq") # Adding A does not improve fit
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
+anova(m0, m3, test="Chisq") # Adding C marginally improves fit
+
+# Do we go with anova or AIC? I went with anova step-wise comparisons
+```
+
+```{r}
+best.fit <- glmer(distance ~ mass_c + (1|chamber), family = Gamma(link = "log"), data = d_fem) 
 tidy_regression(best.fit, is_color=output_col)
 ```
 
-* no significant effects - also the model doesn't make too much sense 
+* no effect of mass
 
 <a id="mmorph"></a>
 
