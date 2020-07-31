@@ -130,6 +130,13 @@ speed_model <- lmer(average_speed ~ (1 | trial_type), data=data_flew)
 tidy_regression(speed_model, is_color=output_col)
 ```
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(speed_model))$p.value)
+qqnorm(resid(speed_model))
+qqline(resid(speed_model))
+text(-2, 0.1, s.test)
+```
+
 <a id="w.mass"></a>
 
 **With Mass**
@@ -163,6 +170,13 @@ tidy_regression(speed_model, is_color=output_col)
 
 * positive effect of mass, so that the heavier the bug, the faster the average speed
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(speed_model))$p.value)
+qqnorm(resid(speed_model))
+qqline(resid(speed_model))
+text(-2, 0.1, s.test)
+```
+
 <a id="morph"></a>
 
 **Morphology**
@@ -195,6 +209,13 @@ tidy_regression(speed_morph_model, is_color=output_col)
 ```
 
 * positive effect of thorax, where the longer the thorax, the faster the speed
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(speed_morph_model))$p.value)
+qqnorm(resid(speed_morph_model))
+qqline(resid(speed_morph_model))
+text(-2, 0.1, s.test)
+```
 
 ### All Flyers Plots
 
@@ -323,6 +344,13 @@ tidy_regression(continuous_model, is_color=output_col)
 
 * positive effect of sex_c, where if a female continuous-flyer bug then more likely to fly faster on average 
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(continuous_model))$p.value)
+qqnorm(resid(continuous_model))
+qqline(resid(continuous_model))
+text(-1, 0.1, s.test)
+```
+
 <a id="w.massc"></a>
 
 **With Mass**
@@ -352,6 +380,14 @@ tidy_regression(continuous_model, is_color=output_col)
 * no effect of sex_c
 * no effect of mass_c
 * negative effect of sex_c*mass_c, where if female and heavier, then slower avg speed (make sense because probably due to egg-laying)
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(continuous_model))$p.value)
+qqnorm(resid(continuous_model))
+qqline(resid(continuous_model))
+text(-1, 0.1, s.test)
+```
+
 
 <a id="morphc"></a>
 
@@ -385,6 +421,13 @@ tidy_regression(continuous_morph_model, is_color=output_col)
 ```
 
 * positive effect of thorax length, where the longer the thorax the faster the avg speed
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(continuous_morph_model))$p.value)
+qqnorm(resid(continuous_morph_model))
+qqline(resid(continuous_morph_model))
+text(-1, 0.1, s.test)
+```
 
 ### Continuous Flyers Plots
 
@@ -513,6 +556,14 @@ burster_model <- lmer(average_speed ~ (1|ID), data=dB) # null model the best fit
 tidy_regression(burster_model, is_color=output_col)
 ```
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(burster_model))$p.value)
+qqnorm(resid(burster_model))
+qqline(resid(burster_model))
+text(-1, 0.1, s.test)
+```
+
+
 <a id="w.massb"></a>
 
 **With Mass**
@@ -540,6 +591,13 @@ anova(m226, m230, test="Chisq") # Adding D does not improve fit
 ```{r}
 burster_model <- lmer(average_speed ~ (1|chamber), data=dB) # null model the best fit model
 tidy_regression(burster_model, is_color=output_col)
+```
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(burster_model))$p.value)
+qqnorm(resid(burster_model))
+qqline(resid(burster_model))
+text(-1, 0.1, s.test)
 ```
 
 <a id="morphb"></a>
@@ -573,6 +631,15 @@ tidy_regression(burster_morph_model, is_color=output_col) # thorax not significa
 burster_morph_model <- lmer(average_speed ~ (1|chamber), data=dB)
 tidy_regression(burster_morph_model, is_color=output_col) 
 ```
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(burster_morph_model))$p.value)
+qqnorm(resid(burster_morph_model))
+qqline(resid(burster_morph_model))
+text(-1, 0.1, s.test)
+```
+
+
 
 ### Burster Plots
 
