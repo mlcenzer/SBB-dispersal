@@ -268,7 +268,7 @@ data_flew <- data_flew[data_flew$average_speed > 0, ]
 data_flew <- center_data(data_flew)
 
 ### Break up by flight type
-dC<-data_flew[data_flew$flight_type=="C",] # this exclusdes BC or CB flyers 
+dC<-data_flew[data_flew$flight_type=="C" | data_flew$flight_type=="BC" | data_flew$flight_type=="CB",] # this includes BC or CB flyers 
 dC <- center_data(dC)
 ```
 
@@ -285,7 +285,7 @@ getME(test_model, "lower")
 #######testing some covariates:
 dC$chamber <- relevel(dC$chamber, ref="A-2")
 
-####### Effect of chamber B-4
+####### Effect of chamber B-4, B-3, B-2
 tidy_regression(lmer(average_speed~chamber + (1|ID), data=dC), is_color=output_col) ###Possibly reductions in speed 
 
 ####### No effect of test date
@@ -311,13 +311,13 @@ model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
 ```
 
 ```{r}
-anova(m18, m36, test="Chisq") # Adding (1|X) does not improve fit
+anova(m18, m36, test="Chisq") # Adding (1|X) does improve fit
 anova(m18, m20, test="Chisq") # Adding B does improve fit
-anova(m20, m38, test="Chisq") # Adding (1|X) does not improve fit
+anova(m20, m38, test="Chisq") # Adding (1|X) does improve fit
 ```
 
 ```{r}
-continuous_model <- lmer(average_speed ~ sex_c + (1|chamber), data=dC)
+continuous_model <- lmer(average_speed ~ sex_c + (1|chamber) + (1|ID), data=dC)
 tidy_regression(continuous_model, is_color=output_col)
 ```
 
@@ -341,13 +341,14 @@ cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-anova(m133, m246, test="Chisq") # Adding (1|X) does not improve fit
+anova(m133, m246, test="Chisq") # Adding (1|X) marginally improves fit
 ```
 
 ```{r}
-continuous_model <- lmer(average_speed ~ sex_c*mass_c + (1|chamber), data=dC)
+continuous_model <- lmer(average_speed ~ sex_c*mass_c + (1|chamber) + (1|ID), data=dC)
 tidy_regression(continuous_model, is_color=output_col)
 ```
+
 * no effect of sex_c
 * no effect of mass_c
 * negative effect of sex_c*mass_c, where if female and heavier, then slower avg speed (make sense because probably due to egg-laying)
