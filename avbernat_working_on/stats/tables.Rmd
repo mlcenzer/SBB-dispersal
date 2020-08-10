@@ -49,12 +49,29 @@ data_tested <- center_data(data_tested)
 ```{r echo=FALSE}
 num_fem <- nrow(data_all[data_all$sex == "F",])
 num_male <- nrow(data_all[data_all$sex == "M",])
-num_tested_fem <- nrow(data_tested[data_tested$sex == "F",])
-num_tested_male <- nrow(data_tested[data_tested$sex == "M",])
+num_tested_fem <- nrow(data_tested[data_tested$sex == "F",]) # not a unique value
+num_tested_male <- nrow(data_tested[data_tested$sex == "M",]) # not a unique value
 
-table0 <- data.frame("All" = c(num_fem, num_male), "Tested" = c(num_tested_fem, num_tested_male))
+table0 <- data.frame("All" = c(num_fem, num_male),
+                     "Tested" = c(num_tested_fem, num_tested_male)) 
 rownames(table0) <- c("F", "M")
+
 kable(table0) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  
+```
+
+### Females that Laid Eggs:
+
+```{r echo=FALSE}
+all_data <- data[[1]]
+unique_num_eggs <- nrow(unique(select(all_data[all_data$sex == "F" & all_data$eggs_b == 1,], ID, eggs_b)))
+did_not_lay <- num_tested_fem - unique_num_eggs 
+  
+table00 <- data.frame(did_not_lay, unique_num_eggs, num_tested_fem, round(unique_num_eggs/num_tested_fem,3))
+rownames(table00) <- "Unique Values"
+colnames(table00) <- c("Females That Didn't Lay Eggs", "Females That Laid Eggs", "Total Females", "Sample Prop")
+
+kable(table00) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  
 ```
 
@@ -124,20 +141,47 @@ countF <- nrow(d[d$sex == "F",])
 countM <- nrow(d[d$sex == "M",])
 
 # calculate means and standard deviations
-mF <-  round(mean(data_all[data_all$sex == "F",]$mass, na.rm=TRUE), 3)
-sdF <- round(sd(data_all[data_all$sex == "F",]$mass, na.rm=TRUE), 3)
-mM <- round(mean(data_all[data_all$sex == "M",]$mass, na.rm=TRUE), 3)
-sdM <- round(sd(data_all[data_all$sex == "M",]$mass, na.rm=TRUE), 3)
+sex_masses <- t(rbind(tapply(X=data_all$mass, INDEX=data_all$sex, FUN=mean, na.rm=T),
+                tapply(X=data_all$mass, INDEX=data_all$sex, FUN=sd, na.rm=T)))
 
-table3 <- data.frame( "mean" = c(mF, mM), 
-            "std" = c(sdF, sdM), 
-            "sample size" = c(countF, countM), 
-            row.names = c("F", "M"))
+table3 <- data.frame(round(sex_masses,3), c(countF, countM))
 colnames(table3) <- c("mean", "sd", "sample size" )
 
 kable(table3) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
   add_header_above(c(" ", "mass (g)" = 2, " " )) 
+```
+
+```{r echo=FALSE}
+countBV <- nrow(d[d$host_plant == "C. corindum",])
+countGRT <- nrow(d[d$host_plant == "K.elegans",])
+
+# calculate means and standard deviations
+host_masses <- t(rbind(tapply(X=data_all$mass, INDEX=data_all$host_plant, FUN=mean, na.rm=T),
+                tapply(X=data_all$mass, INDEX=data_all$host_plant, FUN=sd, na.rm=T)))
+
+table3 <- data.frame(round(host_masses,3), c(countBV, countGRT))
+colnames(table3) <- c("mean", "sd", "sample size" )
+
+kable(table3) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  add_header_above(c(" ", "mass (g)" = 2, " " )) 
+```
+
+```{r echo=FALSE}
+# Can add sample sizes here too
+table3 <-round(data.frame(cbind(
+  tapply(X=data_all$mass, INDEX=list(data_all$sex, data_all$host_plant), FUN=mean, na.rm=T),
+  tapply(X=data_all$mass, INDEX=list(data_all$sex, data_all$host_plant), FUN=sd, na.rm=T))),3)
+
+colnames(table3) <- c("meanC", "meanK", "sdC", "sdK")
+table3 <- table3[c("meanC", "sdC", "meanK", "sdK")]
+colnames(table3) <- c("mean", "sd", "mean", "sd")
+
+kable(table3) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  add_header_above(c(" ", "C. corindum" = 2, "K. elegans " =2 ))   %>%
+  add_header_above(c(" ", "mass (g)" = 4 ))
 ```
 
 ### Morphology Stats
@@ -364,7 +408,3 @@ kable(table13) %>%
   add_header_above(c(" ", "Trial 1 " = 3, "Trial 2" = 3 )) %>%
   add_header_above(c(" ", "Average Speed Flew (m/s)" = 6))
 ```
-
-
-
-
