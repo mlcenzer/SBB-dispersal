@@ -78,23 +78,40 @@ kable(table00) %>%
 ### Grouped by Population
 
 ```{r echo=FALSE}
+d <- data[[1]][data[[1]]$tested == "yes",]
+
+trial2_sizes <-c()
+trial1_sizes <- c()
 female_sizes <- c()
 male_sizes <- c()
 pops <- unique(data_tested$population)
 for (pop in pops) {
   nF <- nrow(data_tested[data_tested$population == pop & data_tested$sex == "F",])
   nM <- nrow(data_tested[data_tested$population == pop & data_tested$sex == "M",])
+  nT1 <- nrow(data_tested[data_tested$population == pop & data_tested$trial_type == "T1",])
+  nT2 <- nrow(data_tested[d$population == pop & d$trial_type == "T2",])
   female_sizes <- c(female_sizes, nF)
   male_sizes <- c(male_sizes, nM)
+  trial2_sizes <- c(trial2_sizes, nT2)
+  trial1_sizes <- c(trial1_sizes, nT1)
 }
 
-table1 <- data.frame(pops, female_sizes, male_sizes)
-colnames(table1) <- c("Population", "Females", "Males")
+table1 <- data.frame(pops, female_sizes, male_sizes, trial1_sizes, trial2_sizes )
+colnames(table1) <- c("Population", "Females", "Males", "Trial 1", "Trial 2")
 
 kable(table1) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
-  add_header_above(c(" ", "Sex Sample Sizes" = length(table1) - 1)) %>% 
-  add_header_above(c("Tested Bugs By Pop and Sex" = 3 ))
+  add_header_above(c(" ", "Sex Sample Sizes" = 2, "Trial Sample Sizes" =2)) %>% 
+  add_header_above(c("Tested Bugs By Pop, Sex, and Trial Type (Unique)" = 5 ))
+```
+
+```{r echo=FALSE}
+ndied <- sum(trial1_sizes ) - sum(trial2_sizes )
+ndied <- data.frame(ndied)
+colnames(ndied) <- "Number of bugs that died between T1 and T2"
+
+kable(ndied) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
 ```
 
 ```{r echo=FALSE}
@@ -408,3 +425,7 @@ kable(table13) %>%
   add_header_above(c(" ", "Trial 1 " = 3, "Trial 2" = 3 )) %>%
   add_header_above(c(" ", "Average Speed Flew (m/s)" = 6))
 ```
+
+
+
+

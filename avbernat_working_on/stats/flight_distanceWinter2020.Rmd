@@ -148,7 +148,7 @@ tidy_regression(glm(distance~min_from_IncStart_c, data=d_T1, family=Gamma(link="
 
 **Without Mass**
 
-```{r warning=FALSE}
+```{r message=FALSE}
 data<-data.frame(R=d_T1$distance, A=d_T1$host_c, B=d_T1$sex_c, C=d_T1$sym_dist, X=d_T1$chamber)
 
 source("src/compare_models.R")
@@ -167,6 +167,13 @@ tidy_regression(best.fit, is_color=output_col)
 ```
 
 * no effect of sex
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
 
 <a id="w.mass"></a>
 
@@ -202,6 +209,13 @@ tidy_regression(best.fit, is_color=output_col)
 * no effect of mass
 * negative effect of sex*mass where if female and heavy then less likely to disperse far
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
 <a id="timestart"></a>
 
 **Min From Inc Start**
@@ -226,6 +240,14 @@ tidy_regression(best.fit, is_color=output_col)
 * no effect of mass
 
 * negative effect of min from start*sex, where if F and tested late in the day then less likely to disperse far
+* negative effect of sex*mass where the more mass and F then less likely to disperse far
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
 
 <a id="morph"></a>
 
@@ -278,6 +300,13 @@ tidy_regression(best.fit, is_color=output_col)
 ```
 
 * positive effect of thorax length, where the longer the length the farther the dispersal
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
 
 ### Trial 1 Plots 
 
@@ -377,6 +406,13 @@ best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_T2)
 tidy_regression(best.fit, is_color=output_col)
 ```
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
 <a id="w.mass2"></a>
 
 **With Mass**
@@ -405,6 +441,13 @@ best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_T2)
 tidy_regression(best.fit, is_color=output_col)
 ```
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
 <a id="morph2"></a>
 
 **Morphology**
@@ -431,6 +474,13 @@ best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_T2)
 tidy_regression(best.fit, is_color=output_col)
 ```
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
 ```{r warning=FALSE}
 data<-data.frame(R=d_T2$distance, A=d_T2$wing2body, B=d_T2$thorax_c, X=d_T2$chamber)
 
@@ -447,6 +497,13 @@ anova(m0, m3, test="Chisq") # Adding C does not improve fit
 ```{r}
 best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_T2) 
 tidy_regression(best.fit, is_color=output_col)
+```
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
 ```
 
 ### Trial 2 Plots
@@ -560,6 +617,14 @@ best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_fem)
 tidy_regression(best.fit, is_color=output_col)
 ```
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
+
 <a id="fmass"></a>
 
 **With Mass**
@@ -588,6 +653,14 @@ tidy_regression(best.fit, is_color=output_col)
 
 * no effect of mass
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
+
 <a id="fmin"></a>
 
 **Min From Inc Start**
@@ -609,6 +682,13 @@ anova(m0, m2, test="Chisq") # Adding B does not improve fit
 ```{r}
 best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_fem) 
 tidy_regression(best.fit, is_color=output_col)
+```
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
 ```
 
 <a id="fmorph"></a>
@@ -641,6 +721,13 @@ tidy_regression(best.fit, is_color=output_col)
 * no effect of body
 * negative effect of wing*thorax where the wider the thorax and longer the wings, the more likely the bug will disperse shorter distances
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
 ```{r message=FALSE}
 d_fem <- d_fem %>%
   filter(!is.na(mass))
@@ -661,6 +748,13 @@ tidy_regression(best.fit, is_color=output_col) # the coeffients are crazy large
 * no effect of wing2body
 * positive effect of thorax where the wider the thorax the more likely the bug flies far
 * negative effect of wing2body*thorax where the wider the thorax and longer the wings in comparison to the body, the less likely the bugs fly far (contradicting)
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
 
 <a id="feggs"></a>
 
@@ -690,6 +784,13 @@ tidy_regression(best.fit, is_color=output_col) # the coeffients are crazy large
 * positive effect of thorax whre the wider the thorax the more likely the bug will disperse far
 * positive effect of eggs laid on test day where if female laid eggs then more likely to disperse far
 * negative effect of mass*thorax where if heavy and have a wide thorax then less likley to disperse far (conflicting)
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
 
 ### Female Plots 
 
@@ -800,6 +901,13 @@ best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_male)
 tidy_regression(best.fit, is_color=output_col)
 ```
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
 <a id="mmass"></a>
 
 **With Mass**
@@ -828,6 +936,13 @@ tidy_regression(best.fit, is_color=output_col)
 
 * marginal positive effect of mass, where the heavier the male bug, the more likely the male bug flies far (this could be because of thorax wider so has more muscle power?)
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
 <a id="mmin"></a>
 
 **Min From Inc Start**
@@ -855,6 +970,13 @@ tidy_regression(best.fit, is_color=output_col)
 ```
 
 * no effect of mass
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
 
 <a id="mmorph"></a>
 
@@ -885,6 +1007,13 @@ tidy_regression(best.fit, is_color=output_col)
 
 * negative effect of body*thorax where the wider the thorax and longer the body, the less likely the bug will disperse farther distances
 
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
 ```{r message=FALSE}
 data<-data.frame(R=d_male$distance, A=d_male$wing2body, B=d_male$thorax_c, X=d_male$chamber)
 
@@ -904,6 +1033,14 @@ tidy_regression(best.fit, is_color=output_col)
 ```
 
 *marginal positive effect of thorax where the wider the thorax the more likely the bug will disperse far.
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
 
 ```{r message=FALSE}
 data<-data.frame(R=d_male$distance, A=d_male$wing2body_s, B=d_male$thorax_s, C=d_male$mass_s, X=d_male$chamber)
@@ -925,6 +1062,14 @@ tidy_regression(best.fit, is_color=output_col)
 * no effect of mass
 * no effect of thorax
 * negative effect of thorax and mass where if weighs more and wider thorax, then less likely to disperse far.
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
+qqnorm(resid(best.fit))
+qqline(resid(best.fit))
+text(-1, 0.1, s.test)
+```
+
 
 ### Male Plots 
 
