@@ -139,6 +139,7 @@ d$num_flew <- 0
 d$num_notflew <- 0
 d$average_mass <- 0
 
+d$egg_diff <- 0
 d$mass_diff <- 0
 d$flew_diff <- 0
 d$dist_diff <- 0
@@ -784,7 +785,7 @@ legend("topright",
 **Testing link functions**
 
 ```{r}
-model_test<-glm(distance~chamber, data=d_fem, family=Gamma(link="log")) # glm.fit algorithm did not converge
+model_test<-glm(distance~chamber, data=d_fem, family=Gamma(link="log")) 
 summary(model_test)
 plot(model_test)
 ```
@@ -858,16 +859,16 @@ cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
 ```{r}
+anova(m0, m3, test="Chisq") # Adding C does not improve fit
 anova(m3, m6, test="Chisq") # Adding B does not improve fit
 anova(m3, m5, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r}
-best.fit <- glm(distance ~ mass_c, family = Gamma(link = "log"), data = d_fem) 
+best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_fem) 
 tidy_regression(best.fit, is_color=output_col)
 ```
 
-* no effect of mass
 
 ```{r}
 s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
@@ -1088,10 +1089,6 @@ tidy_regression(glm(distance~min_from_IncStart, data=d_male, family=Gamma(link="
 
 #### No effect of eggs laid
 tidy_regression(glm(distance~eggs_b, data=d_male, family=Gamma(link="log")), is_color=output_col)
-
-### No effect of total eggs laid
-tidy_regression(glm(distance~total_eggs, data=d_male, family=Gamma(link="log")), is_color=output_col)
-
 ```
 
 <a id="mwomass"></a>
@@ -1141,7 +1138,7 @@ cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
 ```{r}
-anova(m0, m3, test="Chisq") # Adding C marginally improves fit
+anova(m0, m3, test="Chisq") # Adding C improves fit
 anova(m3, m5, test="Chisq") # Adding A does not improve fit
 ```
 
@@ -1175,7 +1172,7 @@ cat("Number of models that failed to converge:", length(errors$warnings))
 anova(m5, m9, test="Chisq") # adding A*C does not improve fit
 anova(m3, m5, test="Chisq") # Adding A does not improve fit
 anova(m0, m1, test="Chisq") # Adding A does not improve fit
-anova(m0, m3, test="Chisq") # Adding C marginally improves fit
+anova(m0, m3, test="Chisq") # Adding C improves fit
 
 # Do we go with anova or AIC? I went with anova step-wise comparisons
 ```
@@ -1267,7 +1264,7 @@ cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
 ```{r}
-anova(m6, m10, test="Chisq") # Adding B*C improves fit
+anova(m6, m10, test="Chisq") # Adding B*C marginally improves fit
 ```
 
 ```{r}
@@ -1277,7 +1274,7 @@ tidy_regression(best.fit, is_color=output_col)
 
 * no effect of mass
 * no effect of thorax
-* negative effect of thorax and mass where if weighs more and wider thorax, then less likely to disperse far.
+* negative marginal effect of thorax and mass where if weighs more and wider thorax, then less likely to disperse far.
 
 ```{r}
 s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
