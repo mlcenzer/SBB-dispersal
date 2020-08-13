@@ -109,6 +109,190 @@ p <- ggplot(data_flew, aes(x=sym_dist, y=distance, color=host_plant)) +
 p + stat_summary(fun=mean, geom="point", shape=23, size=2)
 ```
 
+### Delta Distance 
+
+```{r}
+rm(list=ls())
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
+source("src/clean_flight_data.R") # Script that loads and cleans up the data
+source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
+source("src/center_flight_data.R")
+source("get_warnings.R")
+
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+
+data_flew <- data_tested[data_tested$flew_b == 1, ]
+data_flew <- center_data(data_flew)
+```
+
+```{r}
+d <- data_flew %>%
+   group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, 
+            beak, thorax, wing, body, w_morph, morph_notes, tested,
+            host_c, sex_c, w_morph_c, lat_c, sym_dist, sym_dist_s, total_eggs_c, 
+            beak_c, thorax_c, thorax_s, body_c, wing_c, wing2body, wing2body_c, wing2body_s) %>%
+   summarise_all(funs(list(na.omit(.))))
+
+d$num_flew <- 0
+d$num_notflew <- 0
+d$average_mass <- 0
+
+d$mass_diff <- 0
+d$flew_diff <- 0
+d$dist_diff <- 0
+d$speed_diff <- 0
+
+for(row in 1:length(d$flew_b)){
+  
+  n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails
+  d$num_flew[[row]] <- n_flew 
+  
+  n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
+  d$num_notflew[[row]] <- n_notflew
+  
+  avg_mass <- mean(d$mass[[row]])
+  d$average_mass[[row]] <- avg_mass
+  
+  # mass, flight, distance, and speed changes between T1 and T2
+  
+  d$mass_diff[[row]] <- d$mass[[row]][2] - d$mass[[row]][1]  # T2 - T1
+  d$flew_diff[[row]] <- d$flew_b[[row]][2] - d$flew_b[[row]][1]  # T2 - T1
+  d$dist_diff[[row]] <- d$distance[[row]][2] - d$distance[[row]][1]  # T2 - T1
+  d$speed_diff[[row]] <- d$average_speed[[row]][2] - d$average_speed[[row]][1]  # T2 - T1
+  d$egg_diff[[row]] <- d$eggs_b[[row]][2] - d$eggs_b[[row]][1]  # T2 - T1
+
+}
+
+d <- select(d, -filename, -channel_letter, -set_number)
+
+d # NA's generated are good because that means it's accounted only for bugs that flew in both trials
+
+# Filter out bugs that ONLY flew in T1:
+rows_remove <- c()
+for (row in 1:nrow(d)){
+  if (length(d$trial_type[[row]]) < 2) {
+    rows_remove <- c(rows_remove, row)
+  }
+}
+d <- d[-rows_remove, ]
+d
+```
+
+#### Distance Diff ~ Mass Diff
+
+```{r}
+## Test
+tidy_regression(lm(dist_diff ~ mass_diff, data=d), is_color = output_col) # no effect of mass_diff 
+```
+
+```{r}
+hist(d$dist_diff)
+```
+
+**No mass_diff**
+
+```{r message=FALSE}
+R = d$dist_diff
+A = d$host_c
+B = d$sex_c
+C = d$sym_dist
+D = d$mass_diff 
+X = d$population 
+
+data<-data.frame(R, A, B, C, D, X)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+```
+
+```{r}
+dist_model <- lmer(speed_diff ~ 1 + (1 | population), data=d, REML=FALSE)
+tidy_regression(dist_model, is_color=output_col)
+```
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(dist_model))$p.value)
+qqnorm(resid(dist_model))
+qqline(resid(dist_model))
+text(-1, 0.1, s.test)
+```
+
+**Mass_diff**
+
+```{r message=FALSE}
+d <- d %>%
+  filter(!is.na(mass_diff))
+
+R = d$dist_diff
+A = d$host_c
+B = d$sex_c
+C = d$sym_dist
+D = d$mass_diff 
+X = d$population 
+
+data<-data.frame(R, A, B, C, D, X)
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
+```
+
+```{r}
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
+anova(m0, m4, test="Chisq") 
+anova(m0, m3, test="Chisq") 
+anova(m0, m1, test="Chisq") 
+```
+
+Null is the best model again
+
+### Delta Distance - Females Only
+
+```{r}
+d_fem <- d[d$sex == "F",] # very low sample size 
+```
+
+**No mass_diff**
+
+```{r message=FALSE}
+R = d_fem$dist_diff
+A = d_fem$host_c
+B = d_fem$sym_dist
+C = d_fem$mass_diff 
+X = d_fem$population 
+
+data<-data.frame(R, A, B, C, X)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 2-FF REMLF.R")
+```
+
+```{r}
+anova(m0, m1, test="Chisq")
+anova(m0, m2, test="Chisq")
+```
+
+**mass_diff**
+
+```{r message=FALSE}
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+```
+
+Null is the best model for both again.
+
+
+```{r}
+dist_model <- lmer(speed_diff ~ 1 + (1 | population), data=d_fem, REML=FALSE)
+tidy_regression(dist_model, is_color=output_col)
+```
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(dist_model))$p.value)
+qqnorm(resid(dist_model))
+qqline(resid(dist_model))
+text(-1, 0.1, s.test)
+```
+
 ### Trial 1
 
 [Testing link and covariates](#test)
@@ -120,6 +304,38 @@ p + stat_summary(fun=mean, geom="point", shape=23, size=2)
 [Min From Inc Start ](#timestart)
 
 [Morphology](#morph)
+
+**Cleaning the Data**
+
+```{r}
+rm(list=ls())
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
+source("src/clean_flight_data.R") # Script that loads and cleans up the data
+source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
+source("src/center_flight_data.R")
+source("get_warnings.R")
+
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+
+### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)
+data_flew <- data_tested[data_tested$flew_b == 1, ]
+data_flew <- data_flew[data_flew$distance > 0, ]
+data_flew <- center_data(data_flew)
+
+###Break up by trial type
+d_T1 <-data_flew[data_flew$trial_type=="T1",] 
+d_T1 <- center_data(d_T1)
+d_T2 <-data_flew[data_flew$trial_type=="T2",]
+d_T2 <- center_data(d_T2)
+
+###Break up by sex 
+d_fem <-data_flew[data_flew$sex=="F",] 
+d_fem <- center_data(d_fem)
+d_male <-data_flew[data_flew$sex=="M",]
+d_male <- center_data(d_male)
+```
 
 <a id="test"></a>
 
