@@ -113,22 +113,29 @@ tidy_regression(lmer(average_speed~min_from_IncStart + (1|trial_type), data=data
 
 **Without Mass**
 
-```{r}
+```{r message=FALSE}
 data<-data.frame(R=data_flew$average_speed,
                  A=data_flew$host_c, 
                  B=data_flew$sex_c, 
                  C=data_flew$sym_dist, 
-                 X=data_flew$trial_type)
+                 X=data_flew$ID)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
 ```
-Top model (holding a 96% probability) contains only the random effects of trial type; no effects of host, sex, or distance from the sympatric zone on speed
 
 ```{r}
-speed_model <- lmer(average_speed ~ (1 | trial_type), data=data_flew)
+anova(m0, m2, test="Chisq") # Adding B improves fit
+anova(m2, m4, test="Chisq") # Adding Adoes not improve fit
+anova(m2, m6, test="Chisq") # Adding C does not improve fit
+```
+
+```{r}
+speed_model <- lmer(average_speed ~ sex_c + (1 | ID), data=data_flew, REML=FALSE)
 tidy_regression(speed_model, is_color=output_col)
 ```
+
+* marginal effect of sex
 
 ```{r}
 s.test <- paste("pval: ", shapiro.test(residuals(speed_model))$p.value)
@@ -154,21 +161,21 @@ data<-data.frame(R=data_flew$average_speed,
                  X=data_flew$chamber) 
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
 ```
 
 
 ```{r}
 anova(m0, m4, test="Chisq") # Adding D does improve fit
-# note: if use data_flew_all you get the null model as the best fit model
+anova(m0, m2, test="Chisq") # Adding B does improve fit
 ```
 
 ```{r}
-speed_model <- lmer(average_speed ~ mass_c + (1 | chamber), data=data_flew)
+speed_model <- lmer(average_speed ~ sex_c + (1 | chamber), data=data_flew, REML=FALSE)
 tidy_regression(speed_model, is_color=output_col)
 ```
 
-* positive effect of mass, so that the heavier the bug, the faster the average speed
+* positive effect of sex, so that if F then faster 
 
 ```{r}
 s.test <- paste("pval: ", shapiro.test(residuals(speed_model))$p.value)
@@ -181,7 +188,7 @@ text(-2, 0.1, s.test)
 
 **Morphology**
 
-```{r}
+```{r message=FALSE}
 data_flew <- data_flew %>%
   filter(!is.na(mass)) %>%
   filter(!is.na(body))
@@ -191,20 +198,22 @@ data<-data.frame(R=data_flew$average_speed,
                  A=data_flew$thorax_c, 
                  B=data_flew$body_c, 
                  C=data_flew$wing_c,
-                 X=data_flew$chamber) # 5 models failed to converge
+                 X=data_flew$ID) 
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
 ```
 
 ```{r}
 anova(m0, m1, test="Chisq") # Adding A does improve fit
 anova(m0, m2, test="Chisq") # Adding B does improve fit
 anova(m0, m3, test="Chisq") # Adding C does improve fit
+anova(m1, m5, test="Chisq") # Addihng C does not improve fit
+anova(m1, m4, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
-speed_morph_model <- lmer(average_speed ~ thorax_c + (1|chamber), data=data_flew)
+speed_morph_model <- lmer(average_speed ~ thorax_c + (1|ID), data=data_flew, REML=FALSE)
 tidy_regression(speed_morph_model, is_color=output_col)
 ```
 
@@ -254,6 +263,218 @@ lm_plot(data_flew, "body_c", "average_speed", "Body Length (mm)", "Average Speed
 lm_plot(data_flew, "wing_c", "average_speed", "Wing Length (mm)", "Average Speed (m/s)", "Average Speed by Wing Length")
 lm_plot(data_flew, "beak_c", "average_speed", "Beak Length (mm)", "Average Speed (m/s)", "Average Speed by Beak Length")
 ```
+
+### Delta Speed
+
+```{r}
+rm(list=ls())
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
+source("src/clean_flight_data.R") # Script that loads and cleans up the data
+source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
+source("src/center_flight_data.R")
+source("get_warnings.R")
+
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+
+### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)
+data_flew_all <- data_tested[data_tested$flew_b == 1, ] 
+
+### Remove outliers
+data_flew <- data_flew_all %>%
+  filter(average_speed > 0.05) %>%
+  filter(average_speed < 0.65)
+  
+data_flew <- center_data(data_flew)
+```
+
+```{r}
+d <- data_flew %>%
+   group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, 
+            beak, thorax, wing, body, w_morph, morph_notes, tested,
+            host_c, sex_c, w_morph_c, lat_c, sym_dist, sym_dist_s, total_eggs_c, 
+            beak_c, thorax_c, thorax_s, body_c, wing_c, wing2body, wing2body_c, wing2body_s) %>%
+   summarise_all(funs(list(na.omit(.))))
+
+d$num_flew <- 0
+d$num_notflew <- 0
+d$average_mass <- 0
+
+d$mass_diff <- 0
+d$flew_diff <- 0
+d$dist_diff <- 0
+d$speed_diff <- 0
+
+for(row in 1:length(d$flew_b)){
+  
+  n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails
+  d$num_flew[[row]] <- n_flew 
+  
+  n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
+  d$num_notflew[[row]] <- n_notflew
+  
+  avg_mass <- mean(d$mass[[row]])
+  d$average_mass[[row]] <- avg_mass
+  
+  # mass, flight, distance, and speed changes between T1 and T2
+  
+  d$mass_diff[[row]] <- d$mass[[row]][2] - d$mass[[row]][1]  # T2 - T1
+  d$flew_diff[[row]] <- d$flew_b[[row]][2] - d$flew_b[[row]][1]  # T2 - T1
+  d$dist_diff[[row]] <- d$distance[[row]][2] - d$distance[[row]][1]  # T2 - T1
+  d$speed_diff[[row]] <- d$average_speed[[row]][2] - d$average_speed[[row]][1]  # T2 - T1
+  d$egg_diff[[row]] <- d$eggs_b[[row]][2] - d$eggs_b[[row]][1]  # T2 - T1
+
+}
+
+d <- select(d, -filename, -channel_letter, -set_number)
+
+d # NA's generated are good because that means it's accounted only for bugs that flew in both trials
+
+# Filter out bugs that ONLY flew in T1:
+rows_remove <- c()
+for (row in 1:nrow(d)){
+  if (length(d$trial_type[[row]]) < 2) {
+    rows_remove <- c(rows_remove, row)
+  }
+}
+d <- d[-rows_remove, ]
+d
+```
+
+#### Speed Diff ~ Mass Diff
+
+```{r}
+## Test
+tidy_regression(lm(speed_diff ~ mass_diff, data=d), is_color = output_col) # no effect of mass_diff AFTER you filter out the outliers. If don't filter out the outliers then this relationship is significant and that data is residuals are not normal
+```
+
+```{r}
+hist(d$speed_diff) # much more normally distributed data and later will see the residuals pass the Shapiro-Wilk test
+```
+
+**No mass_diff**
+
+```{r message=FALSE}
+R = d$speed_diff
+A = d$host_c
+B = d$sex_c
+C = d$sym_dist
+D = d$mass_diff 
+X = d$population 
+
+data<-data.frame(R, A, B, C, D, X)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+```
+
+```{r}
+anova(m7, m13, test="Chisq") # Adding B*C does not improve fit
+```
+
+```{r}
+speed_model <- lmer(speed_diff ~ host_c + sex_c + sym_dist  + (1 | population), data=d, REML=FALSE)
+tidy_regression(speed_model, is_color=output_col)
+```
+
+* (marginal) negative effect of sex where if F then more likely to fly slower in T2 than T1 
+* (marginal) negative effect of host where if from GRT then more likely to fly slower in T2 than T1
+* negative effect of sym_dist where if farther from Homestead then more likely to fly slower in T2 than T1
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(speed_model))$p.value)
+qqnorm(resid(speed_model))
+qqline(resid(speed_model))
+text(-1, 0.1, s.test)
+```
+
+**Mass_diff**
+
+```{r message=FALSE}
+d <- d %>%
+  filter(!is.na(mass_diff))
+
+R = d$speed_diff
+A = d$host_c
+B = d$sex_c
+C = d$sym_dist
+D = d$mass_diff 
+X = d$population 
+
+data<-data.frame(R, A, B, C, D, X)
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
+```
+
+```{r}
+anova(m11, m28, test="Chisq") # Adding B*C does not improve fit
+```
+
+```{r}
+speed_model <- lmer(speed_diff ~ host_c + sex_c + sym_dist + (1 | population), data=d, REML=FALSE)
+tidy_regression(speed_model, is_color=output_col)
+```
+
+Same top model as before. All of these variables have weak effects.
+
+So what if it was only females, since they had the greatest mass changes?
+
+### Delta Speed - Females Only
+
+```{r}
+d_fem <- d[d$sex == "F",] # very low sample size 
+```
+
+**No mass_diff**
+
+```{r message=FALSE}
+R = d_fem$speed_diff
+A = d_fem$host_c
+B = d_fem$sym_dist
+C = d_fem$mass_diff 
+X = d_fem$population 
+
+data<-data.frame(R, A, B, C, X)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 2-FF REMLF.R")
+```
+
+```{r}
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
+```
+
+```{r}
+speed_model <- lmer(speed_diff ~ 1 + (1 | population), data=d_fem, REML=FALSE)
+tidy_regression(speed_model, is_color=output_col)
+```
+
+**mass_diff**
+
+```{r message=FALSE}
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+```
+
+```{r}
+anova(m0, m1, test="Chisq") # strange. get error "refitting model(s) with ML (instead of REML)" even though these have been refit to REML=FALSE...
+anova(m0, m3, test="Chisq") # Adding C does not improve fit
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
+```
+
+```{r}
+speed_model <- lmer(speed_diff ~ 1 + (1 | population), data=d_fem, REML=FALSE)
+tidy_regression(speed_model, is_color=output_col)
+```
+
+```{r}
+s.test <- paste("pval: ", shapiro.test(residuals(speed_model))$p.value)
+qqnorm(resid(speed_model))
+qqline(resid(speed_model))
+text(-1, 0.1, s.test)
+```
+
 
 ### Continuous Flyers
 
@@ -325,21 +546,23 @@ data<-data.frame(R=dC$average_speed,
                  A=dC$host_c, 
                  B=dC$sex_c, 
                  C=dC$sym_dist, 
-                 X=dC$ID, Y=dC$chamber)
+                 X=dC$ID)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
 ```
 
 ```{r}
-anova(m18, m36, test="Chisq") # Adding (1|X) does improve fit
-anova(m18, m20, test="Chisq") # Adding B does improve fit
-anova(m20, m38, test="Chisq") # Adding (1|X) does improve fit
+anova(m2, m4, test="Chisq") # Adding A does not improve fit
+anova(m2, m6, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
-continuous_model <- lmer(average_speed ~ sex_c + (1|chamber) + (1|ID), data=dC)
+continuous_model <- lmer(average_speed ~ sex_c + (1|ID), data=dC, REML=FALSE)
 tidy_regression(continuous_model, is_color=output_col)
+
+continuous_model <- lmer(average_speed ~ sex_c + (1|chamber) + (1|ID), data=dC, REML=FALSE)
+tidy_regression(continuous_model, is_color=output_col) # Adding chamber improves fit
 ```
 
 * positive effect of sex_c, where if a female continuous-flyer bug then more likely to fly faster on average 
@@ -361,20 +584,24 @@ data<-data.frame(R=dC$average_speed,
                  B=dC$sex_c, 
                  C=dC$sym_dist,
                  D=dC$mass_c,
-                 X=dC$ID, Y=dC$chamber)
+                 X=dC$ID)
 
 source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R"))
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-anova(m133, m246, test="Chisq") # Adding (1|X) marginally improves fit
+anova(m20, m30, test="Chisq") # Adding A does not improve fit
+anova(m20, m31, test="Chisq") # Adding C does not improve fit
 ```
 
 ```{r}
-continuous_model <- lmer(average_speed ~ sex_c*mass_c + (1|chamber) + (1|ID), data=dC)
+continuous_model <- lmer(average_speed ~ sex_c*mass_c + (1|ID), data=dC)
 tidy_regression(continuous_model, is_color=output_col)
+
+continuous_model <- lmer(average_speed ~ sex_c*mass_c + (1|chamber) + (1|ID), data=dC)
+tidy_regression(continuous_model, is_color=output_col) # Adding chamber improves model
 ```
 
 * no effect of sex_c
@@ -403,24 +630,28 @@ data<-data.frame(R=dC$average_speed,
                  A=dC$thorax_c, 
                  B=dC$body_c, 
                  C=dC$wing_c,
-                 X=dC$ID, Y=dC$chamber) 
+                 X=dC$ID)
 
 source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R"))
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-anova(m18, m19, test="Chisq") # Adding A improves fit
-anova(m19, m37, test="Chisq") # Adding Y does not improve fit 
+anova(m10, m13, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r}
-continuous_morph_model <- lmer(average_speed ~ thorax_c + (1|chamber), data=dC)
+continuous_morph_model <- lmer(average_speed ~ body_c*wing_c + (1|ID), data=dC)
 tidy_regression(continuous_morph_model, is_color=output_col)
+
+continuous_morph_model <- lmer(average_speed ~ body_c*wing_c + (1|ID) + (1|chamber), data=dC)
+tidy_regression(continuous_morph_model, is_color=output_col) # improves model
 ```
 
-* positive effect of thorax length, where the longer the thorax the faster the avg speed
+* positive effect of body length, where the longer the body the faster the avg speed
+* negative effect of wing length, where the longer the wing the slower the avg speed
+* neg eggect of body* wing, where the longer the wing *body  the slower the avg speed
 
 ```{r}
 s.test <- paste("pval: ", shapiro.test(residuals(continuous_morph_model))$p.value)

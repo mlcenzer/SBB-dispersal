@@ -1,0 +1,144 @@
+---
+title: "PCA-Winter2020"
+author: "Anastasia Bernat"
+date: "8/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+setwd("~/Desktop/Rstats-winter2020/")
+library(FactoMineR)
+library(factoextra)
+library(corrplot)
+library(readr)
+library(dplyr)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Winter 2020 Flight Trials: PCA {.tabset}
+
+Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice for multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. 
+
+### No Mass 
+
+```{r message=FALSE}
+source("src/clean_flight_data.R") # Script that loads and cleans up the data
+source("src/center_flight_data.R")
+
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+```
+
+```{r}
+#Standardize variables
+data_tested$thorax_s <- (data_tested$thorax-mean(data_tested$thorax, na.rm=TRUE)) / sd(data_tested$thorax, na.rm=TRUE)
+data_tested$body_s <- (data_tested$body-mean(data_tested$body, na.rm=TRUE)) / sd(data_tested$body, na.rm=TRUE)
+data_tested$wing_s <- (data_tested$wing-mean(data_tested$wing, na.rm=TRUE)) / sd(data_tested$wing, na.rm=TRUE)
+data_tested$beak_s <- (data_tested$beak-mean(data_tested$beak, na.rm=TRUE)) / sd(data_tested$beak, na.rm=TRUE)
+data_tested$mass_s <- (data_tested$mass-mean(data_tested$mass, na.rm=TRUE)) / sd(data_tested$mass, na.rm=TRUE)
+```
+
+```{r}
+#The output is a PCA of soapberry bug morphology
+
+d <- data_tested %>%
+  select(thorax_s, body_s, wing_s, beak_s) %>%
+  filter(!is.na(body_s))
+colnames(d) <- c("thorax", "body", "wing", "beak")
+MorphPCA <- PCA(d, scale.unit=TRUE, graph=TRUE)
+
+#Investiating variables
+eig.val <- get_eigenvalue(MorphPCA)
+eig.val
+fviz_eig(MorphPCA, addlabels = TRUE, ylim = c(0, 50))
+
+#An eigenvalue > 1 indicates that PCs account for more variance than accounted by one of the original variables in standardized data. This is commonly used as a cutoff point for which PCs are retained. This holds true only when the data are standardized, which we have done.
+#You can also limit the number of component to that number that accounts for a certain fraction of the total variance. (No formal cut-off)
+
+variables <- get_pca_var(MorphPCA)
+corrplot(variables$cos2, is.corr=FALSE)
+
+corrplot(variables$contrib, is.corr=FALSE)
+
+GFdim <- dimdesc(MorphPCA, axes = c(1,2), proba = 0.05)
+GFdim$Dim.1
+GFdim$Dim.2
+```
+
+```{r}
+#Plot by host
+host <- data_tested %>%
+  select(host_plant)
+
+d$host_plant <- host$host_plant
+fviz_pca_ind(MorphPCA,
+             geom.ind = "point",
+             col.ind = d$host_plant,
+             legend.title = "Host Plant",
+             addEllipses=TRUE)
+
+# Plot by sex
+sex <- data_tested %>%
+  select(sex)
+
+d$sex <- sex$sex
+fviz_pca_ind(MorphPCA,
+             geom.ind = "point",
+             col.ind = d$sex,
+             legend.title = "Sex",
+             addEllipses=TRUE)
+
+# Plot by distance from the sympatric zone
+sym_dist <- data_tested %>%
+  select(sym_dist)
+
+d$sym_dist <- sym_dist$sym_dist
+fviz_pca_ind(MorphPCA,
+             geom.ind = "point",
+             col.ind = d$sym_dist,
+             legend.title = "Sympatric Zone Distance")
+
+# Plot by population
+pop <- data_tested %>%
+  select(population)
+
+d$population <- pop$pop
+fviz_pca_ind(MorphPCA,
+             geom.ind = "point",
+             col.ind = d$population,
+             legend.title = "Population")
+```
+
+### Mass 
+
+```{r}
+d <- data_tested %>%
+  select(thorax_s, body_s, wing_s, beak_s, mass_s) %>%
+  filter(!is.na(mass_s))
+colnames(d) <- c("thorax", "body", "wing", "beak", "mass")
+MorphMPCA <- PCA(d, scale.unit=TRUE, graph=TRUE)
+```
+
+### Wing2Body
+
+```{r}
+# No mass
+d <- data_tested %>%
+  select(thorax_s, wing2body_s, beak_s) %>%
+  filter(!is.na(beak_s))
+colnames(d) <- c("thorax", "wing2body", "beak")
+MorphMPCA <- PCA(d, scale.unit=TRUE, graph=TRUE)
+
+# Mass
+d <- data_tested %>%
+  select(thorax_s, wing2body_s, beak_s, mass_s) %>%
+  filter(!is.na(mass_s))
+colnames(d) <- c("thorax", "wing2body", "beak", "mass")
+MorphMPCA <- PCA(d, scale.unit=TRUE, graph=TRUE)
+```
+
+

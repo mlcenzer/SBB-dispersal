@@ -1,7 +1,7 @@
 ---
 title: 'Binomial Modeling: flight_yes_no'
 author: "Anastasia Bernat"
-date: "3/30/2020 - 6/14/2020"
+date: "3/30/2020 - 8/5/2020"
 output:
   html_document: default
   pdf_document: default
@@ -17,6 +17,9 @@ library(gridExtra)
 library(ggformula)
 library(tidyselect)
 library(zoo)
+library(nnet) # multinom package
+
+library(rethinking)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -57,12 +60,6 @@ data_tested <- data[[2]]
 ```
 
 ```{r}
-# columns of strings (e.g. "T1, T2")
-# d2 <- data_tested %>%
-#     group_by(ID) %>%
-#     summarise_all(funs(toString(na.omit(.))))
-
-# columns of tuples (e.g. list(T1, T2))
 d <- data_tested %>%
    group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, 
             beak, thorax, wing, body, w_morph, morph_notes, tested,
@@ -88,11 +85,9 @@ for(row in 1:length(d$flew_b)){
 }
 
 d <- select(d, -filename, -channel_letter, -set_number)
-
+d <- center_data(d, is_not_binded = FALSE)
 d
 ```
-
-<a id="testing"></a>
 
 <a id="testing"></a>
 
@@ -102,41 +97,42 @@ Modeling the dataset as it was before led to lots of converging issues that coul
 
 **Testing Models and Covariates**
 
+
 ```{r}
 # test mixed effect model
 model <- glmer(cbind(num_flew, num_notflew)~sex_c*host_c + (1|population), data=d, family=binomial)
-tidy_regression(model, is_color=output_col) ####MLC: updated model, but won't converge with population as a RF
+tidy_regression(model, is_color=output_col) ####MLC: updated model, but won't converge with population as a RF 
+model <- glmer(cbind(num_flew, num_notflew)~sex_c*host_c + (1|site), data=d, family=binomial)
+tidy_regression(model, is_color=output_col) 
 getME(model, "lower")
+
+## AB: What is a random factor here exactly? B/c it seems to matter which we use.
+## AB: I tried this and it didn't work but is there a way to cbind() random factors so I can put in chamber, test date, or test time?
 ```
 
 **Experimental, Biological, and Morphological Effects**
 
 ```{r, echo=FALSE}
 ####### Can't test chamber, test date, or test time any more
-
-####### (Strong) Effect of average mass
-tidy_regression(glm(cbind(num_flew, num_notflew)~average_mass, data=d, family=binomial), is_color=output_col) ####MLC: updated to binom
-
-####### Effect of number of eggs laid
-tidy_regression(glm(cbind(num_flew, num_notflew)~total_eggs, data=d, family=binomial), is_color=output_col) ####MLC: updated to binom
-
 ####### Can't test eggs_b b/c it's date specific
 
+####### (Strong) Effect of average mass
+tidy_regression(glm(cbind(num_flew, num_notflew)~average_mass_c, data=d, family=binomial), is_color=output_col) 
+
+####### Effect of number of eggs laid
+tidy_regression(glm(cbind(num_flew, num_notflew)~total_eggs, data=d, family=binomial), is_color=output_col) 
+
 ####### Effect of beak length
-tidy_regression(glm(cbind(num_flew, num_notflew)~beak_c, data=d, family=binomial), is_color=output_col) ####MLC: updated to binom
+tidy_regression(glm(cbind(num_flew, num_notflew)~beak_c, data=d, family=binomial), is_color=output_col) 
 
 ####### Effect of thorax length
-tidy_regression(glm(cbind(num_flew, num_notflew)~thorax_c, data=d, family=binomial), is_color=output_col) ####MLC: updated to binom
+tidy_regression(glm(cbind(num_flew, num_notflew)~thorax_c, data=d, family=binomial), is_color=output_col) 
 
 ####### Effect of body length
-tidy_regression(glm(cbind(num_flew, num_notflew)~body_c, data=d, family=binomial), is_color=output_col) ####MLC: updated to binom
+tidy_regression(glm(cbind(num_flew, num_notflew)~body_c, data=d, family=binomial), is_color=output_col) 
 
 ####### No effect of wing length
-tidy_regression(glm(cbind(num_flew, num_notflew)~wing_c, data=d, family=binomial), is_color=output_col) ####MLC: updated to binom
-
-####### Effect of wing morph - don't include it
-#tidy_regression(glm(num_flew~w_morph_c, data=d), is_color=output_col)
-
+tidy_regression(glm(cbind(num_flew, num_notflew)~wing_c, data=d, family=binomial), is_color=output_col)
 ```
 
 <a id="all_womass"></a>
@@ -149,8 +145,8 @@ R2 = d$num_notflew
 A = d$host_c
 B = d$sex_c
 C = d$sym_dist
-D = d$average_mass 
-X = d$population
+D = d$average_mass_c 
+X = d$population # or population get the same top model. Variance is 0 if use pop, not 0 if use site. However, variance is 0 if use site and average_mass (down below). 
 
 data<-data.frame(R1, R2, A, B, C, D, X)
 
@@ -160,19 +156,20 @@ length(errors$warnings)
 ```
 
 ```{r}
-anova(m4, m8, test="Chisq") # Adding A*B improves fit...
+anova(m4, m8, test="Chisq") # Adding A*B marginally improves fit if use pop as RF | marginally improves fit if use site as RF
 anova(m2, m4, test="Chisq") # Adding A does not improve fit
 anova(m2, m6, test="Chisq") # Adding C does not improve fit
 ```
 
 ```{r}
-nomass_model <- glmer(cbind(num_flew, num_notflew) ~ sex_c * host_c + (1|population), data=d, family=binomial)
-tidy_regression(nomass_model, is_color=output_col)
+nomass_model_all <- glmer(cbind(num_flew, num_notflew) ~ sex_c + (1|population), data=d, family=binomial)
+tidy_regression(nomass_model_all, is_color=output_col)
+
+nomass_model_all <- glmer(cbind(num_flew, num_notflew) ~ sex_c + (1|site), data=d, family=binomial)
+tidy_regression(nomass_model_all, is_color=output_col)
 ```
 
 * strong negative effect of sex where if F then less number of times will fly
-* no effect of host
-* marginal positive effect of sex * host where if from GRT and F then more likely to fly
 
 <a id="all_wmass"></a>
 
@@ -185,15 +182,198 @@ length(errors$warnings)
 ```
 
 ```{r}
-mass_model <- glmer(cbind(num_flew, num_notflew) ~ host_c * average_mass + sym_dist * average_mass +  sex_c + (1|population), data=d, family=binomial)
-tidy_regression(mass_model, is_color=output_col)
-```
-* no effect of average mass
-* negative effect of host where if from GRT then less times will fly. 
-* positive effect of sym_dist whre if farther from Homestead then more times will fly
+anova(m63, m85, test="Chisq") # Adding B*D does not improve fit
 
-* strong positive host*aveage_mass interaction where if from GRT and heavy then fly more times
-* strong negative sym_dist*aveage_mass interaction where if farther from Homestead and heavy then fly less.
+anova(m26, m36, test="Chisq") # Adding C does not improve fit | is sym dist important?
+anova(m12, m26, test="Chisq") # Adding A*D does improve fit
+```
+
+Wanted to check whether sym_dist is making much of an impact overall and you can see it's far from significant.
+
+```{r}
+tidy_regression(glmer(cbind(num_flew, num_notflew) ~ sym_dist + (1|population), data=d, family=binomial), is_color=output_col)
+```
+
+```{r}
+# model m26 might be the better model than this because even adding C did not improve fit
+# and the difference in AIC between the two isn't huge.
+mass_model_all <- glmer(cbind(num_flew, num_notflew) ~ host_c * average_mass_c +  sex_c + (1|population), data=d, family=binomial)
+tidy_regression(mass_model_all, is_color=output_col)
+mass_model_all <- glmer(cbind(num_flew, num_notflew) ~ host_c * average_mass_c + sym_dist * average_mass_c + sex_c + (1|population), data=d, family=binomial)
+tidy_regression(mass_model_all, is_color=output_col)
+```
+
+Now there's a conflicting interaction between average mass and host*average_mass...and there's 
+
+* no effect of host
+* no effect of average_mass_c
+* no effect of sym_dist
+
+but effect of sex and interactions but the interactions are conflicting...
+
+How do you graph these models? How would you graph cbind(num_flew, num_notflew)?
+
+```{r}
+plot( cbind(num_flew, num_notflew) ~ cbind(host_c, average_mass), data=d , col=rangi2)
+```
+
+How does num_flew or num_notflew vary with host plant?
+
+```{r}
+coplot(num_flew ~ average_mass_c | host_c, data=d)
+coplot(num_notflew~ average_mass_c | host_c, data=d)
+```
+
+```{r, echo=FALSE}
+m7.8 <- map( alist(
+  num_flew ~ dnorm( mu , sigma ) ,
+  mu <- a + bM * average_mass_c + bH*host_c + bMH*average_mass_c*host_c ,
+  a ~ dnorm( 0 , 10 ) ,
+  bM ~ dnorm( 0 , 1 ) ,
+  bH ~ dnorm( 0 , 1 ) ,
+  bMH ~ dnorm( 0 , 1 ) ,
+  sigma ~ dunif( 0 , 1 ) 
+),
+data=d)
+
+m7.9 <- map( alist(
+  num_flew ~ dnorm( mu , sigma ) ,
+  mu <- a + bM * average_mass_c + bH*host_c + bMH*average_mass_c*host_c + bS*sex_c,
+  a ~ dnorm( 0 , 10 ) ,
+  bM ~ dnorm( 0 , 1 ) ,
+  bH ~ dnorm( 0 , 1 ) ,
+  bMH ~ dnorm( 0 , 1 ) ,
+  bS ~ dnorm( 0 , 1),
+  sigma ~ dunif( 0 , 1 ) 
+),
+data=d)
+
+#precis(m7.9) # look at how high the sd's are for bM and bMH
+
+m7.10 <- map( alist(
+  num_notflew ~ dnorm( mu , sigma ) ,
+  mu <- a + bM * average_mass_c + bH*host_c + bMH*average_mass_c*host_c,
+  a ~ dnorm( 0 , 10 ) ,
+  bM ~ dnorm( 0 , 1 ) ,
+  bH ~ dnorm( 0 , 1 ) ,
+  bMH ~ dnorm( 0 , 1 ) ,
+  sigma ~ dunif( 0 , 1 ) 
+),
+data=d)
+
+#precis(m7.10)
+```
+
+Plot the interaction between host*average_mass:
+
+```{r echo=FALSE, fig.height=10}
+par(mfrow=c(4,2)) 
+
+avgmass.seq <- c(-1,1) # -0.3, .12
+for ( m in c(-1,1) ) {
+  dt <- d[d$host_c==m,]
+  plot( num_flew ~ average_mass_c, data=dt , col=rangi2 ,
+        main=paste("host_c =", m) , xaxp=c(-1,1,2) ,
+        xlim=c(-0.03,0.13),
+        ylim=c(-1,3) ,
+        xlab="average mass (centered)" )
+  mu <- link( m7.8 , data=data.frame(host_c=m,average_mass_c=avgmass.seq) ) 
+  mu.mean <- apply( mu , 2 , mean )
+  mu.PI <- apply( mu , 2 , PI , prob=0.97 )
+  lines( avgmass.seq , mu.mean )
+  lines( avgmass.seq , mu.PI[1,] , lty=2 )
+  lines( avgmass.seq , mu.PI[2,] , lty=2 )
+}
+
+host.seq <- c(-1,1)
+for ( h in c(-1,1)) {
+  if (h == -1) {
+    dt <- d[d$average_mass_c < 0,]
+    text <- paste("average_mass_c < 0 ")
+  }
+    if (h == 1) {
+    dt <- d[d$average_mass_c > 0,]
+    text <- paste("average_mass_c > 0")
+  }
+  plot( num_flew ~ host_c, data=dt , col=rangi2 ,
+        main=text , xaxp=c(-1,1,2) ,
+        xlim=c(-1,1),
+        ylim=c(-4,6) ,
+        xlab="host (centered)" )
+  mu <- link( m7.8 , data=data.frame(average_mass_c=h,host_c=host.seq) ) 
+  mu.mean <- apply( mu , 2 , mean )
+  mu.PI <- apply( mu , 2 , PI , prob=0.97 )
+  lines( host.seq , mu.mean )
+  lines( host.seq , mu.PI[1,] , lty=2 )
+  lines( host.seq , mu.PI[2,] , lty=2 )
+}
+
+avgmass.seq <- c(-1,1) # -0.3, .12
+for ( m in c(-1,1) ) {
+  dt <- d[d$host_c==m,]
+  plot( num_notflew ~ average_mass_c, data=dt , col=rangi2 ,
+        main=paste("host_c =", m) , xaxp=c(-1,1,2) ,
+        xlim=c(-0.03,0.13),
+        ylim=c(-1,3) ,
+        xlab="average mass (centered)" )
+  mu <- link( m7.10 , data=data.frame(host_c=m,average_mass_c=avgmass.seq) ) 
+  mu.mean <- apply( mu , 2 , mean )
+  mu.PI <- apply( mu , 2 , PI , prob=0.97 )
+  lines( avgmass.seq , mu.mean )
+  lines( avgmass.seq , mu.PI[1,] , lty=2 )
+  lines( avgmass.seq , mu.PI[2,] , lty=2 )
+}
+
+host.seq <- c(-1,1)
+for ( h in c(-1,1)) {
+  if (h == -1) {
+    dt <- d[d$average_mass_c < 0,]
+    text <- paste("average_mass_c < 0 ")
+  }
+    if (h == 1) {
+    dt <- d[d$average_mass_c > 0,]
+    text <- paste("average_mass_c > 0")
+  }
+  plot( num_notflew ~ host_c, data=dt , col=rangi2 ,
+        main=text , xaxp=c(-1,1,2) ,
+        xlim=c(-1,1),
+        ylim=c(-4,6) ,
+        xlab="host (centered)" )
+  mu <- link( m7.10 , data=data.frame(average_mass_c=h,host_c=host.seq) ) 
+  mu.mean <- apply( mu , 2 , mean )
+  mu.PI <- apply( mu , 2 , PI , prob=0.97 )
+  lines( host.seq , mu.mean )
+  lines( host.seq , mu.PI[1,] , lty=2 )
+  lines( host.seq , mu.PI[2,] , lty=2 )
+}
+```
+
+Consistent with the model and graphs: If GRT and had an average mass below the mean of the population, then you flew less times. But if were GRT and had an average mass above the mean of the population, then you flew more times.
+
+Overall mass vs. num_flew trend:
+
+```{r}
+gf_point(num_flew ~ average_mass, data=d) + 
+  geom_smooth(method='lm')
+```
+
+Then break it between host and average mass:
+
+```{r}
+p1 <- gf_point(num_flew ~ average_mass, col=~host_plant, data=d[d$average_mass_c < 0,], title="(a)   avgmass_c <0") + 
+  geom_smooth(method='lm')
+p2 <- gf_point(num_flew ~ average_mass, col=~host_plant, data=d[d$average_mass_c > 0,], title="(b)   avgmass_c >0") + 
+  geom_smooth(method='lm')
+grid.arrange(p1,p2, nrow=2)
+
+p3 <- gf_point(num_notflew ~ average_mass, col=~host_plant, data=d[d$average_mass_c < 0,], title="(a)   avgmass_c <0") + 
+  geom_smooth(method='lm')
+p4 <- gf_point(num_notflew ~ average_mass, col=~host_plant, data=d[d$average_mass_c > 0,], title="(b)   avgmass_c >0") + 
+  geom_smooth(method='lm')
+grid.arrange(p3,p4, nrow=2)
+```
+
+GRT flyers: Even when they weighed more than the average mass of the population, they flew more times, which breaks the overall trend between number times bug flew vs. average mass which is typically negative. 
 
 <a id="all_morph"></a>
 
@@ -226,8 +406,8 @@ anova(m13, m15, test="Chisq") # Adding A*B does improve fit
 ```
 
 ```{r}
-morph_model <- glmer(cbind(num_flew, num_notflew) ~ thorax_c * body_c + body_c * wing_c + (1|population), data=d, family=binomial)
-tidy_regression(morph_model, is_color=output_col)
+morph_model_all <- glmer(cbind(num_flew, num_notflew) ~ thorax_c * body_c + body_c * wing_c + (1|population), data=d, family=binomial)
+tidy_regression(morph_model_all, is_color=output_col)
 ```
 * strong negative effect of thorax where the wider the thorax, the less times the bug flies
 * strong negative effect of body where the longer the body, the less times a bug flies
@@ -235,7 +415,6 @@ tidy_regression(morph_model, is_color=output_col)
 
 * strong positive effect of thorax*body where the longer the body and wider the thorax, the more times a bug flies (hm seems conflicting to the single effects)
 * negative effect of of body*wing where the longer the body and wing, the less times the bug flies
-
 
 ```{r}
 R1 = d$num_flew
@@ -252,13 +431,32 @@ length(errors$warnings)
 ```
 
 ```{r}
-morph_model <- glmer(cbind(num_flew, num_notflew) ~ wing2body_c * thorax_c + (1|population), data=d, family=binomial)
-tidy_regression(morph_model, is_color=output_col)
+anova(m3, m4, test="Chisq") # Adding A*B improves fit
+```
+
+```{r}
+morph_model_all2 <- glmer(cbind(num_flew, num_notflew) ~ wing2body_c * thorax_c + (1|population), data=d, family=binomial)
+tidy_regression(morph_model_all2, is_color=output_col)
 ```
 
 * strong positive effect of wing2body where the greater the ratio the more times a bug flies
 * negative effect of thorax where the the wider the thorax the less times a bug flies
 * marginal strong negative effect of wing2body*thorax where the wider the thorax and large the ratio, the less times a bug flies
+
+```{r}
+# check for collinearity
+covariates <- data.frame(d$thorax, d$wing2body, d$average_mass)
+pairs(covariates)
+```
+
+Exponential relationships between mass and thorax. Thorax can only get so big - mass can increase but thorax caps out (top right). 
+
+```{r}
+covariates <- data.frame(d$thorax, d$wing, d$body, d$average_mass)
+pairs(covariates)
+```
+
+Seems like once morphology caps out so does mass not stretch too far.
 
 <a id="all_mms"></a>
 
@@ -269,14 +467,14 @@ R1 = d$num_flew
 R2 = d$num_notflew
 A = d$thorax_c
 B = d$wing2body_c
-C = d$average_mass
+C = d$average_mass_c
 X = d$population
 
 data<-data.frame(R1, R2, A, B, C, X)
 
 source("src/compare_models.R")
 errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2R ~ 1 RF + 3-FF.R"))
-length(errors$warnings) # 7 models failed to converge
+length(errors$warnings) # 13 models failed to converge
 ```
 
 ```{r}
@@ -285,9 +483,11 @@ anova(m15, m17, test="Chisq") # Adding A*C does not improve fit
 ```
 
 ```{r}
-multi_model <- glmer(cbind(num_flew, num_notflew) ~ thorax_c * wing2body_c + wing2body_c * average_mass + (1|population), data=d, family=binomial) # error | did not converge 
-tidy_regression(multi_model, is_color=output_col)
+multi_model_all <- glmer(cbind(num_flew, num_notflew) ~ thorax_c * wing2body_c + wing2body_c * average_mass + (1|population), data=d, family=binomial) 
+tidy_regression(multi_model_all, is_color=output_col)
 ```
+
+coefficients are huge. Probably a collinearity issue between morph measurements * mass.
 
 ```{r}
 R1 = d$num_flew
@@ -311,8 +511,8 @@ anova(m7, m11, test="Chisq") # Adding A*B does improve fit
 ```
 
 ```{r}
-multi_model <- glmer(cbind(num_flew, num_notflew) ~ thorax_c * wing2body_c + sex_c + (1|population), data=d, family=binomial) 
-tidy_regression(multi_model, is_color=output_col)
+multi_model_all2 <- glmer(cbind(num_flew, num_notflew) ~ thorax_c * wing2body_c + sex_c + (1|population), data=d, family=binomial) 
+tidy_regression(multi_model_all2, is_color=output_col)
 ```
 
 * no effect of thorax
@@ -322,30 +522,80 @@ tidy_regression(multi_model, is_color=output_col)
 * strong negative effect of thorax*ratio where the larger the ratio and wider the thorax, the less times a bug flew.
 
 ```{r}
+# weak positive relationship between thorax vs. wing2body 
+p1 <- gf_point(thorax ~ wing2body, col=~num_flew, data=d) + 
+  geom_smooth(method='lm')
+p2 <- gf_point(thorax ~ wing2body, data=d[d$num_flew == 2,], title="num_flew=2") + 
+  geom_smooth(method='lm')
+p3 <- gf_point(thorax ~ wing2body, data=d[d$num_flew == 1,], title="num_flew=1") + 
+  geom_smooth(method='lm')
+p4 <- gf_point(thorax ~ wing2body, data=d[d$num_flew == 0,], title="num_flew=0") + 
+  geom_smooth(method='lm')
+
+grid.arrange(p1,p2,p3,p4, ncol=2)
+```
+
+As wing2body and thorax increases, num_flew decreases too, but its really the thorax shrinking that seems to be driving this.
+
+```{r}
+gf_point(num_flew ~ thorax, data=d)  + 
+  geom_smooth(method='lm')
+
+gf_point(num_flew ~ wing2body, data=d)  + 
+  geom_smooth(method='lm')
+```
+
+
+```{r}
 R1 = d$num_flew
 R2 = d$num_notflew
-A = d$thorax_c
-B = d$wing2body_c
+A = d$thorax_s
+B = d$wing2body_s
 C = d$sex_c
-D = d$average_mass
+D = d$average_mass_s
 X = d$population
 
 data<-data.frame(R1, R2, A, B, C, D, X)
 
 source("src/compare_models.R")
 errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2R ~ 1-RF + 4-FF.R"))
-length(errors$warnings) # 62 models failed
+length(errors$warnings) # 108 models failed if use centered variables but only 7 fail if use standardized variables. Also, all the top models have multiple interactions b/c I'm guessing, they're correlated in some ways.
 ```
 
 ```{r}
 anova(m58, m74, test="Chisq") # Adding B*C marginally improves fit
+anova(m74, m94, test="Chisq") # Adding A*C does not improve fit
 ```
 
 ```{r}
-multi_model <- glmer(cbind(num_flew, num_notflew) ~ thorax_c * wing2body_c + wing2body_c * average_mass + sex_c + (1|population), data=d, family=binomial) # model failed to converge 
-#multi_model <- glmer(cbind(num_flew, num_notflew) ~ thorax_c * wing2body_c + wing2body_c * average_mass + sex_c * wing2body_c+ (1|population), data=d, family=binomial) # model failed to converge
+multi_model <- glmer(cbind(num_flew, num_notflew) ~ thorax_s * wing2body_s + wing2body_s * average_mass_s + sex_c + (1|population), data=d, family=binomial) 
 tidy_regression(multi_model, is_color=output_col)
 ```
+
+### Summary
+
+```{r}
+tidy_regression(nomass_model_all, is_color=output_col)
+```
+
+```{r}
+tidy_regression(mass_model_all, is_color=output_col)
+```
+
+Why this host*average_mass interaction? GRT flyers: Even when they weighed more than the average mass of the population, they flew more times, which breaks the overall trend between number times bug flew vs. average mass which is typically negative. (Refer to plots in the "All Trials" tab)
+```{r}
+tidy_regression(morph_model_all, is_color=output_col)
+tidy_regression(morph_model_all2, is_color=output_col)
+```
+
+Why this wing2body*thorax interaction? As wing2body and thorax increases, num_flew decreases too, but its really the thorax shrinking that seems to be driving this.
+
+```{r}
+tidy_regression(multi_model_all, is_color=output_col)
+tidy_regression(multi_model_all2, is_color=output_col)
+```
+
+Huge coefficients! I'm sure this is all due to collinearity. Thoughts?
 
 ### All Trials - Old Method
 
@@ -393,7 +643,7 @@ getME(model, "lower")
 ####### No effect of chamber
 tidy_regression(glm(flew_b~chamber, data=data_tested, family=binomial), is_color=output_col)
 
-####### Effect of test date (but no effect of test date when you split between T1 and T2)
+####### Effect of test date (but no effect of test date when you split between T1 and T2 - which makes sense)
 tidy_regression(glm(flew_b~days_from_start_c, data=data_tested, family=binomial), is_color=output_col)
 
 ####### No effect of test time
@@ -427,12 +677,7 @@ tidy_regression(glm(flew_b~body_c, data=data_tested, family=binomial), is_color=
 
 ####### No effect of wing length
 tidy_regression(glm(flew_b~wing_c, data=data_tested, family=binomial), is_color=output_col)
-
-####### No effect of wing morph (check how annotated the wing morph) - don't include it
-#tidy_regression_bw(glm(flew_b~w_morph_c, data=data_all, family=binomial))
 ```
-
-**Summary:** Effect of days_from_start, mass, eggs, beak length, thorax length, and body length.
 
 <a id="old_womass"></a>
 
@@ -456,21 +701,24 @@ data<-data.frame(R, A, B, C, D, X, Y)
 
 source("src/compare_models.R")
 errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2 RF + 3-FF.R"))
-length(errors$warnings) # 10 models did not converge
+length(errors$warnings) # 11 models did not converge
 ```
 
 ```{r}
-anova(m42, m46, test="Chisq") # Adding A*B improves fit
+anova(m42, m46, test="Chisq") # Adding A*B marginally improves fit
+anova(m40, m42, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r}
-all_model<-glmer(flew_b~sex_c*host_c + (1|ID) + (1|trial_type), family=binomial, data=data_tested)
-tidy_regression(all_model, is_color=output_col)
+nomass_model_all_old<-glmer(flew_b~sex_c*host_c + (1|ID) + (1|trial_type), family=binomial, data=data_tested)
+tidy_regression(nomass_model_all_old, is_color=output_col)
 ```
 
 * strong negative effect of sex where if F then less likely to fly
 * no effect of host
-* marginal positive effect of sex*host where if F and form GRT then more likely to fly
+* marginal effect of host*sex 
+
+Probbaly females from GRT are flyers becuse there are the colonizers of the population.
 
 <a id="old_wmass"></a>
 
@@ -502,7 +750,7 @@ data<-data.frame(R, A, B, C, X, Y)
 
 source("src/compare_models.R")
 errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2 RF + 3-FF.R"))
-cat("Number of models that failed to converge:", length(errors$warnings)) # 13 models did not converge
+cat("Number of models that failed to converge:", length(errors$warnings)) # 7 models did not converge
 ```
 
 ```{r}
@@ -510,8 +758,8 @@ anova(m51, m53, test="Chisq") # Adding A*B improves fit
 ```
 
 ```{r}
-morph_model<-glmer(flew_b~ thorax_c * body_c + body_c * wing_c + (1|ID), family=binomial, data=data_tested) # model failed to converge when both trial_type and ID
-tidy_regression(morph_model, is_color=output_col) 
+morph_model_all_old<-glmer(flew_b~ thorax_c * body_c + body_c * wing_c + (1|ID), family=binomial, data=data_tested) 
+tidy_regression(morph_model_all_old, is_color=output_col) 
 ```
 
 ```{r}
@@ -529,14 +777,479 @@ cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
 ```{r}
-anova(m13, m14, test="Chisq") # Adding A*B marginally improves fit
+anova(m13, m14, test="Chisq") # Adding A*B doe snot improve fit
 ```
 
 ```{r}
-morph_model<-glmer(flew_b~ thorax_c * wing2body_c + (1|trial_type) + (1|ID), family=binomial, data=data_tested)
-tidy_regression(morph_model, is_color=output_col) # coefficients are huge...
+morph_model_all_old2<-glmer(flew_b~ thorax_c + wing2body_c + (1|trial_type) + (1|ID), family=binomial, data=data_tested)
+tidy_regression(morph_model_all_old2, is_color=output_col) # coefficients are huge...
 ```
 
+### Summary
+
+```{r}
+tidy_regression(nomass_model_all_old, is_color=output_col)
+```
+
+It's possible that females from GRT are more likley to fly because they are colonizers.
+
+```{r}
+# There isn't a mass_model_all_old because too many models failed to converge 
+```
+
+```{r}
+tidy_regression(morph_model_all_old, is_color=output_col) # same morph model as the morph_model_all
+tidy_regression(morph_model_all_old2, is_color=output_col) 
+```
+
+This morph model is a better fit model than the morph_model_all_old model, but HUGE coefficient for wing2body_c. Why?
+
+### Delta Flight Response (T1 vs. T2)
+
+[Introduction](#intro)
+
+[Clean the Data](#clean_data)
+
+[Flew Diff ~ Mass Diff ](#mass_diff)
+
+[Flew Diff ~ Egg Diff ](#egg_diff)
+
+<a id="intro"></a>
+
+#### Introduction
+
+Some graphs I generated illustrated how changes in mass or egg-laying lead to changes in flight response, speed, and distance. Below, I run analyses on changes in flight response due to changes in mass or egg-laying that will help interpret and describe those graphs. Other graphs such as speed and distance changes will be found in the speed and distance scripts.
+
+To perfom these analyses, a new variable will be created called "flew_diff" which calculates the flight response differences between T1 and T2. If flew_diff = -1, then the bug flew in T1 but not T2. If flew_diff = 0, then the bug either did not fly in either or flew in both T1 and T2 (no flight response). If flew_diff = 1, then the bug flew in T2 but not T1. Since this response variable is no longer binomial, I will need to use multicategorical logit models (refer to Chapter 6 of *Introduction to Categorical Data Analysis* by Alan Agresti). Below I've written out notes on performing these analyses.
+
+What we are interested in is a multicategorical, nomial response variable. When the response variable is nominal, there is no natural order among the response variable categories (unordered categories). When the response variable is multicategorical, its multicategory models assume that the counts in the categories of $Y$ have a *multinomial* distribution.
+
+Let J = number of categories for $Y$.
+
+$\pi_1,...\pi_J$ = the response probabilities where $\sum_j \pi_j = 1$.
+
+With $n$ independent observations, the probability distribution for the number of outcomes of the J types is the multinomial. It specifices the probability for each possible way the $n$ observations can fall in the J categories. Multicategory logit models simultaneously use all pairs of categories by specifying the odds of outocme in one category instead of another. 
+
+Logit models for nomial response variables pair each category with a baseline category. The choice of the baseline category is arbitrary. When the last category (J) is the baseline, the *baseline-category logits* are
+
+$\log (\frac{\pi_j}{\pi_J}), j = 1, ..., J - 1$.
+
+Given that the response falls in category j or category J, this is the log odds that the response is j. For J = 3, for instance, the model uses $\log(\pi_1/\pi_3)$ and $\log(\pi_2/\pi_3)$. The baseline-category logit model with a predictor x is
+
+$\log \frac{\pi_j}{\pi_J} = \alpha_J + \beta_j x, j = 1, ..., J - 1$
+
+The model has J - 1 equations, with separate parameters for each. The effects vary according to the category paried with the baseline. When J = 2, this model simplifies to a single equaiton for $\log(\pi_1/\pi_2) = logit(\pi_1)$, resulting in ordinary logistic regression for binary responses. 
+
+So how do these pair of categories determine equations for all other pairs of categories? Here is an arbitrary pair of categories a and b that follows the general equation above,
+
+$\log (\frac{\pi_a}{\pi_b}) = \log ( \frac{\pi_a/pi_J}{\pi_b/pi_J}) = \log (\frac{\pi_a}{\pi_J}) -  \log (\frac{\pi_b}{\pi_J})$
+
+$= (\alpha_a + \beta_a x) - (\alpha_b + \beta_b x)$
+
+$= (\alpha_a - \alpha_b) + (\beta_a - \beta_b) x$
+
+So, the equaiton for categories a and b has the form $\alpha + \beta x$ with intercept parameter $\alpha = (\alpha_a - \alpha_b)$ and with slope parameter $\beta = (\beta_a - \beta_b)$.
+
+Let's apply it to our data now:
+
+<a id="clean_data"></a>
+
+#### Cleaning the Data
+
+```{r}
+rm(list=ls())
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
+source("src/clean_flight_data.R") # Script that loads and cleans up the data
+source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
+source("src/center_flight_data.R")
+source("get_warnings.R")
+
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+```
+
+```{r}
+d <- data_tested %>%
+   group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, 
+            beak, thorax, wing, body, w_morph, morph_notes, tested,
+            host_c, sex_c, w_morph_c, lat_c, sym_dist, sym_dist_s, total_eggs_c, 
+            beak_c, thorax_c, thorax_s, body_c, wing_c, wing2body, wing2body_c, wing2body_s) %>%
+   summarise_all(funs(list(na.omit(.))))
+
+d$num_flew <- 0
+d$num_notflew <- 0
+d$average_mass <- 0
+
+d$mass_diff <- 0
+d$flew_diff <- 0
+d$dist_diff <- 0
+d$speed_diff <- 0
+
+for(row in 1:length(d$flew_b)){
+  
+  n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails
+  d$num_flew[[row]] <- n_flew 
+  
+  n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
+  d$num_notflew[[row]] <- n_notflew
+  
+  avg_mass <- mean(d$mass[[row]])
+  d$average_mass[[row]] <- avg_mass
+  
+  # mass, flight, distance, and speed changes between T1 and T2
+  
+  d$mass_diff[[row]] <- d$mass[[row]][2] - d$mass[[row]][1]  # T2 - T1
+  d$flew_diff[[row]] <- d$flew_b[[row]][2] - d$flew_b[[row]][1]  # T2 - T1
+  d$dist_diff[[row]] <- d$distance[[row]][2] - d$distance[[row]][1]  # T2 - T1
+  d$speed_diff[[row]] <- d$average_speed[[row]][2] - d$average_speed[[row]][1]  # T2 - T1
+  d$egg_diff[[row]] <- d$eggs_b[[row]][2] - d$eggs_b[[row]][1]  # T2 - T1
+
+}
+
+d <- select(d, -filename, -channel_letter, -set_number)
+
+d # NA's generated are good because that means it's accounted only for bugs that flew in both trials
+### AB: NOTE this includes also bugs that only flew in T1 so if we want to constrict it to bugs that flew in T1 and T2 we would need to adjust for that. If want to do that just uncomment the following:
+
+# Filter out bugs that ONLY flew in T1:
+# rows_remove <- c()
+# for (row in 1:nrow(d)){
+#   if (length(d$trial_type[[row]]) < 2) {
+#     rows_remove <- c(rows_remove, row)
+#   }
+# }
+# d <- d[-rows_remove, ]
+# d
+```
+
+Below I used the multinom function from the nnet package to estimate a multinomial logistic regression model. There are other functions in other R packages capable of multinomial regression. I chose the multinom function because it does not require the data to be reshaped (as the mlogit package does) and to mirror the example code found in Hilbe’s Logistic Regression Models.
+
+First, I need to choose the level of our outcome that we wish to use as our baseline and specify this in the relevel function. Then, I ran our model using multinom. The multinom package does not include p-value calculation for the regression coefficients, so I calculate p-values using Wald tests (here z-tests).
+
+<a id="mass_diff"></a>
+
+#### Flew Diff ~ Mass Diff 
+
+```{r}
+df <- d %>%
+  filter(!is.na(mass_diff), !is.na(flew_diff)) 
+  
+df <- df[with(df, order(mass_diff)),]
+
+df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
+```
+
+Null model:
+
+```{r}
+null <- multinom(flew_diff ~ 1, data = df) 
+```
+
+Mass_diff model: 
+
+```{r}
+model <- multinom(flew_diff ~ mass_diff, data = df) 
+
+s <- summary(model) # multinom doesn't compute pvalues so need to do it by hand.
+z <- s$coefficients/s$standard.errors  #  calculate p-values using Wald tests (here z-tests)
+wald <- z^2
+p <- (1 - pnorm(abs(z), 0, 1)) * 2
+
+table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[,2], z[,2], wald[,2], p[,2])
+colnames(table) <- c("(Intercept)"," Estimate","DF", "Std. Err.", "z", "wald", "P > |z|")
+cat("\n")
+cat("AIC: ", s$AIC, "\n")
+table
+```
+
+```{r}
+anova(null, model, test="Chisq") # adding mass_diff improves fit
+```
+
+The ML prediction equations are:
+
+$\log(\hat{\pi_{-1}}/\hat{\pi_0}) = -1.70 + 52.85 x$ and
+
+$\log(\hat{\pi_1}/\hat{\pi_0}) = -3.07 - 4.58 x$
+
+The estimated log odds that the response is -1 (Flew in T1, not T2) rather than 1 (flew in T2, not T1) equals:
+
+$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = (-1.70 - (-3.07)) + (52.85 - (- 4.58)) x = 1.37 + 57.43 x$ where x = mass_diff
+
+So, the more positive the mass difference (positive (+) mass means gained mass from T1 to T2, and negative (-) mass means lost mass), the more likely to select flew_diff = -1, meaning that the bug flew in T1 but not T2. While the smaller/more negative the mass difference, the more likely to select flew_diff = 1, meaning that the bug flew in T2 but not T1. 
+
+For bugs of mass_diff x + 1/50 (0.02) g, the estimated odds that flew_diff = -1 rather than flew_diff = 1 equals
+
+```{r}
+exp(52.85/50)
+```
+
+times the estimated odds at mass_diff x (g).
+
+```{r}
+exp(coef(model)/50)
+```
+
+The relative risk ratio for a 1/50-unit increase in the variable mass_diff is 2.90 for flew_diff = -1  (T1 flew only) rather than flew_diff = 1 (T2 flew only). 
+
+**Predicted probabilities** 
+
+You can also use predicted probabilities to help you understand the model. The multicategory logit model has an alternative expression in terms of the response probabilities. This is
+
+$\pi_j = \frac{e^{\alpha_j + \beta_j x}}{\sum_he^{\alpha_h + \beta_h x}}, j=1,...,J$
+
+The denominator is the same for each probability, and the numerators for various j sum to the denominator where $\sum_j \pi_j = 1$. The parameters ($\alpha and \beta$) equal zero for whichever category is the baseline in the logit expressions. So these would be the equations for the model above:
+
+$\hat{\pi_-1} = \frac{e^{-1.70 + 50.85 x}}{1 + e^{-1.70 + 50.85x} + e^{-3.07 - 4.58 x}}, j=1,...,J$
+
+$\hat{\pi_1} = \frac{e^{-3.07 - 4.58 x}}{1 + e^{-1.70 + 50.85x} + e^{-3.07 - 4.58 x}}, j=1,...,J$
+
+$\hat{\pi_0} = \frac{e^{0 + 0 x} = 1}{1 + e^{-1.70 + 50.85x} + e^{-3.07 - 4.58x}}, j=1,...,J$ 
+
+x = mass_diff which can give you the estimated probabilities. 
+
+You can calculate these predicted probabilities for each of our outcome levels using the fitted function. You can start by generating the predicted probabilities for the observations in our dataset and viewing the first few rows. Then you can plot them.
+
+```{r}
+head(pp <- fitted(model))
+```
+
+```{r}
+plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="l", ylab="Predicted Probability", xlab="Changes in Mass From T1 to T2 (g)") # no flight_diff
+points(df$mass_diff, pp[,2], col="blue", type="l") # flew in T1 but not T2
+points(df$mass_diff, pp[,3], col="green", type="l") # flew in T2 but not T1
+text(0.02,0.8, labels="No Flight Diff", col="red")
+text(0.0,0.35, labels="Flew in T1 but not T2", col="blue")
+text(0.02,0.1, labels="Flew in T2 but not T1", col="green")
+abline(v=0.035, lty=2)
+abline(v=-0.027, lty=2)
+```
+
+Summary: Those who gain mass (at least more than 0.035 g) are more likely to fly in T1 but not T2 and less likely to have no change in flight response. Those who loose mass are more likely to fly in T2 but not T1 (but need to loose significant mass - more than 0.03 (g)).
+
+Now let's compare some models:
+
+```{r}
+data <- data.frame(R = df$flew_diff, 
+         A = df$mass_diff, 
+         B = df$host_c, 
+         C = df$sex_c)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic multinomial models- multinom 1RF + 3 FF.R")
+```
+
+```{r}
+anova(m5, m7, test="Chisq") # Adding B does not improve fit
+anova(m5, m9, test="Chisq") # Adding A*C does not improve fit
+```
+
+```{r}
+delta_mass_model <- multinom(flew_diff ~ mass_diff + sex_c, data = df)
+
+s <- summary(delta_mass_model) # multinom doesn't compute pvalues so need to do it by hand.
+z <- s$coefficients/s$standard.errors  #  calculate p-values using Wald tests (here z-tests)
+wald <- z^2
+p <- (1 - pnorm(abs(z), 0, 1)) * 2
+
+table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[,2:3], z[,2:3], wald[,2:3], p[,2:3])
+colnames(table) <- c("(Intercept)","coeff mass_diff", "coeff sex_c","DF", "MD SE", "sex SE", "MD z", "sex z", 
+                     "MD wald","sex wald","MD P > |z|", "sex P > |z|")
+cat("\n", "AIC: ", s$AIC, "\n", "MD = mass_diff", "\n") 
+table
+```
+
+The general ML prediction equaiton is:
+
+$\log(\hat{\pi_{j}}/\hat{\pi_0}) =\alpha_{j} + \beta_{-1}^{\delta mass} x_1 + \beta_{j}^{sex} x_2$ where j = -1 or 1
+
+The individual ML prediction equations are:
+
+$\log(\hat{\pi_{-1}}/\hat{\pi_0}) = -1.86 + 61.25 (\delta mass) - 0.29 (sex)$ and
+
+$\log(\hat{\pi_1}/\hat{\pi_0}) = -8.90 - 55.87 (\delta mass) - 6.35 (sex)$
+
+The estimated log odds that the response is -1 (Flew in T1, not T2) rather than 1 (flew in T2, not T1) equals:
+
+$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = (-1.86 - (-8.90)) + (61.25 - (- 55.87)) \delta mass + (-0.29 - (-6.35)) sex$
+
+$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = 7.04 + 117.12 \delta mass + 6.06 sex$ 
+
+For bugs of mass_diff x + 1/50 (0.02) g and female, the estimated odds that flew_diff = -1 rather than flew_diff = 1 equals
+
+```{r}
+exp((117.12+6.06)/50)
+```
+
+times (almost 12 times) the estimated odds at mass_diff x (g).
+
+For bugs of mass_diff x + 1/50 (0.02) g and male, the estimated odds that flew_diff = -1 rather than flew_diff = 1 equals
+
+```{r}
+exp((117.12-6.06)/50)
+```
+times the estimated odds at mass_diff x (g).
+
+```{r}
+exp(coef(delta_mass_model)/50)
+```
+
+```{r}
+head(pp <- fitted(delta_mass_model))
+```
+
+```{r}
+plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="b", ylab="Predicted Probability", xlab="Changes in Mass From T1 to T2 (g)") # no flight_diff
+points(df$mass_diff, pp[,2], col="blue", type="b") # flew in T1 but not T2
+points(df$mass_diff, pp[,3], col="green", type="b") # flew in T2 but not T1
+text(0.031,0.8, labels="No Flight Diff", col="red")
+text(0.008,0.5, labels="Flew in T1 but not T2", col="blue")
+text(0.052,0.1, labels="Flew in T2 but not T1", col="green")
+# female line is always higher
+text(0.0,0.96, labels="F", col="red")
+text(0.0,0.7, labels="M", col="red")
+text(0.0,0.25, labels="F", col="blue")
+text(0.02,0.2, labels="M", col="blue")
+text(-0.03,0.25, labels="F", col="green")
+text(0.025,0.05, labels="M", col="green")
+abline(v=0.03, lty=2, col="slategrey")
+abline(v=0.035, lty=2, col="slategrey")
+abline(v=0.04, lty=2, col="slategrey")
+abline(v=-0.01, lty=2, col="slategrey")
+abline(v=-0.045, lty=2, col="slategrey")
+```
+
+$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = 6.67 + 95.21 \delta mass + 5.45 sex$ 
+
+As females gain mass (need to gain more than males - 0.04 vs. 0.03 g) they are more likely to fly in T1 than T2. 
+As females loose mass they are much more likely than males to fly in T2 than T1. But both are mor likely to have no mass flight response change. 
+
+More on multinomial plotting for when have more than 1 predictor variables: https://stats.idre.ucla.edu/r/dae/multinomial-logistic-regression/
+
+<a id="egg_diff"></a>
+
+#### Flew Diff ~ Egg Diff (females only)
+
+```{r}
+df <- d %>%
+  filter(!is.na(egg_diff), !is.na(flew_diff), sex_c == 1)
+  
+df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
+```
+
+Null model:
+
+```{r}
+null <- multinom(flew_diff ~ 1, data = df) 
+```
+
+Egg_diff model: 
+
+```{r}
+model <- multinom(flew_diff ~ egg_diff, data = df) 
+
+s <- summary(model) # multinom doesn't compute pvalues so need to do it by hand.
+z <- s$coefficients/s$standard.errors  #  calculate p-values using Wald tests (here z-tests)
+wald <- z^2
+p <- (1 - pnorm(abs(z), 0, 1)) * 2
+
+table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[2], z[2], wald[2], p[2])
+colnames(table) <- c(" Estimate","DF", "Std. Err.", "z", "wald", "P > |z|")
+cat("\n")
+cat("AIC: ", s$AIC, "\n")
+table
+```
+
+```{r}
+anova(null, model, test="Chisq") # adding egg_diff improves fit
+```
+
+The ML prediction equations are:
+
+$\log(\hat{\pi_{-1}}/\hat{\pi_0}) = -2.22 + 1.78 x$ and that's it. Why? Because these comparisons have been reduced to a binomial situation. There are no flight responses = 1. None of the female bugs Fly in T2 but not T1. So we can do our regular binomial comparisons.
+
+```{r}
+# stopped here
+# Remove any missing masses
+df <- df[!is.na(df$mass_diff),]
+
+# Change the -1's to 1's, but still need to keep in mind 1 will then mean that all the bugs flew in T1 but not T2
+df$flew_diff <- abs(as.integer(df$flew_diff)) - 1
+df$flew_diff <- as.factor(df$flew_diff)
+
+R = df$flew_diff
+A = df$egg_diff
+B = df$mass_diff
+#C = df$sym_dist
+C = df$host_c
+
+data<-data.frame(R, A, B, C)
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
+```
+
+```{r}
+anova(m7, m12, test="Chisq") # Adding A*C does not improve fit
+anova(m6, m7, test="Chisq") # Addin A does improve fit
+```
+
+```{r}
+delta_egg_model <- glm(flew_diff ~ egg_diff + mass_diff + host_c, family = binomial, data = df)
+tidy_regression(delta_egg_model, is_color = output_col)
+```
+
+* strong effect of egg_diff where the more eggs a female bug laid the more likely a female bug flew in T1 but not T2
+* strong effect of mass where higher the mass gain the more likely the female bug flew in T1 but not T2. The smaller the mass_diff or if lost mass then the more likely the female bug did not change its flight response.
+* positive effect of host where if from GRT then more likely to have flown in T1 but not T2
+
+```{r}
+gf_point(flew_diff ~ mass_diff, data=df, col=~egg_diff)
+```
+
+### Summary
+
+```{r}
+delta_mass_model
+```
+
+Look within the 'Delta flight response' tab to see the making of the graphs generated from this model. Here is the graph:
+
+```{r echo=FALSE}
+df <- d %>%
+  filter(!is.na(mass_diff), !is.na(flew_diff)) 
+  
+df <- df[with(df, order(mass_diff)),]
+
+df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
+
+pp <- fitted(delta_mass_model)
+```
+
+```{r echo=FALSE}
+plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="b", ylab="Predicted Probability", xlab="Changes in Mass From T1 to T2 (g)") # no flight_diff
+points(df$mass_diff, pp[,2], col="blue", type="b") # flew in T1 but not T2
+points(df$mass_diff, pp[,3], col="green", type="b") # flew in T2 but not T1
+text(0.031,0.8, labels="No Flight Diff", col="red")
+text(0.008,0.5, labels="Flew in T1 but not T2", col="blue")
+text(0.052,0.1, labels="Flew in T2 but not T1", col="green")
+# female line is always higher
+text(0.0,0.96, labels="F", col="red")
+text(0.0,0.7, labels="M", col="red")
+text(0.0,0.25, labels="F", col="blue")
+text(0.02,0.2, labels="M", col="blue")
+text(-0.03,0.25, labels="F", col="green")
+text(0.025,0.05, labels="M", col="green")
+abline(v=0.03, lty=2, col="slategrey")
+abline(v=0.035, lty=2, col="slategrey")
+abline(v=0.04, lty=2, col="slategrey")
+abline(v=-0.01, lty=2, col="slategrey")
+abline(v=-0.045, lty=2, col="slategrey")
+```
+
+```{r}
+tidy_regression(delta_egg_model, is_color = output_col)
+```
 
 ### Trial 1
 
@@ -647,28 +1360,12 @@ anova(m11, m14, test="Chisq") ## Adding A*C interaction does not improve fit
 ```
 
 ```{r}
-model_T1<-glm(flew_b~sex_c*host_c, family=binomial, data=data_T1)
-tidy_regression(model_T1, is_color=output_col)
+nomass_T1<-glm(flew_b~sex_c*host_c, family=binomial, data=data_T1)
+tidy_regression(nomass_T1, is_color=output_col)
 ```
 * strong negative effect of sex, where if you are female you are less likely to fly.
-* no longer an effect of host or distance from sympatric zone. (last season there was)
-* strong positive effect of sex and host where if female and from GRT, then less likely to fly.
-
-**Before adding mass, we can see that:**
-
-* Being female strongly reduces your chances of flying
-* Being from K. elegans reduces the negative effects of being female on flight
 * No direct effect of host plant
-
-```{r}
-model_T1_cov<-glm(flew_b~host_c*sex_c + mass_c, family=binomial, data=data_T1)
-tidy_regression(model_T1_cov, is_color=output_col)
-```
-
-* strong negative effect of mass that subsumes the sex effect
-* no direct effect of host plant
-* no direct effect of sex
-* host*sex interaction shows a strong positive effect, such that if from GRT and are female then more likely to be dispersive
+* strong positive effect of sex and host where if female and from GRT, then less likely to fly.
 
 <a id="with_mass"></a>
 
@@ -677,28 +1374,35 @@ tidy_regression(model_T1_cov, is_color=output_col)
 ```{r}
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
+
+R = data_T1$flew_b
+A = data_T1$host_c
+B = data_T1$sex_c
+C = data_T1$mass_c 
+
+data<-data.frame(R, A, B, C)
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
+```
+
+```{r}
+anova(m9, m12, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
 anova(m51, m63, test="Chisq") # Adding B does not improve fit
+anova(m27, m51, test="Chisq") # Adding C*D does improve fit
 ```
 
 ```{r}
-model_T1_m <- glm(flew_b~host_c*mass_c + sex_c, family=binomial, data=data_T1)
-tidy_regression(model_T1_m, is_color=output_col)
-```
+# top model if don't include sym_dist
+mass_T1_nosym <- glm(flew_b~host_c*mass_c, family=binomial, data=data_T1)
+tidy_regression(mass_T1_nosym, is_color=output_col)
 
-What this basically looks like is if you have sex* host, you don't need mass*host, and vice-versa, but you need one.
-
-* no longer a strong negative effect of being far from the sympatric zone 
-* no effect of host plant
-* strong negative effect of mass and has a large coefficient, where the heavier the bug is the much less likely the bug will fly
-* host*sex interaction shows a strong positive effect, such that if from GRT and are female then more likely to be dispersive
-* marginal effect of sex, where if you are female you are less likely to fly
-
-```{r}
-model_T1_m <- glm(flew_b~host_c*mass_c + sym_dist*mass_c, family=binomial, data=data_T1)
-tidy_regression(model_T1_m, is_color=output_col)
+# top model if you do include sym_dist
+mass_T1_sym<- glm(flew_b~host_c*mass_c + sym_dist*mass_c, family=binomial, data=data_T1)
+tidy_regression(mass_T1_sym, is_color=output_col)
 ```
 
 <a id="morph1"></a>
@@ -723,14 +1427,14 @@ model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
 ```
 
 ```{r}
-anova(m13, m18, test="Chisq") # Adding A*B does not improve fit
 anova(m7, m13, test="Chisq") # Adding B*C marginally improves fit
+anova(m13, m16, test="Chisq") # Adding A*C does not improve fit
 ```
 
 
 ```{r}
-morph_model <- glm(flew_b ~ body_c * wing_c + thorax_c, family = binomial, data = data_T1)
-tidy_regression(morph_model, is_color=output_col)
+morph_T1 <- glm(flew_b ~ body_c * wing_c + thorax_c, family = binomial, data = data_T1)
+tidy_regression(morph_T1, is_color=output_col)
 ```
 
 * maringal negative effect of body wher ethe larger the body the less likely to fly
@@ -740,8 +1444,38 @@ tidy_regression(morph_model, is_color=output_col)
 * no effect of body*wing (we know body and wing are closely related so they could be canceling each other out (b/c body is a proxi for mass))
 
 ```{r}
-morph_modelglmer <- glmer(formula = flew_b ~  body_c * wing_c + thorax_c + (1| population), family = binomial, data = data_T1) 
-tidy_regression(morph_modelglmer, is_color=output_col) # did change the coefficients slightly, but not a better fit
+morph_T1glmer <- glmer(formula = flew_b ~  body_c * wing_c + thorax_c + (1| population), family = binomial, data = data_T1) 
+tidy_regression(morph_T1glmer, is_color=output_col) # did change the coefficients slightly, but not a better fit
+```
+
+```{r}
+R = data_T1$flew_b
+A = data_T1$thorax_c
+B = data_T1$wing2body_c
+
+data<-data.frame(R, A, B)
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 2-FF.R")
+```
+
+```{r}
+anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
+```
+
+```{r}
+morph_T1_ratio <- glm(flew_b ~ wing2body_c + thorax_c, family = binomial, data = data_T1)
+tidy_regression(morph_T1_ratio, is_color=output_col)
+```
+
+### Summary
+
+```{r}
+tidy_regression(nomass_T1, is_color=output_col)
+tidy_regression(mass_T1_sym, is_color=output_col)
+tidy_regression(mass_T1_nosym, is_color=output_col)
+tidy_regression(morph_T1, is_color=output_col) # glmer did not improve fit
+tidy_regression(morph_T1_ratio, is_color=output_col)
 ```
 
 ### Trial 2
@@ -812,7 +1546,7 @@ tidy_regression(glm(flew_b~thorax_c, data=data_T2, family=binomial), is_color=ou
 ####### Effect of body length
 tidy_regression(glm(flew_b~body_c, data=data_T2, family=binomial), is_color=output_col)
 
-####### No effect of wing length
+####### Marginal effect of wing length
 tidy_regression(glm(flew_b~wing_c, data=data_T2, family=binomial), is_color=output_col)
 ```
 
@@ -844,15 +1578,11 @@ model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
 ```{r}
 anova(m2, m4, test="Chisq") # Adding A does not improve fit
 anova(m2, m6, test="Chisq") # Adding C does not improve fit
-anova(m4, m7, test="Chisq") # Adding C does not improve fit
-anova(m6, m7, test="Chisq") # Adding A does not improve fit
-anova(m4, m8, test="Chisq") # Adding an A*B interaction term does not improve fit
-anova(m6, m10, test="Chisq") # Adding a B*C interaction term does not improve fit
 ```
 
 ```{r}
-model_T2 <-glm(flew_b~sex_c, family=binomial, data=data_T2)
-tidy_regression(model_T2, is_color=output_col)
+nomass_T2 <-glm(flew_b~sex_c, family=binomial, data=data_T2)
+tidy_regression(nomass_T2, is_color=output_col)
 ```
 
 * sex is the only significant and strong effect, so that if you are female you are much less likely to disperse/fly
@@ -873,8 +1603,8 @@ anova(m4, m9, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
-model_T2_mass <-glm(flew_b~mass_c, family=binomial, data=data_T2)
-tidy_regression(model_T2_mass, is_color=output_col)
+mass_T2 <-glm(flew_b~mass_c, family=binomial, data=data_T2)
+tidy_regression(mass_T2, is_color=output_col)
 ```
 
 * mass is the only significant and extremely strong effect, so that if you are heavy you are much less likely to disperse/fly
@@ -905,8 +1635,12 @@ model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
 ```
 
 ```{r}
-morph_model_T2 <- glm(flew_b ~ thorax_c * wing_c + body_c * wing_c, family = binomial, data = data_T2)
-tidy_regression(morph_model_T2, is_color=output_col)
+anova(m13, m16, test="Chisq") # Adding A*C improves fit
+```
+
+```{r}
+morph_T2 <- glm(flew_b ~ thorax_c * wing_c + body_c * wing_c, family = binomial, data = data_T2)
+tidy_regression(morph_T2, is_color=output_col)
 ```
 
 * negative marginal effect of thorax, where the wider the thorax, the then bug less likely to fly
@@ -916,12 +1650,301 @@ tidy_regression(morph_model_T2, is_color=output_col)
 * positive effect of thorax:wing where the wider the thorax and wing the more likely the bug is to fly *(this encapsulates overall flight power in a way b/c thorax muscles and wing length)*
 * negative effect of wing and body where the longer the wing and body the less likely the bug is to fly *(this encapsulates mass limitations)*
 
+
 ```{r}
-morph_model_T2glmer <- glmer(flew_b ~ thorax_c * wing_c + body_c * wing_c + (1|chamber), family = binomial, data = data_T2) # (1|days_from_start_c) and (1|population)variance = 0, chamber did not have variance at 0
-tidy_regression(morph_model_T2glmer, is_color=output_col) # changed coefficients slightly, but did not improve the fit of the model.
+R = data_T2$flew_b
+A = data_T2$thorax_c
+B = data_T2$wing2body_c
+
+data<-data.frame(R, A, B)
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 2-FF.R")
 ```
 
-### Females
+```{r}
+anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
+```
+
+```{r}
+morph_T2_ratio <- glm(flew_b ~ thorax_c + wing2body_c, family = binomial, data = data_T2)
+tidy_regression(morph_T2_ratio, is_color=output_col)
+```
+
+### Summary
+
+```{r}
+tidy_regression(nomass_T2, is_color=output_col)
+tidy_regression(mass_T2, is_color=output_col)
+tidy_regression(morph_T2, is_color=output_col) # glmer did not improve fit
+tidy_regression(morph_T2_ratio, is_color=output_col)
+```
+
+### Females 
+
+[Cleaning Data](#cleanup_data_fem)
+
+[Testing Covariates](#fem_exp)
+
+[Without Mass Modeling](#without.mass.fem)
+
+[With Mass Modeling](#with.mass.fem)
+
+[Eggs Modeling](#egg.fem)
+
+[Morphology Modeling](#morph.fem)
+
+<a id="cleanup_data_fem"></a>
+
+**Cleaning the Data**
+
+```{r}
+rm(list=ls())
+output_col = FALSE 
+source("src/clean_flight_data.R") 
+source("src/regression_output.R") 
+source("src/center_flight_data.R")
+source("get_warnings.R")
+
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+```
+
+```{r}
+d <- data_tested %>%
+   group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, 
+            beak, thorax, wing, body, w_morph, morph_notes, tested,
+            host_c, sex_c, w_morph_c, lat_c, sym_dist, sym_dist_s, total_eggs_c, 
+            beak_c, thorax_c, thorax_s, body_c, wing_c, wing2body, wing2body_c, wing2body_s) %>%
+   summarise_all(funs(list(na.omit(.))))
+
+d$num_flew <- 0
+d$num_notflew <- 0
+d$average_mass <- 0
+
+for(row in 1:length(d$flew_b)){
+  
+  n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails
+  d$num_flew[[row]] <- n_flew 
+  
+  n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
+  d$num_notflew[[row]] <- n_notflew
+  
+  avg_mass <- mean(d$mass[[row]])
+  d$average_mass[[row]] <- avg_mass
+
+}
+
+d <- select(d, -filename, -channel_letter, -set_number)
+
+data_fem <- d[d$sex=="F",]
+data_fem <- center_data(data_fem, is_not_binded = FALSE)
+data_fem
+```
+<a id="fem_exp"></a>
+
+**Experimental, Biological, and Morphological Effects**
+
+```{r, echo=FALSE}
+####### Can't test chamber, test date, or test time any more
+####### Can't specific mass anymore - only average mass. (Could do mass diff?)
+
+####### (Strong) Effect of average mass
+tidy_regression(glm(cbind(num_flew, num_notflew)~average_mass, data=data_fem, family=binomial), is_color=output_col) 
+
+####### Effect of number of eggs laid
+tidy_regression(glm(cbind(num_flew, num_notflew)~total_eggs, data=data_fem, family=binomial), is_color=output_col) 
+
+####### Effect of beak length
+tidy_regression(glm(cbind(num_flew, num_notflew)~beak_c, data=data_fem, family=binomial), is_color=output_col) 
+
+####### No effect of thorax length
+tidy_regression(glm(cbind(num_flew, num_notflew)~thorax_c, data=data_fem, family=binomial), is_color=output_col) 
+
+####### Effect of body length
+tidy_regression(glm(cbind(num_flew, num_notflew)~body_c, data=data_fem, family=binomial), is_color=output_col) 
+
+####### Effect of wing length
+tidy_regression(glm(cbind(num_flew, num_notflew)~wing_c, data=data_fem, family=binomial), is_color=output_col)
+```
+
+<a id="without.mass.fem"></a>
+
+#### Without Mass
+
+```{r message=FALSE}
+R1 = data_fem$num_flew
+R2 = data_fem$num_notflew
+A = data_fem$host_c
+B = data_fem$wing_c
+C = data_fem$average_mass 
+X = data_fem$population # can't do trial type anymore
+
+data<-data.frame(R1, R2, A, B, C, X)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2R ~ 1 RF + 2-FF.R"))
+length(errors$warnings)
+```
+
+```{r}
+anova(m0, m2, test="Chisq") # Adding B improves fit
+anova(m2, m3, test="Chisq") # Adding A does not improve fit
+```
+
+```{r}
+nomass_fem <- glmer(cbind(num_flew, num_notflew) ~ wing_c + (1|population), data=data_fem, family=binomial)
+tidy_regression(nomass_fem, is_color=output_col)
+```
+
+* positive effect of wing length where the longer the wing the more times the bug will fly
+
+<a id="with.mass.fem"></a>
+
+#### With Mass 
+
+```{r message=FALSE}
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2R ~ 1 RF + 3-FF.R"))
+length(errors$warnings) 
+```
+
+```{r}
+anova(m7, m12, test="Chisq") # Adding A*C improves fit
+anova(m12, m14, test="Chisq") # Adding A*B does not improve fit
+```
+
+```{r}
+mass_fem <- glmer(cbind(num_flew, num_notflew) ~ host_c * average_mass + wing_c + (1|population), data=data_fem, family=binomial)
+tidy_regression(mass_fem, is_color=output_col)
+```
+
+* negative effect of host where if from GRT the less times a bug will fly
+* strong negative effect of average mass where the heavier the less times a bug will fly
+* positive effect of wing length where the longer the wing the more times the bug will fly
+
+* strong positive effect of host*average mass where the heavier the bug and from GRT the more times the bug will fly (I've seen these strong conflicting interactions a lot with host and something else)
+
+```{r}
+# check for collinearity between mass and wing length
+data<-data.frame(data_fem$host_c, data_fem$wing_c, data_fem$average_mass )
+colnames(data) <- c("Host Plant", "Wing Length", "Average Mass")
+pairs(data)
+```
+
+GRT bugs weigh less.
+
+<a id="egg.fem"></a>
+
+#### Eggs
+
+```{r message=FALSE} 
+R1 = data_fem$num_flew
+R2 = data_fem$num_notflew
+A = data_fem$host_c
+B = data_fem$wing_c
+C = data_fem$average_mass 
+D = data_fem$total_eggs_c # can't use eggs_b anymore
+X = data_fem$population 
+
+data<-data.frame(R1, R2, A, B, C, D, X)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2R ~ 1-RF + 4-FF.R"))
+length(errors$warnings) # 83 models failed 
+```
+
+```{r}
+anova(m9, m20, test="Chisq") # Adding B*D does not improve fit
+```
+
+```{r}
+egg_model <- glmer(cbind(num_flew, num_notflew) ~ wing_c + total_eggs_c + (1|population), data=data_fem, family=binomial)
+tidy_regression(egg_model, is_color=output_col)
+```
+
+* positive effect of wing length
+* negative effect of total eggs
+
+<a id="morph.fem"></a>
+
+#### Morphology 
+
+```{r message=FALSE}
+d <- data_fem %>%
+  filter(!is.na(body))
+d$thorax_c <- d$thorax - mean(d$thorax)
+d$wing_c <- d$wing - mean(d$wing)
+d$body_c <- d$body - mean(d$body)
+
+R1 = d$num_flew
+R2 = d$num_notflew
+A = d$thorax_c
+B = d$body_c
+C = d$wing_c 
+X = d$population
+
+data<-data.frame(R1, R2, A, B, C, X)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2R ~ 1 RF + 3-FF.R"))
+length(errors$warnings)
+```
+
+```{r}
+anova(m15, m16, test="Chisq") # replacing A*B with A*C improves fit
+anova(m13, m16, test="Chisq") # Adding B*C improves fit
+```
+
+```{r}
+morph_fem <- glmer(cbind(num_flew, num_notflew) ~ thorax_c * wing_c + body_c * wing_c + (1 | population), data=d, family=binomial)
+tidy_regression(morph_fem, is_color=output_col)
+```
+* strong negative effect of thorax where the wider the thorax, the less times the bug flies
+* no effect of wing length
+* no effect of body length
+
+* strong positive (marginal) effect of thorax*body where the longer the body and wider the thorax, the more times a bug flies (seems to conflict the single effects)
+* negative effect of of body*wing where the longer the body and wing, the less times the bug flies
+
+```{r message=FALSE}
+R1 = d$num_flew
+R2 = d$num_notflew
+A = d$thorax_c
+B = d$wing2body_c
+X = d$population
+
+data<-data.frame(R1, R2, A, B, X)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2R ~ 1 RF + 2-FF.R"))
+length(errors$warnings)
+```
+
+```{r}
+anova(m0, m2, test="Chisq") # Adding B marginally improves fit
+anova(m2, m3, test="Chisq") # Adding B does not improve fit
+```
+
+```{r}
+morph_fem2 <- glmer(cbind(num_flew, num_notflew) ~ wing2body_c + (1 | population), data=d, family=binomial)
+tidy_regression(morph_fem2, is_color=output_col)
+```
+
+* marginal strong positive effect of wing:body where the longer the body and heavier the body, the more times a female bug flew. (hm)
+
+### Summary
+
+```{r}
+tidy_regression(nomass_fem, is_color=output_col)
+tidy_regression(mass_fem, is_color=output_col)
+tidy_regression(egg_model, is_color=output_col)
+tidy_regression(morph_fem, is_color=output_col)
+tidy_regression(morph_fem2, is_color=output_col)
+```
+
+### Females - Old Method
 
 [Cleaning Data](#cleanup_data)
 
@@ -969,7 +1992,7 @@ data_fem <- center_data(data_fem)
 ####### Marginal effect of chamber B-4 (ah this again!)
 tidy_regression(glm(flew_b~chamber, data=data_fem, family=binomial), is_color=output_col)
 
-####### No effect of test date
+####### No effect of test date (almost marginal)
 tidy_regression(glm(flew_b~days_from_start, data=data_fem, family=binomial), is_color=output_col)
 
 ####### No effect of test time
@@ -1022,15 +2045,13 @@ model_comparisonsAIC("src/generic models-binomial glm 2-FF.R")
 ```
 
 ```{r}
-anova(m0, m1, test="Chisq") # Adding A does not improve fit
 anova(m0, m2, test="Chisq") # Adding B does improve fit
-anova(m1, m3, test="Chisq") # Adding B does improve improve fit
 anova(m2, m3, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r echo=FALSE}
-model_fem <-glm(flew_b~wing_c, family=binomial, data=data_fem)
-tidy_regression(model_fem, is_color=output_col) 
+nomass_fem2 <-glm(flew_b~wing_c, family=binomial, data=data_fem)
+tidy_regression(nomass_fem2, is_color=output_col) 
 ```
 
 * positive effect of wing length where the longer the wing then female more likely to fly.
@@ -1064,8 +2085,8 @@ anova(m6, m10, test="Chisq") # Adding B*C does not improve fit
 ```
 
 ```{r echo=FALSE}
-model_fem_mass <-glm(flew_b~wing_c + mass_c, family=binomial, data=data_fem)
-tidy_regression(model_fem_mass, is_color=output_col) 
+mass_fem2 <-glm(flew_b~wing_c + mass_c, family=binomial, data=data_fem)
+tidy_regression(mass_fem2, is_color=output_col) 
 ```
 
 * large negative effect of mass, where the heavier the bug is the less likely the bus will fly/disperse.
@@ -1073,7 +2094,7 @@ tidy_regression(model_fem_mass, is_color=output_col)
 
 <a id="glmer"></a>
 
-#### Chamber B-4 was significant: Consider for females: A=host, B=mass, C=wing, X=ID
+#### Consider for females: A=host, B=mass, C=wing, X=ID
 
 ```{r}
 R = data_fem$flew_b
@@ -1085,18 +2106,18 @@ X = data_fem$ID  # variance is zero if use trial_type | 3 models fail to converg
 data<-data.frame(R, A, B, C, X)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-binomial glmer 1 RF + 3-FF.R") # here
+model_comparisonsAIC("src/generic models-binomial glmer 1 RF + 3-FF.R") 
 ```
 
 ```{r}
 # top model if use ID:
-model_fem_ME <-glmer(flew_b~host_c * mass_c + host_c * wing_c + (1 | ID), family=binomial, data=data_fem)
-tidy_regression(model_fem_ME, is_color=output_col) 
+multi_glmer_fem <-glmer(flew_b~host_c * mass_c + host_c * wing_c + (1 | ID), family=binomial, data=data_fem)
+tidy_regression(multi_glmer_fem, is_color=output_col) 
 
 # top model if use trial_type:
-model_fem_ME <-glmer(flew_b~mass_c + wing_c + (1|trial_type), family=binomial, data=data_fem)
+multi_glmer_fem2 <-glmer(flew_b~mass_c + wing_c + (1|trial_type), family=binomial, data=data_fem)
 # if you replace trial_type with ID then you'll see the coefficients are way too huge and at different scales. Why?
-tidy_regression(model_fem_ME, is_color=output_col) 
+tidy_regression(multi_glmer_fem2, is_color=output_col) 
 ```
 
 <a id="eggs"></a>
@@ -1117,17 +2138,17 @@ model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
 
 ```{r}
-fem_model<-glm(flew_b~wing_c + mass_c + eggs_b, family=binomial, data=data_fem)
-tidy_regression(fem_model, is_color=output_col)
+egg_model2 <-glm(flew_b~wing_c + mass_c + eggs_b, family=binomial, data=data_fem)
+tidy_regression(egg_model2, is_color=output_col)
 ```
 
 * Strong negative effect if laid eggs that day
-* strong negative effect of mass
+* strong marginal negative effect of mass
 * positive effect of wing length
 
 ```{r}
-ffem_model<-glmer(flew_b~wing_c + mass_c + eggs_b + (1|ID), family=binomial, data=data_fem) 
-tidy_regression(ffem_model, is_color=output_col) # model fits better
+egg_glmer <-glmer(flew_b~wing_c + mass_c + eggs_b + (1|ID), family=binomial, data=data_fem) 
+tidy_regression(egg_glmer, is_color=output_col) # model fits better
 ```
 
 still a strong negative effect if laid eggs that day but mass and wing length are no longer significant...
@@ -1147,26 +2168,24 @@ X = data_fem$ID
 data<-data.frame(R, A, B, C, D, X)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R") # only 1 model failed to converge
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R") 
 ```
-
-But m53 fails to converge...
 
 ```{r}
 anova(m21, m33, test="Chisq") # Adding B improves fits
+anova(m33, m53, test="Chisq") # Adding B*C does not improve fit
 ```
 
 ```{r}
-ffem_model<-glmer(flew_b~mass_c *eggs_b + wing_c + (1|ID), family=binomial, data=data_fem) 
-tidy_regression(ffem_model, is_color=output_col) # model fits better
+egg_glmer2<-glmer(flew_b~mass_c *eggs_b + wing_c + (1|ID), family=binomial, data=data_fem) 
+tidy_regression(egg_glmer2, is_color=output_col)
 ```
 
 coefficients are extremely out of scale.
 * negative effect of mass
 * negative effect of eggs
 *positive effect of wing
-* positivie effect mass*eggs?? doesn't really make sense.
-
+* positivie effect mass*eggs? doesn't really make sense. --> collinearity
 
 <a id="morph_fem"></a>
 
@@ -1189,18 +2208,14 @@ anova(m13, m16, test="Chisq") # Adding A*C improves fit
 ```
 
 ```{r}
-morph_fem_model <- glm(flew_b ~ thorax_c * wing_c + body_c * wing_c, data=data_fem)
-tidy_regression(morph_fem_model, is_color=output_col)
+morph_fem2 <- glm(flew_b ~ thorax_c * wing_c + body_c * wing_c, data=data_fem)
+tidy_regression(morph_fem2, is_color=output_col)
 ```
 * no significant effects 
 
 ```{r}
-morph_fem_modelglmer <- glmer(flew_b ~ thorax_c * wing_c + body_c * wing_c + (1|trial_type) + (1|chamber), data=data_fem, family=binomial) # variance of population and days_from_start_c = 0
-morph_fem_modelglmer2 <- glmer(flew_b ~ thorax_c * wing_c + body_c * wing_c + (1|ID), data=data_fem, family=binomial)
-
-tidy_regression(morph_fem_modelglmer, is_color=output_col) # better fitted model; coefficients changed a lot, and more significant
-tidy_regression(morph_fem_modelglmer2, is_color=output_col) #even better fitted model; effects no longer significant and coefficients changed. 
-# why so drastically different between the two?
+morph_fem_glmer <- glmer(flew_b ~ thorax_c * wing_c + body_c * wing_c + (1|ID), data=data_fem, family=binomial)
+tidy_regression(morph_fem_glmer, is_color=output_col) #even better fitted model; effects no longer significant and coefficients changed. 
 ```
 
 **Trying wing2body**
@@ -1217,16 +2232,16 @@ model_comparisonsAIC("src/generic models-binomial glm 2-FF.R")
 ```
 
 ```{r}
-anova(m0, m2, test="Chisq") # Adding B marginally improves fit
+anova(m0, m2, test="Chisq") # Adding B improves fit
 anova(m2, m3, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r}
-morph_fmodel <- glm(flew_b ~ wing2body_c, data=data_fem, family=binomial) # variance of population and days_from_start_c = 0
-tidy_regression(morph_fmodel, is_color=output_col)
+morph_fem3 <- glm(flew_b ~ wing2body_c, data=data_fem, family=binomial) # variance of population and days_from_start_c = 0
+tidy_regression(morph_fem3, is_color=output_col)
 ```
 
-* strong marginal positive effect of wing2body where the larger the ration (the more wing than body), the more likely the female bug disperses
+* strong positive effect of wing2body where the larger the ration (the more wing than body), the more likely the female bug disperses
 
 Worth running a glmer() script.
 
@@ -1239,9 +2254,7 @@ R = data_fem$flew_b
 A = data_fem$thorax_c
 B = data_fem$body_c
 C = data_fem$wing_c
-X = data_fem$trial_type # rescale variables warning when replace trial type with ID as the sole RF
-#Y = data_fem$ID # you would think it's the same as ID, but not
-# you get a different set of top models if you use trial_type or ID
+X = data_fem$ID # you get a different set of top models if you use trial_type or ID, you get the null model if ID and the usual model if trial_type
 
 data<-data.frame(R, A, B, C, X)
 
@@ -1250,20 +2263,18 @@ model_comparisonsAIC("src/generic models-binomial glmer 1 RF + 3-FF.R")
 ```
 
 ```{r}
-anova(m38, m40, test="Chisq") # adding B does not improve fit
-anova(m38, m41, test="Chisq") # Adding C does not improve fit
-anova(m38, m42, test="Chisq") # Adding A does not improve fit
-
-anova(m13, m16, test="Chisq") # Adding A*C improves fit
+anova(m0, m3, test="Chisq") # Adding C does not improve fit
+anova(m0, m2, test="Chisq") # Adding B does not improve fit
+anova(m0, m1, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r}
 # when use ID and trial type as RFs get the null model as the top model
-best.fem.morph <- glmer(flew_b ~  1 + (1|trial_type) + (1|ID), data=data_fem, family=binomial) 
-tidy_regression(best.fem.morph, is_color=output_col) 
+morph_fem_glmer3 <- glmer(flew_b ~  1 + (1|ID), data=data_fem, family=binomial)
+tidy_regression(morph_fem_glmer3 , is_color=output_col) 
 # when use only trial type as RF:
-best.fem.morph <- glmer(flew_b ~  thorax_c * wing_c + body_c * wing_c + (1|trial_type), data=data_fem, family=binomial) 
-tidy_regression(best.fem.morph, is_color=output_col) 
+morph_fem_glmer4 <- glmer(flew_b ~  thorax_c * wing_c + body_c * wing_c + (1|trial_type), data=data_fem, family=binomial) 
+tidy_regression(morph_fem_glmer4 , is_color=output_col) 
 ```
 
 **Trying wing2body**
@@ -1272,35 +2283,297 @@ tidy_regression(best.fem.morph, is_color=output_col)
 R = data_fem$flew_b
 A = data_fem$thorax_c
 B = data_fem$wing2body_c
-X = data_fem$trial_type # rescale variables warning when replace trial type with ID as the sole RF
-Y = data_fem$ID # you would think it's the same as ID, but not
-# you get a different set of top models if you use trial_type or ID
+X = data_fem$trial_type # you get a different set of top models if you use trial_type or ID
 
-data<-data.frame(R, A, B, X, Y)
+data<-data.frame(R, A, B, X)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-binomial glmer 2-RF + 2-FF.R")
+model_comparisonsAIC("src/generic models-binomial glmer 1-RF + 2-FF.R")
 ```
 
 ```{r}
 anova(m0, m2, test="Chisq") # Adding A marginally imprvoes fit
-anova(m2, m3, test="Chisq") # Adding B does not improve fit
-
-anova(m10, m11, test="Chisq") # Adding A does not improve fit
-anova(m10, m12, test="Chisq") # Adding B does not improve fit
+anova(m0, m1, test="Chisq")
 ```
 
 ```{r}
 # best fit model if only use trial type as RF:
-best.fem.morph <- glmer(flew_b ~  wing2body_c + (1|trial_type), data=data_fem, family=binomial) 
-tidy_regression(best.fem.morph, is_color=output_col) 
+morph_fem_glmer5 <- glmer(flew_b ~  wing2body_c + (1|trial_type), data=data_fem, family=binomial) 
+tidy_regression(morph_fem_glmer5 , is_color=output_col) 
 # best fit model is the null if use both trial type and ID as RFs: 
-best.fem.morph <- glmer(flew_b ~  1 + (1|trial_type) + (1|ID), data=data_fem, family=binomial) 
-tidy_regression(best.fem.morph, is_color=output_col) 
+morph_fem_glmer6 <- glmer(flew_b ~  1 + (1|ID), data=data_fem, family=binomial)
+tidy_regression(morph_fem_glmer6, is_color=output_col) 
+```
+
+### Summary
+
+```{r}
+tidy_regression(nomass_fem2, is_color=output_col) 
+tidy_regression(mass_fem2, is_color=output_col) 
+tidy_regression(multi_glmer_fem, is_color=output_col) 
+tidy_regression(multi_glmer_fem2, is_color=output_col) 
+tidy_regression(egg_model2, is_color=output_col)
+tidy_regression(egg_glmer, is_color=output_col)
+tidy_regression(egg_glmer2, is_color=output_col)
+```
+
+All the morph models had an issue between using ID vs. trial type as the RF. When I used trial_type I got reasonable results. When I used ID I always got the null model. Why is this?
+
+```{r}
+tidy_regression(morph_fem2, is_color=output_col)
+tidy_regression(morph_fem_glmer, is_color=output_col) 
+tidy_regression(morph_fem3, is_color=output_col)
+tidy_regression(morph_fem_glmer3 , is_color=output_col) 
+tidy_regression(morph_fem_glmer4 , is_color=output_col) 
+tidy_regression(morph_fem_glmer5 , is_color=output_col) 
+tidy_regression(morph_fem_glmer6, is_color=output_col)
+```
+
+### Males
+
+[Cleaning Data](#cleanup_male)
+
+[Testing Covariates](#male_exp)
+
+[Without Mass Modeling](#without.mass.m)
+
+[With Mass Modeling](#with.mass.m)
+
+[Morphology Modeling](#morph.m)
+
+<a id="cleanup_male"></a>
+
+**Cleaning the Data**
+
+```{r}
+rm(list=ls())
+output_col = FALSE 
+source("src/clean_flight_data.R") 
+source("src/regression_output.R") 
+source("src/center_flight_data.R")
+source("get_warnings.R")
+
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+```
+
+```{r}
+d <- data_tested %>%
+   group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, 
+            beak, thorax, wing, body, w_morph, morph_notes, tested,
+            host_c, sex_c, w_morph_c, lat_c, sym_dist, sym_dist_s, total_eggs_c, 
+            beak_c, thorax_c, thorax_s, body_c, wing_c, wing2body, wing2body_c, wing2body_s) %>%
+   summarise_all(funs(list(na.omit(.))))
+
+d$num_flew <- 0
+d$num_notflew <- 0
+d$average_mass <- 0
+
+for(row in 1:length(d$flew_b)){
+  
+  n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails
+  d$num_flew[[row]] <- n_flew 
+  
+  n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
+  d$num_notflew[[row]] <- n_notflew
+  
+  avg_mass <- mean(d$mass[[row]])
+  d$average_mass[[row]] <- avg_mass
+
+}
+
+d <- select(d, -filename, -channel_letter, -set_number)
+
+data_male <- d[d$sex=="M",]
+data_male <- center_data(data_male, is_not_binded = FALSE) 
+data_male
+```
+
+<a id="male_exp"></a>
+
+**Experimental, Biological, and Morphological Effects**
+
+```{r, echo=FALSE}
+####### Can't test chamber, test date, or test time any more
+####### Can't specific mass anymore - only average mass. (Could do mass diff?)
+
+####### No effect of average mass (not ideal - using this cbind() method seems to be muting mass)
+tidy_regression(glm(cbind(num_flew, num_notflew)~average_mass, data=data_male, family=binomial), is_color=output_col) 
+
+####### Effect of beak length
+tidy_regression(glm(cbind(num_flew, num_notflew)~beak_c, data=data_male, family=binomial), is_color=output_col) 
+
+####### No effect of thorax length
+tidy_regression(glm(cbind(num_flew, num_notflew)~thorax_c, data=data_male, family=binomial), is_color=output_col) 
+
+####### Effect of body length
+tidy_regression(glm(cbind(num_flew, num_notflew)~body_c, data=data_male, family=binomial), is_color=output_col) 
+
+####### Effect of wing length
+tidy_regression(glm(cbind(num_flew, num_notflew)~wing_c, data=data_male, family=binomial), is_color=output_col)
+```
+
+<a id="without.mass.m"></a>
+
+#### Without Mass
+
+```{r message=FALSE}
+R1 = data_male$num_flew
+R2 = data_male$num_notflew
+A = data_male$host_c
+B = data_male$wing_c
+C = data_male$average_mass 
+X = data_male$population # can't do trial type anymore
+
+data<-data.frame(R1, R2, A, B, C, X)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2R ~ 1 RF + 2-FF.R"))
+length(errors$warnings)
+```
+
+```{r}
+anova(m2, m3, test="Chisq") # Adding A does not improve fit
+```
+
+```{r}
+nomass_male <- glmer(cbind(num_flew, num_notflew) ~ wing_c + (1|population), data=data_male, family=binomial)
+tidy_regression(nomass_male, is_color=output_col)
+```
+
+* positive effect of wing
+
+<a id="with.mass.m"></a>
+
+#### With Mass 
+
+```{r message=FALSE}
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2R ~ 1 RF + 3-FF.R"))
+length(errors$warnings) 
+```
+
+```{r}
+anova(m6, m10, test="Chisq") # Adding B*C does not improve fit
+anova(m6, m7, test="Chisq") # Adding A does not improve fot
+```
+
+```{r}
+mass_male <- glmer(cbind(num_flew, num_notflew) ~ wing_c + average_mass + (1|population), data=data_male, family=binomial)
+tidy_regression(mass_male, is_color=output_col)
+```
+
+* strong positive effect of wing
+* strong negative effect of average mass 
+
+```{r}
+# check for collinearity between mass and wing length
+data<-data.frame(data_male$host_c, data_male$wing_c, data_male$average_mass)
+colnames(data) <- c("Host Plant", "Wing Length", "Average Mass")
+pairs(data)
+```
+
+<a id="morph.m"></a>
+
+#### Morphology 
+
+```{r message=FALSE}
+d <- data_male %>%
+  filter(!is.na(body))
+d$thorax_c <- d$thorax - mean(d$thorax)
+d$wing_c <- d$wing - mean(d$wing)
+d$body_c <- d$body - mean(d$body)
+
+R1 = d$num_flew
+R2 = d$num_notflew
+A = d$thorax_c
+B = d$body_c
+C = d$wing_c 
+X = d$population
+
+data<-data.frame(R1, R2, A, B, C, X)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2R ~ 1 RF + 3-FF.R"))
+length(errors$warnings)
+```
+
+```{r}
+anova(m13, m16, test="Chisq") # Adding B*C does not improve fit
+anova(m10, m13, test="Chisq") # Adding A does not improve fit
+anova(m6, m10, test="Chisq") # Adding B*C improves fit
+```
+
+```{r}
+morph_male <- glmer(cbind(num_flew, num_notflew) ~ body_c * wing_c + (1 | population), data=d, family=binomial)
+tidy_regression(morph_male, is_color=output_col)
+```
+
+* marginal negative effect of body
+* positive effect of wing
+* negative wing*body where the longer the wing and body the less times a male bug flies.
+
+```{r message=FALSE}
+R1 = d$num_flew
+R2 = d$num_notflew
+A = d$thorax_c
+B = d$wing2body_c
+X = d$population
+
+data<-data.frame(R1, R2, A, B, X)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 2R ~ 1 RF + 2-FF.R"))
+length(errors$warnings)
+```
+
+```{r}
+anova(m2, m3, test="Chisq") # Adding B does not improve fit
+```
+
+```{r}
+morph_male2 <- glmer(cbind(num_flew, num_notflew) ~ wing2body_c + (1 | population), data=d, family=binomial)
+tidy_regression(morph_male2, is_color=output_col)
+```
+
+* strong positive effect of wing2body where the more wing2body the more times a male bug flies.
+
+```{r}
+# check for collinearity between mass and morhpology
+data<-data.frame(data_male$thorax_c, data_male$wing_c, data_male$body_c, data_male$average_mass)
+colnames(data) <- c("Thorax Length", "Wing Length", "Body Length", "Average Mass")
+pairs(data)
 ```
 
 
-### Males
+```{r}
+data_male <- data_tested[data_tested$sex=="M",]
+data_male <- center_data(data_male) 
+
+data<-data.frame(data_male$thorax_c, data_male$wing_c, data_male$body_c, data_male$mass_c, data_male$days_from_start_c)
+colnames(data) <- c("Thorax Length", "Wing Length", "Body Length", "Average Mass", "Days from Start")
+pairs(data)
+
+m <- lm(mass ~ days_from_start, data=data_male)
+summary(m)$coefficients
+plot(mass ~ days_from_start, data=data_male)
+abline(m, col="red")
+#plot(body ~ days_from_start, data=data_male)
+text(mass ~ days_from_start, labels=data_male$ID, data=data_male, cex=0.5, font=2, pos=4) # maybe the smaller males died faster? that's why it looks like.
+```
+
+### Summary
+
+```{r}
+tidy_regression(nomass_male, is_color=output_col)
+tidy_regression(mass_male, is_color=output_col)
+tidy_regression(morph_male, is_color=output_col)
+tidy_regression(morph_male2, is_color=output_col)
+```
+
+
+### Males - Old Method
 
 [Cleaning Data](#cleanup_d)
 
@@ -1344,10 +2617,10 @@ data_male <- center_data(data_male)
 ####### No effect of chamber
 tidy_regression(glm(flew_b~chamber, data=data_male, family=binomial), is_color=output_col)
 
-####### Effect of test date (as seen in the data_all)
+####### Effect of test date 
 tidy_regression(glm(flew_b~days_from_start_c, data=data_male, family=binomial), is_color=output_col)
 
-####### No effect of test time (but close p = 0.09443)
+####### Maringal effect of test time (p = 0.081)
 tidy_regression(glm(flew_b~min_from_IncStart, data=data_male, family=binomial), is_color=output_col)
 
 # seems like males are very time sensitive
@@ -1356,20 +2629,20 @@ tidy_regression(glm(flew_b~min_from_IncStart, data=data_male, family=binomial), 
 **Biological Effects**
 
 ```{r echo=FALSE}
-####### (Strong) Effect of mass 
+####### No effect of mass
 tidy_regression(glm(flew_b~mass_c, data=data_male, family=binomial), is_color=output_col) 
 ```
 
 **Morphology Effects**
 
 ```{r echo=FALSE}
-####### No effect of beak length
+####### Effect of beak length
 tidy_regression(glm(flew_b~beak_c, data=data_male, family=binomial), is_color=output_col)
 
 ####### No effect of thorax length
 tidy_regression(glm(flew_b~thorax_c, data=data_male, family=binomial), is_color=output_col) 
 
-####### Marginal effect of body length
+####### Effect of body length
 tidy_regression(glm(flew_b~body_c, data=data_male, family=binomial), is_color=output_col) 
 
 ####### Effect of wing length
@@ -1383,38 +2656,45 @@ tidy_regression(glm(flew_b~wing_c, data=data_male, family=binomial), is_color=ou
 ```{r}
 # Remove any missing masses
 data_male <- data_male %>%
-  filter(!is.na(mass))
+  filter(!is.na(mass), !is.na(wing))
 data_male <- center_data(data_male)
 
 R = data_male$flew_b
 A = data_male$host_c
 B = data_male$days_from_start_c
-C = data_male$mass_c 
+C = data_male$wing_c
+D = data_male$mass_c 
 
-data<-data.frame(R, A, B, C)
+data<-data.frame(R, A, B, C, D)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-binomial glm 2-FF.R")
+model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
 ```
 
 ```{r}
-anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
+anova(m7, m12, test="Chisq") # Adding A*C does not improve fit
+anova(m6, m7, test="Chisq") # Adding A improves fit
 ```
 
 ```{r echo=FALSE}
-model_male<-glm(flew_b~host_c + days_from_start_c, family=binomial, data=data_male)
-tidy_regression(model_male, is_color=output_col)
+nomass_male<-glm(flew_b~host_c + days_from_start_c + wing_c, family=binomial, data=data_male)
+tidy_regression(nomass_male, is_color=output_col)
 ```
 
 * Negative effect if from GRT
 * Negative effect of days from start where the farther out the day from the start of the experiment (e.g. maybe a proxi for age), the less likely the male bug is to fly
+* Positive effect wing length where the longer the wing the more likely the male bug is to fly
 
 ```{r}
 ## Consider covariates
-model_male_final <-glmer(flew_b~host_c + days_from_start_c + (1|population) + (1|trial_type), family=binomial, data=data_male) 
+model_male_final <-glmer(flew_b~host_c + days_from_start_c + wing_c +  (1|ID), family=binomial, data=data_male) 
 tidy_regression(model_male_final, is_color=output_col)
-## Changed the effect slightly, did not improve the model, and made host not significant...
+## Changed the effect slightly and improved the model
 ```
+
+* Marginal negative effect if from GRT
+* Negative effect of days from start where the farther out the day from the start of the experiment (e.g. maybe a proxi for age), the less likely the male bug is to fly
+* Positive effect wing length where the longer the wing the more likely the male bug is to fly
 
 <a id="mass"></a>
 
@@ -1422,28 +2702,29 @@ tidy_regression(model_male_final, is_color=output_col)
 
 ```{r}
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
+model_comparisonsAIC("src/generic models-binomial glm 4-FF.R")
 ```
 
 ```{r}
-anova(m7, m11, test="Chisq") # Adding A*B does not improve fit
+anova(m15, m35, test="Chisq") # Adding A*C does not improve fit
 ```
 
 ```{r echo=FALSE}
-model_male_mass <-glm(flew_b~host_c + mass_c + days_from_start_c, family=binomial, data=data_male)
-tidy_regression(model_male_mass, is_color=output_col)
+mass_male <-glm(flew_b~host_c + mass_c + days_from_start_c + wing_c, family=binomial, data=data_male)
+tidy_regression(mass_male, is_color=output_col)
 ```
 
 * Strong negative effect if from GRT
 * Strong negative effect of mass, that if weigh more then less likely to disperse
 * negative effect of days from start where the farther out the day from the start of the experiment (e.g. maybe a proxi for age), the less likely the male bug is to fly
+* positive effect of wing length where the longer th wing, the more likely the male bug is to fly
 
 ```{r}
 ## Consider covariates
-model_male_mass_final <-glmer(flew_b~host_c + mass_c + days_from_start_c + (1|population) + (1|trial_type), family=binomial, data=data_male) # no error, but singular fit error 
+mass_male_glmer <-glmer(flew_b~host_c + mass_c + days_from_start_c + wing_c + (1|population) + (1|trial_type), family=binomial, data=data_male) # no error, but singular fit error 
 
-tidy_regression(model_male_mass_final, is_color=output_col)
-## Changed the effects slightly and in turn made host not significant but not a better fitting model.
+tidy_regression(mass_male_glmer, is_color=output_col)
+## Changed the effects slightly, a better fitting model, and made host not significant
 ```
 
 <a id="male_morph"></a>
@@ -1469,27 +2750,25 @@ model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
 ```
 
 ```{r}
-anova(m10, m13, test="Chisq") # Adding A*C marginally improves fit
+anova(m10, m13, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r}
-male_morph<-glm(flew_b~body_c* wing_c + thorax_c, family=binomial, data=data_male) 
-tidy_regression(male_morph, is_color=output_col) 
+morph_male <-glm(flew_b~body_c* wing_c, family=binomial, data=data_male) 
+tidy_regression(morph_male, is_color=output_col) 
 ```
 
 * no effect of body length
-* marginal negative effect of thorax length, where if longer thorax then less likely to fly
 * marginal positive effect of wing length, where if longer wing then more likely to fly
 
 * negative effect of body*wing where if longer body and wing then less likely to fly
 
 ```{r}
-male_morph.glmer <- glmer(flew_b ~ body_c* wing_c + thorax_c + (1|ID) + (1|trial_type), family=binomial, data=data_male) 
-tidy_regression(male_morph.glmer, is_color=output_col) # model improves fit and it converges!
+morph_male_glmer <- glmer(flew_b ~ body_c* wing_c + (1|ID), family=binomial, data=data_male) 
+tidy_regression(morph_male_glmer, is_color=output_col) # model improves fit and it converges
 ```
 * no effect of body length
 * no effect of wing length
-* marginal negative effect of thorax length, where if longer thorax then less likely to fly
 
 * negative effect of body*wing where if longer body and wing then less likely to fly
 
@@ -1503,30 +2782,31 @@ A = data_male$thorax_c
 B = data_male$body_c
 C = data_male$wing_c 
 D = data_male$days_from_start_c 
-X = data_male$ID # only one model failed to converge when ID as RF
-Y = data_male$trial_type # 9 modles failed to converge when both RFs
+X = data_male$ID # 3 models failed to converge when ID as RF
+#Y = data_male$trial_type # more models fail if both ID and trial as RF
 
-data<-data.frame(R, A, B, C, D, X, Y)
+data<-data.frame(R, A, B, C, D, X)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-binomial glmer 2-RF + 4-FF-noD-interactions.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 1-RF + 4-FF-noD-interactions.R"))
+length(errors$warnings)
 ```
 
 ```{r}
-anova(m24, m27, test="Chisq") # Adding A marginally improves fit
-anova(m22, m26, test="Chisq") # ADding B does not improve fit
+anova(m24, m27, test="Chisq") # Adding A does not improve fit
+anova(m22, m26, test="Chisq") # Adding B does not improve fit
 ```
 
 ```{r}
-male_morph.glmer <- glmer(flew_b ~ thorax_c * wing_c + days_from_start_c + (1 | ID) , family=binomial, data=data_male) 
-tidy_regression(male_morph.glmer, is_color=output_col) 
+morph_male_glmer2 <- glmer(flew_b ~ thorax_c * wing_c + days_from_start_c + (1 | ID) , family=binomial, data=data_male) 
+tidy_regression(morph_male_glmer2, is_color=output_col) 
 ```
 
 <a id="morph_glmer3"></a>
 
 #### glmer() A=wing2body, B=thorax, C=days_from_start, X=ID, Y=trial_type
 
-```{r}
+```{r message=FALSE}
 # left off here
 R = data_male$flew_b
 A = data_male$wing2body_c 
@@ -1547,9 +2827,33 @@ anova(m5, m24, test="Chisq") # Adding Y does not improve fit
 ```
 
 ```{r}
-male_morph.glmer <- glmer(flew_b ~ wing2body_c + days_from_start_c + (1 | ID), family=binomial, data=data_male) 
-tidy_regression(male_morph.glmer, is_color=output_col) 
+morph_male_glmer3 <- glmer(flew_b ~ wing2body_c + days_from_start_c + (1 | ID), family=binomial, data=data_male) 
+tidy_regression(morph_male_glmer3, is_color=output_col) 
 ```
 
 * strong positive effect of wing2body, where if you have more wing to body, then more likely to fly
-* negative effect of days from start, where farther out in days from the start day, the less likely you are to fly.
+* negative effect of days from start, where farther out in days from the start day, the less likely the bug will fly.
+
+### Summary
+
+```{r}
+tidy_regression(nomass_male, is_color=output_col)
+tidy_regression(mass_male, is_color=output_col)
+tidy_regression(mass_male_glmer, is_color=output_col)
+tidy_regression(morph_male, is_color=output_col) 
+tidy_regression(morph_male_glmer, is_color=output_col) 
+tidy_regression(morph_male_glmer2, is_color=output_col)
+tidy_regression(morph_male_glmer3, is_color=output_col) 
+```
+
+
+
+
+
+
+
+
+
+
+
+

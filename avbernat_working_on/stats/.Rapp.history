@@ -1,0 +1,164 @@
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats/")
+getwd()
+source("src/clean_flight_data.R")
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats/") ####MLC: changed to my working directory#
+#
+library(lme4)#
+library(rethinking)#
+#
+library(dplyr)#
+library(tidyselect)#
+library(stringr)#
+#
+library(glmnet)#
+library(ggplotify)#
+library(gridExtra)#
+library(ggformula)#
+library(randomcoloR)
+rm(list=ls())#
+output_col = TRUE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html ####MLC: changed to TRUE#
+source("src/clean_flight_data.R") # Script that loads and cleans up the data#
+source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white#
+source("src/center_flight_data.R")#
+source("src/get_warnings.R")#
+#
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")#
+data_all <- data[[1]]#
+data_tested <- data[[2]]
+data_flew_all <- data_tested[data_tested$flew_b == 1, ]
+### Check for low speeds#
+low_speeds <- data_flew_all %>%#
+  filter(average_speed <0.05)#
+#
+### Check for high speeds#
+high_speeds <- data_flew_all %>%#
+  filter(average_speed >0.65)#
+#
+low_speeds$flight_type# have 7 bugs with average_speed = 0 but were marked as bursters (this could be just something very short (second burst) - not enough to grant a calculation) - I decided to remove them. But one bug was continuous and had 0 distance and 0 speeds - that was bug 196 T2 set011-3-03-2020-A3_196.txt#
+high_speeds$flight_type # 3 bugs - also bursters. Could also be short explosive bursts but not true to the biology of these bugs (more like us blowing on them).
+data_flew <- data_flew_all %>%#
+  filter(average_speed > 0.05) %>%#
+  filter(average_speed < 0.65)#
+data_flew <- center_data(data_flew)
+test_model<-lmer(average_speed~host_c*sex_c*sym_dist + (1|ID), data=data_flew) #it converges - Run one set of models with ID as a random factor.#
+getME(test_model, "lower")
+#######testing some covariates:#
+data_flew$chamber <- relevel(data_flew$chamber, ref="A-2")#
+#
+####### Effect of chamber B-2 and B-4#
+tidy_regression(lmer(average_speed~chamber + (1|ID), data=data_flew), is_color=output_col) ###Possibly reductions in speed #
+#
+####### No effect of test date#
+tidy_regression(lmer(average_speed~days_from_start + (1|chamber), data=data_flew), is_color=output_col)#
+#
+####### No effect of test time#
+tidy_regression(lmer(average_speed~min_from_IncStart + (1|trial_type), data=data_flew), is_color=output_col)
+####### Effect of chamber B-2 and B-4#
+summary(lmer(average_speed~chamber + (1|ID), data=data_flew), is_color=output_col) ###Possibly reductions in speed #
+#
+####### No effect of test date#
+summary(lmer(average_speed~days_from_start + (1|chamber), data=data_flew), is_color=output_col)#
+#
+####### No effect of test time#
+summary(lmer(average_speed~min_from_IncStart + (1|trial_type), data=data_flew), is_color=output_col)
+data<-data.frame(R=data_flew$average_speed,#
+                 A=data_flew$host_c, #
+                 B=data_flew$sex_c, #
+                 C=data_flew$sym_dist, #
+                 X=data_flew$trial_type)#
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
+data_flew <- data_flew %>%#
+  filter(!is.na(mass))#
+data_flew <- center_data(data_flew)#
+#
+data<-data.frame(R=data_flew$average_speed,#
+                 A=data_flew$host_c, #
+                 B=data_flew$sex_c, #
+                 C=data_flew$sym_dist, #
+                 D=data_flew$mass_c,#
+                 X=data_flew$chamber)
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
+m4
+plot(m4)
+shapiro.test(m4$residuals)
+shapiro.test(residuals(m4))
+qqnorm(resid(m4))
+rm(list=ls())#
+output_col = FALSE #
+source("src/clean_flight_data.R") #
+source("src/regression_output.R") #
+source("src/center_flight_data.R")#
+source("get_warnings.R")#
+#
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")#
+data_all <- data[[1]]#
+data_tested <- data[[2]]#
+#
+### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)#
+data_flew <- data_tested[data_tested$flew_b == 1, ]#
+data_flew <- data_flew[data_flew$average_speed > 0, ]#
+data_flew <- center_data(data_flew)#
+#
+### Break up by flight type#
+dC<-data_flew[data_flew$flight_type=="C" | data_flew$flight_type=="BC" | data_flew$flight_type=="CB",] # this includes BC or CB flyers #
+dC <- center_data(dC)
+source("src/get_warnings.R")
+dC$chamber <- relevel(dC$chamber, ref="A-2")
+tidy_regression(lmer(average_speed~chamber + (1|ID), data=dC), is_color=output_col) ###Possibly reductions in speed
+data<-data.frame(R=dC$average_speed,#
+                 A=dC$host_c, #
+                 B=dC$sex_c, #
+                 C=dC$sym_dist, #
+                 X=dC$ID, Y=dC$chamber)#
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+m36
+m38
+m18
+m20
+summary(m20)
+AIC(m20)
+AIC(m18)
+AICprobs(m20)
+AICprobs(m20, m18)
+anova(m18, m20, test="Chisq")
+summary(m20)
+summary(m18)
+data<-data.frame(R=dC$average_speed,#
+                 A=dC$host_c, #
+                 B=dC$sex_c, #
+                 C=dC$sym_dist, #
+                 X=dC$ID, Y=dC$chamber)#
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+m0<-lmer(R~(1|X), data=data)
+AIC(m0)
+m0<-lmer(R~(1|X), data=data, REML=FALSE)
+AIC(m0)
+shapiro.test(residuals(m0))
+m0<-lmer(R~(1|X), data=data)
+shapiro.test(residuals(m0))
+data<-data.frame(R=dC$average_speed,#
+                 A=dC$host_c, #
+                 B=dC$sex_c, #
+                 C=dC$sym_dist, #
+                 X=dC$ID, Y=dC$chamber)#
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+data<-data.frame(R=dC$average_speed,#
+                 A=dC$host_c, #
+                 B=dC$sex_c, #
+                 C=dC$sym_dist, #
+                 X=dC$ID, Y=dC$chamber)#
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+anova(m38, m42, test="Chisq")
+anova(m40, m38, test="Chisq")
