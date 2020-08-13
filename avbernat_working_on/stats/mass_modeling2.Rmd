@@ -481,7 +481,7 @@ data_fem <- center_data(data_fem)
 ###### No effect of chamber
 tidy_regression(lmer(mass_c~chamber + (1|ID) + (1|trial_type), data=data_fem, REML=FALSE), is_color=output_col) 
 
-####### Effect of test date
+####### Marginal effect of test date
 tidy_regression(lmer(mass_c~days_from_start_c + (1|ID), data=data_fem, REML=FALSE), is_color=output_col) # t val = 2.29 - makes sense because female mass would fluctuate the most
 
 ####### No effect of test time
@@ -508,10 +508,10 @@ tidy_regression(lmer(mass_c~beak_c + (1|ID) + (1|trial_type), data=data_fem, REM
 tidy_regression(lmer(mass_c~thorax_c + (1|ID) + (1|trial_type), data=data_fem, REML=FALSE), is_color=output_col)
 
 ####### Effect of body length
-tidy_regression(lmer(mass_c~body_c + (1|ID) + (1|trial_type), data=data_fem, REML=FALSE), is_color=output_col)
+tidy_regression(lmer(mass_c~body_c + (1|ID), data=data_fem, REML=FALSE), is_color=output_col)
 
 ####### Effect of wing length
-tidy_regression(lmer(mass_c~wing_c + (1|ID) + (1| trial_type), data=data_fem, REML=FALSE), is_color=output_col) 
+tidy_regression(lmer(mass_c~wing_c + (1|ID), data=data_fem, REML=FALSE), is_color=output_col) 
 ```
 
 <a id="lmerf"></a>
@@ -754,7 +754,7 @@ data_male <- center_data(data_male)
 
 ```{r echo=FALSE}
 ###### No effect of chamber
-tidy_regression(lmer(mass_c~chamber + (1|ID) + (1|trial_type), data=data_male, REML=FALSE), is_color=output_col) 
+tidy_regression(lmer(mass_c~chamber + (1|ID), data=data_male, REML=FALSE), is_color=output_col) 
 
 ####### No effect of test date
 tidy_regression(lmer(mass_c~days_from_start_c + (1|ID) + (1|trial_type), data=data_male, REML=FALSE), is_color=output_col)
@@ -797,7 +797,7 @@ cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-anova(m3, m4, test="Chisq") # Adding A*B marginally improves fit
+anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
 ```
 
 ```{r}
@@ -831,27 +831,18 @@ cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-anova(m74, m94, test="Chisq") # Adding A*C marginally improves fit
+# this changed
+anova(m64, m90, test="Chisq") # Adding C*D does not improve fit
+anova(m64, m80, test="Chisq") # Adding A*C does not improve fit
 ```
 
 ```{r}
-male_morph_model <- lmer(mass_c ~ beak_c * thorax_c + beak_c * wing_c + thorax_c * wing_c + thorax_c * body_c + (1|ID), data=data_male, REML=FALSE)
+male_morph_model <- lmer(mass_c ~ thorax_c * wing_c + thorax_c * body_c + wing_c * body_c + beak_c  + (1|ID), data=data_male, REML=FALSE)
 tidy_regression(male_morph_model, is_color=output_col)
 
-male_morph_model <- lmer(mass_c ~ beak_c * thorax_c + beak_c * wing_c + thorax_c * wing_c + thorax_c * body_c + (1|ID) + (1|trial_type), data=data_male, REML=FALSE)
+male_morph_model <- lmer(mass_c ~ thorax_c * wing_c + thorax_c * body_c + wing_c * body_c + beak_c  + (1|ID) + (1|trial_type), data=data_male, REML=FALSE)
 tidy_regression(male_morph_model, is_color=output_col)
 ```
-
-* positive effect of beak length, where the longer the beak the heavier the bug
-* positive effect of thorax length, where the longer the thorax the heavier the bug
-* no effect of wing length
-* positive effect of body, where the longer the body the heavier the bug
-
-* negative effect of beak*thorax
-* no effect of beak*wing
-* negative effect of thorax*wing
-* positive effect of thorax*body
-
 
 ### Plotting Male Data
 
