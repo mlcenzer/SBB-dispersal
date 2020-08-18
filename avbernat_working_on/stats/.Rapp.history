@@ -1,23 +1,352 @@
-setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats/")
-getwd()
-source("src/clean_flight_data.R")
+rm()
+clear()
+vector<-c(1,2,4,7,1)
+vector
+matrix(0, nrow=2, ncol=3)
+breakfast_cals<-function(eggs, pancakes, bacon){#
+	cals<-eggs*78 + pancakes*86 + bacon*43#
+	cals#
+}
+breakfast_cals(eggs=2, pancakes=2, bacon=5)
+breakfast_cals(eggs=2, pancakes=2)
+breakfast_cals<-function(eggs=0, pancakes=0, bacon=0){#
+	cals<-eggs*78 + pancakes*86 + bacon*43#
+	cals#
+}
+breakfast_cals(eggs=2)
+#assignment#
+#
+#object#
+a<-1#
+#vector#
+vec<-c(a,4)#
+#matrix#
+mat<-matrix(vec, nrow=2, ncol=2)#
+#function#
+breakfast_cals<-function(eggs=0, pancakes=0, bacon=0){#
+	eggs*78 + pancakes*86 + bacon*43#
+}
+egg_days<-c(1,0,5,2,3,2,0)#
+pancake_days<-c(2,2,2,2,2,2,2)#
+bacon_days<-c(0,2,0,4,0,1,1)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)
+egg_days<-c(1,0,5,2,3,2,0)#
+pancake_days<-c(2,2,2,2,2,2,2)#
+bacon_days<-c(0,2)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)
+egg_days<-c(1,0,5,2,3,2,0)#
+pancake_days<-c(2,2,2,2,2,2,2)#
+bacon_days<-c(2)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)
+egg_days<-c(1,0,5,2,3,2)#
+pancake_days<-c(2,2,2,2,2,2)#
+bacon_days<-c(2,0)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)
+breakfast_cals(egg_days, pancake_days, bacon_days)
+breakfast_cals(bacon_days, egg_days, pancake_days)
+breakfast_cals(bacon=bacon_days, eggs=egg_days, pancakes=pancake_days)
+?seq
+seq()
+seq(2)
+?
+length
+length(bacon_days)
+length(eggs_days)
+length(egg_days)
+matrix<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+matrix
+matrix[1,2]
+matrix[3,2]
+matrix[,2]
+rm(list=ls())
+matrix
+matrix<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+#assignment#
+#
+#object#
+a<-1#
+#vector#
+vec<-c(a,4)#
+#matrix#
+mat<-matrix(vec, nrow=2, ncol=2)#
+#function#
+breakfast_cals<-function(eggs=0, pancakes=0, bacon=0){#
+	eggs*78 + pancakes*86 + bacon*43#
+}#
+egg_days<-c(1,0,5,2,3,2)#
+pancake_days<-c(2,2,2,2,2,2)#
+bacon_days<-c(2,0)#
+#
+breakfast_cals(egg_days, pancake_days, bacon_days)#
+#practice:#
+#
+#write a function to convert celsius to fahrenheit#
+#
+#Use that function to make a 2-column matrix, the first column of celsius from 0 to 50, the second of corresponding fahrenheit values#
+#Make a matrix where the first column is a population with phenotype values between 0 and 10 (may be drawn randomly using rnorm() or runif())#
+#
+#use the sample() function to fill the second column with a second generation drawn from the first generation. There are multiple ways to do this!#
+#
+#do this for 10 generations.#
+#
+#wouldn't a loop be nice now?
+egg_mat<-matrix(egg_days, ncol=2, nrow=length(egg_days))
+egg_mat
+egg_mat[,2]
+egg_mat[,2]<-0
+egg_mat
+plot(egg_mat)
+plot(egg_mat[,1]~egg_mat[,2])
+24.65+78.70+64
+(24.65+78.70+64)/2
+119.57/2
+2000*0.53
+rbinom(10,1,0.5)
+rbinom(1,10,0.5)
+rbinom(10,1,0.5)
+matrix(NA, ncol=5, nrow=5)
+matrix(c(0,1), ncol=5, nrow=5)
+matrix(c(0,1,2), ncol=5, nrow=5)
+mat<-matrix(0, nrow=5, ncol=2)
+mat
+mat[,1]<-1:5
+mat
+mat[,3]<-1
+install.packages("viridis")#
+install.packages("mgcv")#
+install.packages("boot")#
+install.packages("magick")#
+#
+library(viridis)#
+library(mgcv)  #needed for gam command#
+library(boot)  #needed for the inv.logit command#
+#library(magick)
+2200*0.53
+?ncol
+583.34+291.67
+12/5
+35/12
+#draw body sizes that differ between Treatments using rnorm#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=5), Resp=c(rnorm(5, 5, 1), rnorm(5,3,1)))
+Results
+boxplot(Results)
+boxplot(Results$Resp~Results$Trt)
+lm(Resp~Trt, data=Results)
+summary(lm(Resp~Trt, data=Results))
+#plot mean body sizes from each treatment#
+boxplot(Results$Resp~Results$Trt)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
+}
+sample_test(10)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+boxplot(Results$Resp~Results$Trt)#
+}
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
+}#
+#
+sample_test(10)#
+boxplot(Results$Resp~Results$Trt)
+sample_test(100)#
+boxplot(Results$Resp~Results$Trt)
+sample_test<-function(s_size){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
+Results#
+}#
+#
+output<-sample_test(100)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(10)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(1000)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(2)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(5)#
+boxplot(output$Resp~output$Trt)
+output<-sample_test(5)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(10)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(100)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+?boxplot
+sample_test<-function(s_size, sd){#
+Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, sd), rnorm(s_size,3,sd)))#
+Results#
+}#
+#
+output<-sample_test(s_size=100, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(s_size=1000, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim#
+#
+#Run it for different sample si
+output<-sample_test(s_size=100, sd=2)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+output<-sample_test(s_size=100, sd=1)#
+boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+plot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
+10.49+29.33+18.60+15.55+19.95+5.69+6.39+7.16
+113.16/2
+348.69/4
+150/5
+14+33+18+18+22
+21+15+32+13+25+16+33
+155+15
+170-105
+155/7
+2046/15
+136/4
+30*15
+30*15*4.5
+100000/12
+3/8
+47.71/2
+60*1.75
+500/20
+52*5
+260/25
+200/8
+exp^2
+exp^(1/2)
+e^(1/2)
+exp
+exp(1/2)
+exp(-1/2)
+exp(-1/2)+e(-0.08^2/2*(0.1^2))
+exp(-1/2)+exp(-0.08^2/2*(0.1^2))
+exp(-1/2)+exp((-0.08^2)/2*(0.1^2))
+exp((-0.08^2)/2*(0.1^2))
+exp((-0.05^2)/2*(0.1^2))
+exp((-0.09^2)/2*(0.1^2))
+exp((-0.1^2)/2*(0.1^2))
+exp((-0.1^2)/(2*(0.1^2)))
+exp((-0.08^2)/(2*(0.1^2)))
+exp((-0.07^2)/(2*(0.1^2)))
+exp((-0.01^2)/(2*(0.1^2)))
+1-0.9*(4*0.1*0.9)^1
+1-0.1*(4*0.1*0.9)^1
+1-0.1*(4*0.2*0.9)^1
+1-0.1*(4*0.3*0.9)^1
+1-0.1*(4*0.4*0.9)^1
+1-0.1*(4*0.2*0.8)^1
+1-0.1*(4*0.3*0.7)^1
+1-0.1*(4*0.4*0.6)^1
+1-0.1*(4*0.4*0.6)^16
+1-0.1*(4*0.5*0.5)^16
+1-0.1*(4*0.3*0.7)^16
+1-0.1*(4*0.3*0.7)^(1/16)
+1/16
+x=0.5#
+#
+survival<-function(x){#
+	1-0.1*(4*x*(1-x))^(1/16)#
+}
+survival(x)
+survival(0.6)
+sapply(seq(0,1, by=0.1), survival)
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B)#
+}#
+#
+survival(0.6)#
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B)#
+}#
+#
+survival(0.6)
+survival<-function(x, B=1){#
+	1-0.1*(4*x*(1-x))^B#
+}#
+#
+survival(0.6)
+plot(sapply(seq(0,1, by=0.1), survival))
+survival<-function(x, B=16){#
+	1-0.1*(4*x*(1-x))^B#
+}#
+#
+survival(0.6)#
+plot(sapply(seq(0,1, by=0.1), survival))
+279.93+17.54
+(279.93+17.54)/2
+69/12
+(69/12)/2
+29.79+15.75
+sample(1:4, 4, replace=FALSE)
+runif(1,min=0, max=1)
+sample(1:4, 3, replace=FALSE)
+87.65*2
+110+8+29+16+17+44+75+2+8+59+29+66+38+40+25+13+220+29+12+29+50
+5400/60
+8*60
+480/9
+480/90
+2.7*(480/90)
+252+368.96
+620.96-367.96
+5000000/5000
+25.40*8
+14.86*2
+22000/60000000
+36000/328000000
+686991/328000000
+686991/3280000
+36000/3280000
+library(broom)
+365*24*60*60
+264/23
+246/23
+3090/39
+28*(3090/39)
+10/8
+10000/50
+200*1.25
+2500/60
+71/70
+70*0.02
+library(rethinking)
+exp(-0.61)/(1+exp(-0.61))
+686947/17953597
+154793/4657693
+93563/2707877
+106713/5150000
+120279/4485000
+18.74*24
+518.16/2
+5833/3
+6*6*6
+216-148
+216-144
+518.16/2
+472.81/2
+472.81/2 - 115.20
+9.53+6.05
+15.58/2
+exp(1062)
+1/exp(1062)
 rm(list=ls())#
-setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats/") ####MLC: changed to my working directory#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats") ####MLC: changed to my working directory#
 #
 library(lme4)#
-library(rethinking)#
-#
 library(dplyr)#
-library(tidyselect)#
-library(stringr)#
-#
-library(glmnet)#
 library(ggplotify)#
 library(gridExtra)#
 library(ggformula)#
-library(randomcoloR)
-rm(list=ls())#
-output_col = TRUE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html ####MLC: changed to TRUE#
+library(tidyselect)#
+library(zoo)#
+#
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html#
 source("src/clean_flight_data.R") # Script that loads and cleans up the data#
 source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white#
 source("src/center_flight_data.R")#
@@ -25,140 +354,127 @@ source("src/get_warnings.R")#
 #
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")#
 data_all <- data[[1]]#
-data_tested <- data[[2]]
-data_flew_all <- data_tested[data_tested$flew_b == 1, ]
-### Check for low speeds#
-low_speeds <- data_flew_all %>%#
-  filter(average_speed <0.05)#
-#
-### Check for high speeds#
-high_speeds <- data_flew_all %>%#
-  filter(average_speed >0.65)#
-#
-low_speeds$flight_type# have 7 bugs with average_speed = 0 but were marked as bursters (this could be just something very short (second burst) - not enough to grant a calculation) - I decided to remove them. But one bug was continuous and had 0 distance and 0 speeds - that was bug 196 T2 set011-3-03-2020-A3_196.txt#
-high_speeds$flight_type # 3 bugs - also bursters. Could also be short explosive bursts but not true to the biology of these bugs (more like us blowing on them).
-data_flew <- data_flew_all %>%#
-  filter(average_speed > 0.05) %>%#
-  filter(average_speed < 0.65)#
-data_flew <- center_data(data_flew)
-test_model<-lmer(average_speed~host_c*sex_c*sym_dist + (1|ID), data=data_flew) #it converges - Run one set of models with ID as a random factor.#
-getME(test_model, "lower")
-#######testing some covariates:#
-data_flew$chamber <- relevel(data_flew$chamber, ref="A-2")#
-#
-####### Effect of chamber B-2 and B-4#
-tidy_regression(lmer(average_speed~chamber + (1|ID), data=data_flew), is_color=output_col) ###Possibly reductions in speed #
-#
-####### No effect of test date#
-tidy_regression(lmer(average_speed~days_from_start + (1|chamber), data=data_flew), is_color=output_col)#
-#
-####### No effect of test time#
-tidy_regression(lmer(average_speed~min_from_IncStart + (1|trial_type), data=data_flew), is_color=output_col)
-####### Effect of chamber B-2 and B-4#
-summary(lmer(average_speed~chamber + (1|ID), data=data_flew), is_color=output_col) ###Possibly reductions in speed #
-#
-####### No effect of test date#
-summary(lmer(average_speed~days_from_start + (1|chamber), data=data_flew), is_color=output_col)#
-#
-####### No effect of test time#
-summary(lmer(average_speed~min_from_IncStart + (1|trial_type), data=data_flew), is_color=output_col)
-data<-data.frame(R=data_flew$average_speed,#
-                 A=data_flew$host_c, #
-                 B=data_flew$sex_c, #
-                 C=data_flew$sym_dist, #
-                 X=data_flew$trial_type)#
-#
-source("src/compare_models.R")#
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
-data_flew <- data_flew %>%#
-  filter(!is.na(mass))#
-data_flew <- center_data(data_flew)#
-#
-data<-data.frame(R=data_flew$average_speed,#
-                 A=data_flew$host_c, #
-                 B=data_flew$sex_c, #
-                 C=data_flew$sym_dist, #
-                 D=data_flew$mass_c,#
-                 X=data_flew$chamber)
-source("src/compare_models.R")#
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
-m4
-plot(m4)
-shapiro.test(m4$residuals)
-shapiro.test(residuals(m4))
-qqnorm(resid(m4))
-rm(list=ls())#
-output_col = FALSE #
-source("src/clean_flight_data.R") #
-source("src/regression_output.R") #
-source("src/center_flight_data.R")#
-source("get_warnings.R")#
-#
-data <- read_flight_data("data/all_flight_data-Winter2020.csv")#
-data_all <- data[[1]]#
 data_tested <- data[[2]]#
 #
-### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)#
-data_flew <- data_tested[data_tested$flew_b == 1, ]#
-data_flew <- data_flew[data_flew$average_speed > 0, ]#
-data_flew <- center_data(data_flew)#
+d <- data_tested %>%#
+   group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, #
+            beak, thorax, wing, body, w_morph, morph_notes, tested,#
+            host_c, sex_c, w_morph_c, lat_c, sym_dist, sym_dist_s, total_eggs_c, #
+            beak_c, thorax_c, thorax_s, body_c, wing_c, wing2body, wing2body_c, wing2body_s) %>%#
+   summarise_all(funs(list(na.omit(.))))#
 #
-### Break up by flight type#
-dC<-data_flew[data_flew$flight_type=="C" | data_flew$flight_type=="BC" | data_flew$flight_type=="CB",] # this includes BC or CB flyers #
-dC <- center_data(dC)
-source("src/get_warnings.R")
-dC$chamber <- relevel(dC$chamber, ref="A-2")
-tidy_regression(lmer(average_speed~chamber + (1|ID), data=dC), is_color=output_col) ###Possibly reductions in speed
-data<-data.frame(R=dC$average_speed,#
-                 A=dC$host_c, #
-                 B=dC$sex_c, #
-                 C=dC$sym_dist, #
-                 X=dC$ID, Y=dC$chamber)#
+d$num_flew <- 0#
+d$num_notflew <- 0#
+d$average_mass <- 0#
 #
-source("src/compare_models.R")#
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
-m36
-m38
-m18
-m20
-summary(m20)
-AIC(m20)
-AIC(m18)
-AICprobs(m20)
-AICprobs(m20, m18)
-anova(m18, m20, test="Chisq")
-summary(m20)
-summary(m18)
-data<-data.frame(R=dC$average_speed,#
-                 A=dC$host_c, #
-                 B=dC$sex_c, #
-                 C=dC$sym_dist, #
-                 X=dC$ID, Y=dC$chamber)#
+for(row in 1:length(d$flew_b)){#
+  n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails#
+  d$num_flew[[row]] <- n_flew #
+  n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails#
+  d$num_notflew[[row]] <- n_notflew#
+  avg_mass <- mean(d$mass[[row]])#
+  d$average_mass[[row]] <- avg_mass#
+#
+}#
+#
+d <- select(d, -filename, -channel_letter, -set_number)#
+d <- center_data(d, is_not_binded = FALSE)
+head(d)
+R1 = d$num_flew#
+R2 = d$num_notflew#
+A = d$host_c#
+B = d$sex_c#
+C = d$sym_dist#
+D = d$average_mass_c #
+#X = d$population # or population get the same top model. Variance is 0 if use pop, not 0 if use site. However, variance is 0 if use site and average_mass (down below). #
+#
+data<-data.frame(R1, R2, A, B, C, D, X)#
 #
 source("src/compare_models.R")#
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
-m0<-lmer(R~(1|X), data=data)
-AIC(m0)
-m0<-lmer(R~(1|X), data=data, REML=FALSE)
-AIC(m0)
-shapiro.test(residuals(m0))
-m0<-lmer(R~(1|X), data=data)
-shapiro.test(residuals(m0))
-data<-data.frame(R=dC$average_speed,#
-                 A=dC$host_c, #
-                 B=dC$sex_c, #
-                 C=dC$sym_dist, #
-                 X=dC$ID, Y=dC$chamber)#
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF.R"))#
+length(errors$warnings)
+R1 = d$num_flew#
+R2 = d$num_notflew#
+A = d$host_c#
+B = d$sex_c#
+C = d$sym_dist#
+D = d$average_mass_c #
+#
+data<-data.frame(R1, R2, A, B, C, D)#
 #
 source("src/compare_models.R")#
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
-data<-data.frame(R=dC$average_speed,#
-                 A=dC$host_c, #
-                 B=dC$sex_c, #
-                 C=dC$sym_dist, #
-                 X=dC$ID, Y=dC$chamber)#
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF.R"))#
+length(errors$warnings)
+anova(m63, m85, test="Chisq") # Adding B*D does not improve fit#
+#
+anova(m26, m36, test="Chisq") # Adding C does not improve fit | is sym dist important?#
+anova(m12, m26, test="Chisq") # Adding A*D does improve fit
+mass_model_all <- glm(cbind(num_flew, num_notflew) ~ host_c * average_mass_c +  sex_c, data=d, family=binomial)
+tidy_regression(mass_model_all, is_color=output_color)#
+summary(mass_model_all)
+tidy_regression(mass_model_all, is_color=output_col)#
+summary(mass_model_all)
+summary(m63)
+plot(d$average_mass)
+plot(sort(d$average_mass))
+plot(sort(d$average_mass), col=c(1,2)[as.factor(d$sex)])
+d$average_mass[d$sex=="F"]
+d$average_mass[d$sex=="M"]
+plot(sort(d$average_mass[d$sex=="F"]))
+points(sort(d$average_mass[d$sex=="M"]), pch=10)
+plot(sort(d$average_mass[d$sex=="F"]), ylim=c(0,0.18))
+points(sort(d$average_mass[d$sex=="M"]), pch=10)
+plot(sort(d$average_mass[d$sex=="F"]), ylim=c(0,0.18), xlim=c(0,200))
+points(sort(d$average_mass[d$sex=="M"]), pch=10)
+plot(sort(d$average_mass[d$sex=="F"]), ylim=c(0,0.18), xlim=c(0,210))
+points(sort(d$average_mass[d$sex=="M"]), pch=10)
+plot(d$average_mass[d$sex=="F"]~d$wing2body), ylim=c(0,0.18), xlim=c(0,210))
+plot(d$average_mass[d$sex=="F"]~d$wing2body[d$sex=="F"]), ylim=c(0,0.18), xlim=c(0,210))
+plot(d$average_mass[d$sex=="F"]~d$wing2body[d$sex=="F"], ylim=c(0,0.18), xlim=c(0,210))
+plot(d$average_mass[d$sex=="F"]~d$wing2body[d$sex=="F"], ylim=c(0,0.18), xlim=c(0,3)
+)
+plot(d$average_mass[d$sex=="F"]~d$wing2body[d$sex=="F"], ylim=c(0,0.18), xlim=c(0,1))
+plot(d$average_mass[d$sex=="F"]~d$wing2body[d$sex=="F"], ylim=c(0,0.18), xlim=c(0.6,0.8))
+points(d$average_mass[d$sex=="M"]~d$wing2body[d$sex=="M"], pch=10)
+d$wing2body
+d$wing2body_c
+R1 = d$num_flew#
+R2 = d$num_notflew#
+A = d$host_c#
+B = d$sex_c#
+C = d$sym_dist_c#
+D = d$average_mass_c #
+#
+data<-data.frame(R1, R2, A, B, C, D)
+head(d)
+sym_dist_s
+d$sym_dist_s
+mean(d$wym_dist_s)
+mean(d$sym_dist_s)
+R1 = d$num_flew#
+R2 = d$num_notflew#
+A = d$host_c#
+B = d$sex_c#
+C = d$sym_dist_s#
+D = d$average_mass_c #
+#
+data<-data.frame(R1, R2, A, B, C, D)#
 #
 source("src/compare_models.R")#
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
-anova(m38, m42, test="Chisq")
-anova(m40, m38, test="Chisq")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF.R"))#
+length(errors$warnings)
+summary(m63)
+summary(m26)
+R1 = d$num_flew#
+R2 = d$num_notflew#
+A = d$host_c#
+B = d$sex_c#
+C = d$wing2body_c#
+D = d$average_mass_c #
+#
+data<-data.frame(R1, R2, A, B, C, D)#
+#
+source("src/compare_models.R")#
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF.R"))#
+length(errors$warnings)
+summary(m36)

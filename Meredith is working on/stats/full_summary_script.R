@@ -36,6 +36,7 @@ d <- data_tested %>%
 d$num_flew <- 0
 d$num_notflew <- 0
 d$average_mass <- 0
+d$average_days <- 0
 
 for(row in 1:length(d$flew_b)){
   
@@ -47,14 +48,23 @@ for(row in 1:length(d$flew_b)){
   
   avg_mass <- mean(d$mass[[row]])
   d$average_mass[[row]] <- avg_mass
+  
+  avg_days <- mean(d$days_from_start[[row]])
+  d$average_days[[row]] <- avg_days
 
 }
 
-d <- select(d, -filename, -channel_letter, -set_number)
-d <- center_data(d, is_not_binded = FALSE)
+d_all <- select(d, -filename, -channel_letter, -set_number) ##MC: changed the name here to avoid re-loading all data to generate male and female only centered datasets
+d <- center_data(d_all, is_not_binded = FALSE)
 
 
-####model testing; no random factors.
+######################All data for y/n flight response
+
+##test average days:
+days_model<-glm(cbind(num_flew,num_notflew)~average_days, data=d, family=binomial)
+summary(days_model) ##no detectabe effect
+
+## model testing; no random factors.
 R1 = d$num_flew
 R2 = d$num_notflew
 A = d$host_c
@@ -79,7 +89,7 @@ summary(mass_model_all)
 
 
 
-#model with wing2body, but no sym_dist
+## model with wing2body, but no sym_dist
 R1 = d$num_flew
 R2 = d$num_notflew
 A = d$host_c
@@ -94,7 +104,106 @@ errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R 
 length(errors$warnings)
 
 
-###########MLC: Because mass and morphology are so dimorphic between sexs, and sex itself has a strong direct effect, let's go now to the split-by-sex results.
+
+#### MLC: Because mass and morphology are so dimorphic between sexs, and sex itself has a strong direct effect, let's go now to the split-by-sex results.
+
+
+##################### Females only
+
+
+data_fem <- d_all[d_all$sex=="F",]
+data_fem <- center_data(data_fem, is_not_binded = FALSE)
+
+R1 = data_fem$num_flew
+R2 = data_fem$num_notflew
+A = data_fem$host_c
+B = data_fem$sym_dist
+C = data_fem$average_mass_c 
+D = data_fem$wing2body_s
+
+data<-data.frame(R1, R2, A, B, C, D)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF.R"))
+length(errors$warnings)
+
+anova(m25, m13, test='Chisq') #adding A*C improves fit
+
+anova(m25, m17, test="Chisq") #adding D improves fit
+
+anova(m10, m13, test="Chisq") #adding A alone does not improve fit
+
+anova(m10, m3, test="Chisq") #adding D improves fit
+
+anova(m10, m4, test="Chisq") #adding C improves fit
+
+
+mass_model_fem <- glm(cbind(num_flew, num_notflew) ~ host_c * average_mass_c +  wing2body_s, data=data_fem, family=binomial)
+
+summary(mass_model_fem)
+
+##MC: wing2body recapitulates the effect of wing, although less strongly; however, wing2body is a better predictor: it is not correlated with mass, and it shows the effect of wing length while controlling for overall body size. Furthermore, it's the predictor we use in the full dataset. So, while the effect is less satisfyingly strong, it is still the right predictor to use.
 
 
 
+
+
+#######################Males only
+data_male <- d_all[d_all$sex=="M",]
+data_male <- center_data(data_male, is_not_binded = FALSE)
+
+R1 = data_male$num_flew
+R2 = data_male$num_notflew
+A = data_male$host_c
+B = data_male$sym_dist
+C = data_male$average_mass_c 
+D = data_male$wing2body_c
+
+data<-data.frame(R1, R2, A, B, C, D)
+
+source("src/compare_models.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF.R"))
+length(errors$warnings)
+
+anova(m83, m105, test="Chisq") #no improvement from adding C*D
+
+anova(m50, m62, test="Chisq") #no improvement from adding C
+
+anova(m83, m62, test="Chisq") #marginal improvement from B*C
+
+mass_model_male<-glm(cbind(num_flew, num_notflew)~host_c*wing2body_c + sym_dist*average_mass_c + sym_dist*wing2body_c, family=binomial, data=data_male)
+summary(mass_model_male)
+
+##quick plots
+
+##mass by sex
+d$mass_block<-round(d$average_mass/0.005)*0.005
+d$f_prob<-d$num_flew/(d$num_flew+d$num_notflew)
+data_temp<-aggregate(f_prob~sex*mass_block, data=d, FUN=mean)
+data_temp$n<-aggregate(f_prob~sex*mass_block, data=d, FUN=length)$f_prob
+plot(data_temp$f_prob~data_temp$mass_block, pch=c(10,19)[as.factor(data_temp$sex)])
+##Indeed, we can see that the effect of mass is very pronounced in females but essentially absent in males.
+
+##mass by host
+d$mass_block<-round(d$average_mass/0.005)*0.005
+d$f_prob<-d$num_flew/(d$num_flew+d$num_notflew)
+data_temp<-aggregate(f_prob~host_c*mass_block, data=d, FUN=mean)
+data_temp$n<-aggregate(f_prob~host_c*mass_block, data=d, FUN=length)$f_prob
+plot(data_temp$f_prob~data_temp$mass_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)])
+##Here, we can see that the effect of mass is clear on GRT (red) but weak on BV (blue)
+
+
+
+##wing2body
+d$wing2body_block<-round(d$wing2body, digits=2)
+d$f_prob<-d$num_flew/(d$num_flew+d$num_notflew)
+data_temp<-aggregate(f_prob~sex*wing2body_block, data=d, FUN=mean)
+data_temp$n<-aggregate(f_prob~sex*wing2body_block, data=d, FUN=length)$f_prob
+plot(data_temp$f_prob~data_temp$wing2body_block, pch=c(10,19)[as.factor(data_temp$sex)])
+##Here we can see that as wing2body ratio increases, flight probability increases, but that the effect is much more pronounced in males.
+
+##wing2body by host
+data_temp<-aggregate(f_prob~host_c*wing2body_block, data=d, FUN=mean)
+data_temp$n<-aggregate(f_prob~host_c*wing2body_block, data=d, FUN=length)$f_prob
+plot(data_temp$f_prob~data_temp$wing2body_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)])
+##Here, we can see that the positive effect of wing2body ratio is clear on GRT (red) and on BV (blue)
