@@ -56,6 +56,7 @@ for(row in 1:length(d$flew_b)){
 
 d_all <- select(d, -filename, -channel_letter, -set_number) ##MC: changed the name here to avoid re-loading all data to generate male and female only centered datasets
 d_all$avg_days_c<-d_all$avg_days-mean(d_all$avg_days, na.rm=TRUE)
+d_all$average_mass_trans<-log(sqrt(d_all$average_mass))-mean(log(sqrt(d_all$average_mass)), na.rm=TRUE)
 d <- center_data(d_all, is_not_binded = FALSE)
 
 ######################All data for y/n flight response
@@ -70,7 +71,7 @@ R2 = d$num_notflew
 A = d$host_c
 B = d$sex_c
 C = d$sym_dist_s
-D = d$average_mass_c 
+D = d$average_mass_trans 
 E = d$avg_days_c
 
 data<-data.frame(R1, R2, A, B, C, D, E)
@@ -84,35 +85,15 @@ anova(m26, m36, test="Chisq") # Adding C does not improve fit
 anova(m12, m26, test="Chisq") # Adding A*D does improve fit
 anova(m63, m36, test="Chisq") # Adding C*D does improve fit
 
-mass_model_all <- glm(cbind(num_flew, num_notflew) ~ host_c * average_mass_c + sym_dist_s * average_mass_c + sex + avg_days_c, data=d, family=binomial)
+mass_model_all <- glm(cbind(num_flew, num_notflew) ~ host_c * average_mass_trans + sym_dist_s * average_mass_trans + sex + avg_days_c, data=d, family=binomial)
 
 summary(mass_model_all)
-
-
-
-## model with wing2body, but no sym_dist
-R1 = d$num_flew
-R2 = d$num_notflew
-A = d$host_c
-B = d$sex_c
-C = d$wing2body_c
-D = d$average_mass_c 
-E = d$avg_days_c
-
-data<-data.frame(R1, R2, A, B, C, D, E)
-
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF + E.R"))
-length(errors$warnings)
-
 
 
 #### MLC: Because mass and morphology are so dimorphic between sexs, and sex itself has a strong direct effect, let's go now to the split-by-sex results. It may be that in wing2body and mass, we have pinpointed the reasons that sexes are different; but they differ in so many ways, that is a strong inference ot try and make.
 
 
 ##################### Females only
-
-
 data_fem <- d_all[d_all$sex=="F",]
 data_fem <- center_data(data_fem, is_not_binded = FALSE)
 
@@ -120,7 +101,7 @@ R1 = data_fem$num_flew
 R2 = data_fem$num_notflew
 A = data_fem$host_c
 B = data_fem$sym_dist
-C = data_fem$average_mass_c 
+C = log(sqrt(data_fem$average_mass))-mean(log(sqrt(data_fem$average_mass)), na.rm=TRUE)
 D = data_fem$wing2body_s
 E = data_fem$avg_days_c
 
