@@ -55,9 +55,18 @@ for(row in 1:length(d$flew_b)){
 }
 
 d_all <- select(d, -filename, -channel_letter, -set_number) ##MC: changed the name here to avoid re-loading all data to generate male and female only centered datasets
+
+##added 3 additional variables:
+#average days from start; this deals with the problem of individuals who were only tested early, who will have a low value here, and with any chance individuals who happened to get in early or late in both trials.
 d_all$avg_days_c<-d_all$avg_days-mean(d_all$avg_days, na.rm=TRUE)
+
+##this transformation gets average_mass to act normal and not give haywire effect estimates
 d_all$average_mass_trans<-log(sqrt(d_all$average_mass))-mean(log(sqrt(d_all$average_mass)), na.rm=TRUE)
-d_all$wing2body_norm<-log(sqrt(0.85-d_all$wing2body))-mean(log(sqrt(0.85-d_all$wing2body)), na.rm=TRUE)
+
+##this transformation gets wing2body ratio to act normal and not give haywire effect estimates; note that this has an inverse relationship with wing2body ratio itself, so effect estimate directions need to be flipped for interpretation.
+
+d_all$wing2body_trans<-log(sqrt(0.85-d_all$wing2body))-mean(log(sqrt(0.85-d_all$wing2body)), na.rm=TRUE)
+
 d <- center_data(d_all, is_not_binded = FALSE)
 
 ######################All data for y/n flight response
@@ -103,7 +112,7 @@ R2 = data_fem$num_notflew
 A = data_fem$host_c
 B = data_fem$sym_dist
 C = data_fem$average_mass_trans
-D = data_fem$wing2body_norm
+D = data_fem$wing2body_trans
 E = data_fem$avg_days_c
 
 data<-data.frame(R1, R2, A, B, C, D, E)
@@ -125,17 +134,9 @@ anova(m10, m4, test="Chisq") #adding C improves fit
 anova(m25, m45, test='Chisq') #adding A*D does not improve fit
 
 
-mass_model_fem <- glm(cbind(num_flew, num_notflew) ~ host_c * average_mass_trans +  wing2body_norm + avg_days_c, data=data_fem, family=binomial)
+mass_model_fem <- glm(cbind(num_flew, num_notflew) ~ host_c * average_mass_trans +  wing2body_trans + avg_days_c, data=data_fem, family=binomial)
 
 summary(mass_model_fem)
-
-
-
-
-##MC: Average days pops out!
-
-
-
 
 
 #######################Males only
@@ -145,9 +146,9 @@ data_male <- center_data(data_male, is_not_binded = FALSE)
 R1 = data_male$num_flew
 R2 = data_male$num_notflew
 A = data_male$host_c
-B = data_male$sym_dist
+B = data_male$sym_dist_s
 C = data_male$average_mass_trans 
-D = data_male$wing2body_c
+D = data_male$wing2body_trans
 E = data_male$avg_days_c
 
 data<-data.frame(R1, R2, A, B, C, D, E)
@@ -156,23 +157,28 @@ source("src/compare_models.R")
 errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF + E.R"))
 length(errors$warnings)
 
-anova(m83, m105, test="Chisq") #no improvement from adding C*D
+anova(m83, m105, test="Chisq") #marginal improvement from adding C*D
 
 anova(m50, m62, test="Chisq") #no improvement from adding C
 
 anova(m83, m62, test="Chisq") #marginal improvement from B*C
 
-mass_model_male<-glm(cbind(num_flew, num_notflew)~host_c*wing2body_c + sym_dist*average_mass_trans + sym_dist*wing2body_c + avg_days_c, family=binomial, data=data_male)
+mass_model_male<-glm(cbind(num_flew, num_notflew)~host_c*wing2body_trans + sym_dist_s*wing2body_trans + avg_days_c, family=binomial, data=data_male)
 summary(mass_model_male)
 
 
+#I just made this a function so it's easy to collapse. Probably won't stay in the final summary script, but I found it helpful for looking at these interactions.
+six_plots<-function(){
+##quick plots for y/n flight
+##plot-specific grouping variables
+d$mass_block<-round(d$average_mass/0.005)*0.005
+d$f_prob<-d$num_flew/(d$num_flew+d$num_notflew)
+d$wing2body_block<-round(d$wing2body, digits=2)
+d$days_block<-round(d$avg_days, digits=0)
 
-##quick plots; best to run them all at once, as some local plotting variables are not redefined between plots.
 
 par(mfrow=c(2,3), mai=c(0.6, 0.6, 0.02, 0.02))
 ##mass by sex
-d$mass_block<-round(d$average_mass/0.005)*0.005
-d$f_prob<-d$num_flew/(d$num_flew+d$num_notflew)
 data_temp<-aggregate(f_prob~sex*mass_block, data=d, FUN=mean)
 data_temp$n<-aggregate(f_prob~sex*mass_block, data=d, FUN=length)$f_prob
 plot(data_temp$f_prob~data_temp$mass_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight probability", xlab="Mass")
@@ -180,7 +186,6 @@ plot(data_temp$f_prob~data_temp$mass_block, pch=c(2,19)[as.factor(data_temp$sex)
 
 
 ##wing2body by sex
-d$wing2body_block<-round(d$wing2body, digits=2)
 data_temp<-aggregate(f_prob~sex*wing2body_block, data=d, FUN=mean)
 data_temp$n<-aggregate(f_prob~sex*wing2body_block, data=d, FUN=length)$f_prob
 plot(data_temp$f_prob~data_temp$wing2body_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight probability", xlab="wing-to-body ratio")
@@ -188,7 +193,6 @@ plot(data_temp$f_prob~data_temp$wing2body_block, pch=c(2,19)[as.factor(data_temp
 
 
 ##average days from start by sex
-d$days_block<-round(d$avg_days, digits=0)
 data_temp<-aggregate(f_prob~sex*days_block, data=d, FUN=mean)
 data_temp$n<-aggregate(f_prob~sex*days_block, data=d, FUN=length)$f_prob
 plot(data_temp$f_prob~data_temp$days_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight probability", xlab="Days from start")
@@ -214,3 +218,5 @@ data_temp<-aggregate(f_prob~host_c*days_block, data=d, FUN=mean)
 data_temp$n<-aggregate(f_prob~host_c*days_block, data=d, FUN=length)$f_prob
 plot(data_temp$f_prob~data_temp$days_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], , ylab="Flight probability", xlab="Days from start")
 ##Here we can see no clear impact of days from start when separated by host
+}
+six_plots()
