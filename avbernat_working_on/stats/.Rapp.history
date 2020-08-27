@@ -1,3 +1,43 @@
+fake.data<-data.frame(Treatment=rep(c("A", "B"),each=30), resp=c(rnorm(30, 5, 1), rnorm(30, 6, 1)))#
+#
+fake.data_u<-data.frame(Treatment=rep(c("A", "B"),each=30), resp=c(runif(30, 4, 5), runif(30, 4.5, 5.5)))#
+#
+fake.data_u$trans<-0.0223*(fake.data$resp^2.9816)#
+#
+model6<-lmp(resp-mean(resp)~Treatment, data=fake.data_u, maxIter=999999, Ca=0)#
+model7<-lmp(trans-mean(trans)~Treatment, data=fake.data_u, maxIter=999999, Ca=0)
+summary(model8)
+summary(model7)
+summary(model6)
+Anova(model6)
+Anova(model7)
+plot(model6)
+plot(model7)
+AIC(model6)
+AIC(model7)
+19*40*52
+19*40*52*1.254
+18*40*52*1.254
+18*40*52*1
+20*40*52*1
+20*40*52*1.254
+15*20*30
+19*40*52
+18*40*52*1.254
+18*40*52*1
+19*40*52*1
+5*10*8
+5*8*8
+6*8*8
+1148/7
+348.71*2
+697.42/5
+697.42/3
+(697.42/3)/4
+(697.42/3)/5
+697.42/14
+2*(697.42/14)
+3*(697.42/14)
 697.42/5
 #assignment#
 #
@@ -364,295 +404,29 @@ exp(-0.61)/(1+exp(-0.61))
 exp(1062)
 1/exp(1062)
 rm(list=ls())#
-setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats") ####MLC: changed to my working directory#
-##load libraries#
-#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats")#
 library(lme4)#
+library(rethinking)#
+#
 library(dplyr)#
+library(tidyselect)#
+library(stringr)#
+#
+library(glmnet)#
 library(ggplotify)#
 library(gridExtra)#
 library(ggformula)#
-library(tidyselect)#
-library(zoo)#
+library(randomcoloR)#
 #
-##source scripts#
-#
-output_col = TRUE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html#
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html#
 source("src/clean_flight_data.R") # Script that loads and cleans up the data#
 source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white#
 source("src/center_flight_data.R")#
 source("src/get_warnings.R")#
 #
-##read in and clean up data#
-#
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")#
 data_all <- data[[1]]#
 data_tested <- data[[2]]#
 #
-d <- data_tested %>%#
-   group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, #
-            beak, thorax, wing, body, w_morph, morph_notes, tested,#
-            host_c, sex_c, w_morph_c, lat_c, sym_dist, sym_dist_s, total_eggs_c, #
-            beak_c, thorax_c, thorax_s, body_c, wing_c, wing2body, wing2body_c, wing2body_s) %>%#
-   summarise_all(funs(list(na.omit(.))))#
-#
-d$num_flew <- 0#
-d$num_notflew <- 0#
-d$average_mass <- 0#
-d$total_days <- 0#
-#
-for(row in 1:length(d$flew_b)){#
-  n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails#
-  d$num_flew[[row]] <- n_flew #
-  n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails#
-  d$num_notflew[[row]] <- n_notflew#
-  avg_mass <- mean(d$mass[[row]])#
-  d$average_mass[[row]] <- avg_mass#
-  total_days <- sum(d$days_from_start[[row]]) ##MC: didn't work, or as average#
-  d$total_days[[row]] <- total_days#
-#
-}#
-#
-d_all <- select(d, -filename, -channel_letter, -set_number) ##MC: changed the name here to avoid re-loading all data to generate male and female only centered datasets#
-d <- center_data(d_all, is_not_binded = FALSE)#
-######################All data for y/n flight response#
-#
-##test total or average days:#
-days_model<-glm(cbind(num_flew,num_notflew)~total_days, data=d, family=binomial)#
-summary(days_model) ##no detectabe effect#
-#
-## model testing; ID random factor, but we also need days_from_start in there. We will NOT be testing interactions with days_from_start. Cross the old fingers and see how it goes...#
-R = data_tested$flew_b#
-A = data_tested$host_c#
-B = data_tested$sex_c#
-C = data_tested$sym_dist_s#
-D = data_tested$average_mass_c #
-E = data_tested$days_from_start_c#
-X = data_tested$ID#
-#
-data<-data.frame(R, A, B, C, D, E, X)#
-#
-source("src/compare_models.R")#
-errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 1-RF + 4-FF + E.R"))#
-length(errors$warnings)
-m0<-glmer(R~1 + E + (1|X), data=data, family=binomial) #this one will be at the end to keep index number and model number the same.#
-m1<-glmer(R~A + E + (1|X), data=data, family=binomial)#
-m2<-glmer(R~B + E + (1|X), data=data, family=binomial)#
-m3<-glmer(R~C + E + (1|X), data=data, family=binomial)#
-m4<-glmer(R~D + E + (1|X), data=data, family=binomial)
-head(data_tested)
-R = data_tested$flew_b#
-A = data_tested$host_c#
-B = data_tested$sex_c#
-C = data_tested$sym_dist_s#
-D = data_tested$mass #
-E = data_tested$days_from_start_c#
-X = data_tested$ID#
-#
-data<-data.frame(R, A, B, C, D, E, X)
-m0<-glmer(R~1 + E + (1|X), data=data, family=binomial) #this one will be at the end to keep index number and model number the same.#
-m1<-glmer(R~A + E + (1|X), data=data, family=binomial)#
-m2<-glmer(R~B + E + (1|X), data=data, family=binomial)#
-m3<-glmer(R~C + E + (1|X), data=data, family=binomial)#
-m4<-glmer(R~D + E + (1|X), data=data, family=binomial)
-m5<-glmer(R~A+B + E + (1|X), data=data, family=binomial)#
-m6<-glmer(R~A+C + E + (1|X), data=data, family=binomial)#
-m7<-glmer(R~A+D + E + (1|X), data=data, family=binomial)#
-m8<-glmer(R~B+C + E + (1|X), data=data, family=binomial)#
-m9<-glmer(R~B+D + E + (1|X), data=data, family=binomial)#
-m10<-glmer(R~C+D + E + (1|X), data=data, family=binomial)#
-m11<-glmer(R~A+B+C + E + (1|X), data=data, family=binomial)#
-m12<-glmer(R~A+B+D + E + (1|X), data=data, family=binomial)#
-m13<-glmer(R~A+C+D + E + (1|X), data=data, family=binomial)#
-m14<-glmer(R~B+C+D + E + (1|X), data=data, family=binomial)#
-m15<-glmer(R~A+B+C+D + E + (1|X), data=data, family=binomial)
-R = data_tested$flew_b#
-A = data_tested$host_c#
-B = data_tested$sex_c#
-C = data_tested$sym_dist_s#
-D = (data_tested$mass - mean(data_tested$mass) #
-E = data_tested$days_from_start_c#
-X = data_tested$ID#
-#
-data<-data.frame(R, A, B, C, D, E, X)
-m0<-glmer(R~1 + E + (1|X), data=data, family=binomial) #this one will be at the end to keep index number and model number the same.#
-m1<-glmer(R~A + E + (1|X), data=data, family=binomial)#
-m2<-glmer(R~B + E + (1|X), data=data, family=binomial)#
-m3<-glmer(R~C + E + (1|X), data=data, family=binomial)#
-m4<-glmer(R~D + E + (1|X), data=data, family=binomial)#
-#
-m5<-glmer(R~A+B + E + (1|X), data=data, family=binomial)#
-m6<-glmer(R~A+C + E + (1|X), data=data, family=binomial)#
-m7<-glmer(R~A+D + E + (1|X), data=data, family=binomial)#
-m8<-glmer(R~B+C + E + (1|X), data=data, family=binomial)#
-m9<-glmer(R~B+D + E + (1|X), data=data, family=binomial)#
-m10<-glmer(R~C+D + E + (1|X), data=data, family=binomial)#
-m11<-glmer(R~A+B+C + E + (1|X), data=data, family=binomial)#
-m12<-glmer(R~A+B+D + E + (1|X), data=data, family=binomial)#
-m13<-glmer(R~A+C+D + E + (1|X), data=data, family=binomial)#
-m14<-glmer(R~B+C+D + E + (1|X), data=data, family=binomial)#
-m15<-glmer(R~A+B+C+D + E + (1|X), data=data, family=binomial)
-R = data_tested$flew_b#
-A = data_tested$host_c#
-B = data_tested$sex_c#
-C = data_tested$sym_dist_s#
-D = (data_tested$mass - mean(data_tested$mass))#
-E = data_tested$days_from_start_c#
-X = data_tested$ID#
-#
-data<-data.frame(R, A, B, C, D, E, X)
-m0<-glmer(R~1 + E + (1|X), data=data, family=binomial) #this one will be at the end to keep index number and model number the same.#
-m1<-glmer(R~A + E + (1|X), data=data, family=binomial)#
-m2<-glmer(R~B + E + (1|X), data=data, family=binomial)#
-m3<-glmer(R~C + E + (1|X), data=data, family=binomial)#
-m4<-glmer(R~D + E + (1|X), data=data, family=binomial)#
-#
-m5<-glmer(R~A+B + E + (1|X), data=data, family=binomial)#
-m6<-glmer(R~A+C + E + (1|X), data=data, family=binomial)#
-m7<-glmer(R~A+D + E + (1|X), data=data, family=binomial)#
-m8<-glmer(R~B+C + E + (1|X), data=data, family=binomial)#
-m9<-glmer(R~B+D + E + (1|X), data=data, family=binomial)#
-m10<-glmer(R~C+D + E + (1|X), data=data, family=binomial)#
-m11<-glmer(R~A+B+C + E + (1|X), data=data, family=binomial)#
-m12<-glmer(R~A+B+D + E + (1|X), data=data, family=binomial)#
-m13<-glmer(R~A+C+D + E + (1|X), data=data, family=binomial)#
-m14<-glmer(R~B+C+D + E + (1|X), data=data, family=binomial)#
-m15<-glmer(R~A+B+C+D + E + (1|X), data=data, family=binomial)
-data$D
-(data_tested$mass - mean(data_tested$mass))
-(data_tested$mass - mean(data_tested$mass, na.rm=TRUE))
-R = data_tested$flew_b#
-A = data_tested$host_c#
-B = data_tested$sex_c#
-C = data_tested$sym_dist_s#
-D = (data_tested$mass - mean(data_tested$mass, na.rm=TRUE))#
-E = data_tested$days_from_start_c#
-X = data_tested$ID#
-#
-data<-data.frame(R, A, B, C, D, E, X)
-m0<-glmer(R~1 + E + (1|X), data=data, family=binomial) #this one will be at the end to keep index number and model number the same.#
-m1<-glmer(R~A + E + (1|X), data=data, family=binomial)#
-m2<-glmer(R~B + E + (1|X), data=data, family=binomial)#
-m3<-glmer(R~C + E + (1|X), data=data, family=binomial)#
-m4<-glmer(R~D + E + (1|X), data=data, family=binomial)#
-#
-m5<-glmer(R~A+B + E + (1|X), data=data, family=binomial)#
-m6<-glmer(R~A+C + E + (1|X), data=data, family=binomial)#
-m7<-glmer(R~A+D + E + (1|X), data=data, family=binomial)#
-m8<-glmer(R~B+C + E + (1|X), data=data, family=binomial)#
-m9<-glmer(R~B+D + E + (1|X), data=data, family=binomial)#
-m10<-glmer(R~C+D + E + (1|X), data=data, family=binomial)#
-m11<-glmer(R~A+B+C + E + (1|X), data=data, family=binomial)#
-m12<-glmer(R~A+B+D + E + (1|X), data=data, family=binomial)#
-m13<-glmer(R~A+C+D + E + (1|X), data=data, family=binomial)#
-m14<-glmer(R~B+C+D + E + (1|X), data=data, family=binomial)#
-m15<-glmer(R~A+B+C+D + E + (1|X), data=data, family=binomial)
-m16<-glmer(R~A*B + E + (1|X), data=data, family=binomial)#
-m17<-glmer(R~A*C + E + (1|X), data=data, family=binomial)#
-m18<-glmer(R~A*D + E + (1|X), data=data, family=binomial)#
-m19<-glmer(R~B*C + E + (1|X), data=data, family=binomial)#
-m20<-glmer(R~B*D + E + (1|X), data=data, family=binomial)#
-m21<-glmer(R~C*D + E + (1|X), data=data, family=binomial)
-R = data_tested$flew_b#
-A = data_tested$host_c#
-B = data_tested$sex_c#
-C = data_tested$sym_dist_s#
-D = (data_tested$mass - mean(data_tested$mass, na.rm=TRUE))#
-E = data_tested$days_from_start_c#
-X = data_tested$ID#
-#
-data<-data.frame(R, A, B, C, D, E, X)#
-#
-source("src/compare_models.R")#
-errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glmer 1-RF + 4-FF.R"))#
-length(errors$warnings)
-R1 = d$num_flew#
-R2 = d$num_notflew#
-A = d$host_c#
-B = d$sex_c#
-C = d$sym_dist_s#
-D = d$average_mass_c #
-#
-data<-data.frame(R, A, B, C, D, E, X)#
-#
-source("src/compare_models.R")#
-errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF.R"))#
-length(errors$warnings)
-R1 = d$num_flew#
-R2 = d$num_notflew#
-A = d$host_c#
-B = d$sex_c#
-C = d$sym_dist_s#
-D = d$average_mass_c #
-#
-data<-data.frame(R, A, B, C, D)#
-#
-source("src/compare_models.R")#
-errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF.R"))#
-length(errors$warnings)
-R1 = d$num_flew#
-R2 = d$num_notflew#
-A = d$host_c#
-B = d$sex_c#
-C = d$sym_dist_s#
-D = d$average_mass_c #
-#
-data<-data.frame(R1, R2, A, B, C, D)#
-#
-source("src/compare_models.R")#
-errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF.R"))#
-length(errors$warnings)
-m63
-anova(m63, m85, test="Chisq") # Adding B*D does not improve fit#
-anova(m26, m36, test="Chisq") # Adding C does not improve fit | is sym dist important?#
-anova(m12, m26, test="Chisq") # Adding A*D does improve fit
-anova(m63, m36, test="Chisq")
-m63
-mass_model_all <- glm(cbind(num_flew, num_notflew) ~ host_c * average_mass_c + sym_dist_s * average_mass_c + sex, data=d, family=binomial)#
-#
-summary(mass_model_all)
-####convert and add days_from start#
-data_tested$mass_c <- data_tested$mass - mean(data_tested$mass, na.rm=TRUE)
-model_all <- glmer(flew_b ~ host_c * mass_c + sym_dist_s * mass_c + sex + days_from_start_c, data=d, family=binomial)#
-#
-summary(model_all)
-model_all <- glmer(flew_b ~ host_c * mass_c + sym_dist_s * mass_c + sex + days_from_start_c, data=data_tested, family=binomial)#
-#
-summary(model_all)
-model_all <- glmer(flew_b ~ host_c * mass_c + sym_dist_s * mass_c + sex + days_from_start_c + (1|ID), data=data_tested, family=binomial)#
-#
-summary(model_all)
-summary(mass_model_all)
-data_fem <- d_all[d_all$sex=="F",]#
-data_fem <- center_data(data_fem, is_not_binded = FALSE)#
-#
-R1 = data_fem$num_flew#
-R2 = data_fem$num_notflew#
-A = data_fem$host_c#
-B = data_fem$sym_dist#
-C = data_fem$average_mass_c #
-D = data_fem$wing2body_s#
-#
-data<-data.frame(R1, R2, A, B, C, D)#
-#
-source("src/compare_models.R")#
-errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF.R"))#
-length(errors$warnings)#
-#
-anova(m25, m13, test='Chisq') #adding A*C improves fit#
-#
-anova(m25, m17, test="Chisq") #adding D improves fit#
-#
-anova(m10, m13, test="Chisq") #adding A alone does not improve fit#
-#
-anova(m10, m3, test="Chisq") #adding D improves fit#
-#
-anova(m10, m4, test="Chisq") #adding C improves fit#
-mass_model_fem <- glm(cbind(num_flew, num_notflew) ~ host_c * average_mass_c +  wing2body_s, data=data_fem, family=binomial)#
-#
-summary(mass_model_fem)
-model_fem <- glmer(flew_b ~ host_c * mass_c + wing2body_s + days_from_start_c + (1|ID), data=data_fem, family=binomial)#
-#
-summary(model_fem)
-model_fem <- glmer(flew_b ~ host_c * mass_c + wing2body_s + days_from_start_c + (1|ID), data=data_tested[data_tested$sex=="F",], family=binomial)
-summary(model_fem)
+### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)#
+data_flew_all <- data_tested[data_tested$flew_b == 1, ]

@@ -1,3 +1,6 @@
+
+####################################################################
+######Flight yes-no stats
 rm(list=ls())
 setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats") ####MLC: changed to my working directory
 
@@ -167,7 +170,8 @@ mass_model_male<-glm(cbind(num_flew, num_notflew)~host_c*wing2body_trans + sym_d
 summary(mass_model_male)
 
 
-#I just made this a function so it's easy to collapse. Probably won't stay in the final summary script, but I found it helpful for looking at these interactions.
+#I just made this a function so it's easy to collapse. Probably won't stay in the final summary script, but I found it helpful for looking at these interactions. In making the data_temp summaries, data=d can be swapped for data=d[d$sex=="M",] (or F) to look at host effects within one sex only.
+
 six_plots<-function(){
 ##quick plots for y/n flight
 ##plot-specific grouping variables
@@ -220,3 +224,234 @@ plot(data_temp$f_prob~data_temp$days_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0
 ##Here we can see no clear impact of days from start when separated by host
 }
 six_plots()
+
+
+#################################################################
+#### Flight speed stats
+
+rm(list=ls())
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats")
+
+
+library(lme4)
+
+library(dplyr)
+library(tidyselect)
+library(stringr)
+
+library(glmnet)
+library(ggplotify)
+library(gridExtra)
+library(ggformula)
+library(randomcoloR)
+
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
+source("src/clean_flight_data.R") # Script that loads and cleans up the data
+source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
+source("src/center_flight_data.R")
+source("src/get_warnings.R")
+
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+
+### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)
+data_flew_all <- data_tested[data_tested$flew_b == 1, ] 
+
+### Check for low speeds
+low_speeds <- data_flew_all %>%
+  filter(average_speed <0.05)
+
+### Check for high speeds
+high_speeds <- data_flew_all %>%
+  filter(average_speed >0.65)
+
+low_speeds$flight_type# have 7 bugs with average_speed = 0 but were marked as bursters (this could be just something very short (second burst) - not enough to grant a calculation) - I decided to remove them. But one bug was continuous and had 0 distance and 0 speeds - that was bug 196 T2 set011-3-03-2020-A3_196.txt
+high_speeds$flight_type # 3 bugs - also bursters. Could also be short explosive bursts but not true to the biology of these bugs (more like us blowing on them).
+
+### Remove outliers
+data_flew <- data_flew_all %>%
+  filter(average_speed > 0.05) %>%
+  filter(average_speed < 0.65)
+  
+data_flew <- center_data(data_flew)
+
+##transform mass & speed
+data_flew$mass_trans<-log(data_flew$mass)-mean(log(data_flew$mass), na.rm=TRUE)
+
+data_flew$speed_trans<-log(data_flew$average_speed)-mean(log(data_flew$average_speed), na.rm=TRUE)
+
+
+#######do flight types differ?
+data_flew$flight_type <- relevel(data_flew$flight_type, ref="B")
+
+summary(lmer(speed_trans~flight_type + (1|chamber) + (1|ID), data=data_flew)) #yes, B and C differ distinctly in average speed; BC and CB are not different from C, so let's keep those in the continuous flight analyses.
+
+#######testing some covariates:
+data_flew$chamber <- relevel(data_flew$chamber, ref="A-4")
+
+####### Effect of chamber B-2 and B-4
+summary(lmer(speed_trans~chamber + (1|ID), data=data_flew))###Possibly reductions in speed 
+
+####### No effect of test date
+tidy_regression(lmer(speed_trans~days_from_start + (1|chamber), data=data_flew), is_color=output_col)
+
+####### No effect of test time
+tidy_regression(lmer(average_speed~min_from_IncStart + (1|chamber), data=data_flew), is_color=output_col)
+
+
+##bursters are likely to be much less reliable than continuous flyers; so, let's exclude them.
+
+########C, BC, and CB data for speed
+
+data_flew <- data_flew %>%
+  filter(!is.na(mass))
+data_flew <- center_data(data_flew)
+
+data<-data.frame(R=data_flew$speed_trans,
+                 A=data_flew$host_c, 
+                 B=data_flew$sex_c, 
+                 C=data_flew$sym_dist_s, 
+                 D=data_flew$mass_trans,
+                 X=data_flew$chamber,
+                 Y=data_flew$ID) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+
+#one model, m52, did not converge; I'm ok excluding that model as a possibility.
+
+anova(m4, m7, test="Chisq") #adding A does not improve fit
+anova(m4, m9, test="Chisq") #adding B does not improve fit
+anova(m2, m9, test="Chisq") #adding D does not improve fit - basically it seems we can't tell here if it's sex or mass.
+anova(m9, m20, test="Chisq") #adding B*D interaction does not improve fit
+anova(m0, m4, test="Chisq") # Adding D does improve fit
+anova(m0, m2, test="Chisq") # Adding B does improve fit
+
+
+
+
+#######Since we can't tell if it's sex or mass, let's look within each sex, as in y/n; and try adding wing2body
+
+data_fem <- data_flew[data_flew$sex=="F",]
+data_fem <- center_data(data_fem, is_not_binded = FALSE)
+
+data<-data.frame(R=data_fem$speed_trans,
+                 A=data_fem$host_c, 
+                 B=data_fem$sym_dist_s, 
+                 C=data_fem$mass_trans,
+                 D=data_fem$wing2body,
+                 X=data_fem$chamber,
+                 Y=data_fem$ID) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+
+anova(m0, m4, test="Chisq") #null model is the best model
+anova(m0, m1, test="Chisq") #null model is the best model
+
+
+
+###males
+
+data_male <- data_flew[data_flew$sex=="M",]
+data_male <- center_data(data_male, is_not_binded = FALSE)
+
+data<-data.frame(R=data_male$speed_trans,
+                 A=data_male$host_c, 
+                 B=data_male$sym_dist_s, 
+                 C=data_male$mass_trans,
+                 D=data_male$wing2body,
+                 X=data_male$chamber,
+                 Y=data_male$ID) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+
+anova(m10, m4, test="Chisq") #no improvement from adding C
+anova(m10, m3, test="Chisq") #marginal improvement from adding D
+anova(m4, m0, test="Chisq") #improvement from adding D
+anova(m3, m0, test="Chisq") #marginal improvement from adding C
+
+male_speed_model<-lmer(speed_trans~wing2body + (1|ID) + (1|chamber), data=data_male)
+summary(male_speed_model)
+
+s.test <- paste("pval: ", shapiro.test(residuals(male_speed_model))$p.value)
+qqnorm(resid(male_speed_model))
+qqline(resid(male_speed_model))
+###Gorgeously normal post-transform
+
+
+
+
+####I'm actually quite happy with this, but will take a quick peak here at the continuous fliers only:
+
+dC<-data_flew[data_flew$flight_type=="C",] 
+dC <- dC %>%
+  filter(!is.na(body))
+dC <- center_data(dC)
+
+data<-data.frame(R=dC$speed_trans,
+                 A=dC$host_c, 
+                 B=dC$sex_c, 
+                 C=dC$mass_trans,
+                 D=dC$wing2body,
+                 X=dC$chamber,
+                 Y=dC$ID) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+
+#mass and wing2body ratio both potentially interact with sex; by sex:
+
+######females
+
+data_fem <- dC[dC$sex=="F",]
+data_fem <- center_data(data_fem, is_not_binded = FALSE)
+
+data<-data.frame(R=data_fem$speed_trans,
+                 A=data_fem$host_c, 
+                 B=data_fem$sym_dist_s, 
+                 C=data_fem$mass_trans,
+                 D=data_fem$wing2body,
+                 X=data_fem$chamber,
+                 Y=data_fem$ID) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+
+anova(m0, m4, test="Chisq") #null model is the best model
+anova(m0, m1, test="Chisq") #null model is the best model
+
+
+
+###males
+
+data_male <- dC[dC$sex=="M",]
+data_male <- center_data(data_male, is_not_binded = FALSE)
+
+data<-data.frame(R=data_male$speed_trans,
+                 A=data_male$host_c, 
+                 B=data_male$sym_dist_s, 
+                 C=data_male$mass_trans,
+                 D=data_male$wing2body,
+                 X=data_male$chamber,
+                 Y=data_male$ID) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+
+anova(m10, m4, test="Chisq") #no improvement from adding C
+anova(m10, m3, test="Chisq") #marginal improvement from adding D
+anova(m4, m0, test="Chisq") #improvement from adding D
+anova(m3, m0, test="Chisq") #marginal improvement from adding C
+
+male_speed_model<-lmer(speed_trans~wing2body + (1|ID) + (1|chamber), data=data_male)
+summary(male_speed_model)
+
+s.test <- paste("pval: ", shapiro.test(residuals(male_speed_model))$p.value)
+qqnorm(resid(male_speed_model))
+qqline(resid(male_speed_model))
+###Gorgeously normal post-transform
+
+
