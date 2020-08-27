@@ -406,3 +406,122 @@ library(ggplotify)
 library(gridExtra)
 library(ggformula)
 library(randomcoloR)
+
+
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
+source("src/clean_flight_data.R") # Script that loads and cleans up the data
+source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
+source("src/center_flight_data.R")
+source("src/get_warnings.R")
+
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+
+### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)
+data_flew <- data_tested[data_tested$flew_b == 1, ]
+data_flew <- data_flew[data_flew$distance > 0, ]
+data_flew <- center_data(data_flew)
+
+
+##bursters are likely to be much less reliable than continuous flyers; so, let's exclude them.
+
+########C, BC, and CB data for distance
+
+data_flew <- data_flew %>%
+  filter(!is.na(mass))
+data_flew <- center_data(data_flew)
+
+dC<-data_flew[data_flew$flight_type=="C" | data_flew$flight_type=="BC" | data_flew$flight_type=="CB" ,] 
+dC <- dC %>%
+  filter(!is.na(body))
+dC <- center_data(dC)
+
+###This is intensely influenced by flight_type - similar to speed, I think these are much more meaningful for continuous fliers.
+##transform mass
+dC$mass_trans<-log(dC$mass)-mean(log(dC$mass), na.rm=TRUE)
+
+##transform distance
+dC$distance_trans<-log(sqrt(100+dC$distance))-mean(log(sqrt(100+dC$distance)), na.rm=TRUE)
+
+#######testing some covariates:
+dC$chamber <- relevel(dC$chamber, ref="B-4")
+
+####### Effect of chamber A-4, B-2 and B-4
+summary(lmer(distance_trans~chamber + (1|ID), data=dC)) ###yes, this one's an issue 
+
+####### No effect of test date
+tidy_regression(lmer(distance_trans~days_from_start + (1|chamber), data=dC), is_color=output_col)
+
+####### marginal effect of start time
+tidy_regression(lmer(distance_trans~min_from_IncStart + (1|chamber), data=data_flew), is_color=output_col)
+
+
+
+### model transformed distance
+data<-data.frame(R=dC$distance_trans,
+                 A=dC$host_c, 
+                 B=dC$sex_c, 
+                 C=dC$mass_trans,
+                 D=dC$wing2body, #Sym_dist showed up in nothing, reran with wing2body
+                 X=dC$chamber,
+                 Y=dC$ID) 
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+
+anova(m2, m9, test="Chisq") #adding D does not improve things
+anova(m3, m8, test="Chisq") #adding B does not improve things
+anova(m2, m8, test="Chisq") #adding C does not improve things
+
+#Once again, unclear if it's mass or sex driving the increase in distance traveled. Unfortunately, we still don't have the replication to split this by sex (at least, not for females). So, we just have to accept the uncertainty here - but we can use the delta stats to help dig into this for mass!
+
+distance_model_all<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=dC)
+summary(distance_model_all)
+               
+               
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_all))$p.value)
+s.test #This isn't passing, but it's not awful. I'm willing to accept this.
+qqnorm(resid(distance_model_all))
+qqline(resid(distance_model_all))
+ 
+
+
+
+
+four_plots<-function(){
+##quick plots for distance
+##plot-specific grouping variables
+dC$mass_block<-round(dC$mass/0.005)*0.005
+dC$wing2body_block<-round(dC$wing2body, digits=2)
+
+
+par(mfrow=c(2,2), mai=c(0.8, 0.8, 0.02, 0.02))
+##mass by sex
+data_temp<-aggregate(distance~sex*mass_block, data=dC, FUN=mean)
+data_temp$n<-aggregate(distance~sex*mass_block, data=dC, FUN=length)$distance
+plot(data_temp$distance~data_temp$mass_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight distance", xlab="Mass")
+##Like flight speed, here we again see what looks like a positive effect of mass for males, but not for females
+
+
+##wing2body by sex
+data_temp<-aggregate(distance~sex*wing2body_block, data=dC, FUN=mean)
+data_temp$n<-aggregate(distance~sex*wing2body_block, data=dC, FUN=length)$distance
+plot(data_temp$distance~data_temp$wing2body_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight distance", xlab="wing-to-body ratio")
+##There's not much going on here.
+
+#mass by host
+data_temp<-aggregate(distance~host_c*mass_block, data=dC, FUN=mean)
+data_temp$n<-aggregate(distance~host_c*mass_block, data=dC, FUN=length)$distance
+plot(data_temp$distance~data_temp$mass_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight distance", xlab="Mass")
+##Not much here either
+
+
+##wing2body by host
+data_temp<-aggregate(distance~host_c*wing2body_block, data=dC, FUN=mean)
+data_temp$n<-aggregate(distance~host_c*wing2body_block, data=dC FUN=length)$distance
+plot(data_temp$distance~data_temp$wing2body_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight distance", xlab="wing-to-body ratio")
+##Not much here either
+
+}
+four_plots()

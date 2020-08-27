@@ -1,8 +1,6 @@
 library(lme4)
 #generic 4-fixed factor and 2 random-factor models
 
-## First Random Factor 
-
 m0<-lmer(R~1 + (1|X) + (1|Y), data=data, REML=FALSE) #this one will be at the end to keep index number and model number the same.
 m1<-lmer(R~A + (1|X) + (1|Y), data=data, REML=FALSE)
 m2<-lmer(R~B + (1|X) + (1|Y), data=data, REML=FALSE)
