@@ -308,85 +308,7 @@ data_flew <- data_flew %>%
   filter(!is.na(mass))
 data_flew <- center_data(data_flew)
 
-data<-data.frame(R=data_flew$speed_trans,
-                 A=data_flew$host_c, 
-                 B=data_flew$sex_c, 
-                 C=data_flew$sym_dist_s, 
-                 D=data_flew$mass_trans,
-                 X=data_flew$chamber,
-                 Y=data_flew$ID) 
-
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
-
-#one model, m52, did not converge; I'm ok excluding that model as a possibility.
-
-anova(m4, m7, test="Chisq") #adding A does not improve fit
-anova(m4, m9, test="Chisq") #adding B does not improve fit
-anova(m2, m9, test="Chisq") #adding D does not improve fit - basically it seems we can't tell here if it's sex or mass.
-anova(m9, m20, test="Chisq") #adding B*D interaction does not improve fit
-anova(m0, m4, test="Chisq") # Adding D does improve fit
-anova(m0, m2, test="Chisq") # Adding B does improve fit
-
-
-
-
-#######Since we can't tell if it's sex or mass, let's look within each sex, as in y/n; and try adding wing2body
-
-data_fem <- data_flew[data_flew$sex=="F",]
-data_fem <- center_data(data_fem, is_not_binded = FALSE)
-
-data<-data.frame(R=data_fem$speed_trans,
-                 A=data_fem$host_c, 
-                 B=data_fem$sym_dist_s, 
-                 C=data_fem$mass_trans,
-                 D=data_fem$wing2body,
-                 X=data_fem$chamber,
-                 Y=data_fem$ID) 
-
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
-
-anova(m0, m4, test="Chisq") #null model is the best model
-anova(m0, m1, test="Chisq") #null model is the best model
-
-
-
-###males
-
-data_male <- data_flew[data_flew$sex=="M",]
-data_male <- center_data(data_male, is_not_binded = FALSE)
-
-data<-data.frame(R=data_male$speed_trans,
-                 A=data_male$host_c, 
-                 B=data_male$sym_dist_s, 
-                 C=data_male$mass_trans,
-                 D=data_male$wing2body,
-                 X=data_male$chamber,
-                 Y=data_male$ID) 
-
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
-
-anova(m10, m4, test="Chisq") #no improvement from adding C
-anova(m10, m3, test="Chisq") #marginal improvement from adding D
-anova(m4, m0, test="Chisq") #improvement from adding D
-anova(m3, m0, test="Chisq") #marginal improvement from adding C
-
-male_speed_model<-lmer(speed_trans~wing2body + (1|ID) + (1|chamber), data=data_male)
-summary(male_speed_model)
-
-s.test <- paste("pval: ", shapiro.test(residuals(male_speed_model))$p.value)
-qqnorm(resid(male_speed_model))
-qqline(resid(male_speed_model))
-###Gorgeously normal post-transform
-
-
-
-
-####I'm actually quite happy with this, but will take a quick peak here at the continuous fliers only:
-
-dC<-data_flew[data_flew$flight_type=="C",] 
+dC<-data_flew[data_flew$flight_type=="C" | data_flew$flight_type=="BC" | data_flew$flight_type=="CB" ,] 
 dC <- dC %>%
   filter(!is.na(body))
 dC <- center_data(dC)
@@ -395,63 +317,92 @@ data<-data.frame(R=dC$speed_trans,
                  A=dC$host_c, 
                  B=dC$sex_c, 
                  C=dC$mass_trans,
-                 D=dC$wing2body,
+                 D=dC$sym_dist_s, #I note it does not matter whether this is sym_dist or wing2body 
                  X=dC$chamber,
                  Y=dC$ID) 
 
 source("src/compare_models.R")
 model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
 
-#mass and wing2body ratio both potentially interact with sex; by sex:
+anova(m19, m28, test="Chisq") #adding A does not improve fit
+anova(m19, m29, test="Chisq") #adding D does not improve fit
+anova(m19, m8, test="Chisq") #adding B*C interaction does improve fit
 
-######females
+continuous_model<-lmer(speed_trans~sex*mass_trans + (1|ID) + (1|chamber), data=dC)
 
-data_fem <- dC[dC$sex=="F",]
-data_fem <- center_data(data_fem, is_not_binded = FALSE)
+summary(continuous_model) 
 
-data<-data.frame(R=data_fem$speed_trans,
-                 A=data_fem$host_c, 
-                 B=data_fem$sym_dist_s, 
-                 C=data_fem$mass_trans,
-                 D=data_fem$wing2body,
-                 X=data_fem$chamber,
-                 Y=data_fem$ID) 
-
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
-
-anova(m0, m4, test="Chisq") #null model is the best model
-anova(m0, m1, test="Chisq") #null model is the best model
-
-
-
-###males
-
-data_male <- dC[dC$sex=="M",]
-data_male <- center_data(data_male, is_not_binded = FALSE)
-
-data<-data.frame(R=data_male$speed_trans,
-                 A=data_male$host_c, 
-                 B=data_male$sym_dist_s, 
-                 C=data_male$mass_trans,
-                 D=data_male$wing2body,
-                 X=data_male$chamber,
-                 Y=data_male$ID) 
-
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
-
-anova(m10, m4, test="Chisq") #no improvement from adding C
-anova(m10, m3, test="Chisq") #marginal improvement from adding D
-anova(m4, m0, test="Chisq") #improvement from adding D
-anova(m3, m0, test="Chisq") #marginal improvement from adding C
-
-male_speed_model<-lmer(speed_trans~wing2body + (1|ID) + (1|chamber), data=data_male)
-summary(male_speed_model)
-
-s.test <- paste("pval: ", shapiro.test(residuals(male_speed_model))$p.value)
-qqnorm(resid(male_speed_model))
-qqline(resid(male_speed_model))
+s.test <- paste("pval: ", shapiro.test(residuals(continuous_model))$p.value)
+s.test
+qqnorm(resid(continuous_model))
+qqline(resid(continuous_model))
 ###Gorgeously normal post-transform
 
+speed_summary<-aggregate(average_speed~sex, data=dC, FUN=mean)
+speed_summary$se<-aggregate(average_speed~sex, data=dC, FUN=function(x) sd(x)/sqrt(length(x)))$average_speed
 
+###There is not enough replication to break this down by sex, so we'll leave it as it is.
+
+#this could be generalized, although it's probably not worth the time?
+four_plots<-function(){
+##quick plots for speed
+##plot-specific grouping variables
+data_flew$mass_block<-round(data_flew$mass/0.005)*0.005
+data_flew$wing2body_block<-round(data_flew$wing2body, digits=2)
+
+
+par(mfrow=c(2,2), mai=c(0.8, 0.8, 0.02, 0.02))
+##mass by sex
+data_temp<-aggregate(average_speed~sex*mass_block, data=data_flew, FUN=mean)
+data_temp$n<-aggregate(average_speed~sex*mass_block, data=data_flew, FUN=length)$average_speed
+plot(data_temp$average_speed~data_temp$mass_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight speed", xlab="Mass")
+##Unlike for flight probability, here we see a clear effect of mass on male flight speed, but not female flight speed.
+
+
+##wing2body by sex
+data_temp<-aggregate(average_speed~sex*wing2body_block, data=data_flew, FUN=mean)
+data_temp$n<-aggregate(average_speed~sex*wing2body_block, data=data_flew, FUN=length)$average_speed
+plot(data_temp$average_speed~data_temp$wing2body_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight speed", xlab="wing-to-body ratio")
+##Here we can see that as wing2body ratio increases, flight speed increases marginally in males, but not noticeably in females
+
+#mass by host
+data_temp<-aggregate(average_speed~host_c*mass_block, data=data_flew, FUN=mean)
+data_temp$n<-aggregate(average_speed~host_c*mass_block, data=data_flew, FUN=length)$average_speed
+plot(data_temp$average_speed~data_temp$mass_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight speed", xlab="Mass")
+##Here we can see a weak positive effect of mass on flight speed, that does not appear to differ between hosts
+
+
+##wing2body by host
+data_temp<-aggregate(average_speed~host_c*wing2body_block, data=data_flew, FUN=mean)
+data_temp$n<-aggregate(average_speed~host_c*wing2body_block, data=data_flew, FUN=length)$average_speed
+plot(data_temp$average_speed~data_temp$wing2body_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight speed", xlab="wing-to-body ratio")
+##Here we can see a potential weak positive effect of wing2body ratio on flight speed that does not differ between hosts.
+
+}
+four_plots()
+
+
+
+
+
+
+
+
+
+#####################################################################
+##### distance
+
+rm(list=ls())
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats")
+
+library(lme4)
+
+library(dplyr)
+library(tidyselect)
+
+library(ggplot2)
+library(glmnet)
+library(ggplotify)
+library(gridExtra)
+library(ggformula)
+library(randomcoloR)
