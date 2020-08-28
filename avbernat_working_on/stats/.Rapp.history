@@ -1,374 +1,3 @@
-fake.data<-data.frame(Treatment=rep(c("A", "B"),each=30), resp=c(rnorm(30, 5, 1), rnorm(30, 6, 1)))#
-#
-fake.data_u<-data.frame(Treatment=rep(c("A", "B"),each=30), resp=c(runif(30, 4, 5), runif(30, 4.5, 5.5)))#
-#
-fake.data_u$trans<-0.0223*(fake.data$resp^2.9816)#
-#
-model6<-lmp(resp-mean(resp)~Treatment, data=fake.data_u, maxIter=999999, Ca=0)#
-model7<-lmp(trans-mean(trans)~Treatment, data=fake.data_u, maxIter=999999, Ca=0)
-summary(model8)
-summary(model7)
-summary(model6)
-Anova(model6)
-Anova(model7)
-plot(model6)
-plot(model7)
-AIC(model6)
-AIC(model7)
-19*40*52
-19*40*52*1.254
-18*40*52*1.254
-18*40*52*1
-20*40*52*1
-20*40*52*1.254
-15*20*30
-19*40*52
-18*40*52*1.254
-18*40*52*1
-19*40*52*1
-5*10*8
-5*8*8
-6*8*8
-1148/7
-348.71*2
-697.42/5
-697.42/3
-(697.42/3)/4
-(697.42/3)/5
-697.42/14
-2*(697.42/14)
-3*(697.42/14)
-697.42/5
-#assignment#
-#
-#object#
-a<-1#
-#
-#vector#
-vec<-c(a,4)#
-#
-#matrix#
-mat<-matrix(vec, nrow=2, ncol=2)
-mat
-#function#
-breakfast_cals<-function(eggs, pancakes, bacon){#
-	cals<-eggs*78 + pancakes*86 + bacon*43#
-	cals#
-}
-breakfast_cals(eggs=2, pancakes=2, bacon=4)
-breakfast_cals(eggs=3, pancakes=2)
-breakfast_cals(eggs=3, pancakes=2, bacon=0)
-egg_days<-c(1,0,5,2,3,2,0)#
-pancake_days<-c(2,2,2,2,2,2,2)#
-bacon_days<-c(0,2,0,4,0,1,1)#
-#
-breakfast_cals(egg_days, pancake_days, bacon_days)
-run_amount<-function(breakfast){#
-	distance<-(breakfast-300)/100#
-}
-rm()
-clear()
-vector<-c(1,2,4,7,1)
-vector
-matrix(0, nrow=2, ncol=3)
-breakfast_cals<-function(eggs, pancakes, bacon){#
-	cals<-eggs*78 + pancakes*86 + bacon*43#
-	cals#
-}
-breakfast_cals(eggs=2, pancakes=2, bacon=5)
-breakfast_cals(eggs=2, pancakes=2)
-breakfast_cals<-function(eggs=0, pancakes=0, bacon=0){#
-	cals<-eggs*78 + pancakes*86 + bacon*43#
-	cals#
-}
-breakfast_cals(eggs=2)
-#assignment#
-#
-#object#
-a<-1#
-#vector#
-vec<-c(a,4)#
-#matrix#
-mat<-matrix(vec, nrow=2, ncol=2)#
-#function#
-breakfast_cals<-function(eggs=0, pancakes=0, bacon=0){#
-	eggs*78 + pancakes*86 + bacon*43#
-}
-egg_days<-c(1,0,5,2,3,2,0)#
-pancake_days<-c(2,2,2,2,2,2,2)#
-bacon_days<-c(0,2,0,4,0,1,1)#
-#
-breakfast_cals(egg_days, pancake_days, bacon_days)
-egg_days<-c(1,0,5,2,3,2,0)#
-pancake_days<-c(2,2,2,2,2,2,2)#
-bacon_days<-c(0,2)#
-#
-breakfast_cals(egg_days, pancake_days, bacon_days)
-egg_days<-c(1,0,5,2,3,2,0)#
-pancake_days<-c(2,2,2,2,2,2,2)#
-bacon_days<-c(2)#
-#
-breakfast_cals(egg_days, pancake_days, bacon_days)
-egg_days<-c(1,0,5,2,3,2)#
-pancake_days<-c(2,2,2,2,2,2)#
-bacon_days<-c(2,0)#
-#
-breakfast_cals(egg_days, pancake_days, bacon_days)
-breakfast_cals(egg_days, pancake_days, bacon_days)
-breakfast_cals(bacon_days, egg_days, pancake_days)
-breakfast_cals(bacon=bacon_days, eggs=egg_days, pancakes=pancake_days)
-?seq
-seq()
-seq(2)
-?
-length
-length(bacon_days)
-length(eggs_days)
-length(egg_days)
-matrix<-matrix(egg_days, ncol=2, nrow=length(egg_days))
-matrix
-matrix[1,2]
-matrix[3,2]
-matrix[,2]
-rm(list=ls())
-matrix
-matrix<-matrix(egg_days, ncol=2, nrow=length(egg_days))
-#assignment#
-#
-#object#
-a<-1#
-#vector#
-vec<-c(a,4)#
-#matrix#
-mat<-matrix(vec, nrow=2, ncol=2)#
-#function#
-breakfast_cals<-function(eggs=0, pancakes=0, bacon=0){#
-	eggs*78 + pancakes*86 + bacon*43#
-}#
-egg_days<-c(1,0,5,2,3,2)#
-pancake_days<-c(2,2,2,2,2,2)#
-bacon_days<-c(2,0)#
-#
-breakfast_cals(egg_days, pancake_days, bacon_days)#
-#practice:#
-#
-#write a function to convert celsius to fahrenheit#
-#
-#Use that function to make a 2-column matrix, the first column of celsius from 0 to 50, the second of corresponding fahrenheit values#
-#Make a matrix where the first column is a population with phenotype values between 0 and 10 (may be drawn randomly using rnorm() or runif())#
-#
-#use the sample() function to fill the second column with a second generation drawn from the first generation. There are multiple ways to do this!#
-#
-#do this for 10 generations.#
-#
-#wouldn't a loop be nice now?
-egg_mat<-matrix(egg_days, ncol=2, nrow=length(egg_days))
-egg_mat
-egg_mat[,2]
-egg_mat[,2]<-0
-egg_mat
-plot(egg_mat)
-plot(egg_mat[,1]~egg_mat[,2])
-24.65+78.70+64
-(24.65+78.70+64)/2
-119.57/2
-2000*0.53
-rbinom(10,1,0.5)
-rbinom(1,10,0.5)
-rbinom(10,1,0.5)
-matrix(NA, ncol=5, nrow=5)
-matrix(c(0,1), ncol=5, nrow=5)
-matrix(c(0,1,2), ncol=5, nrow=5)
-mat<-matrix(0, nrow=5, ncol=2)
-mat
-mat[,1]<-1:5
-mat
-mat[,3]<-1
-install.packages("viridis")#
-install.packages("mgcv")#
-install.packages("boot")#
-install.packages("magick")#
-#
-library(viridis)#
-library(mgcv)  #needed for gam command#
-library(boot)  #needed for the inv.logit command#
-#library(magick)
-2200*0.53
-?ncol
-583.34+291.67
-12/5
-35/12
-#draw body sizes that differ between Treatments using rnorm#
-Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=5), Resp=c(rnorm(5, 5, 1), rnorm(5,3,1)))
-Results
-boxplot(Results)
-boxplot(Results$Resp~Results$Trt)
-lm(Resp~Trt, data=Results)
-summary(lm(Resp~Trt, data=Results))
-#plot mean body sizes from each treatment#
-boxplot(Results$Resp~Results$Trt)
-sample_test<-function(s_size){#
-Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
-Results#
-}
-sample_test(10)
-sample_test<-function(s_size){#
-Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
-boxplot(Results$Resp~Results$Trt)#
-}
-sample_test<-function(s_size){#
-Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
-Results#
-}#
-#
-sample_test(10)#
-boxplot(Results$Resp~Results$Trt)
-sample_test(100)#
-boxplot(Results$Resp~Results$Trt)
-sample_test<-function(s_size){#
-Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, 1), rnorm(s_size,3,1)))#
-Results#
-}#
-#
-output<-sample_test(100)#
-boxplot(output$Resp~output$Trt)
-output<-sample_test(10)#
-boxplot(output$Resp~output$Trt)
-output<-sample_test(1000)#
-boxplot(output$Resp~output$Trt)
-output<-sample_test(2)#
-boxplot(output$Resp~output$Trt)
-output<-sample_test(5)#
-boxplot(output$Resp~output$Trt)
-output<-sample_test(5)#
-boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
-output<-sample_test(10)#
-boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
-output<-sample_test(100)#
-boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
-?boxplot
-sample_test<-function(s_size, sd){#
-Results<-data.frame(Trt=rep(c('A', 'B'), times=1, each=s_size), Resp=c(rnorm(s_size, 5, sd), rnorm(s_size,3,sd)))#
-Results#
-}#
-#
-output<-sample_test(s_size=100, sd=2)#
-boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
-output<-sample_test(s_size=1000, sd=2)#
-boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim#
-#
-#Run it for different sample si
-output<-sample_test(s_size=100, sd=2)#
-boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
-output<-sample_test(s_size=100, sd=1)#
-boxplot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
-plot(output$Resp~output$Trt, ylim=c(0,8))#try adding ylim
-10.49+29.33+18.60+15.55+19.95+5.69+6.39+7.16
-113.16/2
-348.69/4
-150/5
-14+33+18+18+22
-21+15+32+13+25+16+33
-155+15
-170-105
-155/7
-2046/15
-136/4
-30*15
-30*15*4.5
-100000/12
-3/8
-47.71/2
-60*1.75
-500/20
-52*5
-260/25
-200/8
-exp^2
-exp^(1/2)
-e^(1/2)
-exp
-exp(1/2)
-exp(-1/2)
-exp(-1/2)+e(-0.08^2/2*(0.1^2))
-exp(-1/2)+exp(-0.08^2/2*(0.1^2))
-exp(-1/2)+exp((-0.08^2)/2*(0.1^2))
-exp((-0.08^2)/2*(0.1^2))
-exp((-0.05^2)/2*(0.1^2))
-exp((-0.09^2)/2*(0.1^2))
-exp((-0.1^2)/2*(0.1^2))
-exp((-0.1^2)/(2*(0.1^2)))
-exp((-0.08^2)/(2*(0.1^2)))
-exp((-0.07^2)/(2*(0.1^2)))
-exp((-0.01^2)/(2*(0.1^2)))
-1-0.9*(4*0.1*0.9)^1
-1-0.1*(4*0.1*0.9)^1
-1-0.1*(4*0.2*0.9)^1
-1-0.1*(4*0.3*0.9)^1
-1-0.1*(4*0.4*0.9)^1
-1-0.1*(4*0.2*0.8)^1
-1-0.1*(4*0.3*0.7)^1
-1-0.1*(4*0.4*0.6)^1
-1-0.1*(4*0.4*0.6)^16
-1-0.1*(4*0.5*0.5)^16
-1-0.1*(4*0.3*0.7)^16
-1-0.1*(4*0.3*0.7)^(1/16)
-1/16
-x=0.5#
-#
-survival<-function(x){#
-	1-0.1*(4*x*(1-x))^(1/16)#
-}
-survival(x)
-survival(0.6)
-sapply(seq(0,1, by=0.1), survival)
-plot(sapply(seq(0,1, by=0.1), survival))
-survival<-function(x, B=1){#
-	1-0.1*(4*x*(1-x))^B)#
-}#
-#
-survival(0.6)#
-plot(sapply(seq(0,1, by=0.1), survival))
-survival<-function(x, B=1){#
-	1-0.1*(4*x*(1-x))^B)#
-}#
-#
-survival(0.6)
-survival<-function(x, B=1){#
-	1-0.1*(4*x*(1-x))^B#
-}#
-#
-survival(0.6)
-plot(sapply(seq(0,1, by=0.1), survival))
-survival<-function(x, B=16){#
-	1-0.1*(4*x*(1-x))^B#
-}#
-#
-survival(0.6)#
-plot(sapply(seq(0,1, by=0.1), survival))
-279.93+17.54
-(279.93+17.54)/2
-69/12
-(69/12)/2
-29.79+15.75
-sample(1:4, 4, replace=FALSE)
-runif(1,min=0, max=1)
-sample(1:4, 3, replace=FALSE)
-87.65*2
-110+8+29+16+17+44+75+2+8+59+29+66+38+40+25+13+220+29+12+29+50
-5400/60
-8*60
-480/9
-480/90
-2.7*(480/90)
-252+368.96
-620.96-367.96
-5000000/5000
-25.40*8
-14.86*2
-22000/60000000
-36000/328000000
-686991/328000000
 686991/3280000
 36000/3280000
 library(broom)
@@ -406,7 +35,6 @@ exp(1062)
 rm(list=ls())#
 setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats")#
 library(lme4)#
-library(rethinking)#
 #
 library(dplyr)#
 library(tidyselect)#
@@ -429,4 +57,973 @@ data_all <- data[[1]]#
 data_tested <- data[[2]]#
 #
 ### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)#
-data_flew_all <- data_tested[data_tested$flew_b == 1, ]
+data_flew_all <- data_tested[data_tested$flew_b == 1, ] #
+#
+### Check for low speeds#
+low_speeds <- data_flew_all %>%#
+  filter(average_speed <0.05)#
+#
+### Check for high speeds#
+high_speeds <- data_flew_all %>%#
+  filter(average_speed >0.65)#
+#
+low_speeds$flight_type# have 7 bugs with average_speed = 0 but were marked as bursters (this could be just something very short (second burst) - not enough to grant a calculation) - I decided to remove them. But one bug was continuous and had 0 distance and 0 speeds - that was bug 196 T2 set011-3-03-2020-A3_196.txt#
+high_speeds$flight_type # 3 bugs - also bursters. Could also be short explosive bursts but not true to the biology of these bugs (more like us blowing on them).#
+#
+### Remove outliers#
+data_flew <- data_flew_all %>%#
+  filter(average_speed > 0.05) %>%#
+  filter(average_speed < 0.65)#
+data_flew <- center_data(data_flew)
+hist(data_flew$mass_c)
+hist(data_flew$wing2body)
+test_model<-lmer(average_speed~host_c*sex_c*sym_dist + (1|ID), data=data_flew) #it converges - Run one set of models with ID as a random factor.#
+getME(test_model, "lower")
+summary(test_model)
+summary(lmer(average_speed~chamber + (1|ID), data=data_flew)
+)
+####### Effect of chamber B-2 and B-4#
+summary(glmer(average_speed~chamber + (1|ID), data=data_flew), family=gaussian)###Possibly reductions in speed
+####### Effect of chamber B-2 and B-4#
+summary(glmer(average_speed~chamber + (1|ID), data=data_flew, family=gaussian))
+data_flew$chamber <- relevel(data_flew$chamber, ref="A-2")#
+#
+####### Effect of chamber B-2 and B-4#
+summary(lmer(average_speed~chamber + (1|ID), data=data_flew))###Possibly reductions in speed
+data_flew$chamber <- relevel(data_flew$chamber, ref="A-3")#
+#
+####### Effect of chamber B-2 and B-4#
+summary(lmer(average_speed~chamber + (1|ID), data=data_flew))###Possibly reductions in speed
+data_flew$chamber <- relevel(data_flew$chamber, ref="A-4")#
+#
+####### Effect of chamber B-2 and B-4#
+summary(lmer(average_speed~chamber + (1|ID), data=data_flew))###Possibly reductions in speed
+data_flew$mass_c
+hist(data_flew$mass)
+hist(log(sqrt(data_flew$mass)))
+hist(log(sqrt(sqrt(data_flew$mass))))
+hist(log(sqrt(data_flew$mass)))
+hist(sqrt(data_flew$mass))
+hist(log(data_flew$mass))
+hist(log(sqrt(data_flew$mass)))
+hist(log(data_flew$mass))
+##transform mass#
+data_flew$mass_trans<-log(data_flew$mass)-mean(log(data_flew$mass), na.rm=TRUE)
+####### No effect of test date#
+tidy_regression(lmer(average_speed~days_from_start + (1|chamber), data=data_flew), is_color=output_col)
+tidy_regression(lmer(average_speed~min_from_IncStart + (1|chamber), data=data_flew), is_color=output_col)
+hist(data_flew$average_speed)
+hist(log(data_flew$average_speed))
+data_flew$speed_trans<-log(data_flew$average_speed)-mean(log(data_flew$average_speed), na.rm=TRUE)
+####### Effect of chamber B-2 and B-4#
+summary(lmer(speed_trans~chamber + (1|ID), data=data_flew))###Possibly reductions in speed
+data_flew <- data_flew %>%#
+  filter(!is.na(mass))#
+data_flew <- center_data(data_flew)#
+#
+data<-data.frame(R=data_flew$speed_trans,#
+                 A=data_flew$host_c, #
+                 B=data_flew$sex_c, #
+                 C=data_flew$sym_dist, #
+                 D=data_flew$mass_trans,#
+                 X=data_flew$chamber) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
+m0<-lmer(R~1 + (1|X), data=data, REML=F)
+data_flew <- data_flew %>%#
+  filter(!is.na(mass))#
+data_flew <- center_data(data_flew)#
+#
+data<-data.frame(R=data_flew$speed_trans,#
+                 A=data_flew$host_c, #
+                 B=data_flew$sex_c, #
+                 C=data_flew$sym_dist, #
+                 D=data_flew$mass_trans,#
+                 X=data_flew$chamber,#
+                 Y=data_flew$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+data_flew <- data_flew %>%#
+  filter(!is.na(mass))#
+data_flew <- center_data(data_flew)#
+#
+data<-data.frame(R=data_flew$speed_trans,#
+                 A=data_flew$host_c, #
+                 B=data_flew$sex_c, #
+                 C=data_flew$sym_dist, #
+                 D=data_flew$mass_trans,#
+                 X=data_flew$chamber,#
+                 Y=data_flew$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+m0<-lmer(R~1 + (1|X) + (1|Y), data=data, REML=FALSE) #this one will be at the end to keep index number and model number the same.#
+m1<-lmer(R~A + (1|X) + (1|Y), data=data, REML=FALSE)#
+m2<-lmer(R~B + (1|X) + (1|Y), data=data, REML=FALSE)#
+m3<-lmer(R~C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m4<-lmer(R~D + (1|X) + (1|Y), data=data, REML=FALSE)
+m5<-lmer(R~A+B + (1|X) + (1|Y), data=data, REML=FALSE)#
+m6<-lmer(R~A+C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m7<-lmer(R~A+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m8<-lmer(R~B+C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m9<-lmer(R~B+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m10<-lmer(R~C+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m11<-lmer(R~A+B+C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m12<-lmer(R~A+B+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m13<-lmer(R~A+C+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m14<-lmer(R~B+C+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m15<-lmer(R~A+B+C+D + (1|X) + (1|Y), data=data, REML=FALSE)
+m16<-lmer(R~A*B + (1|X) + (1|Y), data=data, REML=FALSE)#
+m17<-lmer(R~A*C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m18<-lmer(R~A*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m19<-lmer(R~B*C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m20<-lmer(R~B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m21<-lmer(R~C*D + (1|X) + (1|Y), data=data, REML=FALSE)
+m22<-lmer(R~A*B + C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m23<-lmer(R~A*B + D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m24<-lmer(R~A*C + B + (1|X) + (1|Y), data=data, REML=FALSE)#
+m25<-lmer(R~A*C + D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m26<-lmer(R~A*D + B + (1|X) + (1|Y), data=data, REML=FALSE)#
+m27<-lmer(R~A*D + C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m28<-lmer(R~B*C + A + (1|X) + (1|Y), data=data, REML=FALSE)#
+m29<-lmer(R~B*C + D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m30<-lmer(R~B*D + A + (1|X) + (1|Y), data=data, REML=FALSE)#
+m31<-lmer(R~B*D + C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m32<-lmer(R~C*D + A + (1|X) + (1|Y), data=data, REML=FALSE)#
+m33<-lmer(R~C*D + B + (1|X) + (1|Y), data=data, REML=FALSE)
+m34<-lmer(R~A*B + C + D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m35<-lmer(R~A*C + B + D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m36<-lmer(R~A*D + B + C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m37<-lmer(R~B*C + A + D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m38<-lmer(R~B*D + A + C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m39<-lmer(R~C*D + A + B + (1|X) + (1|Y), data=data, REML=FALSE)
+m40<-lmer(R~A*B + A*C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m41<-lmer(R~A*B + A*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m42<-lmer(R~A*B + B*C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m43<-lmer(R~A*B + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m44<-lmer(R~A*B + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m45<-lmer(R~A*C + A*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m46<-lmer(R~A*C + B*C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m47<-lmer(R~A*C + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m48<-lmer(R~A*C + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m49<-lmer(R~A*D + B*C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m50<-lmer(R~A*D + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m51<-lmer(R~A*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m52<-lmer(R~B*C + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m53<-lmer(R~B*C + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m54<-lmer(R~B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)
+m55<-lmer(R~A*B + A*C + D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m56<-lmer(R~A*B + A*D + C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m57<-lmer(R~A*B + B*C + D + (1|X) + (1|Y), data=data, REML=FALSE)
+m58<-lmer(R~A*B + B*D + C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m59<-lmer(R~A*C + A*D + B + (1|X) + (1|Y), data=data, REML=FALSE)#
+m60<-lmer(R~A*C + B*C + D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m61<-lmer(R~A*C + C*D + B + (1|X) + (1|Y), data=data, REML=FALSE)#
+m62<-lmer(R~A*D + B*D + C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m63<-lmer(R~A*D + C*D + B + (1|X) + (1|Y), data=data, REML=FALSE)#
+m64<-lmer(R~B*C + B*D + A + (1|X) + (1|Y), data=data, REML=FALSE)#
+m65<-lmer(R~B*C + C*D + A + (1|X) + (1|Y), data=data, REML=FALSE)#
+m66<-lmer(R~B*D + C*D + A + (1|X) + (1|Y), data=data, REML=FALSE)
+m52<-lmer(R~B*C + B*D + (1|X) + (1|Y), data=data, REML=FALSE)
+m67<-lmer(R~A*B + A*C + A*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m68<-lmer(R~A*B + A*C + B*C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m69<-lmer(R~A*B + A*C + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m70<-lmer(R~A*B + A*C + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m71<-lmer(R~A*B + A*D + B*C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m72<-lmer(R~A*B + A*D + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m73<-lmer(R~A*B + A*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m74<-lmer(R~A*B + B*C + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m75<-lmer(R~A*B + B*C + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m76<-lmer(R~A*B + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m77<-lmer(R~A*C + A*D + B*C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m78<-lmer(R~A*C + A*D + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m79<-lmer(R~A*C + A*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m80<-lmer(R~A*C + B*C + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m81<-lmer(R~A*C + B*C + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m82<-lmer(R~A*C + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m83<-lmer(R~A*D + B*C + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m84<-lmer(R~A*D + B*C + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m85<-lmer(R~A*D + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m86<-lmer(R~B*C + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)
+m87<-lmer(R~A*B + A*C + B*C + D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m88<-lmer(R~A*B + A*D + B*D + C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m89<-lmer(R~A*C + A*D + C*D + B + (1|X) + (1|Y), data=data, REML=FALSE)#
+m90<-lmer(R~B*C + B*D + C*D + A + (1|X) + (1|Y), data=data, REML=FALSE)
+m91<-lmer(R~A*B + A*C + A*D + B*C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m92<-lmer(R~A*B + A*C + A*D + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m93<-lmer(R~A*B + A*C + A*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m94<-lmer(R~A*B + A*C + B*C + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m95<-lmer(R~A*B + A*C + B*C + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m96<-lmer(R~A*B + A*C + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m97<-lmer(R~A*B + A*D + B*C + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m98<-lmer(R~A*B + A*D + B*C + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m99<-lmer(R~A*B + A*D + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m100<-lmer(R~A*B + B*C + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m101<-lmer(R~A*C + A*D + B*C + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m102<-lmer(R~A*C + A*D + B*C + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m103<-lmer(R~A*C + A*D + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m104<-lmer(R~A*C + B*C + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m105<-lmer(R~A*D + B*C + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)
+m106<-lmer(R~A*B + A*C + A*D + B*C + B*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m107<-lmer(R~A*B + A*C + A*D + B*C + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m108<-lmer(R~A*B + A*C + A*D + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m109<-lmer(R~A*B + A*C + B*C + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m110<-lmer(R~A*B + A*D + B*C + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m111<-lmer(R~A*C + A*D + B*C + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)#
+#
+m112<-lmer(R~A*B + A*C + A*D + B*C + B*D + C*D + (1|X) + (1|Y), data=data, REML=FALSE)
+summary<-AIC(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, #
+             m17, m18, m19, m20, m21, m22, m23, m24, m25, m26, m27, m28, m29, m30, #
+             m31, m32, m33, m34, m35, m36, m37, m38, m39, m40, m41, m42, m43, m44, #
+             m45, m46, m47, m48, m49, m50, m51, m52, m53, m54, m55, m56, m57, m58, #
+             m59, m60, m61, m62, m63, m64, m65, m66, m67, m68, m69, m70, m71, m72, #
+             m73, m74, m75, m76, m77, m78, m79, m80, m81, m82, m83, m84, m85, m86, #
+             m87, m88, m89, m90, m91, m92, m93, m94, m95, m96, m97, m98, m99, m100, #
+             m101, m102, m103, m104, m105, m106, m107, m108, m109, m110, m111, m112, m0) #
+#
+sort(summary$AIC, index.return=TRUE)#
+#
+P<-AICprobs(summary$AIC)#
+sort(P, index.return=TRUE, decreasing=TRUE) #remember, we want the largest one of these
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats")#
+library(lme4)#
+#
+library(dplyr)#
+library(tidyselect)#
+library(stringr)#
+#
+library(glmnet)#
+library(ggplotify)#
+library(gridExtra)#
+library(ggformula)#
+library(randomcoloR)#
+#
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html#
+source("src/clean_flight_data.R") # Script that loads and cleans up the data#
+source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white#
+source("src/center_flight_data.R")#
+source("src/get_warnings.R")#
+#
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")#
+data_all <- data[[1]]#
+data_tested <- data[[2]]#
+#
+### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)#
+data_flew_all <- data_tested[data_tested$flew_b == 1, ] #
+#
+### Check for low speeds#
+low_speeds <- data_flew_all %>%#
+  filter(average_speed <0.05)#
+#
+### Check for high speeds#
+high_speeds <- data_flew_all %>%#
+  filter(average_speed >0.65)#
+#
+low_speeds$flight_type# have 7 bugs with average_speed = 0 but were marked as bursters (this could be just something very short (second burst) - not enough to grant a calculation) - I decided to remove them. But one bug was continuous and had 0 distance and 0 speeds - that was bug 196 T2 set011-3-03-2020-A3_196.txt#
+high_speeds$flight_type # 3 bugs - also bursters. Could also be short explosive bursts but not true to the biology of these bugs (more like us blowing on them).#
+#
+### Remove outliers#
+data_flew <- data_flew_all %>%#
+  filter(average_speed > 0.05) %>%#
+  filter(average_speed < 0.65)#
+data_flew <- center_data(data_flew)#
+#
+##transform mass & speed#
+data_flew$mass_trans<-log(data_flew$mass)-mean(log(data_flew$mass), na.rm=TRUE)#
+#
+data_flew$speed_trans<-log(data_flew$average_speed)-mean(log(data_flew$average_speed), na.rm=TRUE)#
+#
+#######testing some covariates:#
+data_flew$chamber <- relevel(data_flew$chamber, ref="A-4")#
+#
+####### Effect of chamber B-2 and B-4#
+summary(lmer(speed_trans~chamber + (1|ID), data=data_flew))###Possibly reductions in speed #
+#
+####### No effect of test date#
+tidy_regression(lmer(speed_trans~days_from_start + (1|chamber), data=data_flew), is_color=output_col)#
+#
+####### No effect of test time#
+tidy_regression(lmer(average_speed~min_from_IncStart + (1|chamber), data=data_flew), is_color=output_col)#
+######## all data for speed#
+#
+data_flew <- data_flew %>%#
+  filter(!is.na(mass))#
+data_flew <- center_data(data_flew)#
+#
+data<-data.frame(R=data_flew$speed_trans,#
+                 A=data_flew$host_c, #
+                 B=data_flew$sex_c, #
+                 C=data_flew$sym_dist, #
+                 D=data_flew$mass_trans,#
+                 X=data_flew$chamber,#
+                 Y=data_flew$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+anova(m4, m7, test="Chisq")
+# adding A does not improve fit#
+anova(m4, m9, test="Chisq")
+#adding B does not improve fit#
+anova(m2, m9, test="Chisq")
+#adding D does not improve fit - basically it seems we can't tell here if it's sex or mass.#
+anova(m9, m20, test="Chisq")
+summary(m4)
+summary(m2)
+summary(m9)
+anova(m0, m4, test="Chisq") # Adding D does improve fit#
+anova(m0, m2, test="Chisq") # Adding B does improve fit
+data_fem <- data_flew[data_flew$sex=="F",]#
+data_fem <- center_data(data_fem, is_not_binded = FALSE)
+data_flew <- data_flew %>%#
+  filter(!is.na(mass))#
+data_flew <- center_data(data_flew)#
+#
+data<-data.frame(R=data_flew$speed_trans,#
+                 A=data_flew$host_c, #
+                 B=data_flew$sex_c, #
+                 C=data_flew$sym_dist_s, #
+                 D=data_flew$mass_trans,#
+                 X=data_flew$chamber,#
+                 Y=data_flew$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+data_fem <- data_flew[data_flew$sex=="F",]#
+data_fem <- center_data(data_fem, is_not_binded = FALSE)#
+#
+data<-data.frame(R=data_fem$speed_trans,#
+                 A=data_fem$host_c, #
+                 B=data_fem$sym_dist_s, #
+                 C=data_fem$mass_trans,#
+                 D=data_fem$wing2body,#
+                 X=data_fem$chamber,#
+                 Y=data_fem$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+anova(m113, m4, test="Chisq")
+anova(m0, m4, test="Chisq")
+#null model is the best model#
+anova(m0, m1, test="Chisq")
+data_male <- data_flew[data_flew$sex=="M",]#
+data_male <- center_data(data_male, is_not_binded = FALSE)#
+#
+data<-data.frame(R=data_male$speed_trans,#
+                 A=data_male$host_c, #
+                 B=data_male$sym_dist_s, #
+                 C=data_male$mass_trans,#
+                 D=data_male$wing2body,#
+                 X=data_male$chamber,#
+                 Y=data_male$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+anova(m10, m4, test="Chisq")
+anova(m10, m4, test="Chisq") #no improvement from adding C#
+anova(m10, m3, test="Chisq") #no improvement from adding C
+anova(m4, m0, test="Chisq")
+anova(m3, m0, test="Chisq") #improvement from adding D
+summary(m10)
+summary(m4)
+male_speed_model<-lmer(speed_trans~wing2body, data=data_male)#
+summary(male_speed_model)
+male_speed_model<-lmer(speed_trans~wing2body + (1|ID), data=data_male)#
+summary(male_speed_model)
+male_speed_model<-lmer(speed_trans~wing2body + (1|ID) + (1|chamber), data=data_male)#
+summary(male_speed_model)
+s.test <- paste("pval: ", shapiro.test(residuals(male_speed_model))$p.value)
+s.test
+qqnorm(resid(male_speed_model))#
+qqline(resid(male_speed_model))
+qqnorm(resid(male_speed_model))#
+qqline(resid(male_speed_model))
+qqnorm(resid(male_speed_model))
+dC<-data_flew[data_flew$flight_type=="C",] #
+dC <- dC %>%#
+  filter(!is.na(body))#
+dC <- center_data(dC)#
+#
+data<-data.frame(R=dC$speed_trans,#
+                 A=dC$host_c, #
+                 B=dC$sex_c, #
+                 C=dC$mass_trans,#
+                 D=dC$wing2body,#
+                 X=dC$chamber,#
+                 Y=dC$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+hist(dC$speed_trans)
+hist(dC$average_speed)
+summary(m19)
+data_fem <- dC[dC$sex=="F",]#
+data_fem <- center_data(data_fem, is_not_binded = FALSE)#
+#
+data<-data.frame(R=data_fem$speed_trans,#
+                 A=data_fem$host_c, #
+                 B=data_fem$sym_dist_s, #
+                 C=data_fem$mass_trans,#
+                 D=data_fem$wing2body,#
+                 X=data_fem$chamber,#
+                 Y=data_fem$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+data_male <- dC[C$sex=="M",]#
+data_male <- center_data(data_male, is_not_binded = FALSE)#
+#
+data<-data.frame(R=data_male$speed_trans,#
+                 A=data_male$host_c, #
+                 B=data_male$sym_dist_s, #
+                 C=data_male$mass_trans,#
+                 D=data_male$wing2body,#
+                 X=data_male$chamber,#
+                 Y=data_male$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+data_male <- dC[dC$sex=="M",]#
+data_male <- center_data(data_male, is_not_binded = FALSE)#
+#
+data<-data.frame(R=data_male$speed_trans,#
+                 A=data_male$host_c, #
+                 B=data_male$sym_dist_s, #
+                 C=data_male$mass_trans,#
+                 D=data_male$wing2body,#
+                 X=data_male$chamber,#
+                 Y=data_male$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+summary(m3)
+summary(m10)
+data_fem <- dC[dC$sex=="F",]#
+data_fem <- center_data(data_fem, is_not_binded = FALSE)#
+#
+data<-data.frame(R=data_fem$speed_trans,#
+                 A=data_fem$host_c, #
+                 B=data_fem$sym_dist_s, #
+                 C=data_fem$mass_trans,#
+                 D=data_fem$wing2body,#
+                 X=data_fem$chamber,#
+                 Y=data_fem$ID)
+m0<-lmer(R~1 + (1|X) + (1|Y), data=data, REML=FALSE) #this one will be at the end to keep index number and model number the same.#
+m1<-lmer(R~A + (1|X) + (1|Y), data=data, REML=FALSE)#
+m2<-lmer(R~B + (1|X) + (1|Y), data=data, REML=FALSE)#
+m3<-lmer(R~C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m4<-lmer(R~D + (1|X) + (1|Y), data=data, REML=FALSE)#
+#
+m5<-lmer(R~A+B + (1|X) + (1|Y), data=data, REML=FALSE)#
+m6<-lmer(R~A+C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m7<-lmer(R~A+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m8<-lmer(R~B+C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m9<-lmer(R~B+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m10<-lmer(R~C+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m11<-lmer(R~A+B+C + (1|X) + (1|Y), data=data, REML=FALSE)#
+m12<-lmer(R~A+B+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m13<-lmer(R~A+C+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m14<-lmer(R~B+C+D + (1|X) + (1|Y), data=data, REML=FALSE)#
+m15<-lmer(R~A+B+C+D + (1|X) + (1|Y), data=data, REML=FALSE)
+data_fem
+length(unique(data_fem$ID))
+length(data_fem$ID)
+data_fem$chamber
+summary(lmer(speed_trans~flight_type + (1|ID) + (1|chamber), data=data_flew))
+levels(data_flew$flight_type)
+data_flew$flight_type <- relevel(data_flew$flight_type, ref="C")#
+#
+summary(lmer(speed_trans~flight_type + (1|chamber) + (1|ID), data=data_flew))
+data_flew$flight_type <- relevel(data_flew$flight_type, ref="B")#
+#
+summary(lmer(speed_trans~flight_type + (1|chamber) + (1|ID), data=data_flew)) #yes, B and C differ distinctly in average speed.
+dC<-data_flew[data_flew$flight_type=="C" | data_flew$flight_type=="BC" | data_flew$flight_type=="CB" ,] #
+dC <- dC %>%#
+  filter(!is.na(body))#
+dC <- center_data(dC)#
+#
+data<-data.frame(R=dC$speed_trans,#
+                 A=dC$host_c, #
+                 B=dC$sex_c, #
+                 C=dC$mass_trans,#
+                 D=dC$wing2body,#
+                 X=dC$chamber,#
+                 Y=dC$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+anova(m19, m28, test="Chisq")
+#adding A does not improve fit#
+anova(m19, m29, test="Chisq")
+#adding D does not improve fit#
+anova(m19, m8, test="Chisq")
+data_fem <- dC[dC$sex=="F",]#
+data_fem <- center_data(data_fem, is_not_binded = FALSE)#
+#
+data<-data.frame(R=data_fem$speed_trans,#
+                 A=data_fem$host_c, #
+                 B=data_fem$sym_dist_s, #
+                 C=data_fem$mass_trans,#
+                 D=data_fem$wing2body,#
+                 X=data_fem$chamber,#
+                 Y=data_fem$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+data<-data.frame(R=dC$speed_trans,#
+                 A=dC$host_c, #
+                 B=dC$sex_c, #
+                 C=dC$mass_trans,#
+                 D=dC$sym_dist_s,#
+                 X=dC$chamber,#
+                 Y=dC$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+anova(m19, m28, test="Chisq") #adding A does not improve fit#
+anova(m19, m29, test="Chisq") #adding D does not improve fit#
+anova(m19, m8, test="Chisq") #adding B*C interaction does improve fit
+s.test <- paste("pval: ", shapiro.test(residuals(continuous_model))$p.value)#
+s.test#
+qqnorm(resid(continuous_model))#
+qqline(resid(continuous_model))#
+###Gorgeously normal post-transform
+continuous_model<-lmer(speed_trans~sex*mass_trans + (1|ID) + (1|chamber), data=dC)#
+#
+s.test <- paste("pval: ", shapiro.test(residuals(continuous_model))$p.value)#
+s.test#
+qqnorm(resid(continuous_model))#
+qqline(resid(continuous_model))#
+###Gorgeously normal post-transform#
+#
+###The
+summary(continuous_model)
+plot(dC$mass~dC$mass_trans)
+data_flew$average_speed
+data_flew$mass_block<-round(data_flew$average_mass/0.005)*0.005#
+data_flew$wing2body_block<-round(data_flew$wing2body, digits=2)#
+par(mfrow=c(2,2), mai=c(0.6, 0.6, 0.02, 0.02))#
+##mass by sex#
+data_temp<-aggregate(average_speed~sex*mass_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~sex*mass_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$mass_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight speed", xlab="Mass")#
+##Indeed, we can see that the effect of mass is very pronounced in females but essentially absent in males.
+data_flew$mass_block
+data_flew$mass_block<-round(data_flew$mass/0.005)*0.005#
+data_flew$wing2body_block<-round(data_flew$wing2body, digits=2)#
+par(mfrow=c(2,2), mai=c(0.6, 0.6, 0.02, 0.02))#
+##mass by sex#
+data_temp<-aggregate(average_speed~sex*mass_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~sex*mass_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$mass_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight speed", xlab="Mass")#
+##Indeed, we can see that the effect of mass is very pronounced in females but essentially absent in males.
+##wing2body by sex#
+data_temp<-aggregate(average_speed~sex*wing2body_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~sex*wing2body_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$wing2body_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight speed", xlab="wing-to-body ratio")
+data_temp<-aggregate(average_speed~host_c*mass_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~host_c*mass_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$mass_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8)[as.factor(data_temp$host_c)], ylab="Flight speed", xlab="Mass")
+data_temp<-aggregate(average_speed~host_c*mass_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~host_c*mass_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$mass_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight speed", xlab="Mass")
+##wing2body by host#
+data_temp<-aggregate(average_speed~host_c*wing2body_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~host_c*wing2body_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$wing2body_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight speed", xlab="wing-to-body ratio")
+#this could be generalized, although it's probably not worth the time?#
+four_plots<-function{#
+##quick plots for speed#
+##plot-specific grouping variables#
+data_flew$mass_block<-round(data_flew$mass/0.005)*0.005#
+data_flew$wing2body_block<-round(data_flew$wing2body, digits=2)#
+par(mfrow=c(2,2), mai=c(0.8, 0.8, 0.02, 0.02))#
+##mass by sex#
+data_temp<-aggregate(average_speed~sex*mass_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~sex*mass_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$mass_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight speed", xlab="Mass")#
+##Unlike for flight probability, here we see a clear effect of mass on male flight speed, but not female flight speed.#
+##wing2body by sex#
+data_temp<-aggregate(average_speed~sex*wing2body_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~sex*wing2body_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$wing2body_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight speed", xlab="wing-to-body ratio")#
+##Here we can see that as wing2body ratio increases, flight speed increases marginally in males, but not noticeably in females#
+#
+#mass by host#
+data_temp<-aggregate(average_speed~host_c*mass_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~host_c*mass_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$mass_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight speed", xlab="Mass")#
+##Unlike for flight probability, here we see a clear effect of mass on male flight speed, but not female flight speed.#
+##wing2body by host#
+data_temp<-aggregate(average_speed~host_c*wing2body_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~host_c*wing2body_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$wing2body_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight speed", xlab="wing-to-body ratio")#
+##Here we can see that as wing2body ratio increases, flight speed increases marginally in males, but not noticeably in females#
+#
+}#
+four_plots()
+#this could be generalized, although it's probably not worth the time?#
+four_plots<-function(){#
+##quick plots for speed#
+##plot-specific grouping variables#
+data_flew$mass_block<-round(data_flew$mass/0.005)*0.005#
+data_flew$wing2body_block<-round(data_flew$wing2body, digits=2)#
+par(mfrow=c(2,2), mai=c(0.8, 0.8, 0.02, 0.02))#
+##mass by sex#
+data_temp<-aggregate(average_speed~sex*mass_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~sex*mass_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$mass_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight speed", xlab="Mass")#
+##Unlike for flight probability, here we see a clear effect of mass on male flight speed, but not female flight speed.#
+##wing2body by sex#
+data_temp<-aggregate(average_speed~sex*wing2body_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~sex*wing2body_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$wing2body_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight speed", xlab="wing-to-body ratio")#
+##Here we can see that as wing2body ratio increases, flight speed increases marginally in males, but not noticeably in females#
+#
+#mass by host#
+data_temp<-aggregate(average_speed~host_c*mass_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~host_c*mass_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$mass_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight speed", xlab="Mass")#
+##Here we can see a weak positive effect of mass on flight speed, that does not appear to differ between hosts#
+##wing2body by host#
+data_temp<-aggregate(average_speed~host_c*wing2body_block, data=data_flew, FUN=mean)#
+data_temp$n<-aggregate(average_speed~host_c*wing2body_block, data=data_flew, FUN=length)$average_speed#
+plot(data_temp$average_speed~data_temp$wing2body_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight speed", xlab="wing-to-body ratio")#
+##Here we can see a potential weak positive effect of wing2body ratio on flight speed that does not differ between hosts.#
+#
+}#
+four_plots()
+data_flew$max_speed
+hist(data_flew$max_speed)
+hist(dC$max_speed)
+continuous_model<-lmer(speed_trans~sex*mass_trans + (1|ID) + (1|chamber), data=dC)#
+#
+summary(continuous_model)
+aggregate(average_speed~sex, data=dC, FUN=mean)
+speed_summary<-aggregate(average_speed~sex, data=dC, FUN=mean)#
+speed_summary$se<-aggregate(average_speed~sex, data=dC, FUN=function(x) df(x)/sqrt(length(x)))$average_speed
+speed_summary<-aggregate(average_speed~sex, data=dC, FUN=mean)#
+speed_summary$n<-aggregate(average_speed~sex, data=dC, FUN=function(x) sqrt(length(x)))$average_speed
+speed_summary
+speed_summary<-aggregate(average_speed~sex, data=dC, FUN=mean)#
+speed_summary$se<-aggregate(average_speed~sex, data=dC, FUN=function(x) sd(x)/sqrt(length(x)))$average_speed
+speed_summary
+rm(list=ls())#
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats")#
+#
+library(lme4)#
+#
+library(dplyr)#
+library(tidyselect)#
+#
+library(ggplot2)#
+library(glmnet)#
+library(ggplotify)#
+library(gridExtra)#
+library(ggformula)#
+library(randomcoloR)#
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html#
+source("src/clean_flight_data.R") # Script that loads and cleans up the data#
+source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white#
+source("src/center_flight_data.R")#
+source("get_warnings.R")#
+#
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")#
+data_all <- data[[1]]#
+data_tested <- data[[2]]#
+#
+### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)#
+data_flew <- data_tested[data_tested$flew_b == 1, ]#
+data_flew <- data_flew[data_flew$distance > 0, ]#
+data_flew <- center_data(data_flew)
+source("src/get_warnings.R")
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")#
+data_all <- data[[1]]#
+data_tested <- data[[2]]#
+#
+### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)#
+data_flew <- data_tested[data_tested$flew_b == 1, ]#
+data_flew <- data_flew[data_flew$distance > 0, ]#
+data_flew <- center_data(data_flew)
+data_flew$distance
+hist(data_flew$distance)
+hist(log(data_flew$distance))
+hist(sqrt(log(data_flew$distance)))
+hist(log(sqrt(data_flew$distance)))
+hist(log(sqrt(data_flew$distance[data_flew$flight_type=="B"])))
+hist(log(sqrt(data_flew$distance[data_flew$flight_type=="C"])))
+hist(log((data_flew$distance[data_flew$flight_type=="C"])))
+sqrt
+hist(log(sqrt(data_flew$distance[data_flew$flight_type=="C"])))
+data_flew$mass_trans<-log(data_flew$mass)-mean(log(data_flew$mass), na.rm=TRUE)#
+#
+##transform distance#
+data_flew$distance_trans<-log(sqrt(data_flew$distance))-mean(log(sqrt(data_flew$distance)), na.rm=TRUE)
+hist(data_flew$mass_trans)
+hist(data_flew$mass)
+summary(lmer(distance_trans~flight_type + (1|chamber) + (1|ID), data=data_flew))
+data_flew$flight_type <- relevel(data_flew$flight_type, ref="B")#
+#
+summary(lmer(distance_trans~flight_type + (1|chamber) + (1|ID), data=data_flew))
+data_flew <- data_flew %>%#
+  filter(!is.na(mass))#
+data_flew <- center_data(data_flew)#
+#
+dC<-data_flew[data_flew$flight_type=="C" | data_flew$flight_type=="BC" | data_flew$flight_type=="CB" ,] #
+dC <- dC %>%#
+  filter(!is.na(body))#
+dC <- center_data(dC)
+####### Effect of chamber B-2 and B-4#
+summary(lmer(distance_trans~chamber + (1|ID), data=data_flew))###Possibly reductions in speed
+####### Effect of chamber B-2 and B-4#
+summary(lmer(distance_trans~chamber + (1|ID), data=dC))###Possibly reductions in speed
+#######testing some covariates:#
+data_flew$chamber <- relevel(data_flew$chamber, ref="A-4")#
+#
+####### Effect of chamber A-4, B-2 and B-4#
+summary(lmer(distance_trans~chamber + (1|ID), data=dC))###Possibly reductions in speed
+#######testing some covariates:#
+dC$chamber <- relevel(dC$chamber, ref="A-4")#
+#
+####### Effect of chamber A-4, B-2 and B-4#
+summary(lmer(distance_trans~chamber + (1|ID), data=dC))###Possibly reductions in speed
+dC$chamber <- relevel(dC$chamber, ref="B-2")#
+#
+####### Effect of chamber A-4, B-2 and B-4#
+summary(lmer(distance_trans~chamber + (1|ID), data=dC))###Possibly reductions in speed
+dC$chamber <- relevel(dC$chamber, ref="B-4")#
+#
+####### Effect of chamber A-4, B-2 and B-4#
+summary(lmer(distance_trans~chamber + (1|ID), data=dC))###Possibly reductions in speed
+tidy_regression(lmer(distance_trans~days_from_start + (1|chamber), data=dC), is_color=output_col)
+####### No effect of test time#
+tidy_regression(lmer(distance_trans~min_from_IncStart + (1|chamber), data=data_flew), is_color=output_col)
+data<-data.frame(R=dC$distance_trans,#
+                 A=dC$host_c, #
+                 B=dC$sex_c, #
+                 C=dC$mass_trans,#
+                 D=dC$sym_dist_s, #I note it does not matter whether this is sym_dist or wing2body #
+                 X=dC$chamber,#
+                 Y=dC$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+hist(dC$wing2body)
+data<-data.frame(R=dC$distance_trans,#
+                 A=dC$host_c, #
+                 B=dC$sex_c, #
+                 C=dC$mass_trans,#
+                 D=dC$wing2body, #I note it does not matter whether this is sym_dist or wing2body #
+                 X=dC$chamber,#
+                 Y=dC$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+anova(m2, m9, test="Chisq")
+#adding D does not improve things#
+anova(m3, m8, test="Chisq")
+anova(m2, m8, test="Chisq") #adding B does not improve things
+summary(m2)
+summary(m3)
+summary(m8)
+d_fem <-dC[dC$sex=="F",] #
+d_fem <- center_data(d_fem)#
+#
+data<-data.frame(R=dC$distance_trans,#
+                 A=dC$host_c, #
+                 B=dC$mass_trans,#
+                 C=dC$wing2body, #Sym_dist showed up in nothing, reran with wing2body#
+                 X=dC$chamber,#
+                 Y=dC$ID) #
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REML-F.R")
+source("src/compare_models.R")#
+###I rewrote this script so neither chamber nor ID is optional#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
+anova(m2, m6, test="Chisq")
+#no improvement from adding C#
+anova(m2, m4, test="Chisq")
+#no improvement from adding A#
+anova(m6, m10, test="Chisq")
+#no improvement from B*C#
+anova(m6, m7, test="Chisq")#
+anova(m4, m7, test="Chisq")#
+anova(m4, m1, test="Chisq")
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_fem))$p.value)#
+s.test#
+qqnorm(resid(distance_model_fem))#
+qqline(resid(distance_model_fem))
+distance_model_fem<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=d_fem)#
+summary(distance_model_fem)#
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_fem))$p.value)#
+s.test#
+qqnorm(resid(distance_model_fem))#
+qqline(resid(distance_model_fem))
+distance_model_fem<-lm(distance_trans~mass_trans, data=d_fem)#
+summary(distance_model_fem)
+d_fem <-dC[dC$sex=="F",] #
+d_fem <- center_data(d_fem)#
+#
+data<-data.frame(R=d_fem$distance_trans,#
+                 A=d_fem$host_c, #
+                 B=d_fem$mass_trans,#
+                 C=d_fem$wing2body, #Sym_dist showed up in nothing, reran with wing2body#
+                 X=d_fem$chamber,#
+                 Y=d_fem$ID) #
+source("src/compare_models.R")#
+###I rewrote this script so neither chamber nor ID is optional#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
+anova(m3, m0, test="Chisq") #no improvement from adding C#
+anova(m1, m0, test="Chisq") #no improvement from adding A#
+anova(m2, m0, test="Chisq") #no improvement from B*C
+source("src/compare_models.R")#
+###I rewrote this script so neither chamber nor ID is optional#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
+m0<-lmer(R~(1|X) + (1|Y), data=data, REML=FALSE)#
+#
+m1<-lmer(R~A + (1|X) + (1|Y), data=data, REML=FALSE)#
+#
+m2<-lmer(R~B + (1|X) + (1|Y), data=data, REML=FALSE)#
+#
+m3<-lmer(R~C + (1|X) + (1|Y), data=data, REML=FALSE)#
+#
+m4<-lmer(R~A+B + (1|X) + (1|Y), data=data, REML=FALSE)#
+#
+m5<-lmer(R~A+C + (1|X) + (1|Y), data=data, REML=FALSE)
+d_male <-dC[dC$sex=="M",] #
+d_male <- center_data(d_male)#
+#
+data<-data.frame(R=d_male$distance_trans,#
+                 A=d_male$host_c, #
+                 B=d_male$mass_trans,#
+                 C=d_male$wing2body, #Sym_dist showed up in nothing, reran with wing2body#
+                 X=d_male$chamber,#
+                 Y=d_male$ID) #
+source("src/compare_models.R")#
+###I rewrote this script so neither chamber nor ID is optional#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF REMLF.R")
+### model transformed distance#
+data<-data.frame(R=dC$distance_trans,#
+                 A=dC$host_c, #
+                 B=dC$sex_c, #
+                 C=dC$mass_trans,#
+                 D=dC$wing2body, #Sym_dist showed up in nothing, reran with wing2body#
+                 X=dC$chamber,#
+                 Y=dC$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+distance_model_all<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=dC)#
+summary(distance_model_all)#
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_all))$p.value)#
+s.test #It's a pass! But the model shows nothing interesting.#
+qqnorm(resid(distance_model_all))#
+qqline(resid(distance_model_all))
+hist(dC$distance_trans)
+hist(dC$distance)
+plot(dC$distance~dC$distance_trans)
+hist(dC$distance_trans)
+hist(log(100+dC$distance))
+hist(log(150+dC$distance))
+hist(log(250+dC$distance))
+hist(log(200+dC$distance))
+hist(log(sqrt(200+dC$distance)))
+dC$distance_trans<-log(sqrt(200+dC$distance))-mean(log(sqrt(200+dC$distance)), na.rm=TRUE)
+data<-data.frame(R=dC$distance_trans,#
+                 A=dC$host_c, #
+                 B=dC$sex_c, #
+                 C=dC$mass_trans,#
+                 D=dC$wing2body, #Sym_dist showed up in nothing, reran with wing2body#
+                 X=dC$chamber,#
+                 Y=dC$ID) #
+#
+source("src/compare_models.R")#
+model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+distance_model_all<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=dC)#
+summary(distance_model_all)#
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_all))$p.value)#
+s.test #Dammit, this doesn't actually pass...#
+qqnorm(resid(distance_model_all))#
+qqline(resid(distance_model_all))
+hist(log(sqrt(500+dC$distance)))
+dC$distance_trans<-log(sqrt(500+dC$distance))-mean(log(sqrt(500+dC$distance)), na.rm=TRUE)
+#######testing some covariates:#
+dC$chamber <- relevel(dC$chamber, ref="B-4")#
+#
+####### Effect of chamber A-4, B-2 and B-4#
+summary(lmer(distance_trans~chamber + (1|ID), data=dC)) ###yes, this one's an issue #
+#
+####### No effect of test date#
+tidy_regression(lmer(distance_trans~days_from_start + (1|chamber), data=dC), is_color=output_col)#
+#
+####### marginal effect of start time#
+tidy_regression(lmer(distance_trans~min_from_IncStart + (1|chamber), data=data_flew), is_color=output_col)
+distance_model_all<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=dC)#
+summary(distance_model_all)#
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_all))$p.value)#
+s.test #This is closer to passing#
+qqnorm(resid(distance_model_all))#
+qqline(resid(distance_model_all))
+dC$distance_trans<-log(sqrt(300+dC$distance))-mean(log(sqrt(500+dC$distance)), na.rm=TRUE)
+dC$distance_trans<-log(sqrt(300+dC$distance))-mean(log(sqrt(300+dC$distance)), na.rm=TRUE)
+distance_model_all<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=dC)#
+summary(distance_model_all)#
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_all))$p.value)#
+s.test #This is closer to passing
+dC$distance_trans<-log(sqrt(200+dC$distance))-mean(log(sqrt(200+dC$distance)), na.rm=TRUE)
+distance_model_all<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=dC)#
+summary(distance_model_all)#
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_all))$p.value)#
+s.test #This is closer to passing#
+qqnorm(resid(distance_model_all))#
+qqline(resid(distance_model_all))
+dC$distance_trans<-log(sqrt(100+dC$distance))-mean(log(sqrt(100+dC$distance)), na.rm=TRUE)
+distance_model_all<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=dC)#
+summary(distance_model_all)#
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_all))$p.value)#
+s.test #Thi
+dC$distance_trans<-log(sqrt(50+dC$distance))-mean(log(sqrt(50+dC$distance)), na.rm=TRUE)
+distance_model_all<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=dC)#
+summary(distance_model_all)#
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_all))$p.value)#
+s.test #This is closer to passin
+dC$distance_trans<-log(sqrt(90+dC$distance))-mean(log(sqrt(90+dC$distance)), na.rm=TRUE)
+distance_model_all<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=dC)#
+summary(distance_model_all)#
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_all))$p.value)#
+s.test #This is closer to passing
+dC$distance_trans<-log(sqrt(100+dC$distance))-mean(log(sqrt(100+dC$distance)), na.rm=TRUE)
+distance_model_all<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=dC)#
+summary(distance_model_all)#
+s.test <- paste("pval: ", shapiro.test(residuals(distance_model_all))$p.value)#
+s.test #This is closer to passing#
+qqnorm(resid(distance_model_all))#
+qqline(resid(distance_model_all))
+library(lmtest)
+bptest(distance_model_all)
+library(lmtest)
+bptest(distance_model_all)
+dC$mass_block<-round(dC$mass/0.005)*0.005#
+dC$wing2body_block<-round(dC$wing2body, digits=2)#
+par(mfrow=c(2,2), mai=c(0.8, 0.8, 0.02, 0.02))#
+##mass by sex#
+data_temp<-aggregate(distance~sex*mass_block, data=dC, FUN=mean)#
+data_temp$n<-aggregate(distance~sex*mass_block, data=dC, FUN=length)$distance#
+plot(data_temp$distance~data_temp$mass_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight distance", xlab="Mass")#
+##Unlike for flight probability, here we see a clear effect of mass on male flight speed, but not female flight speed.
+data_temp<-aggregate(distance~sex*wing2body_block, data=dC, FUN=mean)#
+data_temp$n<-aggregate(distance~sex*wing2body_block, data=dC, FUN=length)$distance#
+plot(data_temp$distance~data_temp$wing2body_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight distance", xlab="wing-to-body ratio")#
+##Here we can see that as wing2body ratio increases, flight speed increases marginally in males, but not notice
+#mass by host#
+data_temp<-aggregate(distance~host_c*mass_block, data=dC, FUN=mean)#
+data_temp$n<-aggregate(distance~host_c*mass_block, data=dC, FUN=length)$distance#
+plot(data_temp$distance~data_temp$mass_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight distance", xlab="Mass")
+##wing2body by host#
+data_temp<-aggregate(distance~host_c*wing2body_block, data=dC, FUN=mean)#
+data_temp$n<-aggregate(distance~host_c*wing2body_block, data=dC FUN=length)$distance#
+plot(data_temp$distance~data_temp$wing2body_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight distance", xlab="wing-to-body ratio")

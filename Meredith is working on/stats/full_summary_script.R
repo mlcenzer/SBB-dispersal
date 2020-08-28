@@ -478,8 +478,10 @@ anova(m2, m8, test="Chisq") #adding C does not improve things
 
 distance_model_all<-lmer(distance_trans~mass_trans + (1|chamber) + (1|ID), data=dC)
 summary(distance_model_all)
-               
-               
+
+alt_distance_model<-lmer(distance_trans~sex + (1|chamber) + (1|ID), data=dC)
+summary(alt_distance_model)
+        
 s.test <- paste("pval: ", shapiro.test(residuals(distance_model_all))$p.value)
 s.test #This isn't passing, but it's not awful. I'm willing to accept this.
 qqnorm(resid(distance_model_all))
