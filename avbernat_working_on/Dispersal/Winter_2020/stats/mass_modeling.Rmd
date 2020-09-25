@@ -34,7 +34,7 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 
 [Cleaning Data](#clean)
 
-[lmer() A=host, B=sex, C=sym_dist, X=ID, Y=trial_type, Z=chamber](#lmer1)
+[lmer() host, sex, sym_dist | ID and trial_type](#lmer1)
 
 [Morphology](#morph)
 
@@ -48,6 +48,7 @@ output_col = FALSE # Recommend changing this to TRUE if working in Base R or RSt
 source("src/clean_flight_data.R") # Script that loads and cleans up the data
 source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
 source("src/center_flight_data.R")
+source("src/get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -60,7 +61,7 @@ data_tested <- data[[2]]
 
 ```{r}
 ####Check for convergence without splitting by trial type
-test_model<-lmer(mass~host_c*sex_c*sym_dist+ (1|trial_type) + (1|ID), data=data_tested) 
+test_model<-lmer(mass~host_c*sex_c*sym_dist+ (1|trial_type) + (1|ID), data=data_tested, REML=FALSE) 
 tidy_regression(test_model, is_color=output_col)
 getME(test_model, "lower")
 ```
@@ -69,125 +70,147 @@ getME(test_model, "lower")
 
 ```{r echo=FALSE}
 ###### No effect of chamber
-tidy_regression(lmer(mass_c~chamber + (1|ID) + (1|trial_type), data=data_tested), is_color=output_col) # shouldn't matter because this measurement was taken seperate from the chamber.
+tidy_regression(lmer(mass_c~chamber + (1|ID) + (1|trial_type), data=data_tested, REML=FALSE), is_color=output_col) 
 
-####### No effect of test date
-tidy_regression(lmer(mass_c~days_from_start_c + (1|ID) + (1|trial_type), data=data_tested), is_color=output_col)
+####### Effect of test date - meaning that mass fluctuates by day
+tidy_regression(lmer(mass_c~days_from_start_c + (1|ID), data=data_tested, REML=FALSE), is_color=output_col)
 
 ####### No effect of test time
-tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|ID) + (1|trial_type), data=data_tested), is_color=output_col) 
+tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|ID) + (1|trial_type), data=data_tested, REML=FALSE), is_color=output_col) 
 ```
 
 **Biological Effects**
 
 ```{r, echo=FALSE}
 ####### Effect of number of eggs laid
-tidy_regression(lmer(mass_c~total_eggs + (1|ID), data=data_tested), is_color=output_col) # model didn't converge with (1|trial_type)
+tidy_regression(lmer(mass_c~total_eggs + (1|ID) + (1|trial_type), data=data_tested, REML=FALSE), is_color=output_col) 
 
 ####### Effect of whether eggs were laid or not
-tidy_regression(lmer(mass_c~eggs_b + (1|ID) + (1|trial_type), data=data_tested), is_color=output_col)
+tidy_regression(lmer(mass_c~eggs_b + (1|ID), data=data_tested, REML=FALSE), is_color=output_col) 
 ```
 
 **Morphology Effects**
 
 ```{r, echo=FALSE}
 ####### Effect of beak length
-tidy_regression(lmer(mass_c~beak_c + (1|ID), data=data_tested), is_color=output_col) # model didn't converge with (1|trial_type)
+tidy_regression(lmer(mass_c~beak_c + (1|ID) + (1|trial_type), data=data_tested, REML=FALSE), is_color=output_col) # model didn't converge with (1|trial_type)
 
 ####### Effect of thorax length
-tidy_regression(lmer(mass_c~thorax_c + (1|ID) + (1|trial_type), data=data_tested), is_color=output_col)
+tidy_regression(lmer(mass_c~thorax_c + (1|ID) + (1|trial_type), data=data_tested, REML=FALSE), is_color=output_col)
 
 ####### Effect of body length
-tidy_regression(lmer(mass_c~body_c + (1|ID) + (1|trial_type), data=data_tested), is_color=output_col)
+tidy_regression(lmer(mass_c~body_c + (1|ID) + (1|trial_type), data=data_tested, REML=FALSE), is_color=output_col)
 
 ####### Effect of wing length
-tidy_regression(lmer(mass_c~wing_c + (1|ID) + (1|trial_type), data=data_tested), is_color=output_col)
-
-####### No effect of wing morph (check how annotated the wing morph) - don't include it b/c almost all tested bugs are long-winged
+tidy_regression(lmer(mass_c~wing_c + (1|ID) + (1|trial_type), data=data_tested, REML=FALSE), is_color=output_col)
 ```
 
 <a id="lmer1"></a>
 
-#### All Data | lmer() A=host, B=sex, C=sym_dist, X=ID, Y=trial_type, Z=chamber 
+#### All Data | lmer() A=host, B=sex, C=sym_dist, X=ID 
 
-```{r, warning=FALSE}
+```{r}
 data<-data.frame(R=data_tested$mass_c, 
                  A=data_tested$host_c, 
                  B=data_tested$sex_c, 
                  C=data_tested$sym_dist, 
-                 X=data_tested$ID, Y=data_tested$trial_type)
+                 X=data_tested$ID)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-model_alldata <- lmer(mass_c ~ sex_c + (1|ID) + (1|trial_type), data=data_tested)
-tidy_regression(model_alldata, is_color=output_col)
+anova(m13, m15, test="Chisq") # Adding A*B does not improve fit
+```
+
+```{r}
+model_alldata <- lmer(mass_c ~ sex_c * sym_dist + host_c + (1|ID), data=data_tested, REML=FALSE)
+tidy_regression(model_alldata, is_color=output_col) 
+
+model_alldata <- lmer(mass_c ~ sex_c * sym_dist + host_c + (1|ID) + (1|trial_type), data=data_tested, REML=FALSE)
+tidy_regression(model_alldata, is_color=output_col) # adding trial type improves fit
 ```
 
 * positive effect of sex, where if Female then weigh more.
+* negative weak effect of host where if from GRT then weigh less.
+* negative weak effect of sym_dist
+
+* negative weak effect of sex*sym_dist where if F and farther from Homestead, then weigh less
 
 <a id="morph"></a>
 
 #### Morphology Modeling
 
-```{r, warning=FALSE}
+```{r}
 data<-data.frame(R=data_tested$mass_c, 
                  A=data_tested$beak_c, 
                  B=data_tested$thorax_c, 
                  C=data_tested$body_c, 
                  D=data_tested$wing_c,
-                 X=data_tested$ID, Y=data_tested$trial_type)
+                 X=data_tested$ID)
 data <- data %>%
   filter(!is.na(C))
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-allmorph_model <- lmer(mass_c ~ beak_c * wing_c + thorax_c * body_c + (1 | ID) + (1 | trial_type), data=data_tested)
-tidy_regression(allmorph_model, is_color=output_col)
+anova(m91, m107, test="Chisq") # Adding C*D does not improve fit
 ```
 
-* positive effect of beak length, where the longer the beak the heavier the bug
-* negative effect of wing length, where the longer the wing the lighter the bug
-* no effect of thorax length
-* positive effect of body length, where the longer the body the heavier the bug
-* negative effect of beak_c:wing_c, where if wing longer and body longer, then bug lighter *(might be worth it to just do a wing-to-body effect instead)*
-* positive effect of thorax_c:body_c, where the longer the thorax and body, the heavier the bug
+```{r}
+allmorph_model <- lmer(mass_c ~ beak_c * thorax_c + beak_c * body_c + beak_c * wing_c + thorax_c * body_c + (1|ID), data=data_tested, REML=FALSE)
+tidy_regression(allmorph_model, is_color=output_col) 
 
-```{r, warning=FALSE}
+allmorph_model <- lmer(mass_c ~ beak_c * thorax_c + beak_c * body_c + beak_c * wing_c + thorax_c * body_c + (1|ID) + (1|trial_type), data=data_tested, REML=FALSE)
+tidy_regression(allmorph_model, is_color=output_col) 
+```
+
+```{r, message=FALSE}
 data<-data.frame(R=data_tested$mass_c, 
                  A=data_tested$beak_c, 
                  B=data_tested$thorax_c, 
                  C=data_tested$wing2body_c,
-                 X=data_tested$ID, Y=data_tested$trial_type)
+                 X=data_tested$ID)
 data <- data %>%
   filter(!is.na(A))
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 3-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-anova(m48, m52, test="Chisq") # Adding B*C interaction does not improve fit
-anova(m48, m49, test="Chisq") # Replacing B with A does not improve fit
+anova(m12, m14, test="Chisq") # Adding A*B does not improve fit
 ```
 
 ```{r}
-allmorph_model <- lmer(mass_c ~ beak_c * wing2body_c + thorax_c + (1 | ID) + (1 | trial_type), data=data_tested)
-tidy_regression(allmorph_model, is_color=output_col)
+allmorph_model <- lmer(mass_c ~  beak_c * wing2body_c + thorax_c + (1 | ID), data=data_tested, REML = FALSE)
+tidy_regression(allmorph_model, is_color=output_col) 
+
+allmorph_model <- lmer(mass_c ~  beak_c * wing2body_c + thorax_c + (1 | ID) + (1|trial_type), data=data_tested, REML = FALSE)
+tidy_regression(allmorph_model, is_color=output_col) 
 ```
 
-* positive effect of beak, where the longer beak the heavier the bug
+* positive weak effect of beak, where the longer beak the heavier the bug
 * negative effect of wing2body, where the longer the wing to body the lighter the bug
 * positive effect of thorax, where the longer the thorax the heavier the bug
-* negative beak*wing2body interaction, where the longer the beak and longer the wingtobody, the lighter the bug
+
+* negative beak*wing2body interaction, where the longer the beak and longer the wing2body, the lighter the bug
 
 ### All Data Plotting 
 
+#### Days from start by mass
+
+```{r, warning=FALSE}
+source("src/plotting-lm.R") 
+lm_plot(data_tested, "days_from_start_c","mass_c", "Days From Start", "Mass (g)", "Mass by Days From Start") 
+tidy_regression(lmer(mass_c~days_from_start_c + (1|ID), data=data_tested, REML=FALSE), is_color=output_col)
+```
 #### Flight Duration by Mass
 
 ```{r fig.width=6, fig.height=2.5}
@@ -284,6 +307,8 @@ axis(1, at = seq(-1,1,.5),labels=c("M", " ", " ", " ", "F"))
 lm_plot2(data_tested, "host_c","mass_c", "Host Plant", "Mass (g)", "Mass by Host Plant") 
 axis(1, at = seq(-1,1,.5),labels=c("BV", " ", " ", " ", "GRT"))
 #dev.off()
+
+lm_plot(data_tested, "sym_dist","mass_c", "Distance From Sympatric Zone", "Mass (g)", "Mass by Sym_Dist") 
 ```
 
 #### Morphology Plots 
@@ -389,13 +414,13 @@ Try an exponential line next: https://www.theanalysisfactor.com/r-tutorial-5/
 
 ```{r, fig.width=8, fig.height=2.5}
 # Had twice as many males as females.
-data_fem <- filter(data_tested, sex == "F") # 208 obs
-data_male <- filter(data_tested, sex == "M") # 406 obs 
+data_fem <- filter(data_tested, sex == "F") 
+data_male <- filter(data_tested, sex == "M") 
 
-data_fem1 <- filter(data_tested, sex == "F") # 115 obs
-data_fem2 <- filter(data_tested, sex == "F") # 93 obs
-data_male1 <- filter(data_tested, sex == "M") # 219 obs
-data_male2 <- filter(data_tested, sex == "M") # 187 obs
+data_fem1 <- filter(data_tested, sex == "F", trial_type=="T1") 
+data_fem2 <- filter(data_tested, sex == "F", trial_type=="T2")  
+data_male1 <- filter(data_tested, sex == "M", trial_type=="T1")  
+data_male2 <- filter(data_tested, sex == "M", trial_type=="T2") 
 
 h3 <- as.grob(expression(hist(data_fem1$mass, main="Females Trial 1", xlab= "Mass (g)")))
 h4 <- as.grob(expression(hist(data_fem2$mass, main="Females Trial 2", xlab= "Mass (g)")))
@@ -432,6 +457,7 @@ output_col = FALSE
 source("src/clean_flight_data.R") 
 source("src/regression_output.R") 
 source("src/center_flight_data.R")
+source("src/get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -439,7 +465,7 @@ data_tested <- data[[2]]
 
 # filter out missing masses
 data_tested <- data_tested %>%
-  filter(!is.na(mass_c))
+  filter(!is.na(mass))
 
 data_fem <- data_tested[data_tested$sex=="F",]
 data_fem <- center_data(data_fem)
@@ -453,67 +479,73 @@ data_fem <- center_data(data_fem)
 
 ```{r echo=FALSE}
 ###### No effect of chamber
-tidy_regression(lmer(mass_c~chamber + (1|ID) + (1|trial_type), data=data_fem), is_color=output_col) # shouldn't matter because this measurement was taken seperate from the chamber.
+tidy_regression(lmer(mass_c~chamber + (1|ID) + (1|trial_type), data=data_fem, REML=FALSE), is_color=output_col) 
 
-####### Effect of test date
-tidy_regression(lmer(mass_c~days_from_start_c + (1|ID), data=data_fem), is_color=output_col) # t val = 2.38 - makes sense because female mass would fluctuate the most
+####### Marginal effect of test date
+tidy_regression(lmer(mass_c~days_from_start_c + (1|ID), data=data_fem, REML=FALSE), is_color=output_col) # t val = 2.29 - makes sense because female mass would fluctuate the most
 
 ####### No effect of test time
-tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|ID) + (1|trial_type), data=data_fem), is_color=output_col) 
+tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|ID) + (1|trial_type), data=data_fem, REML=FALSE), is_color=output_col) 
 ```
 
 **Biological Effects**
 
 ```{r, echo=FALSE}
 ####### Effect of number of eggs laid
-tidy_regression(lmer(mass_c~total_eggs + (1|ID) + (1|trial_type), data=data_fem), is_color=output_col) 
+tidy_regression(lmer(mass_c~total_eggs + (1|ID) + (1|trial_type), data=data_fem, REML=FALSE), is_color=output_col) 
 
 ####### Effect of whether eggs were laid or not
-tidy_regression(lmer(mass_c~eggs_b + (1|ID), data=data_fem), is_color=output_col)
+tidy_regression(lmer(mass_c~eggs_b + (1|ID), data=data_fem, REML=FALSE), is_color=output_col)
 ```
 
 **Morphology Effects**
 
 ```{r, echo=FALSE}
 ####### Effect of beak length
-tidy_regression(lmer(mass_c~beak_c + (1|ID) + (1|trial_type), data=data_fem), is_color=output_col) # model didn't converge with (1|trial_type)
+tidy_regression(lmer(mass_c~beak_c + (1|ID) + (1|trial_type), data=data_fem, REML=FALSE), is_color=output_col)
 
 ####### Effect of thorax length
-tidy_regression(lmer(mass_c~thorax_c + (1|ID) + (1|trial_type), data=data_fem), is_color=output_col)
+tidy_regression(lmer(mass_c~thorax_c + (1|ID) + (1|trial_type), data=data_fem, REML=FALSE), is_color=output_col)
 
 ####### Effect of body length
-tidy_regression(lmer(mass_c~body_c + (1|ID) + (1|trial_type), data=data_fem), is_color=output_col)
+tidy_regression(lmer(mass_c~body_c + (1|ID), data=data_fem, REML=FALSE), is_color=output_col)
 
 ####### Effect of wing length
-tidy_regression(lmer(mass_c~wing_c + (1|ID) + (1|trial_type), data=data_fem), is_color=output_col)
+tidy_regression(lmer(mass_c~wing_c + (1|ID), data=data_fem, REML=FALSE), is_color=output_col) 
 ```
 
 <a id="lmerf"></a>
 
-#### Female Data | lmer() A=host, B=sex, C=sym_dist, X=ID, Y=trial_type, Z=chamber 
+#### Female Data | lmer() A=host, B=sex, C=sym_dist, X=ID 
 
-```{r, warning=FALSE}
+```{r, message=FALSE}
 data<-data.frame(R=data_fem$mass_c, 
                  A=data_fem$host_c, 
                  B=data_fem$sym_dist,
-                 X=data_fem$ID, Y=data_fem$population)
+                 X=data_fem$ID)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 2-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 2-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-anova(m0, m10, test="Chisq") # Adding (1|Y) does not improve fit
+anova(m2, m3, test="Chisq") # Adding A does not improve fit
 ```
 
 ```{r}
-femm_model <- lmer(mass_c ~ (1|ID), data=data_fem)
+femm_model <- lmer(mass_c ~ sym_dist + (1|ID), data=data_fem, REML=FALSE)
+tidy_regression(femm_model, is_color=output_col)
+
+femm_model <- lmer(mass_c ~ sym_dist + (1|ID) + (1|trial_type), data=data_fem, REML=FALSE)
 tidy_regression(femm_model, is_color=output_col)
 ```
 
+* marginal negative weak effect of sym_dist where the farther from homestead the less GRT female bugs weigh
+
 Let's add eggs:
 
-```{r warning=FALSE}
+```{r message=FALSE}
 data<-data.frame(R=data_fem$mass_c, 
                  A=data_fem$host_c, 
                  B=data_fem$sym_dist,
@@ -521,98 +553,119 @@ data<-data.frame(R=data_fem$mass_c,
                  X=data_fem$ID)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-femm_model <- lmer(mass_c ~ eggs_b + (1|ID), data=data_fem)
-tidy_regression(femm_model, is_color=output_col)
+anova(m6, m10, test="Chisq") # Adding B*C does not improve fit
 ```
 
+```{r}
+femm_model <- lmer(mass_c ~ sym_dist + eggs_b + (1|ID), data=data_fem, REML=FALSE)
+tidy_regression(femm_model, is_color=output_col) # When addd trial type as RF, it has zero variance so not needed
+```
+
+* no efffect of sym dist
 * Positive effect of eggs laid on test day where if a female bug laid eggs on her test day, she weighed more.
 
-```{r, warning=FALSE}
+```{r, message=FALSE}
 data<-data.frame(R=data_fem$mass_c, 
                  A=data_fem$host_c, 
                  B=data_fem$sym_dist,
-                 C=data_fem$eggs_b,
-                 D=data_fem$total_eggs_c,
+                 C=data_fem$total_eggs_c,
                  X=data_fem$ID)
 data <- data %>%
   filter(!is.na(D))
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings))
+```
+
+```{r}
+anova(m2, m4, test="Chisq") # Adding A does not improve fit
 ```
 
 
 ```{r}
-anova(m3, m10, test="Chisq") # Adding D improves the fit
-```
-
-```{r}
-femm_model <- lmer(mass_c ~ eggs_b + total_eggs_c + (1|ID), data=data_fem)
+femm_model <- lmer(mass_c ~ sym_dist + (1|ID), data=data_fem, REML=FALSE)
+tidy_regression(femm_model, is_color=output_col)
+femm_model <- lmer(mass_c ~ sym_dist + (1|ID) + (1 | trial_type), data=data_fem, REML=FALSE)
 tidy_regression(femm_model, is_color=output_col)
 ```
 
-* Positive effect of eggs laid on test day where if a female bug laid eggs on her test day, she weighed more.
-* Positive effect of total eggs laid where if a female bug laid more eggs overall, she weighed more.
+* negative marginal effect of sym_dist where the farther the bug is from Homestead, the less it weighed
 
 <a id="morphf"></a>
 
 #### Morphology Modeling
 
-```{r, warning=FALSE}
+```{r, message=FALSE}
 data<-data.frame(R=data_fem$mass_c, 
                  A=data_fem$beak_c, 
                  B=data_fem$thorax_c,
                  C=data_fem$wing_c,
                  D=data_fem$body_c,
-                 X=data_fem$ID, Y=data_fem$trial_type) 
+                 X=data_fem$ID) 
 data <- data %>%
   filter(!is.na(A))
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-femm_morph_model <- lmer(mass_c ~ thorax_c + (1|ID) + (1| trial_type), data=data_fem)
+femm_morph_model <- lmer(mass_c ~ beak_c * thorax_c + thorax_c * body_c + wing_c  + (1|ID), data=data_fem, REML=FALSE)
+tidy_regression(femm_morph_model, is_color=output_col)
+femm_morph_model <- lmer(mass_c ~ beak_c * thorax_c + thorax_c * body_c + wing_c  + (1|ID) + (1|trial_type), data=data_fem, REML=FALSE)
 tidy_regression(femm_morph_model, is_color=output_col)
 ```
 
-* positive effect of thorax length where the longer the thorax the more the female bug weighed. (probably b/c that's where all the muscle mass is held).
+* no effect of beak
+* no effect of thorax
+* positive effect of body
+* negative effect of beak
+* negative effect of wing 
+
+* beak*thorax negative effect where the longer the beak and throax the less the bug weighs
+* positive effect of thorax*body where the larger the thorax and body, more less the bug weighs
+
 
 <a id="eggmorph"></a>
 
 #### Eggs and Morphology 
 
-```{r, warning=FALSE, message=FALSE}
+```{r, message=FALSE}
 data<-data.frame(R=data_fem$mass_c, 
                  A=data_fem$eggs_b, 
                  B=data_fem$thorax_c,
                  C=data_fem$wing_c,
                  D=data_fem$body_c,
-                 X=data_fem$ID, Y=data_fem$trial_type) 
+                 X=data_fem$ID) 
 data <- data %>%
-  filter(!is.na(A)) %>%
-  filter(!is.na(B))
+  filter(!is.na(A), !is.na(B)) 
+
+## model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R") ## AB: wide difference between model selection, uncomment to compare.
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings)) 
 ```
 
 ```{r}
-anova(m5, m231, test="Chisq") # Adding Y does not improve fit
-```
-
-```{r}
-femm_eggmorph <- lmer(mass_c ~ eggs_b + thorax_c + (1|ID), data=data_fem)
-tidy_regression(femm_eggmorph, is_color=output_col)
+femm_eggmorph <- lmer(mass_c ~ eggs_b * body_c + thorax_c * body_c + wing_c  + (1|ID), data=data_fem, REML=TRUE)
+tidy_regression(femm_eggmorph, is_color=output_col) # Adding (1|trial_type) does not improve fit
 ```
 
 * if female laid eggs that day, then mass is larger
-* the larger the thorax, the heavier the female
+* the larger the body, the heavier the female
+* marginal? effect of thorax
+* negative effect of wing where the larger the wing the lighter the female
+
+* no effect of eggs*body
+* no effect of body*thorax
 
 ### Plotting Female Data
 
@@ -637,6 +690,8 @@ lm_plot(data_eggs, "total_eggs_c", "mass_c", "Total Eggs Laid", "Mass (g)", "Mas
 source("src/plotting-lm2.R") 
 lm_plot2(data_fem, "eggs_b", "mass_c", "Eggs Laid", "Mass (g)", "Mass by Egg Laid on Test Day")
 axis(1, at = seq(-1,1,.5),labels=c(" ", " ", "M ", " ", "F"))
+
+lm_plot(data_fem, "sym_dist", "mass_c", "Distance From Sympatric Zone", "Mass (g)", "Mass by Distance from Sympatric Zone")
 ```
 
 #### Morphology
@@ -681,6 +736,7 @@ output_col = FALSE
 source("src/clean_flight_data.R") 
 source("src/regression_output.R") 
 source("src/center_flight_data.R")
+source("src/get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -698,13 +754,13 @@ data_male <- center_data(data_male)
 
 ```{r echo=FALSE}
 ###### No effect of chamber
-tidy_regression(lmer(mass_c~chamber + (1|ID), data=data_male), is_color=output_col) 
+tidy_regression(lmer(mass_c~chamber + (1|ID), data=data_male, REML=FALSE), is_color=output_col) 
 
 ####### No effect of test date
-tidy_regression(lmer(mass_c~days_from_start_c + (1|ID) + (1|trial_type), data=data_male), is_color=output_col)
+tidy_regression(lmer(mass_c~days_from_start_c + (1|ID) + (1|trial_type), data=data_male, REML=FALSE), is_color=output_col)
 
 ####### No effect of test time
-tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|ID), data=data_male), is_color=output_col) 
+tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|ID), data=data_male, REML=FALSE), is_color=output_col) 
 ```
 
 **Biological Effects** - none b/c males don't lay eggs
@@ -713,42 +769,53 @@ tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|ID), data=data_male), is_co
 
 ```{r, echo=FALSE}
 ####### Effect of beak length
-tidy_regression(lmer(mass_c~beak_c + (1|ID) + (1|trial_type), data=data_male), is_color=output_col) 
+tidy_regression(lmer(mass_c~beak_c + (1|ID) + (1|trial_type), data=data_male, REML=FALSE), is_color=output_col) 
 
 ####### Effect of thorax length
-tidy_regression(lmer(mass_c~thorax_c + (1|ID), data=data_male), is_color=output_col)
+tidy_regression(lmer(mass_c~thorax_c + (1|ID) + (1|trial_type), data=data_male, REML=FALSE), is_color=output_col)
 
 ####### Effect of body length
-tidy_regression(lmer(mass_c~body_c + (1|ID), data=data_male), is_color=output_col)
+tidy_regression(lmer(mass_c~body_c + (1|ID) + (1|trial_type), data=data_male, REML=FALSE), is_color=output_col)
 
 ####### Effect of wing length
-tidy_regression(lmer(mass_c~wing_c + (1|ID) + (1|trial_type), data=data_male), is_color=output_col)
+tidy_regression(lmer(mass_c~wing_c + (1|ID) + (1|trial_type), data=data_male, REML=FALSE), is_color=output_col)
 ```
 
 <a id="lmerm"></a>
 
 #### Male Data | lmer() A=host, B=sym_dist, X=ID, Y=trial_type
 
-```{r, warning= FALSE}
+```{r, message= FALSE}
 data<-data.frame(R=data_male$mass_c, 
                  A=data_male$host_c, 
                  B=data_male$sym_dist,
-                 X=data_male$ID, Y=data_male$trial_type)
+                 X=data_male$ID)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 2-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 2-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings)) 
 ```
 
 ```{r}
-male_model <- lmer(mass_c ~ (1 | ID) + (1 | trial_type), data=data_male)
+anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
+```
+
+```{r}
+male_model <- lmer(mass_c ~ host_c + sym_dist + (1 | ID), data=data_male, REML=FALSE)
+tidy_regression(male_model, is_color=output_col)
+
+male_model <- lmer(mass_c ~ host_c + sym_dist + (1 | ID) + (1 | trial_type), data=data_male, REML=FALSE)
 tidy_regression(male_model, is_color=output_col)
 ```
+
+* significant but weak negative effect of host
+* no effect of sym_dist
 
 <a id="morphm"></a>
 
 #### Morphology Modeling
 
-```{r, warning=FALSE}
+```{r, message=FALSE}
 data<-data.frame(R=data_male$mass_c, 
                  A=data_male$beak_c, 
                  B=data_male$thorax_c,
@@ -759,16 +826,23 @@ data <- data %>%
   filter(!is.na(A))
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings)) 
 ```
 
 ```{r}
-male_morph_model <- lmer(mass_c ~ beak_c + thorax_c + (1|ID), data=data_male)
-tidy_regression(male_morph_model, is_color=output_col)
+# this changed
+anova(m64, m90, test="Chisq") # Adding C*D does not improve fit
+anova(m64, m80, test="Chisq") # Adding A*C does not improve fit
 ```
 
-* positive effect of beak length, where the longer the beak the heavier the bug
-* positive effect of thorax length, where the longer the thorax the heavier the bug
+```{r}
+male_morph_model <- lmer(mass_c ~ thorax_c * wing_c + thorax_c * body_c + wing_c * body_c + beak_c  + (1|ID), data=data_male, REML=FALSE)
+tidy_regression(male_morph_model, is_color=output_col)
+
+male_morph_model <- lmer(mass_c ~ thorax_c * wing_c + thorax_c * body_c + wing_c * body_c + beak_c  + (1|ID) + (1|trial_type), data=data_male, REML=FALSE)
+tidy_regression(male_morph_model, is_color=output_col)
+```
 
 ### Plotting Male Data
 
@@ -821,6 +895,7 @@ output_col = FALSE
 source("src/clean_flight_data.R") 
 source("src/regression_output.R") 
 source("src/center_flight_data.R")
+source("src/get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -843,107 +918,125 @@ data_T1 <- center_data(data_T1)
 
 ```{r echo=FALSE}
 ###### No effect of chamber
-tidy_regression(lmer(mass_c~chamber + (1|days_from_start_c), data=data_T1), is_color=output_col) # (1|population) variance near zero so can remove
+tidy_regression(lmer(mass_c~chamber + (1|days_from_start_c), data=data_T1, REML=FALSE), is_color=output_col) # (1|population) variance near zero so can remove
 
 ####### No effect of test date
-tidy_regression(lmer(mass_c~days_from_start_c + (1|chamber), data=data_T1), is_color=output_col)
+tidy_regression(lmer(mass_c~days_from_start_c + (1|chamber), data=data_T1, REML=FALSE), is_color=output_col)
 
 ####### No effect of test time
-tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|chamber), data=data_T1), is_color=output_col) 
-```
-
-**Biological Effects**
-
-```{r, echo=FALSE}
-####### Effect of number of eggs laid
-tidy_regression(lmer(mass_c~total_eggs + (1|chamber), data=data_T1), is_color=output_col) 
-
-####### Effect of whether eggs were laid or not
-tidy_regression(lmer(mass_c~eggs_b + (1|chamber), data=data_T1), is_color=output_col)
+tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|chamber), data=data_T1, REML=FALSE), is_color=output_col) 
 ```
 
 **Morphology Effects**
 
 ```{r, echo=FALSE}
 ####### Effect of beak length
-tidy_regression(lmer(mass_c~beak_c + (1|chamber), data=data_T1), is_color=output_col) 
+tidy_regression(lmer(mass_c~beak_c + (1|population), data=data_T1, REML=FALSE), is_color=output_col) 
 
 ####### Effect of thorax length
-tidy_regression(lmer(mass_c~thorax_c + (1|chamber), data=data_T1), is_color=output_col)
+tidy_regression(lmer(mass_c~thorax_c + (1|population), data=data_T1, REML=FALSE), is_color=output_col)
 
 ####### Effect of body length
-tidy_regression(lmer(mass_c~body_c + (1|chamber), data=data_T1), is_color=output_col)
+tidy_regression(lmer(mass_c~body_c + (1|population), data=data_T1, REML=FALSE), is_color=output_col)
 
 ####### Effect of wing length
-tidy_regression(lmer(mass_c~wing_c + (1|chamber), data=data_T1), is_color=output_col)
+tidy_regression(lmer(mass_c~wing_c + (1|population), data=data_T1, REML=FALSE), is_color=output_col)
 ```
 
 <a id="modelT1"></a>
 
 #### Sex * Host * Sym_Dist Modeling
 
-```{r, warning=FALSE}
+```{r, message=FALSE}
 data<-data.frame(R=data_T1$mass_c, 
                  A=data_T1$host_c, 
                  B=data_T1$sym_dist,
                  C=data_T1$sex_c,
-                 X=data_T1$min_from_IncStart_c)
+                 X=data_T1$population)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings)) 
 ```
 
 ```{r}
-T1_model <- lmer(mass_c ~ sex_c + (1|min_from_IncStart_c), data=data_T1)
+anova(m10, m13, test="Chisq") # Adding A does not improve fit
+```
+
+```{r}
+T1_model <- lmer(mass_c ~ sex_c * sym_dist + (1|population), data=data_T1, REML=FALSE)
 tidy_regression(T1_model, is_color=output_col)
 ```
 
 * positive effect of sex, where if female then weigh more
+* negative effect of sym_dist, where if from GRT then weigh less
+
+* negative effect of sym_dist*sex where if from GRT and F then weigh less
 
 <a id="morphT1"></a>
 
 #### Morphology Modeling
 
-```{r, warning=FALSE}
+```{r, message=FALSE}
 data<-data.frame(R=data_T1$mass_c, 
                  A=data_T1$beak_c, 
                  B=data_T1$thorax_c,
                  C=data_T1$body_c,
                  D=data_T1$wing_c,
-                 X=data_T1$days_from_start_c)
+                 X=data_T1$population)
 data <- data %>%
   filter(!is.na(A))
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings)) 
 ```
 
 ```{r}
-T1_morph_model <- lmer(mass_c ~ beak_c * wing_c + thorax_c * body_c + (1 | days_from_start_c), data=data_T1)
+T1_morph_model <- lmer(mass_c ~ beak_c * thorax_c + beak_c * body_c + beak_c * wing_c + thorax_c * body_c  + (1 | population), data=data_T1, REML=FALSE)
 tidy_regression(T1_morph_model, is_color=output_col)
 ```
 
-```{r, warning=FALSE}
+* positive effect of beak
+* positive effect of thorax
+* positive effect of wing
+* negative effect of wing 
+
+* marginal negative effect of beak*thorax
+* positve effect of beak*body
+* negative effect of beak*wing
+* positive effect of thorax*body
+
+
+```{r}
 data<-data.frame(R=data_T1$mass_c, 
                  A=data_T1$beak_c, 
                  B=data_T1$thorax_c,
                  C=data_T1$wing2body_c,
-                 X=data_T1$days_from_start_c)
+                 X=data_T1$population)
 data <- data %>%
   filter(!is.na(A))
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings)) 
 ```
 
 ```{r}
 anova(m12, m16, test="Chisq") # Adding B*C interaction does not improve fit
-anova(m12, m13, test="Chisq") # Replacing B with A does not improve fit
+anova(m12, m14, test="Chisq") # Adding A*B interaction does not improve fit
 ```
 
 ```{r}
-T1_morph_model <- lmer(mass_c ~ beak_c * wing2body_c + thorax_c + (1 | days_from_start_c), data=data_T1)
+T1_morph_model <- lmer(mass_c ~ beak_c * wing2body_c + thorax_c + (1 | population), data=data_T1, REML=FALSE)
 tidy_regression(T1_morph_model, is_color=output_col)
 ```
+
+* positive effect of beak where longer then weigh more
+* negative effect of wing2body where the more wing to body then weigh less
+* positive effect of thorax where the wider the thorax the more the bug weighs
+
+* negative effect of beak*wing2body wher ethe more wing to body and longer beak then weigh less
+
 
 ### Trial 2
 
@@ -965,6 +1058,7 @@ output_col = FALSE
 source("src/clean_flight_data.R") 
 source("src/regression_output.R") 
 source("src/center_flight_data.R")
+source("src/get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -984,46 +1078,36 @@ data_T2 <- center_data(data_T2)
 
 ```{r echo=FALSE}
 ###### No effect of chamber
-tidy_regression(lmer(mass_c~chamber + (1|population), data=data_T2), is_color=output_col)
+tidy_regression(lmer(mass_c~chamber + (1|site), data=data_T2, REML=FALSE), is_color=output_col)
 
 ####### No effect of test date
-tidy_regression(lmer(mass_c~days_from_start_c + (1|population), data=data_T2), is_color=output_col)
+tidy_regression(lmer(mass_c~days_from_start_c + (1|site), data=data_T2, REML=FALSE), is_color=output_col)
 
 ####### No effect of test time
-tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|population), data=data_T2), is_color=output_col) 
-```
-
-**Biological Effects**
-
-```{r, echo=FALSE}
-####### Effect of number of eggs laid
-tidy_regression(lmer(mass_c~total_eggs + (1|population), data=data_T2), is_color=output_col) 
-
-####### Effect of whether eggs were laid or not
-tidy_regression(lmer(mass_c~eggs_b + (1|population), data=data_T2), is_color=output_col)
+tidy_regression(lmer(mass_c~min_from_IncStart_c + (1|site), data=data_T2, REML=FALSE), is_color=output_col) 
 ```
 
 **Morphology Effects**
 
 ```{r, echo=FALSE}
 ####### Effect of beak length
-tidy_regression(lmer(mass_c~beak_c + (1|population), data=data_T2), is_color=output_col) 
+tidy_regression(lmer(mass_c~beak_c + (1|population), data=data_T2, REML=FALSE), is_color=output_col) 
 
 ####### Effect of thorax length
-tidy_regression(lmer(mass_c~thorax_c + (1|population), data=data_T2), is_color=output_col)
+tidy_regression(lmer(mass_c~thorax_c + (1|population), data=data_T2, REML=FALSE), is_color=output_col)
 
 ####### Effect of body length
-tidy_regression(lmer(mass_c~body_c + (1|population), data=data_T2), is_color=output_col)
+tidy_regression(lmer(mass_c~body_c + (1|population), data=data_T2, REML=FALSE), is_color=output_col)
 
 ####### Effect of wing length
-tidy_regression(lmer(mass_c~wing_c + (1|population), data=data_T2), is_color=output_col)
+tidy_regression(lmer(mass_c~wing_c + (1|population), data=data_T2, REML=FALSE), is_color=output_col)
 ```
 
 <a id="modelT2"></a>
 
 #### Sex * Host * Sym_Dist Modeling
 
-```{r, warning=FALSE}
+```{r, message=FALSE}
 data<-data.frame(R=data_T2$mass_c, 
                  A=data_T2$host_c, 
                  B=data_T2$sym_dist,
@@ -1031,40 +1115,51 @@ data<-data.frame(R=data_T2$mass_c,
                  X=data_T2$population)
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings)) 
 ```
 
 ```{r}
-T2_model <- lmer(mass_c ~ sex_c + (1|population), data=data_T2)
+anova(m5, m9, test="Chisq") # Adding A*C does not improve fit
+```
+
+```{r}
+T2_model <- lmer(mass_c ~ host_c + sex_c + (1|population), data=data_T2, REML=FALSE)
 tidy_regression(T2_model, is_color=output_col)
 ```
 
-* Positive effect of sex, where if female then weigh more.
+* positive effect of sex, where if female then weigh more.
+* negative effect of sex, where if from GRT then weigh less.
 
 <a id="moprhT2"></a>
 
 #### Morphology Modeling
 
-```{r, warning=FALSE}
+```{r message=FALSE}
 data<-data.frame(R=data_T2$mass_c, 
                  A=data_T2$beak_c, 
                  B=data_T2$thorax_c,
                  C=data_T2$body_c,
                  D=data_T2$wing_c,
-                 X=data_T2$days_from_start_c)
+                 X=data_T2$population)
 data <- data %>%
   filter(!is.na(A))
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-T2_morph_model <- lmer(mass_c ~ beak_c*wing_c + thorax_c*body_c + (1|days_from_start_c), data=data_T2)
+anova(m49, m77, test="Chisq") # Adding A*C does not improve fit
+```
+
+```{r}
+T2_morph_model <- lmer(mass_c ~ beak_c * wing_c + thorax_c * body_c  + (1|population), data=data_T2, REML=FALSE)
 tidy_regression(T2_morph_model, is_color=output_col)
 ```
 
-```{r, warning=FALSE}
+```{r, message=FALSE}
 data<-data.frame(R=data_T2$mass_c, 
                  A=data_T2$beak_c, 
                  B=data_T2$thorax_c,
@@ -1074,17 +1169,17 @@ data <- data %>%
   filter(!is.na(A))
 
 source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF.R")
+errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
 anova(m7, m12, test="Chisq") # Adding A*C does improve the fit
-anova(m12, m16, test="Chisq") # Adding B*C intercation does not improve fit
-anova(m7, m13, test="Chisq") # Adding B*C interaction does not improve fit
+anova(m12, m16, test="Chisq") # Adding B*C does not improve fit
 ```
 
 ```{r}
-T2_morph_model <- lmer(mass_c ~ beak_c*wing2body_c + thorax_c + (1|days_from_start_c), data=data_T2)
+T2_morph_model <- lmer(mass_c ~ beak_c*wing2body_c + thorax_c + (1|population), data=data_T2, REML=TRUE)
 tidy_regression(T2_morph_model, is_color=output_col)
 ```
 
@@ -1175,3 +1270,4 @@ g3 <- grid.arrange(p8,p9,p10,p11, ncol=2, top="Trial 2")
 # Uncomment below to save graph:
 #ggsave("MassbyMorphologyT2", plot = g3, device="jpeg", width = 9, height = 7)
 ```
+
