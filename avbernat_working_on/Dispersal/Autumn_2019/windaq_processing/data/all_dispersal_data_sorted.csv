@@ -1,0 +1,392 @@
+ID,box,test_date,time,set_number,chamber#,sex,population,flew,died,flight_type,NOTES,filename
+329,C,10.15,11:30am,1,A-1,M,Lake Placid,Y,,,,set001-11am-10-15-19-A1.txt
+372,Petri2,10.15,11:30am,1,A-2,F,Leesburg,N,,,,set001-11am-10-15-19-A2.txt
+37,Petri1,10.15,11:30am,1,A-3,F,Key Largo,N,Y,,,set001-11am-10-15-19-A3.txt
+303,C,10.15,11:30am,1,A-4,F,Lake Placid,N,,,,set001-11am-10-15-19-A4.txt
+259,C,10.15,11:30am,1,B-1,M,North Key Largo,N,,,,set001-11am-10-15-19-B1.txt
+354,D,10.15,11:30am,1,B-3,F,Lake Placid,N,,,,set001-11am-10-15-19-B2.txt
+89,Petri1,10.15,11:30am,1,B-2,M,Homestead,Y,,,,set001-11am-10-15-19-B3.txt
+158,D,10.15,11:30am,1,B-4,M,Lake Wales,N,,,,set001-11am-10-15-19-B4.txt
+349,D,10.15,12:10,2,A-1,M,Lake Placid,N,,,no recordings,NA
+265,C,10.15,12:10,2,A-2,F,North Key Largo,N,,,no recordings,NA
+282,C,10.15,12:10,2,A-3,M,North Key Largo,N,,,no recordings,NA
+242,Petri2,10.15,12:10,2,A-4,F,North Key Largo,N,,,no recordings,NA
+127,B,10.15,12:10,2,B-1,M,Homestead,N,,,no recordings,NA
+51,B,10.15,12:10,2,B-2,F,Key Largo,N,Y,,no recordings,NA
+118,A,10.15,12:10,2,B-3,F,Homestead,N,,,no recordings,NA
+112,A,10.15,12:10,2,B-4,F,Homestead,N,Y,,no recordings,NA
+30,A,10.15,12:45,3,A-1,F,Plantation Key,N,,,,set003-10-15-19-A1.txt
+141,Petri1,10.15,12:45,3,A-2,F,Lake Wales,N,Y,,,set003-10-15-19-A2.txt
+313,C,10.15,12:45,3,A-3,F,Lake Placid,Y,,bursts,,set003-10-15-19-A3.txt
+82,B,10.15,12:45,3,A-4,M,North Key Largo,N,,,,set003-10-15-19-A4.txt
+402,Petri2,10.15,12:45,3,B-1,M,Gainesville,N,,,,set003-10-15-19-B1.txt
+86,B,10.15,12:45,3,B-2,M,North Key Largo,N,,,,set003-10-15-19-B2.txt
+58,B,10.15,12:45,3,B-3,F,Key Largo,N,,,,set003-10-15-19-B3.txt
+132,B,10.15,12:45,3,B-4,M,Homestead,Y,,continuous,struggled against gravity,set003-10-15-19-B4.txt
+262,C,10.15,1:30,4,A-1,M,North Key Largo,Y,,,,set004-10-15-19-A1.txt
+105,A,10:15,1:30,4,A-2,F,Homestead,N,,,,set004-10-15-19-A2.txt
+237,Petri2,10:15,1:30,4,A-3,F,North Key Largo,N,,,,set004-10-15-19-A3.txt
+328,C,10:15,1:30,4,A-4,F,Lake Placid,Y,,,,set004-10-15-19-A4.txt
+99,Petri1,10.16,10:20,5,A-1,M,Homestead,Y,,continuous,,set005-10-16-19-A1.txt
+346,D,10.16,10:20,5,A-2,M,Lake Placid,Y,,,,set005-10-16-19-A2.txt
+201,E,10.16,10:20,5,A-3,M,North Key Largo,N,,,,set005-10-16-19-A3.txt
+238,Petri2,10.16,10:20,5,A-4,F,North Key Largo,N,,,,set005-10-16-19-A4.txt
+296,Petri2,10.16,10:20,5,B-1,F,Lake Placid,Y,,,,set005-10-16-19-B1.txt
+255,E,10.16,10:20,5,B-2,M,North Key Largo,N,,,,set005-10-16-19-B2.txt
+110,A,10.16,10:20,5,B-3,F,Homestead,N,Y,,,set005-10-16-19-B3.txt
+383,D,10.16,10:20,5,B-4,M,Leesburg,N,Y,,,set005-10-16-19-B4.txt
+312,C,10.16,11:00,6,A-1,M,Lake Placid,Y,,,,set006-10-16-19-A1.txt
+261,C,10.16,11:00,6,A-2,M,North Key Largo,Y,,continuous,,set006-10-16-19-A2.txt
+405,Petri2,10.16,11:00,6,A-3,F,Gainesville,N,,,,set006-10-16-19-A3.txt
+113,A,10.16,11:00,6,A-4,M,Homestead,Y,,continous,,set006-10-16-19-A4.txt
+47,B,10.16,11:00,6,B-1,M,Key Largo,N,,,,set006-10-16-19-B1.txt
+254,E,10.16,11:00,6,B-2,M,North Key Largo,N,,,,set006-10-16-19-B2.txt
+257,Petri2,10.16,11:00,6,B-3,M,North Key Largo,Y,,,,set006-10-16-19-B3.txt
+15,A,10.16,11:00,6,B-4,M,Plantation Key,N,,,,set006-10-16-19-B4.txt
+253,E,10.16,11:50,7,A-1,F,North Key Largo,N,,,,set007-10-16-19-A1.txt
+373,Petri2,10.16,11:50,7,A-2,M,Leesburg,N,Y,,,set007-10-16-19-A2.txt
+31,A,10.16,11:50,7,A-3,M,Plantation Key,N,,,,set007-10-16-19-A3.txt
+223,E,10.16,11:50,7,A-4,F,North Key Largo,Y,,continuous,,set007-10-16-19-A4.txt
+148,D,10.16,11:50,7,B-1,M,Lake Wales,N,,,no recordings,NA
+278,C,10.16,11:50,7,B-2,M,North Key Largo,N,,,no recordings,NA
+224,E,10.16,11:50,7,B-3,M,North Key Largo,N,,,no recordings,NA
+397,D,10.16,11:50,7,B-4,F,Gainesville,N,,,no recordings,NA
+139,Petri1,10.16,12:25,8,A-1,F,Lake Wales,N,,,,set008-10-16-19-A2.txt
+53,B,10.16,12:25,8,A-2,M,Key Largo,N,,,,set008-10-16-19-A3.txt
+407,D,10.16,12:25,8,A-3,M,Gainesville,N,,,,set008-10-16-19-A4.txt
+326,C,10.16,12:25,8,A-4,M,Lake Placid,Y,,,paint came off at 80%,set008-10-16-19-B1.txt
+191,E,10.16,12:25,8,B-1,M,North Key Largo,N,Y,,,set008-10-16-19-B2.txt
+310,C,10.16,12:25,8,B-2,F,Lake Placid,N,,,,set008-10-16-19-B3.txt
+299,Petri2,10.16,12:25,8,B-3,M,Lake Placid,Y,,,,set008-10-16-19-B4.txt
+334,D,10.17,9:40,9,A-1,M,Lake Placid,Y,,,paint came off at end,set009-10-17-19-A1.txt
+198,E,10.17,9:40,9,A-2,F,North Key Largo,N,,,,set009-10-17-19-A2.txt
+295,Petri2,10.17,9:40,9,A-3,M,Lake Placid,Y,,continuous,,set009-10-17-19-A3.txt
+424,D,10.17,9:40,9,A-4,M,Gainesville,N,Y,,,set009-10-17-19-A4.txt
+203,E,10.17,9:40,9,B-1,F,North Key Largo,N,,,,set009-10-17-19-B1.txt
+131,B,10.17,9:40,9,B-2,F,Homestead,N,,,,set009-10-17-19-B2.txt
+98,Petri1,10.17,9:40,9,B-3,F,Homestead,N,,,,set009-10-17-19-B3.txt
+300,C,10.17,9:40,9,B-4,M,Lake Placid,Y,,,paint came off at end,set009-10-17-19-B4.txt
+279,C,10.17,10:30,10,A-1,M,North Key Largo,Y,,,,set010-10-17-19-A1.txt
+318,C,10.17,10:30,10,A-2,M,Lake Placid,Y,,bursts,,set010-10-17-19-A2.txt
+17,A,10.17,10:30,10,A-3,M,Plantation Key,N,,,,set010-10-17-19-A3.txt
+285,Petri2,10.17,10:30,10,A-4,F,North Key Largo,N,,,,set010-10-17-19-A4.txt
+202,E,10.17,10:30,10,B-1,F,North Key Largo,N,,,no recording,NA
+153,D,10.17,10:30,10,B-2,F,Lake Wales,N,,,no recording,NA
+333,C,10.17,10:30,10,B-3,F,Lake Placid,N,,,no recording,NA
+8,A,10.17,10:30,10,B-4,F,Plantation Key,N,,,no recording,NA
+217,E,10.17,11:20,11,A-1,F,North Key Largo,N,,,no recording,NA
+66,Petri1,10.17,11:20,11,A-2,F,North Key Largo,N,,,no recording,NA
+56,B,10.17,11:20,11,A-3,M,Key Largo,N,,,no recording,NA
+384,D,10.17,11:20,11,A-4,M,Leesburg,N,,,no recording,NA
+327,C,10.17,11:20,11,B-1,M,Lake Placid,N,Y,,no recording,NA
+283,C,10.17,11:20,11,B-2,F,North Key Largo,N,,,no recording,NA
+314,C,10.17,11:20,11,B-3,F,Lake Placid,N,,,no recording,NA
+410,D,10.17,11:20,11,B-4,F,Gainesville,N,,,no recording,NA
+332,C,10.17,12:20,12,A-1,M,Lake Placid,Y,,continuous,,set012-10-17-19-A1.txt
+149,D,10.17,12:20,12,A-2,F,Lake Wales,N,,,,set012-10-17-19-A2.txt
+226,E,10.17,12:20,12,A-3,M,North Key Largo,Y,,bursts,,set012-10-17-19-A3.txt
+287,Petri2,10.17,12:20,12,A-4,M,North Key Largo,N,,,,set012-10-17-19-A4.txt
+386,D,10.17,12:20,12,B-1,M,Leesburg,N,Y,,,set012-10-17-19-B1.txt
+101,A,10.17,12:20,12,B-2,M,Homestead,Y,,continuous,,set012-10-17-19-B2.txt
+13,A,10.17,12:20,12,B-3,M,Plantation Key,N,,,,set012-10-17-19-B3.txt
+41,Petri1,10.17,12:20,12,B-4,M,Key Largo,N,,,,set012-10-17-19-B4.txt
+298,Petri2,10.17,1:25,13,A-1,F,Lake Placid,N,,,,set013-10-17-19-A1.txt
+64,B,10.17,1:25,13,A-2,F,Key Largo,N,,,,set013-10-17-19-A2.txt
+197,E,10.17,1:25,13,A-3,M,North Key Largo,Y,,,,set013-10-17-19-A3.txt
+258,Petri2,10.17,1:25,13,A-4,M,North Key Largo,N,,,,set013-10-17-19-A4.txt
+339,D,10.17,1:25,13,B-3,M,Lake Placid,Y,,,,set013-10-17-19-B1.txt
+390,,10.17,1:25,13,B-2,M,Leesburg,N,,,,set013-10-17-19-B2.txt
+321,C,10.17,1:25,13,B-1,M,Lake Placid,N,,,,set013-10-17-19-B3.txt
+33,A,10.17,1:25,13,B-4,M,Plantation Key,N,Y,,,set013-10-17-19-B4.txt
+21,A,10.17,2:20,14,A-1,M,Plantation Key,N,,,,set014-10-17-19-A1.txt
+264,C,10.17,2:20,14,A-2,M,North Key Largo,N,,,,set014-10-17-19-A2.txt
+269,C,10.17,2:20,14,A-3,M,North Key Largo,N,,,,set014-10-17-19-A3.txt
+155,D,10.17,2:20,14,A-4,M,Lake Wales,Y,,bursts,,set014-10-17-19-A4.txt
+381,D,10.17,2:20,14,B-1,F,Leesburg,N,,,,set014-10-17-19-B1.txt
+387,D,10.17,2:20,14,B-2,F,Leesburg,Y,,bursts,,set014-10-17-19-B2.txt
+68,Petri1,10.17,2:20,14,B-3,M,North Key Largo,Y,,,,set014-10-17-19-B3.txt
+116,A,10.17,2:20,14,B-4,F,Homestead,Y,,long bursts,,set014-10-17-19-B4.txt
+124,A,10.18,10:05,15,A-1,M,Homestead,N,,,no recording,NA
+35,A,10.18,10:05,15,A-2,M,Plantation Key,N,,,no recording,NA
+26,A,10.18,10:05,15,A-3,M,Plantation Key,N,,,no recording,NA
+135,B,10.18,10:05,15,A-4,F,Homestead,N,,,no recording,NA
+280,C,10.18,10:05,15,B-1,M,North Key Largo,N,,,no recording,NA
+195,E,10.18,10:05,15,B-2,M,North Key Largo,N,,,no recording,NA
+256,E,10.18,10:05,15,B-3,F,North Key Largo,N,,,no recording,NA
+62,B,10.18,10:05,15,B-4,F,Key Largo,N,,,no recording,NA
+229,E,10.18,10:55,16,A-1,F,North Key Largo,N,,,,set016-10-18-19-A1.txt
+275,C,10.18,10:55,16,A-2,F,North Key Largo,N,,,,set016-10-18-19-A2.txt
+125,B,10.18,10:55,16,A-3,M,Homestead,Y,,bursts,,set016-10-18-19-A3.txt
+120,A,10.18,10:55,16,A-4,M,Homestead,Y,,bursts,,set016-10-18-19-A4.txt
+74,B,10.18,10:55,16,B-1,F,North Key Largo,N,,,no recording,NA
+146,Petri1,10.18,10:55,16,B-2,M,Lake Wales,N,,,no recording,NA
+250,E,10.18,10:55,16,B-3,F,North Key Largo,N,,,no recording,NA
+180,Petri1,10.18,10:55,16,B-4,M,North Key Largo,N,,,no recording,NA
+375,Petri2,10.18,11:45,17,A-1,F,Leesburg,N,,,,set017-10-18-19-A1.txt
+69,Petri1,10.18,11:45,17,A-3,F,North Key Largo,N,,,,set017-10-18-19-A2.txt
+67,Petri1,10.18,11:45,17,A-4,M,North Key Largo,Y,,bursts,,set017-10-18-19-A3.txt
+331,C,10.18,11:45,17,A-2,F,Lake Placid,N,,,,set017-10-18-19-A4.txt
+187,B,10.18,11:45,17,B-1,F,North Key Largo,N,,,,set017-10-18-19-B1.txt
+416,D,10.18,11:45,17,B-2,F,Gainesville,Y,,bursts,,set017-10-18-19-B2.txt
+95,A,10.18,11:45,17,B-3,F,Homestead,Y,,continuous,,set017-10-18-19-B3.txt
+102,A,10.18,11:45,17,B-4,F,Homestead,N,,,,set017-10-18-19-B4.txt
+34,A,10.18,1:30,18,A-1,F,Plantation Key,N,,,,set018-10-18-19-A1.txt
+249,E,10.18,1:30,18,A-2,F,North Key Largo,N,,,,set018-10-18-19-A2.txt
+126,B,10.18,1:30,18,A-3,M,Homestead,Y,,,,set018-10-18-19-A3.txt
+190,E,10.18,1:30,18,A-4,M,North Key Largo,N,,,,set018-10-18-19-A4.txt
+288,Petri2,10.18,1:30,18,B-1,M,North Key Largo,Y,,Bursts,,set018-10-18-19-B1.txt
+290,Petri2,10.18,1:30,18,B-2,M,Lake Placid,N,Y,,,set018-10-18-19-B2.txt
+39,Petri1,10.18,1:30,18,B-3,F,Key Largo,N,,,,set018-10-18-19-B3.txt
+78,B,10.18,1:30,18,B-4,M,North Key Largo,N,,,,set018-10-18-19-B4.txt
+221,E,10.18,2:15,19,A-1,F,North Key Largo,N,,,,set019-10-18-19-A1.txt
+81,B,10.18,2:15,19,A-2,M,North Key Largo,N,,,,set019-10-18-19-A2.txt
+302,C,10.18,2:15,19,A-3,F,Lake Placid,Y,,continuous,,set019-10-18-19-A3.txt
+271,C,10.18,2:15,19,A-4,M,North Key Largo,N,,,,set019-10-18-19-A4.txt
+85,B,10.18,2:15,19,B-1,F,North Key Largo,Y,,bursts,,set019-10-18-19-B1.txt
+109,A,10.18,2:15,19,B-2,F,Homestead,Y,,bursts,,set019-10-18-19-B2.txt
+351,D,10.18,2:15,19,B-3,M,Lake Placid,Y,,continuous,,set019-10-18-19-B3.txt
+235,E,10.18,2:15,19,B-4,F,North Key Largo,Y,,continuous,,set019-10-18-19-B4.txt
+73,B,10.18,3:00,20,A-1,M,North Key Largo,N,,,,set020-10-18-19-A1.txt
+49,A,10.18,3:00,20,A-2,M,Key Largo,Y,,continuous,,set020-10-18-19-A2.txt
+123,A,10.18,3:00,20,A-3,M,Homestead,N,,,,set020-10-18-19-A3.txt
+239,Petri2,10.18,3:00,20,A-4,F,North Key Largo,N,,,,set020-10-18-19-A4.txt
+108,A,10.18,3:00,20,B-1,F,Homestead,N,,,,set020-10-18-19-B1.txt
+276,C,10.18,3:00,20,B-2,M,North Key Largo,Y,,,started halfway through,set020-10-18-19-B2.txt
+92,A,10.18,3:00,20,B-3,M,Homestead,??,,,,set020-10-18-19-B3.txt
+103,A,10.18,3:00,20,B-4,M,Homestead,Y,,bursts,,set020-10-18-19-B4.txt
+421,D,10.21,9:00,21,A-1,M,Gainesville,N,,,,set021-10-21-19-A1.txt
+129,B,10.21,9:00,21,A-2,M,Homestead,Y,,continuous,,set021-10-21-19-A2.txt
+335,D,10.21,9:00,21,A-3,F,Lake Placid,N,,,,set021-10-21-19-A3.txt
+413,D,10.21,9:00,21,A-4,F,Gainesville,N,,,,set021-10-21-19-A4.txt
+128,B,10.21,9:00,21,B-1,M,Homestead,N,,,,set021-10-21-19-B1.txt
+208,E,10.21,9:00,21,B-2,F,North Key Largo,N,,,,set021-10-21-19-B2.txt
+156,D,10.21,9:00,21,B-3,F,Lake Wales,N,,,,set021-10-21-19-B3.txt
+96,A,10.21,9:00,21,B-4,M,Homestead,Y,,continuous,,set021-10-21-19-B4.txt
+136,B,10.21,10:00,22,A-1,M,Homestead,Y,,bursts,paint came off at 40%,set022-10-21-19-A1.txt
+214,E,10.21,10:00,22,A-2,M,North Key Largo,N,,,,set022-10-21-19-A2.txt
+152,D,10.21,10:00,22,A-3,M,Lake Wales,Y,,bursts,,set022-10-21-19-A3.txt
+330,C,10.21,10:00,22,A-4,M,Lake Placid,Y,,continuous,,set022-10-21-19-A4.txt
+134,B,10.21,10:00,22,B-1,M,Homestead,Y,,bursts,,set022-10-21-19-B1.txt
+272,C,10.21,10:00,22,B-2,F,North Key Largo,N,Y,,"died immediately after trial, should probably be excluded",set022-10-21-19-B2.txt
+204,E,10.21,10:00,22,B-3,M,North Key Largo,N,,,,set022-10-21-19-B3.txt
+391,Petri1,10.21,10:00,22,B-4,M,Leesburg,N,,,,set022-10-21-19-B4.txt
+48,A,10.21,10:40,23,A-1,F,Key Largo,N,,,,set023-10-21-19-A1.txt
+205,E,10.21,10:40,23,A-2,M,North Key Largo,N,,,,set023-10-21-19-A2.txt
+348,D,10.21,10:40,23,A-3,M,Lake Placid,Y,,,,set023-10-21-19-A3.txt
+234,E,10.21,10:40,23,A-4,F,North Key Largo,N,,,,set023-10-21-19-A4.txt
+320,C,10.21,10:40,23,B-1,F,Lake Placid,N,,,,set023-10-21-19-B1.txt
+263,C,10.21,10:40,23,B-2,F,North Key Largo,N,,,,set023-10-21-19-B2.txt
+376,D,10.21,10:40,23,B-3,F,Leesburg,Y,,continuous,,set023-10-21-19-B3.txt
+408,D,10.21,10:40,23,B-4,M,Gainesville,N,,,,set023-10-21-19-B4.txt
+54,B,10.21,11:20,24,A-1,M,Key Largo,Y,,bursts,non-J.haematoloma,set024-10-21-19-A1.txt
+76,B,10.21,11:20,24,A-2,F,North Key Largo,N,,,,set024-10-21-19-A2.txt
+189,E,10.21,11:20,24,A-3,M,North Key Largo,N,,,,set024-10-21-19-A3.txt
+270,C,10.21,11:20,24,A-4,F,North Key Largo,N,,,,set024-10-21-19-A4.txt
+114,A,10.21,11:20,24,B-1,M,Homestead,N,,,no recording,NA
+210,E,10.21,11:20,24,B-2,M,North Key Largo,N,,,no recording,NA
+107,A,10.21,11:20,24,B-3,F,Homestead,N,,,no recording,NA
+306,C,10.21,11:20,24,B-4,F,Lake Placid,N,,,no recording,NA
+286,Petri2,10.21,12:00,25,A-1,M,North Key Largo,Y,,continuous,,set025-10-21-19-A1.txt
+417,D,10.21,12:00,25,A-2,M,Gainesville,N,,,,set025-10-21-19-A2.txt
+308,C,10.21,12:00,25,A-3,M,Lake Placid,Y,,bursts,,set025-10-21-19-A3.txt
+154,D,10.21,12:00,25,A-4,F,Lake Wales,N,,,,set025-10-21-19-A4.txt
+315,C,10.21,12:00,25,B-1,F,Lake Placid,N,,,no recording,NA
+406,D,10.21,12:00,25,B-2,M,Gainesville,N,,,no recording,NA
+420,D,10.21,12:00,25,B-3,M,Gainesville,NA,,,no recording; paint came off pre-trail,NA
+392,Petri1,10.21,12:00,25,B-4,F,Leesburg,N,,,no recording,NA
+111,A,10.21,12:35,26,A-1,M,Homestead,Y,,bursts,,set026-10-21-19-A1.txt
+91,Petri1,10.21,12:35,26,A-2,M,Homestead,Y,,continuous,,set026-10-21-19-A2.txt
+404,Petri2,10.21,12:35,26,A-3,F,Gainesville,Y,,bursts,,set026-10-21-19-A3.txt
+353,D,10.21,12:35,26,A-4,M,Lake Placid,N,,,,set026-10-21-19-A4.txt
+325,C,10.21,12:35,26,B-1,F,Lake Placid,N,,,no recording,NA
+196,E,10.21,12:35,26,B-2,F,North Key Largo,N,,,no recording,NA
+399,D,10.21,12:35,26,B-3,F,Gainesville,N,,,no recording,NA
+142,Petri1,10.21,12:35,26,B-4,F,Lake Wales,N,,,no recording,NA
+159,D,10.21,1:10,27,A-1,M,Lake Wales,,,,,set027-10-21-19-A1.txt
+46,A,10.21,1:10,27,A-2,F,Key Largo,,,,,set027-10-21-19-A2.txt
+50,B,10.21,1:10,27,A-3,M,Key Largo,Y,,bursts,,set027-10-21-19-A3.txt
+84,B,10.21,1:10,27,A-4,M,North Key Largo,Y,,bursts,,set027-10-21-19-A4.txt
+12,A,10.21,1:10,27,B-1,F,Plantation Key,,,,,set027-10-21-19-B1.txt
+213,E,10.21,1:10,27,B-2,M,North Key Largo,,,,,set027-10-21-19-B2.txt
+16,A,10.21,1:10,27,B-3,F,Plantation Key,,,,,set027-10-21-19-B3.txt
+183,Petri1,10.21,1:10,27,B-4,M,North Key Largo,Y,,bursts,,set027-10-21-19-B4.txt
+18,A,10.21,3:25,28,A-1,M,Plantation Key,N,,,,set028-10-21-19-A1.txt
+59,B,10.21,3:25,28,A-2,M,Key Largo,N,,,,set028-10-21-19-A2.txt
+337,D,10.21,3:25,28,A-3,M,Lake Placid,N,,,,set028-10-21-19-A3.txt
+319,C,10.21,3:25,28,A-4,F,Lake Placid,Y,,continuous,,set028-10-21-19-A4.txt
+311,C,10.21,3:25,28,B-1,M,Lake Placid,Y,,bursts,,set028-10-21-19-B1.txt
+245,E,10.21,3:25,28,B-2,F,North Key Largo,N,,,,set028-10-21-19-B2.txt
+252,E,10.21,3:25,28,B-3,F,North Key Largo,N,,,,set028-10-21-19-B3.txt
+284,C,10.21,3:25,28,B-4,M,North Key Largo,N,,,,set028-10-21-19-B4.txt
+323,C,10.21,4:10,29,A-1,M,Lake Placid,Y,,continuous,,set029-10-21-19-A1.txt
+90,Petri1,10.21,4:10,29,A-2,F,Homestead,Y,,bursts,,set029-10-21-19-A2.txt
+340,D,10.21,4:10,29,A-3,F,Lake Placid,N,,,,set029-10-21-19-A3.txt
+65,B,10.21,4:10,29,A-4,F,Key Largo,N,,,,set029-10-21-19-A4.txt
+336,D,10.21,4:10,29,B-1,F,Lake Placid,Y,,bursts,,set029-10-21-19-B1.txt
+343,D,10.21,4:10,29,B-2,M,Lake Placid,N,,,,set029-10-21-19-B2.txt
+409,D,10.21,4:10,29,B-3,M,Gainesville,N,,,,set029-10-21-19-B3.txt
+342,D,10.21,4:10,29,B-4,F,Lake Placid,N,,,,set029-10-21-19-B4.txt
+119,A,10.21,4:50,30,A-1,M,Homestead,N,,,,set030-10-21-19-A1.txt
+2,Petri1,10.21,4:50,30,A-2,F,Plantation Key,N,,,,set030-10-21-19-A2.txt
+380,D,10.21,4:50,30,A-3,F,Leesburg,Y,,continuous,,set030-10-21-19-A3.txt
+147,Petri1,NA,NA,NA,NA,F,Lake Wales,NA,Y,,,NA
+374,Petri2,NA,NA,NA,NA,F,Leesburg,NA,Y,,,NA
+267,C,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+403,Petri2,NA,NA,NA,NA,F,Gainesville,NA,Y,,,NA
+228,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+345,D,NA,NA,NA,NA,M,Lake Placid,NA,Y,,,NA
+215,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+57,B,NA,NA,NA,NA,M,Key Largo,NA,Y,,,NA
+140,Petri1,NA,NA,NA,NA,M,Lake Wales,NA,Y,,,NA
+72,B,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+206,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+297,Petri2,NA,NA,NA,NA,M,Lake Placid,NA,Y,,,NA
+411,D,NA,NA,NA,NA,F,Gainesville,NA,Y,,,NA
+246,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+1,Petri1,NA,NA,NA,NA,F,Plantation Key,NA,Y,,,NA
+418,D,NA,NA,NA,NA,M,Gainesville,NA,Y,,,NA
+394,,NA,NA,NA,NA,F,Leesburg,NA,Y,,,NA
+22,A,NA,NA,NA,NA,M,Plantation Key,NA,Y,,,NA
+212,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+194,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+293,Petri2,NA,NA,NA,NA,F,Lake Placid,NA,Y,,,NA
+42,Petri1,NA,NA,NA,NA,F,Key Largo,NA,Y,,,NA
+83,B,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+370,Petri2,NA,NA,NA,NA,M,Leesburg,NA,Y,,,NA
+188,B,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+24,A,NA,NA,NA,NA,M,Plantation Key,NA,Y,,,NA
+244,Petri2,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+32,A,NA,NA,NA,NA,F,Plantation Key,NA,Y,,,NA
+305,C,NA,NA,NA,NA,F,Lake Placid,NA,Y,,,NA
+233,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+344,D,NA,NA,NA,NA,M,Lake Placid,NA,Y,,,NA
+7,Petri1,NA,NA,NA,NA,M,Plantation Key,NA,Y,,,NA
+341,D,NA,NA,NA,NA,M,Lake Placid,NA,Y,,,NA
+289,Petri2,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+294,Petri2,NA,NA,NA,NA,M,Lake Placid,NA,Y,,,NA
+268,C,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+137,Petri1,NA,NA,NA,NA,M,Lake Wales,NA,Y,,,NA
+281,C,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+63,B,NA,NA,NA,NA,F,Key Largo,NA,Y,,,NA
+144,Petri1,NA,NA,NA,NA,F,Lake Wales,NA,Y,,,NA
+104,A,NA,NA,NA,NA,F,Homestead,NA,Y,,,NA
+266,C,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+378,D,NA,NA,NA,NA,M,Leesburg,NA,Y,,,NA
+227,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+40,Petri1,NA,NA,NA,NA,M,Key Largo,NA,Y,,,NA
+209,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+207,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+350,D,NA,NA,NA,NA,F,Lake Placid,NA,Y,,,NA
+347,D,NA,NA,NA,NA,M,Lake Placid,NA,Y,,,NA
+379,D,NA,NA,NA,NA,F,Leesburg,NA,Y,,,NA
+277,C,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+371,Petri2,NA,NA,NA,NA,M,Leesburg,NA,Y,,,NA
+211,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+178,B,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+106,A,NA,NA,NA,NA,F,Homestead,NA,Y,,,NA
+14,A,NA,NA,NA,NA,F,Plantation Key,NA,Y,,,NA
+3,Petri1,NA,NA,NA,NA,M,Plantation Key,NA,Y,,,NA
+181,Petri1,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+185,B,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+218,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+216,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+385,D,NA,NA,NA,NA,F,Leesburg,NA,Y,,,NA
+19,A,NA,NA,NA,NA,F,Plantation Key,NA,Y,,,NA
+27,A,NA,NA,NA,NA,M,Plantation Key,NA,Y,,,NA
+240,Petri2,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+398,D,NA,NA,NA,NA,F,Gainesville,NA,Y,,,NA
+401,Petri2,NA,NA,NA,NA,M,Gainesville,NA,Y,,,NA
+94,A,NA,NA,NA,NA,F,Homestead,NA,Y,,,NA
+419,D,NA,NA,NA,NA,M,Gainesville,NA,Y,,,NA
+219,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+307,C,NA,NA,NA,NA,M,Lake Placid,NA,Y,,,NA
+23,A,NA,NA,NA,NA,F,Plantation Key,NA,Y,,,NA
+182,Petri1,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+274,C,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+422,D,NA,NA,NA,NA,M,Gainesville,NA,Y,,,NA
+117,A,NA,NA,NA,NA,F,Homestead,NA,Y,,,NA
+43,Petri1,NA,NA,NA,NA,M,Key Largo,NA,Y,,,NA
+414,D,NA,NA,NA,NA,F,Gainesville,NA,Y,,,NA
+115,A,NA,NA,NA,NA,F,Homestead,NA,Y,,,NA
+160,D,NA,NA,NA,NA,F,Lake Wales,NA,Y,,,NA
+4,Petri1,NA,NA,NA,NA,M,Plantation Key,NA,Y,,,NA
+309,C,NA,NA,NA,NA,M,Lake Placid,NA,Y,,,NA
+77,B,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+412,D,NA,NA,NA,NA,M,Gainesville,NA,Y,,,NA
+29,A,NA,NA,NA,NA,M,Plantation Key,NA,Y,,,NA
+317,C,NA,NA,NA,NA,M,Lake Placid,NA,Y,,,NA
+248,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+382,D,NA,NA,NA,NA,F,Leesburg,NA,Y,,,NA
+236,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+388,Petri1,NA,NA,NA,NA,M,Leesburg,NA,Y,,,NA
+75,B,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+389,Petri1,NA,NA,NA,NA,F,Leesburg,NA,Y,,,NA
+232,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+88,B,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+5,Petri1,NA,NA,NA,NA,F,Plantation Key,NA,Y,,,NA
+36,A,NA,NA,NA,NA,F,Plantation Key,NA,Y,,,NA
+304,C,NA,NA,NA,NA,F,Lake Placid,NA,Y,,,NA
+20,A,NA,NA,NA,NA,M,Plantation Key,NA,Y,,,NA
+231,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+423,D,NA,NA,NA,NA,M,Gainesville,NA,Y,,,NA
+322,C,NA,NA,NA,NA,F,Lake Placid,NA,Y,,,NA
+251,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+199,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+130,B,NA,NA,NA,NA,M,Homestead,NA,Y,,,NA
+292,Petri2,NA,NA,NA,NA,F,Lake Placid,NA,Y,,,NA
+10,A,NA,NA,NA,NA,M,Plantation Key,NA,Y,,,NA
+11,A,NA,NA,NA,NA,M,Plantation Key,NA,Y,,,NA
+61,B,NA,NA,NA,NA,M,Key Largo,NA,Y,,,NA
+79,B,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+52,B,NA,NA,NA,NA,F,Key Largo,NA,Y,,,NA
+151,D,NA,NA,NA,NA,F,Lake Wales,NA,Y,,,NA
+157,D,NA,NA,NA,NA,M,Lake Wales,NA,Y,,,NA
+222,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+45,A,NA,NA,NA,NA,M,Key Largo,NA,Y,,,NA
+38,Petri1,NA,NA,NA,NA,F,Key Largo,NA,Y,,,NA
+55,B,NA,NA,NA,NA,M,Key Largo,NA,Y,,,NA
+377,D,NA,NA,NA,NA,M,Leesburg,NA,Y,,,NA
+225,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+28,A,NA,NA,NA,NA,F,Plantation Key,NA,Y,,,NA
+60,B,NA,NA,NA,NA,F,Key Largo,NA,Y,,,NA
+121,A,NA,NA,NA,NA,F,Homestead,NA,Y,,,NA
+260,C,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+93,A,NA,NA,NA,NA,M,Homestead,NA,Y,,,NA
+6,Petri1,NA,NA,NA,NA,F,Plantation Key,NA,Y,,,NA
+143,Petri1,NA,NA,NA,NA,M,Lake Wales,NA,Y,,,NA
+80,B,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+200,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+415,D,NA,NA,NA,NA,M,Gainesville,NA,Y,,,NA
+193,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+177,B,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+97,Petri1,NA,NA,NA,NA,F,Homestead,NA,Y,,,NA
+393,Petri1,NA,NA,NA,NA,M,Leesburg,NA,Y,,,NA
+316,C,NA,NA,NA,NA,F,Lake Placid,NA,Y,,,NA
+133,B,NA,NA,NA,NA,M,Homestead,NA,Y,,,NA
+273,C,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+25,A,NA,NA,NA,NA,M,Plantation Key,NA,Y,,,NA
+44,A,NA,NA,NA,NA,M,Key Largo,NA,Y,,,NA
+338,D,NA,NA,NA,NA,F,Lake Placid,NA,Y,,,NA
+145,Petri1,NA,NA,NA,NA,M,Lake Wales,NA,Y,,,NA
+184,B,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+71,B,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+100,A,NA,NA,NA,NA,M,Homestead,NA,Y,,,NA
+352,D,NA,NA,NA,NA,M,Lake Placid,NA,Y,,,NA
+230,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+150,D,NA,NA,NA,NA,F,Lake Wales,NA,Y,,,NA
+291,Petri2,NA,NA,NA,NA,M,Lake Placid,NA,Y,,,NA
+70,B,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+9,A,NA,NA,NA,NA,F,Plantation Key,NA,Y,,,NA
+247,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+324,C,NA,NA,NA,NA,F,Lake Placid,NA,Y,,,NA
+87,B,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+179,B,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+301,C,NA,NA,NA,NA,F,Lake Placid,NA,Y,,,NA
+243,Petri2,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
+138,Petri1,NA,NA,NA,NA,F,Lake Wales,NA,Y,,,NA
+192,E,NA,NA,NA,NA,M,North Key Largo,NA,Y,DNA,,NA
+186,B,NA,NA,NA,NA,F,North Key Largo,NA,Y,,,NA
+400,D,NA,NA,NA,NA,F,Gainesville,NA,Y,,,NA
+220,E,NA,NA,NA,NA,F,North Key Largo,NA,Y,DNA,,NA
+122,A,NA,NA,NA,NA,M,Homestead,NA,Y,,,NA
+241,Petri2,NA,NA,NA,NA,M,North Key Largo,NA,Y,,,NA
