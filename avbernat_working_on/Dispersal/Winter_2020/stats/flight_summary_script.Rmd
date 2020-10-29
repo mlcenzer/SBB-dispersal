@@ -258,6 +258,9 @@ anova(m83, m62, test="Chisq") #marginal improvement from B*C
 mass_model_male<-glm(cbind(num_flew, num_notflew)~host_c*wing2body_trans + sym_dist_s*wing2body_trans + avg_days_c, family=binomial, data=data_male) ## AB: host showing up matches top (simpler) model from original dataset (host + mass + days + wing but the nuance is that when used ID host was not significant and when use trial_type it was). Also strange to not see mass show up. It was significant in all the top models but not when it was the only predictor variable in a model.
 
 summary(mass_model_male)
+# Tests
+summary(glm(cbind(num_flew, num_notflew)~host_c*wing2body_trans + sym_dist_s*wing2body_trans + avg_days_c, family=binomial, data=data_male))
+plot(host_c ~ sym_dist_s, data=data_male)
 ```
 
 * mass does not matter but morphology does by host or sym_dist
