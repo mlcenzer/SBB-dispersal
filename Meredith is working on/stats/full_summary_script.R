@@ -2,7 +2,7 @@
 ####################################################################
 ######Flight yes-no stats
 rm(list=ls())
-setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats") ####MLC: changed to my working directory
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/Dispersal/Winter_2020/stats") ####MLC: changed to my working directory
 
 
 ##load libraries
@@ -230,7 +230,7 @@ six_plots()
 #### Flight speed stats
 
 rm(list=ls())
-setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats")
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/Dispersal/Winter_2020/stats")
 
 
 library(lme4)
@@ -270,9 +270,9 @@ low_speeds$flight_type# have 7 bugs with average_speed = 0 but were marked as bu
 high_speeds$flight_type # 3 bugs - also bursters. Could also be short explosive bursts but not true to the biology of these bugs (more like us blowing on them).
 
 ### Remove outliers
-data_flew <- data_flew_all %>%
+data_flew <- data_flew_all #%>%
   filter(average_speed > 0.05) %>%
-  filter(average_speed < 0.65)
+ filter(average_speed < 0.65)
   
 data_flew <- center_data(data_flew)
 
@@ -281,7 +281,7 @@ data_flew$mass_trans<-log(data_flew$mass)-mean(log(data_flew$mass), na.rm=TRUE)
 
 data_flew$speed_trans<-log(data_flew$average_speed)-mean(log(data_flew$average_speed), na.rm=TRUE)
 
-
+data_flew$max_speed_trans <- 
 #######do flight types differ?
 data_flew$flight_type <- relevel(data_flew$flight_type, ref="B")
 
@@ -340,7 +340,7 @@ qqline(resid(continuous_model))
 
 speed_summary<-aggregate(average_speed~sex, data=dC, FUN=mean)
 speed_summary$se<-aggregate(average_speed~sex, data=dC, FUN=function(x) sd(x)/sqrt(length(x)))$average_speed
-
+speed_summary$N<-aggregate(average_speed~sex, data=dC, FUN=length)$average_speed
 ###There is not enough replication to break this down by sex, so we'll leave it as it is.
 
 #this could be generalized, although it's probably not worth the time?
@@ -393,7 +393,7 @@ four_plots()
 ##### distance
 
 rm(list=ls())
-setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats")
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/Dispersal/Winter_2020/stats")
 
 library(lme4)
 
