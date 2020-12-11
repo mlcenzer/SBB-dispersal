@@ -259,7 +259,7 @@ mass_model_male<-glm(cbind(num_flew, num_notflew)~host_c*wing2body_trans + sym_d
 
 summary(mass_model_male)
 # Tests
-summary(glm(cbind(num_flew, num_notflew)~host_c*wing2body_trans + sym_dist_s*wing2body_trans + avg_days_c, family=binomial, data=data_male))
+summary(glm(cbind(num_flew, num_notflew)~wing2body_trans + sym_dist_s*wing2body_trans + avg_days_c, family=binomial, data=data_male))
 plot(host_c ~ sym_dist_s, data=data_male)
 ```
 
