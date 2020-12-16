@@ -314,7 +314,7 @@ output_col = FALSE # Recommend changing this to TRUE if working in Base R or RSt
 source("src/clean_flight_data.R") # Script that loads and cleans up the data
 source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
 source("src/center_flight_data.R")
-source("get_warnings.R")
+source("src/get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
