@@ -1,13 +1,15 @@
 ---
-title: "PCA-Winter2020"
+title: "Principal component analysis (PCA)"
 author: "Anastasia Bernat"
-date: "8/12/2020"
+date: "8/12/2020 - 12/16/2020"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-setwd("~/Desktop/Rstats-winter2020/")
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
+setwd(dir) 
+
 library(FactoMineR)
 library(factoextra)
 library(corrplot)
@@ -17,37 +19,93 @@ library(dplyr)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Winter 2020 Flight Trials: PCA {.tabset}
+## Winter 2020 Flight Trials {.tabset}
 
-Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice for multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. 
+Flight Trials Winter 2020 were conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice for multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. 
 
 ### Size-adjusted CPCA (notes)
 
-"Morphological relationships change with overall body size and body size often varies among populations. Therefore, quantitative analyses of indi- vidual traits from organisms in different populations or environments (e.g., in studies of phenotypic plasticity) often adjust for differences in body size to isolate changes in allometry." (McCoy et al, 2006)
+PCAs are good to...
 
-"For most studies of morphological plasticity and size correction, it is only the first CPC (CPC1) that is of interest because it describes the general scaling of traits with body size." (McCoy et al, 2006)
+- **Isolate changes in allometry**: "Morphological relationships change with overall body size and body size often varies among populations. Therefore, quantitative analyses of individual traits from organisms in different populations or environments (e.g. in studies of phenotypic plasticity) often adjust for differences in body size to isolate changes in allometry." (McCoy et al, 2006)
 
-"If the first principal components are not shared (Fig. 1c), then the patterns of morphological variation are so fundamentally different that there can be no globally applied size correction because 'size' does not have a common meaning across groups. On the other hand, if all principal components are common to all groups (Fig. 1a), then the groups show identical patterns of within-group covariation, indicating the same all- ometries of traits with size in all groups." (McCoy et al, 2006)
+- **Help define scaling of traits with body size with PC1**: "For most studies of morphological plasticity and size correction, it is only the first CPC (CPC1) that is of interest because it describes the general scaling of traits with body size." (McCoy et al, 2006)
 
-Looking at the figures....I would say differences in size but not shape. 
+- **Define size patterns and size corrections**: "If the first principal components are not shared (Fig. 1c), then the patterns of morphological variation are so fundamentally different that there can be no globally applied size correction because 'size' does not have a common meaning across groups. On the other hand, if all principal components are common to all groups (Fig. 1a), then the groups show identical patterns of within-group covariation, indicating the same allometries of traits with size in all groups." (McCoy et al, 2006) AB: Looking at the figures....I would say differences in size but not shape.
 
-"As long as the groups to be compared share CPC1 (Fig. 1a, b) and all the traits have strong loadings on CPC1, then it can be interpreted as a common body size dimension:i.e., a 'size-axis' that can be used to evaluate between-group differences in morphology that go beyond simple (isometric) changes in size" (McCoy et al, 2006)
+- **Define common body size dimensions to evaluate group differences**: "As long as the groups to be compared share CPC1 (Fig. 1a, b) and all the traits have strong loadings on CPC1, then it can be interpreted as a common body size dimension: i.e., a 'size-axis' that can be used to evaluate between-group differences in morphology that go beyond simple (isometric) changes in size" (McCoy et al, 2006)
 
-"...where the main goal is to correct for the effects of a growth axis that explains a large fraction of the total variation (e.g., >90%)" (McCoy et al, 2006)
+- **Correct for the effects of a growth axis**: "...where the main goal is to correct for the effects of a growth axis that explains a large fraction of the total variation (e.g., >90%)" (McCoy et al, 2006)
 
-### No Mass 
+### PCA Functions 
+
+```{r}
+Round <- function(number){
+  # for plotting
+  x <- round(number, 1)
+  if(x%%1 == 0){
+    return(paste(as.character(x), ".0", sep = ""))
+  }
+  else{
+    return(x)
+  }
+}
+```
+
+```{r}
+PCA_graphs <- function(dataset, PCA_title){
+    # cos2 and the alpha.var: alpha.var colours variables by cos2 
+    # (importance of most important PC to variable), 
+    # see https://personal.utdallas.edu/~herve/abdi-awPCA2010.pdf
+  
+    GFpca <- PCA(dataset, scale.unit = TRUE, graph = TRUE, ncp = 10)
+    
+    eig.val <- get_eigenvalue(GFpca)
+    var.val <- GFpca$var
+    print(eig.val) #will only show in in console
+    print(var.val)
+    
+    scree <- fviz_eig(GFpca, addlabels = TRUE, ylim = c(0, 100))
+    print(scree)
+    
+    labX <- paste("PC1 (", Round(eig.val[1, 2]), "%)", sep = "")
+    labY <- paste("PC1 (", Round(eig.val[2, 2]), "%)", sep = "")
+    leplot <- fviz_pca_biplot(GFpca, geom.id = c("point"), 
+                              geom.var = c("arrow", "text"), 
+                              alpha.var = "cos2",
+                              label = "var", repel = T, 
+                              col.ind = "gray", col.var = "black")
+    print(leplot)
+    
+    ggpubr::ggpar(leplot, title = PCA_title, xlab = labX, ylab = labY, 
+                  ggtheme = theme_classic(), font.main = c(20, "bold"), 
+                  font.x = 14, font.y = 14, font.tickslab = 12
+                  )
+    
+    D = cor(dataset)
+    test <- cor.mtest(dataset)$p
+    par(mfrow=c(1,2))
+    corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
+    corrplot.mixed(D,lower.col = "black", number.cex = .7)
+    
+    return(GFpca)
+}
+```
+
+### Reading and Standardizaing Data
 
 ```{r message=FALSE}
-source("src/clean_flight_data.R") # Script that loads and cleans up the data
-source("src/center_flight_data.R")
+source("src/clean_flight_data.R") # Loads and cleans data
+source("src/center_flight_data.R") # Centers data
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
-```
 
-```{r}
-#Standardize variables
+# Filter out duplicates (PCA applies to data tables where rows are considered as individuals)
+data_tested <- data_tested[data_tested$trial_type == "T1",]
+
+# Standardize variables
 data_tested$thorax_s <- (data_tested$thorax-mean(data_tested$thorax, na.rm=TRUE)) / sd(data_tested$thorax, na.rm=TRUE)
 data_tested$body_s <- (data_tested$body-mean(data_tested$body, na.rm=TRUE)) / sd(data_tested$body, na.rm=TRUE)
 data_tested$wing_s <- (data_tested$wing-mean(data_tested$wing, na.rm=TRUE)) / sd(data_tested$wing, na.rm=TRUE)
@@ -55,79 +113,55 @@ data_tested$beak_s <- (data_tested$beak-mean(data_tested$beak, na.rm=TRUE)) / sd
 data_tested$mass_s <- (data_tested$mass-mean(data_tested$mass, na.rm=TRUE)) / sd(data_tested$mass, na.rm=TRUE)
 ```
 
-PCA applies to data tables where rows are considered as individuals and columns as quantitative variables. Let's filter out the dupliates:
+### Morphology
+
+Thorax, body, wing, and beak lengths only considered. 
 
 ```{r}
-data_tested <- data_tested[data_tested$trial_type == "T1",]
-```
-
-```{r}
-#The output is a PCA of soapberry bug morphology
-
 d <- data_tested %>%
   select(thorax_s, body_s, wing_s, beak_s) %>%
   filter(!is.na(body_s))
 colnames(d) <- c("thorax", "body", "wing", "beak")
-MorphPCA <- PCA(d, scale.unit=TRUE, graph=TRUE)
 
-#Investiating variables
-eig.val <- get_eigenvalue(MorphPCA)
-eig.val
-fviz_eig(MorphPCA, addlabels = TRUE, ylim = c(0, 50))
-
-#An eigenvalue > 1 indicates that PCs account for more variance than accounted by one of the original variables in standardized data. This is commonly used as a cutoff point for which PCs are retained. This holds true only when the data are standardized, which we have done.
-#You can also limit the number of component to that number that accounts for a certain fraction of the total variance. (No formal cut-off)
-
-variables <- get_pca_var(MorphPCA)
-
-corrplot(variables$cos2, is.corr=FALSE)
-
-corrplot(variables$contrib, is.corr=FALSE)
-
-GFdim <- dimdesc(MorphPCA, axes = c(1,2), proba = 0.05)
-GFdim$Dim.1
-GFdim$Dim.2
+MorphPCA = PCA_graphs(d, "(a) ")
 ```
 
 ```{r}
 vars <- MorphPCA$ind
-
 par(mfrow=c(2,3))
-#Correlations
 
+#Correlations
 m <- lm(d$thorax ~ vars$coord[,1])
-#pval <- paste("p = ", summary(m)$coefficients[8])
-vars <- MorphPCA$ind
 plot(vars$coord[,1], d$thorax, xlab="PC1", ylab="thorax (mm)")
-cor_val <- paste("R = ", round(cor(vars$coord[,1], d$thorax),3))
+cor_val <- paste("R = ", round(cor(vars$coord[,1], d$thorax), 2))
 text(-2,2, cor_val)
-#text(-2,1.5, pval)
 abline(m, lty=2)
 
 m <- lm(d$body ~ vars$coord[,1])
 plot(vars$coord[,1], d$body, xlab="PC1", ylab="body (mm)")
-cor_val <- paste("R = ", round(cor(vars$coord[,1], d$body),3))
+cor_val <- paste("R = ", round(cor(vars$coord[,1], d$body), 2))
 text(-2,2, cor_val)
 abline(m, lty=2)
 
 m <- lm(d$wing ~ vars$coord[,1])
 plot(vars$coord[,1], d$wing, xlab="PC1", ylab="wing (mm)")
-cor_val <- paste("R = ", round(cor(vars$coord[,1], d$wing),3))
+cor_val <- paste("R = ", round(cor(vars$coord[,1], d$wing), 2))
 text(-2,2, cor_val)
 abline(m, lty=2)
 
 m <- lm(d$beak ~ vars$coord[,1])
 plot(vars$coord[,1], d$beak, xlab="PC1", ylab="beak (mm)")
-cor_val <- paste("R = ", round(cor(vars$coord[,1], d$beak),3))
+cor_val <- paste("R = ", round(cor(vars$coord[,1], d$beak), 2))
 text(-2,2, cor_val)
 abline(m, lty=2)
 
 m <- lm(d$beak ~ vars$coord[,2])
 plot(vars$coord[,2], d$beak, xlab="PC2", ylab="beak (mm)")
-cor_val <- paste("R = ", round(cor(vars$coord[,2], d$beak), 3))
+cor_val <- paste("R = ", round(cor(vars$coord[,2], d$beak), 2))
 text(-0.5,3, cor_val)
 abline(m, lty=2)
 ```
+
 
 ```{r}
 #Plot by host
@@ -174,17 +208,18 @@ fviz_pca_ind(MorphPCA,
              addEllipses=TRUE)
 ```
 
-### Mass 
+### Morphology w/ Mass
 
 ```{r}
 d <- data_tested %>%
   select(thorax_s, body_s, wing_s, beak_s, mass_s) %>%
   filter(!is.na(mass_s))
 colnames(d) <- c("thorax", "body", "wing", "beak", "mass")
-MorphMPCA <- PCA(d, scale.unit=TRUE, graph=TRUE)
+
+MorphPCA = PCA_graphs(d, "(b) ")
 ```
 
-### Wing2Body
+### Morphology w/ Wing2Body
 
 ```{r}
 # No mass
@@ -192,12 +227,14 @@ d <- data_tested %>%
   select(thorax_s, wing2body_s, beak_s) %>%
   filter(!is.na(beak_s))
 colnames(d) <- c("thorax", "wing2body", "beak")
-MorphMPCA <- PCA(d, scale.unit=TRUE, graph=TRUE)
+
+MorphPCA = PCA_graphs(d, "(c) ")
 
 # Mass
 d <- data_tested %>%
   select(thorax_s, wing2body_s, beak_s, mass_s) %>%
   filter(!is.na(mass_s))
 colnames(d) <- c("thorax", "wing2body", "beak", "mass")
-MorphMPCA <- PCA(d, scale.unit=TRUE, graph=TRUE)
+
+MorphPCA = PCA_graphs(d, "(d) ")
 ```

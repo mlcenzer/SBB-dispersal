@@ -1,0 +1,578 @@
+---
+title: "Delta Flight Response"
+author: "Anastasia Bernat"
+date: "12/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
+setwd(dir) 
+
+library(lme4)
+library(dplyr)
+# library(ggplotify)
+# library(gridExtra)
+library(ggformula)
+# library(tidyselect)
+# library(zoo)
+library(nnet) # multinom package
+
+# tables
+library(knitr)
+library(kableExtra)
+
+# plotting
+library(rethinking) 
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Multinomial Flight Modeling {.tabset}
+
+Flight Trials Winter 2020 were conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice (T1 vs. T2) for multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. Used multivariate (glm) and mixed effect modeling (glmer) to analyze the flight results.
+
+### Delta Flight Response (T1 vs. T2)
+
+[Introduction](#intro)
+
+[Clean the Data](#clean_data)
+
+[Flew Diff ~ Mass Diff ](#mass_diff)
+
+[Flew Diff ~ Egg Diff ](#egg_diff)
+
+<a id="intro"></a>
+
+#### Introduction
+
+Some graphs I generated illustrate how changes in mass or egg-laying lead to changes in flight response, speed, and distance. Below, I run analyses on changes in flight response due to changes in mass or egg-laying that will help interpret and describe those graphs. Changes in speed and distance as a result of changes in mass or egg-laying can also be found here.
+
+To perform these analyses, a new variable will be created called "flew_diff" which calculates the flight response differences between T1 and T2. If flew_diff = -1, then the bug flew in T1 but not T2. If flew_diff = 0, then the bug either did not fly in either or flew in both T1 and T2 (no flight response). If flew_diff = 1, then the bug flew in T2 but not T1. Here is a key describing each event and encoding: 
+
+*Formula: response in* $T_2$ *- response in* $T_1$
+
+```{r echo=FALSE}
+# key = response in T2 - response in T1
+Event = c("flew in T2 but not T1", " flew in T1 and T2 or in neither trial", "flew in T1 but not T2")
+Encoding = c(1,0,-1)
+key = cbind(Event, Encoding)
+
+kable(key) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  add_header_above(c("Delta Flight Response Key" = 2 )) 
+```
+
+Since this response variable is no longer binomial, I will need to use multicategorical logit models (refer to Chapter 6 of *Introduction to Categorical Data Analysis* by Alan Agresti). Below I've written out notes on performing these analyses.
+
+**What we are interested in is a multicategorical, nominal response variable.** When the response variable is nominal, there is no natural order among the response variable categories (unordered categories). When the response variable is multicategorical, its multicategory models assume that the counts in the categories of $Y$ have a *multinomial* distribution.
+
+Let J = number of categories for $Y$.
+
+$\pi_1,...\pi_J$ = the response probabilities where $\sum_j \pi_j = 1$.
+
+With $n$ independent observations, the probability distribution for the number of outcomes of the J types is the multinomial. It specifies the probability for each possible way the $n$ observations can fall in the J categories. Multicategory logit models simultaneously use all pairs of categories by specifying the odds of outcome in one category instead of another. 
+
+Logit models for nominal response variables pair each category with a baseline category. The choice of the baseline category is arbitrary. When the last category (J) is the baseline, the **baseline-category logits** are
+
+<div align="center">$\log (\frac{\pi_j}{\pi_J}), j = 1, ..., J - 1$.</div> <br/>
+
+Given that the response falls in category j or category J, this is the log odds that the response is j. **For J = 3**, for instance, the model uses $\log(\pi_1/\pi_3)$ and $\log(\pi_2/\pi_3)$. The baseline-category logit model with a predictor x is
+
+<div align="center">$\log \frac{\pi_j}{\pi_J} = \alpha_J + \beta_j x, j = 1, ..., J - 1$</div> <br/>
+
+The model has J - 1 equations, with separate parameters for each. **The effects vary according to the category paired with the baseline**. When J = 2, this model simplifies to a single equation for $\log(\pi_1/\pi_2) = logit(\pi_1)$, resulting in ordinary logistic regression for binary responses. 
+
+So how do these pair of categories determine equations for all other pairs of categories? Here is an arbitrary pair of categories a and b that follows the general equation above,
+
+<div align="center">$\log (\frac{\pi_a}{\pi_b}) = \log ( \frac{\pi_a/pi_J}{\pi_b/pi_J}) = \log (\frac{\pi_a}{\pi_J}) -  \log (\frac{\pi_b}{\pi_J})$
+
+$= (\alpha_a + \beta_a x) - (\alpha_b + \beta_b x)$
+
+$= (\alpha_a - \alpha_b) + (\beta_a - \beta_b) x$ </div> <br/>
+So, the equation for categories a and b has the form $\alpha + \beta x$ with intercept parameter $\alpha = (\alpha_a - \alpha_b)$ and with slope parameter $\beta = (\beta_a - \beta_b)$.
+
+Let's apply it to our data now:
+
+<a id="clean_data"></a>
+
+#### Cleaning the Data
+
+```{r}
+output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if generating an HTML
+source("src/clean_flight_data.R") # Loads and cleans data
+source("src/regression_output.R") # Cleans regression outputs; prints in color or black & white
+source("src/center_flight_data.R") # Re-centers data
+source("src/get_warnings.R")
+
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+```
+
+```{r}
+d <- data_tested %>%
+   group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, 
+            beak, thorax, wing, body, w_morph, morph_notes, tested,
+            host_c, sex_c, w_morph_c, lat_c, sym_dist, sym_dist_s, total_eggs_c, 
+            beak_c, thorax_c, thorax_s, body_c, wing_c, wing2body, wing2body_c, wing2body_s) %>%
+   summarise_all(funs(list(na.omit(.))))
+
+d$num_flew <- 0
+d$num_notflew <- 0
+d$average_mass <- 0
+
+d$egg_diff <- 0
+d$mass_diff <- 0
+d$flew_diff <- 0
+d$dist_diff <- 0
+d$speed_diff <- 0
+
+for(row in 1:length(d$flew_b)){
+  
+  n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails
+  d$num_flew[[row]] <- n_flew 
+  
+  n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
+  d$num_notflew[[row]] <- n_notflew
+  
+  avg_mass <- mean(d$mass[[row]])
+  d$average_mass[[row]] <- avg_mass
+  
+  # mass, flight, distance, and speed changes between T1 and T2
+  
+  d$mass_diff[[row]] <- d$mass[[row]][2] - d$mass[[row]][1]  # T2 - T1
+  d$flew_diff[[row]] <- d$flew_b[[row]][2] - d$flew_b[[row]][1]  # T2 - T1
+  d$dist_diff[[row]] <- d$distance[[row]][2] - d$distance[[row]][1]  # T2 - T1
+  d$speed_diff[[row]] <- d$average_speed[[row]][2] - d$average_speed[[row]][1]  # T2 - T1
+  d$egg_diff[[row]] <- d$eggs_b[[row]][2] - d$eggs_b[[row]][1]  # T2 - T1
+
+}
+
+d <- select(d, -filename, -channel_letter, -set_number)
+
+# Filter out bugs that were not tested twice:
+rows_remove <- c()
+for (row in 1:nrow(d)){
+  if (length(d$trial_type[[row]]) < 2) {
+    rows_remove <- c(rows_remove, row)
+  }
+}
+d <- d[-rows_remove, ]
+```
+
+```{r}
+head(d)
+```
+
+Below I used the multinom function from the nnet package to estimate a multinomial logistic regression model. There are other functions in other R packages capable of multinomial regression. I chose the multinom function because it does not require the data to be reshaped (as the mlogit package does) and to mirror the example code found in Hilbe’s Logistic Regression Models.
+
+First, I chose the level of our outcome that we wish to use as our baseline and specified this in the relevel function. Then, I ran our model using multinom. The multinom package does not include p-value calculation for the regression coefficients, so I calculated p-values using Wald tests (i.e. z-tests).
+
+<a id="mass_diff"></a>
+
+#### Flew Diff ~ Mass Diff 
+
+```{r}
+df <- d %>%
+  filter(!is.na(mass_diff), !is.na(flew_diff)) 
+  
+df <- df[with(df, order(mass_diff)),]
+n_trials = nrow(df)
+
+df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
+```
+
+**Null model:**
+
+```{r}
+null <- multinom(flew_diff ~ 1, data = df) 
+```
+
+**Mass_diff model:**
+
+```{r}
+model <- multinom(flew_diff ~ mass_diff, data = df) 
+
+# compute p-values using Wald tests (i.e. z-tests)
+s <- summary(model) 
+z <- s$coefficients/s$standard.errors 
+wald <- z^2
+p <- (1 - pnorm(abs(z), 0, 1)) * 2
+
+# summary table (similar to lm, glm, or lmer function)
+table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[,2], z[,2], wald[,2], p[,2])
+colnames(table) <- c("(Intercept)"," Estimate","DF", "Std. Err.", "z", "wald", "P > |z|")
+cat("\n")
+cat("AIC: ", s$AIC, "\n")
+table
+```
+
+```{r}
+anova(null, model, test="Chisq") # adding mass_diff improves fit
+```
+
+The multinomial (ML) prediction equations are:
+
+<div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_0}) = -1.70 + 52.85 x$ and
+
+$\log(\hat{\pi_1}/\hat{\pi_0}) = -3.07 - 4.58 x$</div><br/>
+
+The estimated log odds that the response is -1 (Flew in T1, not T2) rather than 1 (flew in T2, not T1) equals:
+
+<div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = (-1.70 - (-3.07)) + (52.85 - (- 4.58)) x = 1.37 + 57.43 x$
+
+where x = mass_diff </div><br/>
+
+```{r echo=FALSE}
+eq = "Flew in T1 rather than T2 = 1.4 + 57.4 Mass Change"
+
+t = cbind(n_trials, eq)
+colnames(t) = c("N","Model")
+
+kable(t) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
+```
+
+So, the more positive the mass difference (positive (+) mass means gained mass from T1 to T2, and negative (-) mass means lost mass), the more likely to select flew_diff = -1, meaning that the bug flew in T1 but not T2. While the smaller/more negative the mass difference, the more likely to select flew_diff = 1, meaning that the bug flew in T2 but not T1. 
+
+```{r echo=FALSE}
+# key = change in mass
+Event = c("gained mass from T1 to T2", "no mass change between trails", "lost mass from T1 to T2")
+Sign = c("+","0","-")
+key = cbind(Event, Sign)
+
+kable(key) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  add_header_above(c("Delta Mass Key" = 2 )) 
+```
+
+For bugs of mass_diff x + 1/50 (0.02) g, the estimated odds that flew_diff = -1 rather than flew_diff = 1 equals
+
+```{r}
+exp(52.85/50)
+```
+
+times the estimated odds at mass_diff x (g).
+
+```{r}
+exp(coef(model)/50)
+```
+
+The relative risk ratio for a 1/50-unit increase in the variable mass_diff is 2.90 for flew_diff = -1  (T1 flew only) rather than flew_diff = 1 (T2 flew only). 
+
+**Predicted probabilities** 
+
+You can also use predicted probabilities to help you understand the model. **The multicategory logit model has an alternative expression in terms of the response probabilities**. This is
+
+<div align="center">$\pi_j = \frac{e^{\alpha_j + \beta_j x}}{\sum_he^{\alpha_h + \beta_h x}}, j=1,...,J$</div> <br/>
+
+The denominator is the same for each probability, and the numerators for various j sum to the denominator where $\sum_j \pi_j = 1$. The parameters ($\alpha and \beta$) equal zero for whichever category is the baseline in the logit expressions. So these would be the equations for the model above:
+
+<div align="center">$\hat{\pi_-1} = \frac{e^{-1.70 + 50.85 x}}{1 + e^{-1.70 + 50.85x} + e^{-3.07 - 4.58 x}}, j=1,...,J$
+
+$\hat{\pi_1} = \frac{e^{-3.07 - 4.58 x}}{1 + e^{-1.70 + 50.85x} + e^{-3.07 - 4.58 x}}, j=1,...,J$
+
+$\hat{\pi_0} = \frac{e^{0 + 0 x} = 1}{1 + e^{-1.70 + 50.85x} + e^{-3.07 - 4.58x}}, j=1,...,J$
+
+x = mass_diff, which can give you the estimated probabilities.</div><br/>
+
+You can calculate these predicted probabilities for each of our outcome levels using the fitted function. You can start by generating the predicted probabilities for the observations in our dataset and viewing the first few rows. Then you can plot them.
+
+```{r}
+head(pp <- fitted(model))
+```
+
+```{r}
+plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="l", ylab="Predicted Probability", xlab="Changes in Mass From T1 to T2 (g)") # no flight_diff
+points(df$mass_diff, pp[,2], col="blue", type="l") # flew in T1 but not T2
+points(df$mass_diff, pp[,3], col="darkgreen", type="l") # flew in T2 but not T1
+text(0.02,0.8, labels="No Flight Diff", col="red")
+text(0.0,0.35, labels="Flew in T1 but not T2", col="blue")
+text(0.02,0.1, labels="Flew in T2 but not T1", col="darkgreen")
+abline(v=0.032, lty=2)
+abline(v=-0.024, lty=2)
+```
+
+Summary: Those who gain mass (at least more than 0.035 g) are more likely to fly in T1 but not T2 and less likely to have no change in flight response. Those who loose mass are more likely to fly in T2 but not T1 (but need to loose significant mass - more than 0.03 (g)).
+
+**Now let's compare some models:**
+
+```{r}
+data <- data.frame(R = df$flew_diff, 
+         A = df$mass_diff, 
+         B = df$host_c, 
+         C = df$sex_c)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic multinomial models- multinom 1RF + 3 FF.R")
+```
+
+```{r}
+anova(m5, m7, test="Chisq") # Adding B does not improve fit
+anova(m5, m9, test="Chisq") # Adding A*C does not improve fit
+```
+
+```{r}
+delta_mass_model <- multinom(flew_diff ~ mass_diff + sex_c, data = df)
+
+# compute p-values using Wald tests (i.e. z-tests)
+s <- summary(delta_mass_model) 
+z <- s$coefficients/s$standard.errors
+wald <- z^2
+p <- (1 - pnorm(abs(z), 0, 1)) * 2
+
+# summary table (similar to lm, glm, or lmer function)
+table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[,2:3], z[,2:3], wald[,2:3], p[,2:3])
+colnames(table) <- c("(Intercept)","coeff mass_diff", "coeff sex_c","DF", 
+                     "MD SE", "sex SE", "MD z", "sex z", 
+                     "MD wald","sex wald","MD P > |z|", "sex P > |z|")
+cat("\n", "AIC: ", s$AIC, "\n", "MD = mass_diff", "\n") 
+table
+```
+
+The general ML prediction equation is:
+
+<div align="center">$\log(\hat{\pi_{j}}/\hat{\pi_0}) =\alpha_{j} + \beta_{-1}^{\delta mass} x_1 + \beta_{j}^{sex} x_2$ 
+
+where j = -1 or 1</div><br/>
+
+The individual ML prediction equations are:
+
+<div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_0}) = -1.86 + 61.25 (\delta mass) - 0.29 (sex)$ and
+
+$\log(\hat{\pi_1}/\hat{\pi_0}) = -8.90 - 55.87 (\delta mass) - 6.35 (sex)$</div><br/>
+
+The estimated log odds that the response is -1 (Flew in T1, not T2) rather than 1 (flew in T2, not T1) equals:
+
+<div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = (-1.86 - (-8.90)) + (61.25 - (- 55.87)) \delta mass + (-0.29 - (-6.35)) sex$
+
+$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = 7.04 + 117.12 \delta mass + 6.06 sex$</div><br/>
+
+```{r echo=FALSE}
+eq = "Flew in T1 rather than T2 = 7.04 + 117.12 Mass Change + 6.06 Sex"
+
+t = cbind(n_trials, eq)
+colnames(t) = c("N","Model")
+
+kable(t) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
+```
+
+For **female** bugs of mass_diff x + 1/50 (0.02) g, the estimated odds that flew_diff = -1 rather than flew_diff = 1 equals
+
+```{r}
+exp((117.12+6.06)/50)
+```
+
+times (almost 12 times) the estimated odds at mass_diff x (g).
+
+For bugs of mass_diff x + 1/50 (0.02) g and male, the estimated odds that flew_diff = -1 rather than flew_diff = 1 equals
+
+```{r}
+exp((117.12-6.06)/50)
+```
+
+times the estimated odds at mass_diff x (g).
+
+```{r}
+exp(coef(delta_mass_model)/50)
+```
+
+**Predicted Probabilities**
+
+```{r}
+head(pp <- fitted(delta_mass_model))
+```
+
+```{r}
+plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="b", 
+     ylab="Predicted Probability", xlab="Changes in Mass From T1 to T2 (g)") # no flight_diff
+points(df$mass_diff, pp[,2], col="blue", type="b") # flew in T1 but not T2
+points(df$mass_diff, pp[,3], col="darkgreen", type="b") # flew in T2 but not T1
+text(0.031,0.8, labels="No Flight Diff", col="red")
+text(0.008,0.5, labels="Flew in T1 but not T2", col="blue")
+text(0.052,0.1, labels="Flew in T2 but not T1", col="darkgreen")
+# female line is always higher
+text(0.0,0.96, labels="F", col="red")
+text(0.0,0.7, labels="M", col="red")
+text(0.0,0.25, labels="F", col="blue")
+text(0.02,0.2, labels="M", col="blue")
+text(-0.03,0.25, labels="F", col="darkgreen")
+text(0.025,0.05, labels="M", col="darkgreen")
+abline(v=0.03, lty=2, col="slategrey")
+abline(v=0.035, lty=2, col="slategrey")
+abline(v=0.04, lty=2, col="slategrey")
+abline(v=-0.01, lty=2, col="slategrey")
+abline(v=-0.045, lty=2, col="slategrey") # Need to fix graph
+```
+
+<div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = 7.04 + 117.12 \delta mass + 6.06 sex$</div><br/>
+
+As females gain mass (need to gain more than males - 0.04 vs. 0.03 g) they are more likely to fly in T1 than T2. 
+As females loose mass they are much more likely than males to fly in T2 than T1. But both are more likely to have no mass flight response change. 
+
+More on multinomial plotting for when have more than 1 predictor variables: https://stats.idre.ucla.edu/r/dae/multinomial-logistic-regression/
+
+<a id="egg_diff"></a>
+
+#### Flew Diff ~ Egg Diff (females only)
+
+```{r}
+df <- d %>%
+  filter(!is.na(egg_diff), !is.na(flew_diff), sex_c == 1)
+n_tfemales = nrow(df)
+  
+df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
+```
+
+```{r echo=FALSE}
+# key = response in T2 - response in T1
+Event = c("laid eggs in T2 but not T1", "laid eggs T1 and T2 or neither trials", "laid eggs in T1 but not T2")
+Encoding = c(1,0,-1)
+key = cbind(Event, Encoding)
+
+kable(key) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  add_header_above(c("Delta Flight Response Key" = 2 )) 
+```
+
+Null model:
+
+```{r}
+null <- multinom(flew_diff ~ 1, data = df) 
+```
+
+Egg_diff model: 
+
+```{r}
+model <- multinom(flew_diff ~ egg_diff, data = df) 
+
+# compute p-values using Wald tests (i.e. z-tests)
+s <- summary(model) 
+z <- s$coefficients/s$standard.errors  
+wald <- z^2
+p <- (1 - pnorm(abs(z), 0, 1)) * 2
+
+# summary table (similar to lm, glm, or lmer function)
+table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[2], z[2], wald[2], p[2])
+colnames(table) <- c(" Estimate","DF", "Std. Err.", "z", "wald", "P > |z|")
+cat("\n")
+cat("AIC: ", s$AIC, "\n")
+table
+```
+
+```{r}
+anova(null, model, test="Chisq") # adding egg_diff improves fit
+```
+
+The ML prediction equations are:
+
+$\log(\hat{\pi_{-1}}/\hat{\pi_0}) = -2.22 + 1.78 x$ and that's it. Why? Because these comparisons have been reduced to a binomial situation. There are no flight responses = 1. None of the female bugs Fly in T2 but not T1. So we can do our regular binomial comparisons.
+
+```{r}
+# Remove any missing masses
+df <- df[!is.na(df$mass_diff),]
+n_tfemales = nrow(df)
+
+# Change the -1's to 1's, but then need to keep in mind that 1 will then mean that bug flew in T1 but not T2
+df$flew_diff <- abs(as.integer(df$flew_diff)) - 1
+df$flew_diff <- as.factor(df$flew_diff) 
+```
+
+```{r echo=FALSE}
+# key = response in T2 - response in T1
+Event = c("flew in T1 only", "flew in T1 and T2 or in neither trial")
+Encoding = c(1,0)
+key = cbind(Event, Encoding)
+
+kable(key) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  add_header_above(c("Binomial Flight Response Key" = 2 )) 
+```
+
+```{r}
+R = df$flew_diff
+A = df$egg_diff
+B = df$mass_diff
+#C = df$sym_dist
+C = df$host_c
+
+data<-data.frame(R, A, B, C)
+
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
+```
+
+```{r}
+anova(m7, m12, test="Chisq") # Adding A*C does not improve fit
+anova(m6, m7, test="Chisq") # Addin A does improve fit
+```
+
+```{r echo=FALSE}
+eq = "Flew in T1 only = -2.2 + 1.4 Egg Change + 40.2 Mass Change + 0.72 Host Plant"
+
+t = cbind(n_tfemales, eq)
+colnames(t) = c("N","Model")
+
+kable(t) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
+```
+
+
+```{r}
+delta_egg_model <- glm(flew_diff ~ egg_diff + mass_diff + host_c, family = binomial, data = df)
+tidy_regression(delta_egg_model, is_color = output_col)
+```
+
+* If female bug laid eggs in T2, then the more likely flew in T1 only.
+* The higher the mass gain, then the more likely flew in T1 only. 
+* If from GRT, then more likely flew in T1 only.
+
+```{r}
+gf_point(flew_diff ~ mass_diff, data=df, col=~egg_diff) 
+```
+
+### Summary
+
+```{r}
+delta_mass_model
+```
+
+Look within the 'Delta flight response' tab to see the making of the graphs generated from this model. Here is the graph:
+
+```{r echo=FALSE}
+df <- d %>%
+  filter(!is.na(mass_diff), !is.na(flew_diff)) 
+  
+df <- df[with(df, order(mass_diff)),]
+
+df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
+
+pp <- fitted(delta_mass_model)
+```
+
+```{r echo=FALSE}
+plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="b", ylab="Predicted Probability", xlab="Changes in Mass From T1 to T2 (g)") # no flight_diff
+points(df$mass_diff, pp[,2], col="blue", type="b") # flew in T1 but not T2
+points(df$mass_diff, pp[,3], col="green", type="b") # flew in T2 but not T1
+text(0.031,0.8, labels="No Flight Diff", col="red")
+text(0.008,0.5, labels="Flew in T1 but not T2", col="blue")
+text(0.052,0.1, labels="Flew in T2 but not T1", col="green")
+# female line is always higher
+text(0.0,0.96, labels="F", col="red")
+text(0.0,0.7, labels="M", col="red")
+text(0.0,0.25, labels="F", col="blue")
+text(0.02,0.2, labels="M", col="blue")
+text(-0.03,0.25, labels="F", col="green")
+text(0.025,0.05, labels="M", col="green")
+abline(v=0.03, lty=2, col="slategrey")
+abline(v=0.035, lty=2, col="slategrey")
+abline(v=0.04, lty=2, col="slategrey")
+abline(v=-0.01, lty=2, col="slategrey")
+abline(v=-0.045, lty=2, col="slategrey")
+```
+
+```{r}
+tidy_regression(delta_egg_model, is_color = output_col)
+```

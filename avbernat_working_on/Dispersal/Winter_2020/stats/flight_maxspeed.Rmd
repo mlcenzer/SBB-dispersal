@@ -57,6 +57,11 @@ boxplot(max_speed~sex,data=data_flew_all,
         ylab="Max Speed (m/s)", 
         xlab="Sex")
 ```
+
+```{r}
+sort(data_flew_all$max_speed) # need to do flight trajectories to see *where* these pop up
+```
+
 ```{r}
 # pwc = "Pairwise Wilcoxon test" between groups
 pwc <- data_flew_all %>% 
