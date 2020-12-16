@@ -84,6 +84,7 @@ for(row in 1:length(d$flew_b)){
 d_all <- select(d, -filename, -channel_letter, -set_number) ##MC: changed the name here to avoid re-loading all data to generate male and female only centered datasets
 d_all <- center_data(d_all, is_not_binded = FALSE) # AB: need this here or else average_mass_c and some other columns do not get calculated
 ```
+
 ```{r}
 d_all
 ```
@@ -431,8 +432,7 @@ high_speeds$flight_type # 3 bugs - also bursters. Could also be short explosive 
 
 ### Remove outliers
 data_flew <- data_flew_all %>%
-  filter(average_speed > 0.05) %>%
-  filter(average_speed < 0.65)
+  filter(average_speed > 0.05) 
   
 data_flew <- center_data(data_flew)
 
@@ -449,9 +449,9 @@ data_flew$flight_type <- relevel(data_flew$flight_type, ref="B")
 tidy_regression(lmer(speed_trans~flight_type + (1|chamber) + (1|ID), data=data_flew), is_color=output_col) 
 # yes, B and C differ distinctly in average speed; BC and CB are not different from C, so let's keep those in the continuous flight analyses.
 
-####### Effect of chamber B-2 and B-4
+####### Effect of chamber B-1, B-4, A-2, A-1 
 data_flew$chamber <- relevel(data_flew$chamber, ref="A-4")
-tidy_regression(lmer(speed_trans~chamber + (1|ID), data=data_flew), is_color=output_col)###Possibly reductions in speed 
+tidy_regression(lmer(speed_trans~chamber + (1|ID), data=data_flew), is_color=output_col) ###Possibly reductions in speed 
 
 ####### No effect of test date
 tidy_regression(lmer(speed_trans~days_from_start + (1|chamber), data=data_flew), is_color=output_col)
