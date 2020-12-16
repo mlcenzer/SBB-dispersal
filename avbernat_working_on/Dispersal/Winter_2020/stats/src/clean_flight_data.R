@@ -76,7 +76,7 @@ read_flight_data<-function(filename){
         data_tested$distance[row] = 0 
         data_tested$average_speed[row] = 0
         data_tested$max_speed[row] = 0
-        data_tested$total_duration[row] = 1740 # this doesn't work
+        data_tested$recording_duration[row] = 1740 # this doesn't work
       }
     }
     
