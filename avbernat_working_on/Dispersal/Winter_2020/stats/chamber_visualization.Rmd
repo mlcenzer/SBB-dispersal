@@ -8,7 +8,9 @@ output:
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-setwd("~/Desktop/Rstats-winter2020/")
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
+setwd(dir) 
+
 library(lubridate)
 library(chron)
 library(dplyr)
@@ -28,7 +30,7 @@ data_tested <- data[[2]]
 
 **Checking errors** 
 
-How to check for flight time errors? Check for the sucessive intervals for when bugs were placed into and out of the chamber for testing. This visual shows that for each day (or set) for each chamber (just horizontal lines drawn with the filename on top and different colors). 
+How to check for flight time errors? Check for the successive intervals for when bugs were placed into and out of the chamber for testing. This visual shows that for each day (or set) for each chamber (just horizontal lines drawn with the filename on top and different colors). 
 
 ```{r fig.width=11, fig.height=6}
 
@@ -45,7 +47,8 @@ for(set in sets) {
   
   data_list <- list(dataA, dataB)
 
-  png(paste0("output/set", set, ".png"), width = 2100, height = 1050)
+  png(paste0("output/set", set, ".png"), width = 2100, height = 1250)
+  par(mar=c(4.5,6,4.5,2))
   par(mfrow=c(2,1))
   for(data in data_list) {
     rand_colors <- randomColor(nrow(data), luminosity="bright")
@@ -53,7 +56,10 @@ for(set in sets) {
     max_x <- max(as.duration(hms(data$time_end))) 
     min_x <- min(as.duration(hms(data$time_start)))
   
-    plot(1, type="n", xlim=c(min_x, max_x), ylim=c(0.5, 4.8), xlab="Duration (s)", ylab="Channel Number")
+    plot(1, type="n", xlim=c(min_x, max_x), ylim=c(0.5, 4.8), 
+         xlab="Duration (s)", ylab="Channel Number",
+         cex.axis=1.7,
+         cex.lab=2.2)
     for(row in 1:nrow(data)) {
       
       if(row %% 2 == 0) {
@@ -68,18 +74,25 @@ for(set in sets) {
       channel_letter <- sapply(strsplit(channel, "-"), "[[", 1)
       filename <- data$filename[row]
       set_num <- data$set_number[row]
+      
       start_time <- hms(data$time_start[row])
       end_time <- hms(data$time_end[row])
+      # s <- strptime(data$time_start[row], format = "%H:%M") # could redo labels this way
+      # start_time <- paste0(hour(s), "H ", minute(s), "M")
+      # e <- strptime(data$time_end[row], format = "%H:%M")
+      # end_time <- paste0(hour(e), "H ", minute(e), "M")
       
       lines(c(start_time, end_time), c(channel_num, channel_num), type="l", col=rand_colors[row])
       text(c(start_time, end_time), c(channel_num, channel_num), labels=as.character(c(start_time, end_time)), 
-                                                                  cex=0.8, font=2, pos=pos, col=rand_colors[row])
+                                                                  cex=1.2, font=2, pos=pos, col=rand_colors[row])
       midpoint <- as.duration(start_time + end_time ) / 2
       file <- sprintf("[%s]", filename)
-      text(midpoint, channel_num + 0.2*direction, labels=file, cex=0.65, font=2, pos=pos, col=rand_colors[row]) #0.09* direction if don't squish
+      text(midpoint, channel_num + 0.2*direction, labels=file, cex=0.9, font=2, pos=pos, col=rand_colors[row]) 
+      #0.09* direction if don't squish
     }
-    title(main=paste("Channel Letter", channel_letter))
+    title(main=list(paste("Channel Letter", channel_letter), cex=2.2))
   }
   dev.off()
 }
 ```
+

@@ -10,13 +10,9 @@ rm(list=ls())
 dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
 setwd(dir) 
 
+# modeling and data manipulation
 library(lme4)
 library(dplyr)
-# library(ggplotify)
-# library(gridExtra)
-library(ggformula)
-# library(tidyselect)
-# library(zoo)
 library(nnet) # multinom package
 
 # tables
@@ -25,6 +21,7 @@ library(kableExtra)
 
 # plotting
 library(rethinking) 
+library(ggformula)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -384,27 +381,46 @@ exp(coef(delta_mass_model)/50)
 ```{r}
 head(pp <- fitted(delta_mass_model))
 ```
+```{r echo=FALSE}
+df <- d %>%
+  filter(!is.na(mass_diff), !is.na(flew_diff)) 
+  
+df <- df[with(df, order(mass_diff)),]
+
+df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
+
+pp <- fitted(delta_mass_model)
+```
 
 ```{r}
-plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="b", 
-     ylab="Predicted Probability", xlab="Changes in Mass From T1 to T2 (g)") # no flight_diff
-points(df$mass_diff, pp[,2], col="blue", type="b") # flew in T1 but not T2
-points(df$mass_diff, pp[,3], col="darkgreen", type="b") # flew in T2 but not T1
-text(0.031,0.8, labels="No Flight Diff", col="red")
+df$index = 1:nrow(df)
+females = df %>%
+  filter(sex=="F")
+males = df %>%
+  filter(sex=="M")
+Frows = females$index
+Mrows = males$index
+```
+
+```{r echo=FALSE}
+plot(df$mass_diff[Frows], pp[Frows,1], ylim=c(0,1), col="red", type="l", ylab="Predicted Probability", xlab="Changes in Mass From T1 to T2 (g)") # no flight_diff
+points(df$mass_diff[Mrows], pp[Mrows,1], col="red", type="l") # no flight_diff
+points(df$mass_diff[Frows], pp[Frows,2], col="blue", type="l") # flew in T1 but not T2
+points(df$mass_diff[Mrows], pp[Mrows,2], col="blue", type="l")
+points(df$mass_diff[Frows], pp[Frows,3], col="darkgreen", type="l") # flew in T2 but not T1
+points(df$mass_diff[Mrows], pp[Mrows,3], col="darkgreen", type="l") 
+text(0.019,0.9, labels="No Flight Diff", col="red")
 text(0.008,0.5, labels="Flew in T1 but not T2", col="blue")
 text(0.052,0.1, labels="Flew in T2 but not T1", col="darkgreen")
 # female line is always higher
 text(0.0,0.96, labels="F", col="red")
 text(0.0,0.7, labels="M", col="red")
-text(0.0,0.25, labels="F", col="blue")
-text(0.02,0.2, labels="M", col="blue")
-text(-0.03,0.25, labels="F", col="darkgreen")
-text(0.025,0.05, labels="M", col="darkgreen")
-abline(v=0.03, lty=2, col="slategrey")
+text(0.02,0.2, labels="F", col="blue")
+text(0.0,0.25, labels="M", col="blue")
+text(0.025,0.05, labels="F", col="darkgreen")
+text(0.01,0.10, labels="M", col="darkgreen")
 abline(v=0.035, lty=2, col="slategrey")
-abline(v=0.04, lty=2, col="slategrey")
-abline(v=-0.01, lty=2, col="slategrey")
-abline(v=-0.045, lty=2, col="slategrey") # Need to fix graph
+abline(v=-0.008, lty=2, col="slategrey")
 ```
 
 <div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = 7.04 + 117.12 \delta mass + 6.06 sex$</div><br/>
@@ -491,6 +507,17 @@ kable(key) %>%
   add_header_above(c("Binomial Flight Response Key" = 2 )) 
 ```
 
+```{r echo=FALSE}
+# key 
+Host = c("Golden Rain Tree (GRT)", "Balloon Vine (BV)")
+Encoding = c(1,-1)
+key = cbind(Host, Encoding)
+
+kable(key) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  add_header_above(c("Host Plant Key" = 2 )) 
+```
+
 ```{r}
 R = df$flew_diff
 A = df$egg_diff
@@ -552,25 +579,35 @@ df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
 pp <- fitted(delta_mass_model)
 ```
 
+```{r}
+df$index = 1:nrow(df)
+females = df %>%
+  filter(sex=="F")
+males = df %>%
+  filter(sex=="M")
+Frows = females$index
+Mrows = males$index
+```
+
 ```{r echo=FALSE}
-plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="b", ylab="Predicted Probability", xlab="Changes in Mass From T1 to T2 (g)") # no flight_diff
-points(df$mass_diff, pp[,2], col="blue", type="b") # flew in T1 but not T2
-points(df$mass_diff, pp[,3], col="green", type="b") # flew in T2 but not T1
-text(0.031,0.8, labels="No Flight Diff", col="red")
+plot(df$mass_diff[Frows], pp[Frows,1], ylim=c(0,1), col="red", type="l", ylab="Predicted Probability", xlab="Changes in Mass From T1 to T2 (g)") # no flight_diff
+points(df$mass_diff[Mrows], pp[Mrows,1], col="red", type="l") # no flight_diff
+points(df$mass_diff[Frows], pp[Frows,2], col="blue", type="l") # flew in T1 but not T2
+points(df$mass_diff[Mrows], pp[Mrows,2], col="blue", type="l")
+points(df$mass_diff[Frows], pp[Frows,3], col="darkgreen", type="l") # flew in T2 but not T1
+points(df$mass_diff[Mrows], pp[Mrows,3], col="darkgreen", type="l") 
+text(0.019,0.9, labels="No Flight Diff", col="red")
 text(0.008,0.5, labels="Flew in T1 but not T2", col="blue")
-text(0.052,0.1, labels="Flew in T2 but not T1", col="green")
+text(0.052,0.1, labels="Flew in T2 but not T1", col="darkgreen")
 # female line is always higher
 text(0.0,0.96, labels="F", col="red")
 text(0.0,0.7, labels="M", col="red")
-text(0.0,0.25, labels="F", col="blue")
-text(0.02,0.2, labels="M", col="blue")
-text(-0.03,0.25, labels="F", col="green")
-text(0.025,0.05, labels="M", col="green")
-abline(v=0.03, lty=2, col="slategrey")
+text(0.02,0.2, labels="F", col="blue")
+text(0.0,0.25, labels="M", col="blue")
+text(0.025,0.05, labels="F", col="darkgreen")
+text(0.01,0.10, labels="M", col="darkgreen")
 abline(v=0.035, lty=2, col="slategrey")
-abline(v=0.04, lty=2, col="slategrey")
-abline(v=-0.01, lty=2, col="slategrey")
-abline(v=-0.045, lty=2, col="slategrey")
+abline(v=-0.008, lty=2, col="slategrey")
 ```
 
 ```{r}
