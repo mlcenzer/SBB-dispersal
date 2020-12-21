@@ -147,10 +147,10 @@ kable(table2) %>%
 
 ```{r echo=FALSE}
 # adding host plant
-host_plants = c("C. corindum", "C. corindum", "K. elegans", "K. elegans",
-                "C. corindum", "C. corindum", "C. corindum", "K. elegans",
-                "K. elegans", "K. elegans", "K. elegans", "K. elegans", 
-                "K. elegans", "K. elegans", "K. elegans", "K. elegans")
+host_plants = c("K. elegans", "K. elegans", "C. corindum", "C. corindum", 
+                "K. elegans", "K. elegans", "K. elegans", "C. corindum",
+                "C. corindum", "C. corindum", "C. corindum", "C. corindum",
+                "C. corindum", "C. corindum","C. corindum","C. corindum")
 
 table2b = cbind(host_plants, table2)
 colnames(table2b)[1] <- c("host plant")
