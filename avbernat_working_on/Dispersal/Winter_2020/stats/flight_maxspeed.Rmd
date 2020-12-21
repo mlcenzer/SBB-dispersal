@@ -21,6 +21,8 @@ library(ggplotify)
 library(gridExtra)
 library(ggformula)
 library(randomcoloR)
+library(rstatix)
+library(ggpubr)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -45,6 +47,46 @@ data_tested <- data[[2]]
 
 data_flew_all <- data_tested[data_tested$flew_b == 1, ] # remove who didn't fly
 ```
+
+```{r}
+data_flew_all = read.csv("data/flight_stats_summary5.csv")
+data_flew_all <- data_flew_all[data_flew_all$average_speed != 0, ]
+
+par(mfrow=c(2,2))
+hist(data_flew_all$max_speed1,   # not normally distributed
+     main="Max Speed Histogram", 
+     xlab="Max Speed (m/s)", 
+     ylim=c(0,100))
+hist(data_flew_all$max_speed2,   # not normally distributed
+     main="Max Speed Histogram", 
+     xlab="Max Speed (m/s)", 
+     ylim=c(0,100))
+hist(data_flew_all$max_speed3,   # not normally distributed
+     main="Max Speed Histogram", 
+     xlab="Max Speed (m/s)", 
+     ylim=c(0,100))
+hist(data_flew_all$max_speed4,   # not normally distributed
+     main="Max Speed Histogram", 
+     xlab="Max Speed (m/s)", 
+     ylim=c(0,100))
+hist(data_flew_all$max_speed10,   # not normally distributed
+     main="Max Speed Histogram", 
+     xlab="Max Speed (m/s)", 
+     ylim=c(0,100))
+```
+
+```{r fig.height=10, fig.width=10}
+small = data_flew_all %>%
+  select(max_speed1, max_speed2, max_speed3, max_speed4)
+
+
+v = c(1,2,3,4)
+plot(v, unlist(c(data_flew_all[1,15:18])), ylim=c(0,0.8), type="l")
+for (i in seq(2,93, 1)) {
+  points(v, unlist(c(data_flew_all[i,15:18])), type="l")
+}
+```
+
 
 ```{r}
 par(mfrow=c(1,2))

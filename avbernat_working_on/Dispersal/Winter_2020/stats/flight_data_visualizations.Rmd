@@ -36,46 +36,45 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 # Loading, cleaning, and recoding the data
 
 ```{r}
-# Script that loads and cleans up the data
 source("src/clean_flight_data.R")
-data_all <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
 ```
 
 # ALL DATA PLOTS
 
 ```{r}
-# Categorizing Binomial Data Function: It groups explanatory values into categories and calculates the sample of proportion of flight for each category
-source("src/categorize_binomial_data.R") # categorize_binomial_data2.R works too
+source("src/categorize_binomial_data.R")
 ```
 
-```{r}
-# ALL DATA: Observed proportions of yes flew by minutes from incubation start 
-cat_data1 <- categorize_data(data_all, all_of("min_from_IncStart"), all_of("flew_b"), 30, 0, 30)
-# ALL DATA: Observed proportions of yes flew by minutes from trial start
-cat_data2 <- categorize_data(data_all, all_of("minute_duration"), all_of("flew_b"), 30, 0, 30)
-```
+categorize_data: It groups explanatory values into categories and calculates the sample of proportion of flight for each category
 
 ```{r fig.width=7, fig.height=2.5}
-# Plotting observered proportions of yes flew by minutes from incubation start 
-p1 <- as.grob(expression(plot(as.matrix(cat_data1[1]), 
-     as.matrix(cat_data1[3]),
-     ylab="Sample Proportion of Yes Flew", xlab="Minutes From Incubtation Start (min) ", main="Observed proportions of yes flew by minutes from incubation start")
+cat_data1 <- categorize_data(data_tested, all_of("min_from_IncStart"), all_of("flew_b"), 30, 0, 30)
+cat_data2 <- categorize_data(data_tested, all_of("minute_duration"), all_of("flew_b"), 30, 0, 30)
+
+# Plotting observed proportions of yes flew by minutes from incubation start 
+p1 <- as.grob(expression(plot(sample_prop ~ min_from_IncStart, data=cat_data1,
+     ylab="Sample Proportion of Yes Flew", xlab="Minutes From Incubtation Start (min) ", 
+     main="Observed proportions of yes flew by minutes from incubation start")
 ))
 
-# Plotting observered proportions of yes flew by minutes from trial start
+# Plotting observed proportions of yes flew by minutes from trial start
 p2 <- as.grob(expression(
-  plot(as.matrix(cat_data2[1]), 
-     as.matrix(cat_data2[3]),
-     ylab="Sample Proportion of Yes Flew", xlab="Minutes From Trial Start (min)", main="Observed proportions of yes flew by minutes from trial start") %>%
+  plot(sample_prop ~ minute_duration, data=cat_data2,
+     ylab="Sample Proportion of Yes Flew", xlab="Minutes From Trial Start (min)", 
+     main="Observed proportions of yes flew by minutes from trial start") %>%
   abline(v=120, col="red")
 ))
 
 grid.arrange(p1,p2, ncol=2)
 ```
 
+
 ```{r}
 cat_data1$min_from_IncStart
-fit <- lm(`Sample Proportion`~ min_from_IncStart, data=cat_data1)
+fit <- lm(`sample_prop`~ min_from_IncStart, data=cat_data1)
 summary(fit) # NO significant effect
 
 cf <- round(coef(fit), 2)  ## rounded coefficients for better output
@@ -83,7 +82,8 @@ eq <- paste0("portion_flew = ", cf[1],
              ifelse(sign(cf[2])==1, " + ", " - "), 
              abs(cf[2]), "*time_start ") ## sign check to avoid having plus followed by minus for negative coefficients
 
-plot(cat_data1$min_from_IncStart,cat_data1$`Sample Proportion`, xlab= "Starting Time", ylab="Proportion of 24-H Day Spent Flying")
+plot(cat_data1$min_from_IncStart,cat_data1$sample_prop, 
+     xlab= "Starting Time", ylab="Proportion of 24-H Day Spent Flying")
   abline(coef(fit)[1:2], col="blue")
 mtext(eq, 3, line=-2, side=3)
 text(300,0.4, c("not significant"), col= "red")
@@ -93,7 +93,7 @@ text(300,0.4, c("not significant"), col= "red")
 cat_data2$log_min_duration <- log(cat_data2$minute_duration)
 m <- quap(
   alist(
-    `Sample Proportion` ~ dnorm(mu, sigma),
+    sample_prop ~ dnorm(mu, sigma),
     mu <- alpha + beta*(log_min_duration),
     alpha ~ dnorm(5.792217, 5), # this should be in terms of height not weight
     beta ~ dlnorm(0,1),
@@ -111,7 +111,7 @@ mu_mean <- apply(mu,2,mean)
 mu_ci <- apply(mu,2,PI,prob=0.89) 
 
 # Plot Log
-plot( cat_data2$log_min_duration , cat_data2$`Sample Proportion` , col=col.alpha(rangi2,0.7),
+plot( cat_data2$log_min_duration , cat_data2$sample_prop , col=col.alpha(rangi2,0.7),
       ylab="Sample Proportion of Yes Flew", 
       xlab="Log(Minutes From Trial Start) log(min)", 
       main="Observed proportions of yes flew by log(minutes) from trial start" )
@@ -120,7 +120,7 @@ shade(mu_ci, lim = x_seq)
 text(6,0.3, c("significant"), col= "darkolivegreen4")
 
 # Plot Non-log
-plot( cat_data2$minute_duration , cat_data2$`Sample Proportion` , col=col.alpha(rangi2,0.7), 
+plot( cat_data2$minute_duration , cat_data2$sample_prop, col=col.alpha(rangi2,0.7), 
       ylab="Sample Proportion of Yes Flew", 
       xlab="Minutes From Trial Start (min)", 
       main="Observed proportions of yes flew by minutes from trial start" )
@@ -130,13 +130,29 @@ abline(v=120, col="red", lty=2)
 ```
 
 ```{r}
+par(mfrow=c(1,2))
+# What is happening for those who flew?
+x = chron(times = data_tested$time_start)
+y = data_tested$recording_duration / (60*60) # hours 
+
+fit <- lm(y~x, data=data_tested)
+summary(fit) # significant effect
+
+cf <- round(coef(fit), 2)  ## rounded coefficients for better output
+eq <- paste0("portion_flew = ", cf[1],
+             ifelse(sign(cf[2])==1, " + ", " - "), 
+             abs(cf[2]), "*time_start ") ## sign check to avoid having plus followed by minus for negative coefficients
+
+plot(x,y, xlab= "Starting Time", ylab="Duration (hr)")
+  abline(coef(fit)[1:2], col="blue") # Alternative: lines(x, fitted(fit), col="blue")
+#mtext(eq, 3, line=-2, side=3)
+
 # Filter out those that didn't fly.
 all_flew <- filter(data_all, flew_b == 1)
 
 # What is happening for those who flew?
 x = chron(times = all_flew$time_start)
-y = all_flew$total_duration # seconds 
-y = y / (24*60*60) # proportion of the day they flew
+y = all_flew$recording_duration / (60*60) # hours 
 
 fit <- lm(y~x, data=all_flew)
 summary(fit) # significant effect
@@ -146,9 +162,9 @@ eq <- paste0("portion_flew = ", cf[1],
              ifelse(sign(cf[2])==1, " + ", " - "), 
              abs(cf[2]), "*time_start ") ## sign check to avoid having plus followed by minus for negative coefficients
 
-plot(x,y, xlab= "Starting Time", ylab="Proportion of 24-H Day Spent Flying")
+plot(x,y, xlab= "Starting Time", ylab="Duration (hr)")
   abline(coef(fit)[1:2], col="blue") # Alternative: lines(x, fitted(fit), col="blue")
-mtext(eq, 3, line=-2, side=3)
+#mtext(eq, 3, line=-2, side=3)
 ```
 
 ```{r}
@@ -178,7 +194,7 @@ plot(data_T1$mass, data_T1$flew_b)
 ```{r}
 # ALL DATA 
 #all_fit <-lm(flew_b~mass, data=data_mass) 
-all_fit <-lm(`Sample Proportion`~ mass, data=cat_data3) 
+all_fit <-lm(sample_prop~ mass, data=cat_data3) 
 coeff <- coefficients(summary(all_fit))
 coeff
 
@@ -234,14 +250,14 @@ plot(summary$flew_b~summary$sym_dist,
      pch=c(19,22)[as.factor(summary$host_plant)],
      main="Observed Data",
      xlab = "Distance from Sympatric Zone (°)",
-     ylab= "Proportion Flew", # K. elegans = Squares C.corindum = circles
+     ylab= "Proportion Flew" # K. elegans = Squares C.corindum = circles
      #sub=eq_glmer
      ) 
 legend("topright",
-       legend = c("C.corindum and F","K.elegans and M"),
+       legend = c("C. corindum and F", "C. corindum and M", "K. elegans and F" , "K. elegans and M"),
        inset=c(-0.23,0.2),
        col=c(1,2),
-       pch = c(19,22),
+       pch = c(19,19, 22,22),
        title="Groups")
 
 ```
@@ -251,7 +267,7 @@ missing_mass <- subset(data_all, is.na(data_all$mass))
 data_mass <- data_all %>%
   filter(!is.na(mass))
 
-source("categorize_binomial_data-MF.R")
+source("src/categorize_binomial_data-MF.R")
 cat_data5 <- categorize_data_MF(data_mass, all_of("mass"), all_of("sex_c"), 
                                 all_of("host_c"), all_of("flew_b"), 0.010, 0.015, 0.025)
 cat_data5
@@ -273,10 +289,10 @@ plot(cat_data5$sample_prop~cat_data5$mass,
      #sub=eq_glmer
      ) 
 legend("topright",
-       legend = c("C.corindum and F","K.elegans and M"),
+       legend = c("C. corindum and F", "C. corindum and M", "K. elegans and F" , "K. elegans and M"),
        inset=c(-0.23,0.2),
        col=c(1,2),
-       pch = c(19,22),
+        pch = c(19,19, 22,22),
        title="Groups")
 ```
 

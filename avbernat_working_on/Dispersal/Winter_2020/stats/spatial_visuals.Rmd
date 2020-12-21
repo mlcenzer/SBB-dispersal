@@ -1,0 +1,604 @@
+---
+title: "Soapberry Bug Flight Dispersal Spatial Data Visualization - Winter2020"
+author: "Anastasia Bernat"
+fontsize: 11pt
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document:
+    df_print: kable
+    fig_caption: no
+    fig_height: 3.5
+    fig_width: 3.5
+    highlight: monochrome
+geometry: margin=0.75in
+fig_crop: no
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
+setwd(dir) 
+
+# Load some commonly used packages.
+library(MASS)
+library(gridExtra)
+library(tidyverse)
+library(mosaic)
+library(broom)
+library(dplyr)
+library(knitr)
+library(readr)
+library(chron)
+library(stringr)
+
+# Set numerical output display parameters
+options(width=70, digits=4, scipen=8)
+# Set R output size a bit smaller than default
+knitr::opts_chunk$set(size='small', prompt=FALSE, comment="")
+# set plot theme to black and white
+ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_update(panel.grid.major = ggplot2::element_line(colour = "grey75"))
+
+# Spatial Libraries
+library(sf)
+library(sp)
+library(lubridate)
+library(tmap)
+library(geojsonR)
+library(geojsonio)
+library(lwgeom) # lwgeom is known as the light-weight geometry library used by 'PostGIS' 
+library(cleangeo)
+library(maps)
+library(shinyjs)
+library(tmaptools)
+```
+
+## Read the data.
+
+```{r}
+source("src/clean_flight_data.R")
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+all_data <- data[[1]]
+data_all <- data[[2]] # bugs tested
+```
+
+```{r}
+data_all$flew_b<-0
+data_all$flew_b[data_all$flew=="Y"]<-1
+
+data_all$eggs_b<-0
+data_all$eggs_b[data_all$EWM=="Y"]<-1
+
+data_all$sym_dist<-abs(data_all$latitude-25.49197)
+
+data_all
+```
+
+## Filter for only the columns you need.
+
+```{r}
+# filtered_data <- full_data[,c("ID", "filename", "chamber", "set_number", "average_speed",
+#                         "total_flight_time", "distance", "shortest_flying_bout", 
+#                         "longest_flying_bout", "portion_flying", "max_speed",
+#                         "sex", "population", "site", "host_plant", "flew", "flew_b", flight_type", 
+#                         "mass", "eggs", "latitude", "longitude")]
+filtered_data <- select(data_all, ID, filename, chamber, set_number, average_speed, # recently added flew_b
+                        total_flight_time, distance, shortest_flying_bout, 
+                        longest_flying_bout, max_speed,
+                        sex, population, site, host_plant, flew, flew_b, flight_type, mass, eggs_b, 
+                        total_eggs, beak, thorax, wing, body, sym_dist, tested, w_morph,
+                        lat = latitude, 
+                        lon = longitude)
+
+# Get rid of NA's in long and lat columns
+filtered_data <- filter(filtered_data, !is.na(lat), !is.na(lon))
+glimpse(filtered_data)
+```
+
+## Convert to a spatial point object and plot.
+
+```{r}
+dispersal_data <- st_as_sf(filtered_data,
+                           coords = c("lon", "lat"),
+                           crs = 4326,
+                           agr = "constant")
+
+dispersal_data <- st_transform(dispersal_data, 2236)
+plot(dispersal_data)
+```
+
+This shows us the data, but visually it's hard to read. Let's try mapping multipolygon and polygon shapes.
+
+## Create mappable multipolygon shapes for designated areas. Sites to use:
+
+(i) Go to OpenStreetMaps: https://nominatim.openstreetmap.org
+
+(ii) Type in the area you want your multipolygon for.
+
+(iii) Find the OSM ID and copy it.
+
+(iv) Go to Polygon Creation: http://polygons.openstreetmap.fr/index.py
+
+(v) Past the OSM ID into the 'Id of relation' box.
+
+(vi) Click on 'image' to confirm that is the shape you want on OpenStreetMaps or Google Maps.
+
+(vii) Click on GeoJSON and copy the url.
+
+(viii) Find a spatial reference number or (espg) for Florida. I went with 2236, East Florida as pictured here on OpenStreetMaps: https://maps.omniscale.com/en/openstreetmap/epsg-2236. 
+
+```{r}
+florida <- "http://polygons.openstreetmap.fr/get_geojson.py?id=162050&params=0"
+
+# Just For Florida
+
+# URL Florida
+florida_read <- st_read(florida)
+FL_url <- mutate(florida_read, population = "Florida")
+FL_url_transformed <- st_transform(FL_url, 2236)
+
+# State Maps Data
+states <- st_as_sf(map("state", plot = FALSE, fill = TRUE))
+florida_state <- states %>%
+  filter(ID == "florida")
+FL <- mutate(florida_state, State = "Florida")
+FL_transformed <- st_transform(FL, 2236)
+```
+
+
+(ix) Convert the GeoJSON dat into a nested list using geojson_read() or lapply() and st_read as the second argument. lapply() and st_read() are much more efficient. The map() function is also similar to lapply(), but for some reason it does not work here. Similar to pandas in Python, the map() function transforms its input by applying a function to each element and returning a vector (or whichever class you want) with the same length as the input.
+
+(x) If there is a gap in one or more of the polygons created, use st_make_valid() to bypass the error and make the polygon valid.
+
+(xi) Transform the GEOMETRY COLLECTIONS to MULTIPOLYGONS using st_cast().
+
+```{r}
+# For Other Populations and Their Respective Counties
+
+lake_wales <- "http://polygons.openstreetmap.fr/get_geojson.py?id=117732&params=0"
+polk <- "http://polygons.openstreetmap.fr/get_geojson.py?id=1214525&params=0"
+  
+lake_placid <- "http://polygons.openstreetmap.fr/get_geojson.py?id=117660&params=0"
+highlands <- "http://polygons.openstreetmap.fr/get_geojson.py?id=1210702&params=0"
+  
+homestead <-"http://polygons.openstreetmap.fr/get_geojson.py?id=1216731&params=0" 
+miami_dade <- "http://polygons.openstreetmap.fr/get_geojson.py?id=1210692&params=0"
+
+gainesville <- "http://polygons.openstreetmap.fr/get_geojson.py?id=118870&params=0"
+alachua <- "http://polygons.openstreetmap.fr/get_geojson.py?id=1210739&params=0"
+
+leesburg <- "http://polygons.openstreetmap.fr/get_geojson.py?id=117476&params=0"
+lake <- "http://polygons.openstreetmap.fr/get_geojson.py?id=389026&params=0"
+  
+# Have the same counties (Monroe), so kept on an island level. 
+north_key_largo <- "http://polygons.openstreetmap.fr/get_geojson.py?id=119071&params=0" 
+key_largo <- "http://polygons.openstreetmap.fr/get_geojson.py?id=119070&params=0"
+plantation_key <-  "http://polygons.openstreetmap.fr/get_geojson.py?id=117963&params=0"
+
+populations <- c("Lake Wales", "Lake Placid", "Homestead", "North Key Largo",
+           "Gainesville", "Leesburg", "Key Largo", "Plantation Key")
+
+counties <- c("Polk", "Highlands", "Miami-Dade", "Alachua", "Lake", "North Key Largo", "Key Largo", "Plantation Key")
+
+pop_urls <- c(lake_wales, lake_placid, homestead, north_key_largo, gainesville,
+          leesburg, key_largo, plantation_key)
+county_urls <- c(polk, highlands, miami_dade, alachua, lake, north_key_largo, key_largo, plantation_key)
+```
+
+```{r}
+# For Populations
+polylist <- lapply(pop_urls, st_read)
+sf_df <- do.call(rbind, polylist)
+pops <- cbind(sf_df, populations)
+df_transformed <- st_transform(pops, 2236)
+
+# For Counties
+countylist <- lapply(county_urls, st_read)
+sf_df_county <- do.call(rbind, countylist)
+counties_df <- cbind(sf_df_county, counties)
+counties_transformed <- st_transform(counties_df, 2236)
+
+# Geometry reports
+
+poly_valid_report <- st_is_valid(df_transformed)
+poly_valid_report # see that LW, LP, GV, LB, and PK are invalid
+
+county_valid_report <- st_is_valid(counties_transformed)
+county_valid_report
+
+# Make any invalid polygons valid
+df_final_pop <- st_make_valid(df_transformed) %>%
+  st_cast("MULTIPOLYGON") 
+
+df_final_counties <- st_make_valid(counties_transformed) %>%
+  st_cast("MULTIPOLYGON") 
+
+# Check the final report
+poly_valid_report2 <- st_is_valid(df_final_pop)
+poly_valid_report2
+
+county_valid_report2 <- st_is_valid(df_final_counties)
+county_valid_report2
+
+tmap_mode("view")
+tmap_mode("plot")
+
+tm_shape(df_final_pop) +
+  tm_polygons("populations") +
+  tm_basemap("Hydda.Base")
+
+# test
+tm_shape(FL_transformed) +
+  tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey") +
+  tm_fill(col="white", alpha= 0.3) +
+  tm_polygons("State") +
+  tm_scale_bar(position = c("left", "bottom")) +
+tm_shape(df_final_counties) +
+  #tm_polygons("counties") +
+  tm_fill(col="grey") +
+  tm_basemap("Hydda.Base")
+
+tm_shape(combined_filtered, bbox=keys_bb) + # only place where it would matter is in the keys.
+    tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "azure2") +
+    tm_polygons("counties", labels = NULL, legend.show = FALSE) +
+    #tm_fill(col="cornflowerblue")
+    tm_scale_bar(position = c("right", "bottom")) +
+tm_shape(dispersal_filtered) +
+  tm_dots(alpha = 0.9, title = 'Collection Sites', labels = "geometry") +
+  tm_text("zmap_site", size = 0.4, xmod = -1.7, ymod = 0.15)
+```
+
+(xii) Combine the comprehensive sf dataframe with the sf dataframe mapping the populations to the polygon shapes.
+
+(xiii) Write your data to a csv or gpkg file using write_sf(). (Still unsure what application opens gpkg files)
+
+```{r}
+# Add Counties to the Populations
+combined <- st_join(df_final_counties, dispersal_data) 
+
+#write_sf(combined, "flight_spatial_data.csv", layer_options="GEOMETRY=AS_WKT")
+#write_sf(combined_df, "combined2.gpkg")
+```
+
+(xiv) Filter for the datasets you want to work with. This is a good point to customize you datasets as well. Then, calculate proportion flew and site names.
+
+```{r}
+# Only those that flew (this also removes distance NA and speed NA values):
+combined_filtered <- combined %>%
+  filter(average_speed !=0)
+dispersal_filtered <- dispersal_data %>%
+  filter(average_speed !=0)
+
+# Remove bugs not tested and L or LS
+
+experiment_bugs <- combined %>%
+  filter(tested == "yes" | tested == "no" & w_morph == "S")
+
+# Remove NA mass vales
+mass_data <- combined_filtered %>%
+  filter(!is.na(mass))
+```
+
+```{r}
+# Prop flew --> rewrite to make it cleaner
+cal_prop_flew <- function(data, site_name) {
+  d <- filter(data, population == site_name)
+  data$flew_prop[data$population == site_name] <- sum(d$flew_b) / nrow(d)
+}
+
+# For tested bugs:
+
+NKL <- filter(combined_filtered, population == "North Key Largo")
+KL <- filter(combined_filtered, population == "Key Largo")
+PK <- filter(combined_filtered, population == "Plantation Key")
+HS <- filter(combined_filtered, population == "Homestead")
+LP <- filter(combined_filtered, population == "Lake Placid")
+LW <- filter(combined_filtered, population == "Lake Wales")
+LB <- filter(combined_filtered, population == "Leesburg")
+GV <- filter(combined_filtered, population == "Gainesville")
+
+combined_filtered$flew_prop[combined_filtered$population == "North Key Largo"] <- sum(NKL$flew_b) / nrow(NKL)
+combined_filtered$flew_prop[combined_filtered$population == "Key Largo"] <- sum(KL$flew_b) / nrow(KL)
+combined_filtered$flew_prop[combined_filtered$population == "Plantation Key"] <- sum(PK$flew_b) / nrow(PK)
+combined_filtered$flew_prop[combined_filtered$population == "Homestead"] <- sum(HS$flew_b) / nrow(HS)
+combined_filtered$flew_prop[combined_filtered$population == "Lake Placid"] <- sum(LP$flew_b) / nrow(LP)
+combined_filtered$flew_prop[combined_filtered$population == "Lake Wales"] <- sum(LW$flew_b) / nrow(LW)
+combined_filtered$flew_prop[combined_filtered$population == "Leesburg"] <- sum(LB$flew_b) / nrow(LB)
+combined_filtered$flew_prop[combined_filtered$population == "Gainesville"] <- sum(GV$flew_b) / nrow(GV)
+
+# For tested and non tested bugs:
+
+NKL <- filter(experiment_bugs, population == "North Key Largo")
+KL <- filter(experiment_bugs, population == "Key Largo")
+PK <- filter(experiment_bugs, population == "Plantation Key")
+HS <- filter(experiment_bugs, population == "Homestead")
+LP <- filter(experiment_bugs, population == "Lake Placid")
+LW <- filter(experiment_bugs, population == "Lake Wales")
+LB <- filter(experiment_bugs, population == "Leesburg")
+GV <- filter(experiment_bugs, population == "Gainesville")
+
+combined_filtered$flew_prop_all[combined_filtered$population == "North Key Largo"] <- sum(NKL$flew_b) / nrow(NKL)
+combined_filtered$flew_prop_all[combined_filtered$population == "Key Largo"] <- sum(KL$flew_b) / nrow(KL)
+combined_filtered$flew_prop_all[combined_filtered$population == "Plantation Key"] <- sum(PK$flew_b) / nrow(PK)
+combined_filtered$flew_prop_all[combined_filtered$population == "Homestead"] <- sum(HS$flew_b) / nrow(HS)
+combined_filtered$flew_prop_all[combined_filtered$population == "Lake Placid"] <- sum(LP$flew_b) / nrow(LP)
+combined_filtered$flew_prop_all[combined_filtered$population == "Lake Wales"] <- sum(LW$flew_b) / nrow(LW)
+combined_filtered$flew_prop_all[combined_filtered$population == "Leesburg"] <- sum(LB$flew_b) / nrow(LB)
+combined_filtered$flew_prop_all[combined_filtered$population == "Gainesville"] <- sum(GV$flew_b) / nrow(GV)
+```
+
+```{r}
+# Creating site names for the map: 
+
+# Large Map (Non-Keys):
+pop_abbrev <- gsub("[^A-Z]","",dispersal_filtered$population) # Extract only capital letters 
+
+dispersal_filtered$lmap_site <- paste0(pop_abbrev, ", ", dispersal_filtered$site)
+
+for (row in 1:nrow(dispersal_filtered)) {
+  if (dispersal_filtered$population[row] == "North Key Largo" |
+      dispersal_filtered$population[row] == "Key Largo" |
+      dispersal_filtered$population[row] == "Plantation Key") {
+    dispersal_filtered$lmap_site[row] <- " "
+      }
+}
+
+dispersal_filtered$lmap_site <- gsub("\\s", " ", format(dispersal_filtered$lmap_site,
+                                                        width=max(nchar(dispersal_filtered$lmap_site)))) 
+
+# Small Zoon Map (Keys):
+pop_abbrev <- gsub("[^A-Z]","",dispersal_filtered$population) 
+dispersal_filtered$zmap_site <- paste0(pop_abbrev, ", ", dispersal_filtered$site)
+dispersal_filtered$zmap_site <- gsub("\\s", " ", format(dispersal_filtered$zmap_site,
+                                                        width=max(nchar(dispersal_filtered$zmap_site)))) 
+```
+
+(xiv) Distance variable only: Create distance buffers using st_buffer(). Buffers are polygons representing the area within a given distance of a geometric feature. st_buffer() requires at least two arguments: an input geometry and a distance, provided in the units of the CRS (in this case meters):
+
+## Build the distance buffer map
+
+```{r}
+################################################################################
+# FUNCTION: get_distance_buffer | extracts the distance buffer of a site
+#
+# INPUTS:   data as a data.frame and site_name as a character
+#
+# OUTPUTS:  the preserved spatial data.frame and its distance buffer to be used
+#           for mapping
+################################################################################
+
+get_distance_buffer <- function(data, site_name) { 
+  d <- filter(data, population == site_name | site == site_name)
+  d_buff <- st_buffer(d, dist=max(d$distance))
+  d_buff <- d_buff %>%
+    select(distance, geometry) # can probably include population and site for easier accesss
+}
+
+# Population Buffers
+pops <- unique(dispersal_filtered$population)
+pops
+
+NKL_buffer <- get_distance_buffer(dispersal_filtered, "North Key Largo")
+KL_buffer <- get_distance_buffer(dispersal_filtered, "Key Largo")
+PK_buffer <- get_distance_buffer(dispersal_filtered, "Plantation Key")
+HS_buffer <- get_distance_buffer(dispersal_filtered, "Homestead")
+LB_buffer <- get_distance_buffer(dispersal_filtered, "Leesburg")
+LW_buffer <- get_distance_buffer(dispersal_filtered, "Lake Wales")
+LP_buffer <- get_distance_buffer(dispersal_filtered, "Lake Placid")
+GV_buffer <- get_distance_buffer(dispersal_filtered, "Gainesville")
+
+pop_buffer_data <- rbind(NKL_buffer, KL_buffer, PK_buffer, HS_buffer, LB_buffer, LW_buffer, LP_buffer, GV_buffer)
+
+# Site Buffers
+sites <- unique(dispersal_filtered$site)
+sites
+
+KLMRL_buffer <- get_distance_buffer(dispersal_filtered, "KLMRL")
+JP_buffer <- get_distance_buffer(dispersal_filtered, "JP")
+ND_buffer <- get_distance_buffer(dispersal_filtered, "N. Dagny")
+CH_buffer <- get_distance_buffer(dispersal_filtered, "Charlemagne")
+DDF_buffer <- get_distance_buffer(dispersal_filtered, "DD front")
+MM_buffer <- get_distance_buffer(dispersal_filtered, "MM165")
+PA_buffer <- get_distance_buffer(dispersal_filtered, "Polk Ave")
+St_buffer <- get_distance_buffer(dispersal_filtered, "23rd & 8th")
+F_buffer <- get_distance_buffer(dispersal_filtered, "Founder's")
+CF_buffer <- get_distance_buffer(dispersal_filtered, "Carysfort")
+DT_buffer <- get_distance_buffer(dispersal_filtered, "Dagny Trellis")
+MSt_buffer <- get_distance_buffer(dispersal_filtered, "Mount & 8th")
+DD_buffer <- get_distance_buffer(dispersal_filtered, "Dynamite Docks")
+StM_buffer <- get_distance_buffer(dispersal_filtered, "110N Main")
+AL_buffer <- get_distance_buffer(dispersal_filtered, "Aregood Ln")
+SWSt_buffer <- get_distance_buffer(dispersal_filtered, "SW 296th St")
+
+site_buffer_data <- rbind(KLMRL_buffer, JP_buffer, ND_buffer, CH_buffer,
+                          DDF_buffer, MM_buffer, PA_buffer, St_buffer, 
+                          F_buffer, CF_buffer, DT_buffer, MSt_buffer, 
+                          DD_buffer, StM_buffer, AL_buffer, SWSt_buffer)
+```
+
+```{r}
+# Island vs. Mainland & Island vs. Island Crossings
+
+zmap.filename = "keys_dist_map1.png"
+
+keys_bb <- st_bbox(combined_filtered %>% filter(counties %in% c("North Key Largo", "Key Largo", "Plantation Key")) )
+
+m21 <- tm_shape(combined_filtered, bbox=keys_bb) + # only place where it would matter is in the keys.
+    tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "azure2") +
+    tm_fill("distance", labels = NULL, legend.show = FALSE) +
+    tm_scale_bar(position = c("right", "bottom")) +
+tm_shape(site_buffer_data) + # NKL_buffer
+  tm_fill("distance", alpha=0.02, legend.show = FALSE) + # can change the color, col = "blue"
+tm_shape(dispersal_filtered) +
+  tm_dots(alpha = 0.9, title = 'Collection Sites', labels = "geometry") +
+  tm_text("zmap_site", size = 0.4, xmod = -1.7, ymod = 0.15)
+
+m21
+
+tmap_save(m21, zmap.filename )
+```
+
+```{r}
+h.keys_bb <- st_bbox(combined_filtered %>% filter(counties %in% c("Miami-Dade"," North Key Largo", "Key Largo", "Plantation Key")) )
+h.keys_bb[4] <- h.keys_bb[4] - 169000
+h.keys_bb[1] <- h.keys_bb[1] + 40000
+h.keys_bb[3] <- h.keys_bb[3] - 60000
+m22 <- tm_shape(combined_filtered, bbox=h.keys_bb) + # only place where it would matter is in the keys.
+    tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "azure2") +
+    tm_fill("distance", labels = NULL, legend.show = FALSE) +
+    tm_scale_bar(position = c("right", "bottom")) +
+tm_shape(site_buffer_data) + # NKL_buffer
+  tm_fill("distance", alpha=0.02, legend.show = FALSE, col= "lightskyblue1") +
+tm_shape(dispersal_filtered) +
+  tm_dots(alpha = 0.9, title = 'Collection Sites', labels = "geometry") +
+  tm_text("zmap_site", size = 0.4, xmod = -1.7, ymod = 0.15)
+
+m22
+```
+
+```{r}
+mainland_bb <- st_bbox(combined_filtered %>% filter(counties %in% c("Polk", "Highlands", "Miami-Dade", "Lake", "Alachua")) ) # same thing with or without this
+
+tm_shape(FL_transformed, bbox=mainland_bb) +
+  tm_fill(col="darkolivegreen4", alpha= 0.3) +
+  tm_polygons("State") +
+tm_shape(combined_filtered, bbox=mainland_bb) +
+    tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1)) + #, col= "azure2") +
+    tm_fill("distance", labels = NULL, legend.show = FALSE) +
+    tm_scale_bar(position = c("left", "bottom")) +
+tm_shape(site_buffer_data) + 
+  tm_fill("distance", alpha=0.02, legend.show = FALSE, col="blue") +
+tm_shape(dispersal_filtered) + # can also ommit the keys before map this 
+  tm_dots(alpha = 0.7, title = 'Collection Sites', labels = "geometry") +
+  tm_text("lmap_site", size = 0.4, xmod = -0.15, ymod = -0.35)
+```
+
+## Build the rest of the maps!
+
+```{r}
+# ORIGINAL VERSION (WIDE)
+map_data = combined_filtered
+var = "mass"
+main.title = "Mass Across Latitude"
+label.title = "Mass (g)"
+map.filename = "winter_test6.png"
+
+
+m <- tm_shape(FL_transformed) +
+  tm_fill(col="darkolivegreen4", alpha= 0.3) +
+  tm_polygons("State") +
+#    tm_text("State", col= "black", xmod = 1, ymod = 3, fontface="bold") +
+tm_shape(map_data) +
+  tm_fill(var, title = label.title, legend.hist = TRUE) + #, palette="Oranges"
+  tm_basemap("Hydda.Base") +
+#  tm_style("natural") +
+  tm_layout(main.title = main.title,
+            legend.hist.size = 2.5,
+            legend.outside = TRUE,
+            compass.type = "4star",
+            asp = 1, # legend.inside vs. outside
+            inner.margins=c(0.06, 0.01, 0, 0.1)) + # c(bottom, left, top, and right
+  #bg.color= "aliceblue") + # or aliceblue as bg.color
+    tm_compass(show.labels = 1, 
+             cardinal.directions = c("N", "E", "S", "W"),
+             position = c(0.8, 0.77), 
+             size = 4, 
+             color.light= "grey90",
+             color.dark= "grey30") +
+  tm_scale_bar(position = c("left", "bottom")) +
+  tm_graticules() +
+tm_shape(dispersal_filtered) + # can also ommit the keys before map this 
+  tm_dots(alpha = 0.7, title = 'Collection Sites', labels = "geometry") +
+  tm_text("lmap_site", size = 0.4, xmod = 1.2, ymod = -0.3)
+
+tmap_save(m, map.filename) 
+```
+
+```{r}
+# CLOSER VERSION
+map_data = combined_filtered #mass_data #
+var = "flew_prop"
+main.title = "Prop Flew Across Latitude"
+label.title = "Prop Flew"
+map.filename = "propflew_map2.png"
+
+
+m1 <- tm_shape(FL_transformed) +
+  tm_fill(col="darkolivegreen4", alpha= 0.3) +
+  tm_polygons("State") +
+#    tm_text("State", col= "black", xmod = 1, ymod = 3, fontface="bold")
+  tm_view(set.bounds = c(1, 29, 1, 85)) +
+tm_shape(map_data) +
+  tm_graticules(n.x = 4, n.y = 7, labels.format = list(digits=1)) +
+  tm_fill(var, title = label.title) + #, palette="Oranges" | legend.hist = TRUE
+  tm_layout(#main.title = main.title,
+            #main.title.position = c("center", "top"),
+            legend.hist.size = 2,
+            legend.position = c("left", "center"),
+            legend.height = 0.8,
+            compass.type = "4star",
+            asp = 1, # legend.inside vs. outside
+            inner.margins=c(0.06, 0.01, 0, 0.13)) +
+      tm_compass(show.labels = 1, 
+             cardinal.directions = c("N", "E", "S", "W"),
+             position = c(0.75, 0.76), 
+             size = 4, 
+             color.light= "grey90",
+             color.dark= "grey30") +
+  tm_scale_bar(position = c("left", "bottom")) +
+tm_shape(dispersal_filtered) +
+  tm_dots(alpha = 0.7, title = 'Collection Sites', labels = "geometry") +
+  tm_text("lmap_site", size = 0.4, xmod = 1.27, ymod = -0.1)
+
+tmap_save(m1, map.filename, width=1260, height=1080, asp=0) # 1920, 1080
+```
+
+```{r}
+# KEYS MAP
+zmap.filename = "keys_propflewall_map.png"
+keys_bb <- st_bbox(combined_filtered %>% filter(counties %in% c("North Key Largo", "Key Largo", "Plantation Key")) )
+
+m20 <- tm_shape(combined_filtered, bbox=keys_bb) + # only place where it would matter is in the keys.
+    tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "azure2") +
+    tm_fill(var, labels = NULL, legend.show = FALSE) +
+    tm_scale_bar(position = c("right", "bottom")) +
+tm_shape(dispersal_filtered) +
+  tm_dots(alpha = 0.9, title = 'Collection Sites', labels = "geometry") +
+  tm_text("zmap_site", size = 0.4, xmod = -1.7, ymod = 0.15)
+
+m20
+tmap_save(m20, zmap.filename )
+```
+
+
+```{r}
+# COMBINATION OF MAPS 
+m_full <- tmap_arrange(m1, m20, ncol = 2, widths= c(0.65, 0.35))
+tmap_save(m_full, map.filename, width=1920, height=1080, asp=0)
+```
+
+
+Extra sources and notes:
+
+?tmap_icons()
+Specifies icons from a png images, which can be used as markers in thematic maps. The function marker_icon is the specification of the default marker.
+
+
+grids: https://geocompr.github.io/post/2019/tmap-grid/
+
+tm_fill
+tm_layout
+tm_legend
+tmap_arrange: https://rdrr.io/cran/tmap/man/tmap_arrange.html
+tm_shape and bbox: https://www.jla-data.net/eng/adjusting-bounding-box-of-a-tmap-map/ | https://rdrr.io/cran/tmaptools/man/bb.html
+
+
+more mapping layouts: https://mran.revolutionanalytics.com/snapshot/2015-07-13/web/packages/tmap/vignettes/tmap-nutshell.html
+
+creating beautiful maps: http://zevross.com/blog/2018/10/02/creating-beautiful-demographic-maps-in-r-with-the-tidycensus-and-tmap-packages/
+
+tmap_save
+
+title? Florida Keys National Marine Sanctuary
