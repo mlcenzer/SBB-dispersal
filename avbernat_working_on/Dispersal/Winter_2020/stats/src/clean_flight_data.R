@@ -47,44 +47,11 @@ read_flight_data<-function(filename){
     data_tested <- data_all[data_all$tested == "yes",]
     data_tested <- center_data(data_tested)
     
-    ############ 4. ) Curb False Distances and Speeds For No-Flyers ##################
-    
-    # What qualifies as "false" distance (less than 15 meters) and, thus, "false" speed?:
-    # When the minute_duration < 55 min (Have seen up to 22 minute delay in setting
-    # up bugs on the flight mill), and flight response of a bug is "N", and the 
-    # distance < 15 meters then it is safe to assume that a false distance and speed
-    # was recorded.
-    # What to do? Set the false distances and speeds to 0, and the minute_duration to 30 minutes. 
-    
-    # First, check to see which false distances and speeds remain and then consult the recordings. 
-    # if all the peaks are false peaks, then change the < 15 for data_all$distance[row] < 15 to
-    # data_all$distance[row] < [the max number]. Why might the recordings get such large false
-    # readings? Mostly due to voltage noise. - Chambers with the most noise could be approximated
-    # based on those with large distances.
-    
-    # Focused on bugs 0 to 60 minutes because it may take up to 25 minutes of preparation between bugs.
-    # On the other hand, 60+ minutes indicate another sort of recording mistake.
-    
-    nofly_bugs <- data_tested %>%
-      select(filename, minute_duration, flew_b, flew, distance, time_start, time_end) %>%
-      filter(minute_duration >= 0 & minute_duration < 60) %>%
-      filter(flew_b == 0) %>%
-      filter(distance > 15)
-    
-    for(row in 1:nrow(data_tested)) {
-      if(data_tested$minute_duration[row] < 55 && data_tested$flew[row] == "N" && data_tested$distance[row] <= max(nofly_bugs$distance)) {
-        data_tested$distance[row] = 0 
-        data_tested$average_speed[row] = 0
-        data_tested$max_speed[row] = 0
-        data_tested$total_duration[row] = 1740 # this doesn't work
-      }
-    }
-    
-    ############ 5. ) Re-Center Column Values ##################
+    ############ 4. ) Re-Center Column Values ##################
     
     data_tested <- center_data(data_tested)
     
-    ############ 6. ) Fix Up Trial Type - some bugs may have been tested twice in the same trial ##################
+    ############ 5. ) Fix Up Trial Type - some bugs may have been tested twice in the same trial ##################
 
     cols_vector <- c("ID", "trial_type", "filename")
     d <- data_all[,cols_vector] 

@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-setwd("~/Desktop/Rstats-winter2020/")
+setwd("/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats")
 
 library(lme4)
 library(dplyr)
@@ -23,12 +23,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, echo=FALSE, message=FALSE}
-rm(list=ls())
 output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
 source("src/clean_flight_data.R") # Script that loads and cleans up the data
 source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
 source("src/center_flight_data.R")
-source("get_warnings.R")
+#source("get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -144,6 +143,26 @@ kable(table2) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
   add_header_above(c(" ", " ", "Coordinates" = 2, "Sample Sizes" = 2 )) %>% 
   add_header_above(c("Tested Bugs By Population and Site" = 6 ))
+```
+
+```{r echo=FALSE}
+# adding host plant
+host_plants = c("C. corindum", "C. corindum", "K. elegans", "K. elegans",
+                "C. corindum", "C. corindum", "C. corindum", "K. elegans",
+                "K. elegans", "K. elegans", "K. elegans", "K. elegans", 
+                "K. elegans", "K. elegans", "K. elegans", "K. elegans")
+
+table2b = cbind(host_plants, table2)
+colnames(table2b)[1] <- c("host plant")
+table2b <- table2b[order(-table2b$latitude),]
+write.table(table2b, "tables/table1.csv", sep=",", row.names=FALSE)
+
+rownames(table2b) <- NULL
+kable(table2b) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  add_header_above(c(" ", " ", " ", "Coordinates" = 2, "Sample Sizes" = 2 )) %>% 
+  add_header_above(c("Tested Bugs By Host Plant, Population, and Site" = 7 ))
+
 ```
 
 ## Data Stats

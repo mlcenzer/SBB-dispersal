@@ -11,12 +11,11 @@ from datetime import datetime
 # Output: one csv file
 #************************************************************************************************************
 
-#trial_data = r"/Users/anastasiabernat/Desktop/all_flight_trials-processed-April21.2020.csv"
-
-main_path = r"/Users/anastasiabernat/Desktop/flight-python-scripts-winter2020/data/"
+#main_path = r"/Users/anastasiabernat/Desktop/flight-python-scripts-winter2020/data/"
+main_path = r"/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/windaq_processing/data/"
 
 over_night_data = main_path + "over_night_flyers-March30.2020.csv"
-trial_data = main_path + "all_flight_trials-processed-Aug6.2020.csv"
+trial_data = main_path + "all_flight_trials-processed-Dec10.2020.csv"
 
 file_cut_off = {}
 
@@ -47,7 +46,7 @@ with open(trial_data, "r") as data_file:
             continue
         if row['NOTES'].startswith('BUG: short') or row['NOTES'].startswith('solves'): # exceptions
             continue
-        ID = round(float(row['\ufeffID'])) # int
+        ID = round(float(row['ID'])) # int
         set_num = row['set_number'].lstrip('0') # str
         channel_letter = row['chamber'].split("-")[0] # str
         individual_datetime_str = row['time_end']
@@ -62,7 +61,7 @@ with open(trial_data, "r") as data_file:
         full_data.append(row)
 
 #outpath = r"/Users/anastasiabernat/Desktop/all_flight_trials-time-processed-April21.2020.csv"
-outpath = main_path + "all_flight_trials-time-processed-Aug6.2020.csv"
+outpath = main_path + "all_flight_trials-time-processed-Dec10.2020.csv"
 
 with open(outpath, "w") as output_file:
     writer = csv.DictWriter(output_file, fieldnames = row.keys())

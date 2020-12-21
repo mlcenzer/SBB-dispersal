@@ -2,7 +2,7 @@
 # Function that centers the data for which ever flight data subset you give it
 
 center_data <- function(d, is_not_binded = TRUE) {
-  
+
   # Distance From Sympatric Zone
   d$lat_c<-d$latitude-mean(d$latitude)
   d$sym_dist<-abs(d$latitude-25.49197)
@@ -11,7 +11,7 @@ center_data <- function(d, is_not_binded = TRUE) {
   # Flight Duration (minutes) 
   if (is_not_binded) {
     d$minute_duration <- 0
-    d$minute_duration <- as.integer(d$total_duration / 60)
+    d$minute_duration <- as.integer(d$recording_duration / 60)
     d$minute_duration_c <- d$minute_duration - mean(d$minute_duration)
   }
   

@@ -9,7 +9,7 @@ output:
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-setwd("~/Desktop/Rstats-winter2020/")
+setwd("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/")
 
 library(lme4)
 library(rethinking)
@@ -53,7 +53,7 @@ output_col = FALSE # Recommend changing this to TRUE if working in Base R or RSt
 source("src/clean_flight_data.R") # Script that loads and cleans up the data
 source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
 source("src/center_flight_data.R")
-source("get_warnings.R")
+source("src/get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -72,15 +72,14 @@ low_speeds <- data_flew_all %>%
 high_speeds <- data_flew_all %>%
   filter(average_speed >0.65)
 
-low_speeds$flight_type# have 7 bugs with average_speed = 0 but were marked as bursters (this could be just something very short (second burst) - not enough to grant a calculation) - I decided to remove them. But one bug was continuous and had 0 distance and 0 speeds - that was bug 196 T2 set011-3-03-2020-A3_196.txt
+low_speeds$flight_type# have 15 bugs with average_speed = 0 but were marked as bursters (this could be just something very short (second burst) - not enough to grant a calculation) - I decided to remove them. But one bug was continuous and had 0 distance and 0 speeds - that was bug 196 T2 set011-3-03-2020-A3_196.txt
 high_speeds$flight_type # 3 bugs - also bursters. Could also be short explosive bursts but not true to the biology of these bugs (more like us blowing on them).
 ```
 
 ```{r}
-### Remove outliers
+### Remove those have 0 m/s speeds
 data_flew <- data_flew_all %>%
   filter(average_speed > 0.05) %>%
-  filter(average_speed < 0.65)
   
 data_flew <- center_data(data_flew)
 ```
