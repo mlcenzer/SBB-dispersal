@@ -1,0 +1,283 @@
+
+####################################################################
+######Flight yes-no stats
+rm(list=ls())
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/Dispersal/Winter_2020/stats") ####MLC: changed to my working directory
+
+
+##load libraries
+
+library(lme4)
+library(dplyr)
+library(ggplotify)
+library(gridExtra)
+library(ggformula)
+library(tidyselect)
+library(zoo)
+library(binom)
+
+##source scripts
+
+output_col = TRUE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
+source("src/clean_flight_data.R") # Script that loads and cleans up the data
+source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
+source("src/center_flight_data.R")
+source("src/get_warnings.R")
+
+##read in and clean up data
+
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+
+d <- data_tested %>%
+   group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, 
+            beak, thorax, wing, body, w_morph, morph_notes, tested,
+            host_c, sex_c, w_morph_c, lat_c, sym_dist, sym_dist_s, total_eggs_c, 
+            beak_c, thorax_c, thorax_s, body_c, wing_c, wing2body, wing2body_c, wing2body_s) %>%
+   summarise_all(funs(list(na.omit(.))))
+
+d$num_flew <- 0
+d$num_notflew <- 0
+d$average_mass <- 0
+d$avg_days <- 0
+
+for(row in 1:length(d$flew_b)){
+  
+  n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails
+  d$num_flew[[row]] <- n_flew 
+  
+  n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
+  d$num_notflew[[row]] <- n_notflew
+  
+  avg_mass <- mean(d$mass[[row]])
+  d$average_mass[[row]] <- avg_mass
+  
+ avg_days <- mean(d$days_from_start[[row]]) ##MC: use average days as covariate
+  d$avg_days[[row]] <- avg_days
+
+}
+
+d_all <- select(d, -filename, -channel_letter, -set_number) ##MC: changed the name here to avoid re-loading all data to generate male and female only centered datasets
+
+##added 3 additional variables:
+#average days from start; this deals with the problem of individuals who were only tested early, who will have a low value here, and with any chance individuals who happened to get in early or late in both trials.
+d_all$avg_days_c<-d_all$avg_days-mean(d_all$avg_days, na.rm=TRUE)
+
+##this transformation gets average_mass to act normal and not give haywire effect estimates
+d_all$average_mass_trans<-log(sqrt(d_all$average_mass))-mean(log(sqrt(d_all$average_mass)), na.rm=TRUE)
+
+##this transformation gets wing2body ratio to act normal and not give haywire effect estimates; note that this has an inverse relationship with wing2body ratio itself, so effect estimate directions need to be flipped for interpretation.
+
+d_all$wing2body_trans<-log(sqrt(0.85-d_all$wing2body))-mean(log(sqrt(0.85-d_all$wing2body)), na.rm=TRUE)
+
+d <- center_data(d_all, is_not_binded = FALSE)
+
+
+
+##################### Females only
+data_fem <- d_all[d_all$sex=="F",]
+
+
+
+#######################Males only
+data_male <- d_all[d_all$sex=="M",]
+data_male <- center_data(data_male, is_not_binded = FALSE)
+
+##plot-specific grouping variables
+d$mass_block<-round(d$average_mass/0.005)*0.005
+d$f_prob<-d$num_flew/(d$num_flew+d$num_notflew)
+d$wing2body_block<-round(d$wing2body, digits=2)
+d$days_block<-round(d$avg_days, digits=0)
+
+
+####sex vs. flight prob
+data_temp <- aggregate(f_prob~sex, data=d, FUN=mean)
+data_temp$trials <-c(sum(d$num_flew[d$sex=="F"]+d$num_notflew[d$sex=="F"]), sum(d$num_flew[d$sex=="M"]+d$num_notflew[d$sex=="M"]))
+#data_temp$CI <- aggregate(f_prob~sex, data=d, FUN=function(x) qnorm(0.975)*sd(x)/length(x))$f_prob Oops, that's for normal data, not binomial data
+
+#calculate binomial confidence interval
+data_temp$successes <- c(sum(d$num_flew[d$sex=="F"]), sum(d$num_flew[d$sex=="M"]))
+data_temp$CI<-binom.confint(data_temp$successes, data_temp$trials, methods="exact")
+
+#Print to file
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/plots")
+
+pdf(file="flight_prob_vs_sex.pdf", width=6.5, height=6.5)
+
+#plot beak length residuals
+par(mai=c(1, 1, .2, .2), ps=22)
+
+plot(data_temp$CI$mean~c(1,2), xaxt='n', ylab="Flight probability", xlab="Sex", ylim=c(0,1), xlim=c(0.5,2.5), cex=3, pch=19, col=c("red", "blue"))
+
+lines(x=xy.coords(x=c(1,1), y=c(data_temp$CI$lower[1], data_temp$CI$upper[1])), lwd=3, col="red")
+lines(x=xy.coords(x=c(2,2), y=c(data_temp$CI$lower[2], data_temp$CI$upper[2])), lwd=3, col="blue")
+
+axis(side=1, at=c(1,2), labels=c("female", "male"))
+
+mtext(text=c("N=120", "N=213"), at=c(1,2), side=1, line=-1.2)
+
+dev.off()
+
+
+
+#####Plot wing2body vs. f_prob in males, then add females
+
+d$wing2body_block<-round(d$wing2body, digits=2)
+data_temp<-aggregate(f_prob~wing2body_block, data=d[d$sex=="M",], FUN=mean)
+data_temp$n<-aggregate(f_prob~wing2body_block, data=d[d$sex=="M",], FUN=length)$f_prob
+###I would like to add a model prediction line here
+
+
+#Print to file
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/plots")
+
+pdf(file="flight_prob_vs_wing2body_males.pdf", width=7, height=7)
+
+#plot beak length residuals
+par(mai=c(1, 1, .2, .2), ps=22)
+
+plot(data_temp$f_prob~data_temp$wing2body_block, ylab="Flight probability", xlab="wing-to-body ratio", pch=19, col="blue", cex=3, ylim=c(0,1))
+##Here we can see that as wing2body ratio increases, flight probability increases in males.
+dev.off()
+
+###add females
+data_temp<-aggregate(f_prob~sex*wing2body_block, data=d, FUN=mean)
+data_temp$n<-aggregate(f_prob~sex*wing2body_block, data=d, FUN=length)$f_prob
+###I would like to add a model prediction line here
+
+
+#Print to file
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/plots")
+
+pdf(file="flight_prob_vs_wing2body_both_sexes.pdf", width=7, height=7)
+
+#plot beak length residuals
+par(mai=c(1, 1, .2, .2), ps=22)
+
+plot(data_temp$f_prob~data_temp$wing2body_block, ylab="Flight probability", xlab="wing-to-body ratio", pch=19, col=c("red","blue")[as.factor(data_temp$sex)], cex=3, ylim=c(0,1))
+##Here we can see that as wing2body ratio increases, flight probability increases in males.
+
+legend(0.64, 1, legend=c("male", "female"), pch=19, col=c("blue", "red"), y.intersp=1.5, pt.cex=2)
+
+dev.off()
+
+
+
+
+
+#####Plot mass vs. f_prob in females, then add males
+d$mass_block<-round(d$average_mass/0.005)*0.005
+data_temp<-aggregate(f_prob~mass_block, data=d[d$sex=="F",], FUN=mean)
+data_temp$n<-aggregate(f_prob~mass_block, data=d[d$sex=="F",], FUN=length)$f_prob
+###I would like to add a model prediction line here
+
+
+#Print to file
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/plots")
+
+pdf(file="flight_prob_vs_mass_females.pdf", width=7, height=7)
+
+#plot beak length residuals
+par(mai=c(1, 1, .2, .2), ps=22)
+
+plot(data_temp$f_prob~data_temp$mass_block, ylab="Flight probability", xlab="Mass (mg)", pch=19, col="red", cex=3, ylim=c(0,1), xlim=c(0.02, 0.18))
+
+dev.off()
+
+###add males
+data_temp<-aggregate(f_prob~sex*mass_block, data=d, FUN=mean)
+data_temp$n<-aggregate(f_prob~sex*mass_block, data=d, FUN=length)$f_prob
+###I would like to add a model prediction lines here
+
+
+#Print to file
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/plots")
+
+pdf(file="flight_prob_vs_mass_both_sexes.pdf", width=7, height=7)
+
+#plot beak length residuals
+par(mai=c(1, 1, .2, .2), ps=22)
+
+plot(data_temp$f_prob~data_temp$mass_block, ylab="Flight probability", xlab="Mass (mg)", pch=19, col=c("red","blue")[as.factor(data_temp$sex)], cex=3, ylim=c(0,1), xlim=c(0.02, 0.18))
+##Here we can see that as wing2body ratio increases, flight probability increases in males.
+
+legend(0.14, 1, legend=c("male", "female"), pch=19, col=c("blue", "red"), y.intersp=1.5, pt.cex=2)
+
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##host by sex
+data_temp<-aggregate(f_prob~sex*host_plant, data=d, FUN=mean)
+d$trials<-d$num_flew+d$num_notflew
+
+data_temp$trials <-aggregate(trials~sex*host_plant, data=d, FUN=sum)$trials
+
+#calculate binomial confidence interval
+data_temp$successes <- aggregate(num_flew~sex*host_plant, data=d, FUN=sum)$num_flew
+data_temp$CI<-binom.confint(data_temp$successes, data_temp$trials, methods="exact")
+
+#Print to file
+setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/plots")
+
+pdf(file="flight_prob_vs_sex_by_host.pdf", width=6.5, height=6.5)
+
+#plot beak length residuals
+par(mai=c(1, 1, .2, .2), ps=22)
+
+plot(data_temp$CI$mean~c(1,1.5,2, 2.5), xaxt='n', ylab="Flight probability", xlab="Sex", ylim=c(0,1), xlim=c(0.5,3), cex=3, pch=c(19,2), col=c("red", "blue"))
+
+lines(x=xy.coords(x=c(1,1), y=c(data_temp$CI$lower[1], data_temp$CI$upper[1])), lwd=3, col="red")
+lines(x=xy.coords(x=c(2,2), y=c(data_temp$CI$lower[2], data_temp$CI$upper[2])), lwd=3, col="blue")
+
+axis(side=1, at=c(1,2), labels=c("female", "male"))
+
+mtext(text=c("N=120", "N=213"), at=c(1,2), side=1, line=-1.2)
+
+dev.off()
+
+
+
+
+
+
+
+##average days from start by sex
+data_temp<-aggregate(f_prob~sex*days_block, data=d, FUN=mean)
+data_temp$n<-aggregate(f_prob~sex*days_block, data=d, FUN=length)$f_prob
+plot(data_temp$f_prob~data_temp$days_block, pch=c(2,19)[as.factor(data_temp$sex)], ylab="Flight probability", xlab="Days from start")
+##Here we can see that as the average days from start increases, flight probability increases, but that the effect is really only visible in females. This does not mean days from start didn't impact males - only that our experimental design successfully stopped that from being confounding (eg, males may have been less likely to die, or had less biased mortality by host).
+
+
+##mass by host
+data_temp<-aggregate(f_prob~host_c*mass_block, data=d, FUN=mean)
+data_temp$n<-aggregate(f_prob~host_c*mass_block, data=d, FUN=length)$f_prob
+plot(data_temp$f_prob~data_temp$mass_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], ylab="Flight probability", xlab="Mass")
+##Here, we can see that the effect of mass is clear on GRT (red) but weak on BV (blue)
+
+
+##wing2body by host
+data_temp<-aggregate(f_prob~host_c*wing2body_block, data=d, FUN=mean)
+data_temp$n<-aggregate(f_prob~host_c*wing2body_block, data=d, FUN=length)$f_prob
+plot(data_temp$f_prob~data_temp$wing2body_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], , ylab="Flight probability", xlab="wing-to-body ratio")
+##Here, we can see that the positive effect of wing2body ratio is clear on GRT (red) and on BV (blue)
+
+
+##average days from start by host
+data_temp<-aggregate(f_prob~host_c*days_block, data=d, FUN=mean)
+data_temp$n<-aggregate(f_prob~host_c*days_block, data=d, FUN=length)$f_prob
+plot(data_temp$f_prob~data_temp$days_block, pch=19, col=c(rgb(1,0.1,0,0.8),rgb(0,1,0.8,0.8))[as.factor(data_temp$host_c)], , ylab="Flight probability", xlab="Days from start")
+##Here we can see no clear impact of days from start when separated by host

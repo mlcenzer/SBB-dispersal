@@ -281,7 +281,7 @@ data_flew$mass_trans<-log(data_flew$mass)-mean(log(data_flew$mass), na.rm=TRUE)
 
 data_flew$speed_trans<-log(data_flew$average_speed)-mean(log(data_flew$average_speed), na.rm=TRUE)
 
-data_flew$max_speed_trans <- 
+
 #######do flight types differ?
 data_flew$flight_type <- relevel(data_flew$flight_type, ref="B")
 
