@@ -1,7 +1,7 @@
 ---
 title: 'Data Visualizations: flight_yes_no'
 author: "Anastasia Bernat"
-date: "5/4/2020"
+date: "5/4/2020-1/6/2021"
 output:
   pdf_document: default
   html_document: default
@@ -78,7 +78,7 @@ p2 <- as.grob(expression(
 grid.arrange(p1,p2, ncol=2)
 ```
 
-### Start Time of Testing
+### Testing Start Time
 
 How did/does the time of day in which a bug was tested impact how long the bug flew for/whether the bug flew or not? When all bugs were considered, the effect of start time was marginal. When only bugs that flew were considered, the effect of start time was significant. From this we see that time was a limitation on our experimental set-up.
 
@@ -109,6 +109,96 @@ eq <- paste0("portion_flew = ", cf[1],
              ifelse(sign(cf[2])==1, " + ", " - "), abs(cf[2]), "*time_start ")
 plot(x,y, xlab= "Starting Time", ylab="Duration (hr)")
 abline(coef(fit)[1:2], col="blue") 
+```
+
+```{r fig.height=2.4, fig.width=2.7}
+c1=1.4
+c2=1.2
+c3=1.2
+
+data_flew = data_tested %>%
+  filter(flew_b==1)
+d = data_flew
+data_flew$start_time = chron(times = data_flew$time_start)
+data_flew$recording_dur_hr = data_flew$recording_duration / (60*60)
+
+x=data_flew$start_time
+y=data_flew$recording_dur_hr
+
+m <- lm(recording_dur_hr ~ start_time, data=data_flew)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=data_flew)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("red", "orange"))
+plot(data_flew$recording_dur_hr ~ data_flew$start_time, 
+     pch=16,
+     xlab = "Trial Start Time (HR:MIN)",
+     ylab= "Recording Duration (HR)", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     ylim=c(0,14),
+     #col = alpha("black", 0.7),
+     bty="n") 
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(chron(times = "14:15:15"), 4, pval, cex=c3)
+#title("Time of Day Tested", adj = 0.05, line = 0, cex.main=c1)
+#title("(a)", adj = 0.05, line = 0, cex.main=1.4)
+
+summary(lm(recording_dur_hr ~ start_time, data=data_flew))
+
+```
+
+### Days from Experiment Start
+
+```{r}
+cat_data_days <- categorize_data(data_tested, all_of("days_from_start"), all_of("flew_b"), 1, 0, 1)
+```
+
+```{r fig.height=2.4, fig.width=2.7}
+x=cat_data_days$days_from_start
+y=cat_data_days$sample_prop
+
+m <- lm(sample_prop ~ days_from_start, data=cat_data_days)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=cat_data_days)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("red", "orange"))
+plot(cat_data_days$sample_prop ~ cat_data_days$days_from_start, 
+     pch=16,
+     xlab = "Day From Start",
+     ylab= "Flight Probability", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     xlim=c(0,25),
+     ylim=c(0.4, 0.8),
+     #col = alpha("black", 0.7),
+     bty="n") 
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(15, 0.65, pval, cex=c3)
+#title("Age", adj = 0.05, line = 0, cex.main=c1)
+#title("(a)", adj = 0.05, line = 0, cex.main=1.4)
+
+summary(glm(flew_b ~ days_from_start_c, data=data_tested, family="binomial"))
+summary(lm(sample_prop ~ days_from_start, data=cat_data_days))
+
 ```
 
 ## Biological Features

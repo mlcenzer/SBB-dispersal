@@ -23,7 +23,9 @@ read_flight_data<-function(filename){
     data_all$flew_b[data_all$flew=="Y"]<-1
     
     # Host
-    data_all$host_c[data_all$host_plant=="K.elegans"]<-1
+    data_all$host_temp[data_all$host_plant=="K.elegans"]<- "K. elegans"
+    data_all$host_temp[data_all$host_plant=="C. corindum"]<- "C. corindum"
+    data_all$host_c[data_all$host_temp=="K. elegans"]<- 1
     data_all$host_c[data_all$host_plant=="C. corindum"]<- -1
     
     # Sex

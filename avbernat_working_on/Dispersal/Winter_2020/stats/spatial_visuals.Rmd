@@ -87,7 +87,7 @@ data_all
 filtered_data <- select(data_all, ID, filename, chamber, set_number, average_speed, # recently added flew_b
                         total_flight_time, distance, shortest_flying_bout, 
                         longest_flying_bout, max_speed,
-                        sex, population, site, host_plant, flew, flew_b, flight_type, mass, eggs_b, 
+                        sex, population, site, host_plant, host_temp, flew, flew_b, flight_type, mass, eggs_b, 
                         total_eggs, beak, thorax, wing, body, sym_dist, tested, w_morph,
                         lat = latitude, 
                         lon = longitude)
@@ -221,7 +221,9 @@ poly_valid_report2
 
 county_valid_report2 <- st_is_valid(df_final_counties)
 county_valid_report2
+```
 
+```{r}
 tmap_mode("view")
 tmap_mode("plot")
 
@@ -230,24 +232,47 @@ tm_shape(df_final_pop) +
   tm_basemap("Hydda.Base")
 
 # test
-tm_shape(FL_transformed) +
+colors = c("lightblue", "darkolivegreen3")
+#"BuGn"
+tm_shape(FL_transformed, bbox=big_bb) +
   tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey") +
   tm_fill(col="white", alpha= 0.3) +
   tm_polygons("State") +
   tm_scale_bar(position = c("left", "bottom")) +
+tm_shape(combined_filtered) +
+  tm_polygons("host_temp", tm_legend="Host Plant", palette=colors) +
+  tm_basemap("Hydda.Base") +
+tm_shape(dispersal_main) +
+  tm_dots(alpha = 0.8, size=0.2, shape=2, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) 
+#+ tm_layout(bg.color = "skyblue", inner.margins = c(0, .02, .02, .02))
+
+dispersal_main = dispersal_filtered %>%
+  filter(host_temp=="K. elegans")
+
+dispersal_keys = dispersal_filtered %>%
+  filter(host_temp=="C. corindum")
+
 tm_shape(df_final_counties) +
   #tm_polygons("counties") +
   tm_fill(col="grey") +
   tm_basemap("Hydda.Base")
 
 tm_shape(combined_filtered, bbox=keys_bb) + # only place where it would matter is in the keys.
-    tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "azure2") +
-    tm_polygons("counties", labels = NULL, legend.show = FALSE) +
+    #tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey") +
+    tm_polygons("host_temp", labels = NULL, legend.show = FALSE, palette=colors) +
     #tm_fill(col="cornflowerblue")
     tm_scale_bar(position = c("right", "bottom")) +
-tm_shape(dispersal_filtered) +
-  tm_dots(alpha = 0.9, title = 'Collection Sites', labels = "geometry") +
-  tm_text("zmap_site", size = 0.4, xmod = -1.7, ymod = 0.15)
+tm_shape(dispersal_keys) +
+  tm_dots(alpha = 0.9, size= 0.2, shape=2, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) 
+#+ tm_text("zmap_site", size = 0.4, xmod = -1.7, ymod = 0.15)
+
+```
+
+```{r}
+big_bb <- st_bbox(FL_transformed)
+big_bb[2] = big_bb[2]-100000
+keys_bb
+?tm_dots
 ```
 
 (xii) Combine the comprehensive sf dataframe with the sf dataframe mapping the populations to the polygon shapes.
