@@ -145,7 +145,8 @@ plot(data_flew$recording_dur_hr ~ data_flew$start_time,
      cex.axis=c2,
      ylim=c(0,14),
      #col = alpha("black", 0.7),
-     bty="n") 
+     #bty="n"
+     ) 
 abline(m, lty=2)
 shade(mu_ci, lim = prd$x)
 pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
@@ -188,7 +189,8 @@ plot(cat_data_days$sample_prop ~ cat_data_days$days_from_start,
      xlim=c(0,25),
      ylim=c(0.4, 0.8),
      #col = alpha("black", 0.7),
-     bty="n") 
+     #bty="n"
+     ) 
 abline(m, lty=2)
 shade(mu_ci, lim = prd$x)
 pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
@@ -338,6 +340,47 @@ pf2 <- as.grob(expression(
 pf3 <- as.grob(expression(
   plot(data_fem$sym_dist,data_fem$total_eggs, xlab="total eggs", ylab="distance from sympatric zone")))
 grid.arrange(pf1,pf2,pf3, ncol=3)
+```
+
+```{r fig.height=2.4, fig.width=2.7}
+# remove missing mass 
+data_fem_temp = data_fem %>%
+  filter(!is.na(mass))
+
+x=data_fem_temp$mass
+y=data_fem_temp$total_eggs
+
+m <- lm(total_eggs ~ mass, data=data_fem_temp)
+x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+m <- lm(y ~ x, data=data_fem_temp)
+prd <- data.frame(x=x.seq) # newdata
+err <- predict(m, newdata = prd, se.fit = TRUE)
+prd$lci <- err$fit - 1.96 * err$se.fit
+prd$fit <- err$fit
+prd$uci <- err$fit + 1.96 * err$se.fit
+mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+
+colfunc <- colorRampPalette(c("red", "orange"))
+plot(data_fem_temp$total_eggs ~ data_fem_temp$mass, 
+     pch=16,
+     xlab = "mass (g)",
+     ylab= "total eggs", 
+     cex=c2,
+     cex.lab=c3,
+     cex.axis=c2,
+     #ylim=c(0,14),
+     #col = alpha("black", 0.7),
+     #bty="n"
+     ) 
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],10), "*")
+text(0.16, 150, pval, cex=c3)
+#title("Time of Day Tested", adj = 0.05, line = 0, cex.main=c1)
+#title("(a)", adj = 0.05, line = 0, cex.main=1.4)
+
+summary(lm(total_eggs ~ mass, data=data_fem_temp))
+
 ```
 
 ```{r}

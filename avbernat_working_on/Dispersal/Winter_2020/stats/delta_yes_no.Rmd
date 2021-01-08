@@ -162,7 +162,28 @@ d <- d[-rows_remove, ]
 ```
 
 ```{r}
+# for flight case building
+d$no_response_b = NA
+d$no_response_b[d$num_flew == 0] = 0
+d$no_response_b[d$num_flew == 2] = 2
+
+d$flight_case = NA
+d$flight_case = d$num_flew
+d$flight_case[d$flew_diff == -1] = -1
+d$flight_case = as.factor(d$flight_case)
+d$flight_case
+```
+
+```{r}
 head(d)
+```
+
+```{r fig.height=2.4, fig.width=2.7}
+counts <- table(data_tested$flew_b, data_tested$trial_type)
+counts <- counts[1:2,2:3]
+barplot(counts, #main="Flight Distribution by Trial",
+  xlab="Trial", col=c("lightblue","darkgoldenrod2"),
+  legend = c("no flew", "yes flew"), ylim=c(0,250), beside=TRUE)
 ```
 
 Below I used the multinom function from the nnet package to estimate a multinomial logistic regression model. There are other functions in other R packages capable of multinomial regression. I chose the multinom function because it does not require the data to be reshaped (as the mlogit package does) and to mirror the example code found in Hilbe’s Logistic Regression Models.
@@ -186,7 +207,7 @@ df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
 **Null model:**
 
 ```{r}
-null <- multinom(flew_diff ~ 1, data = df) 
+null <- multinom(flew_diff ~ 1, data = df)
 ```
 
 **Mass_diff model:**
@@ -282,13 +303,6 @@ You can calculate these predicted probabilities for each of our outcome levels u
 ```{r}
 head(pp <- fitted(model))
 ```
-```{r}
-df$no_response_b = NA
-df$no_response_b[df$num_flew == 0] = 0
-df$no_response_b[df$num_flew == 2] = 2
-as.factor(df$no_response_b)
-```
-
 
 ```{r}
 plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="b", ylab="Flight Case Probability", xlab="Changes in Mass From T1 to T2 (g)", pch=c(2,3)[as.factor(df$no_response_b)], cex=0.45) # no flight_diff | 0 is triangle and 2 is cross
@@ -309,13 +323,6 @@ legend(-0.045, 0.7,
 Summary: Those who gain mass (at least more than 0.035 g) are more likely to fly in T1 but not T2 and less likely to have no change in flight response. Those who loose mass are more likely to fly in T2 but not T1 (but need to loose significant mass - more than 0.03 (g)).
 
 **Let's see what the graph looks like when split the no flight diff category into 0 flights and 2 flights**
-
-```{r}
-df$flight_case = df$num_flew
-df$flight_case[df$flew_diff == -1] = -1
-df$flight_case = as.factor(df$flight_case)
-df$flight_case 
-```
 
 ```{r echo=FALSE}
 # key = response in T2 - response in T1
@@ -361,34 +368,33 @@ table
 ```{r}
 anova(null, model, test="Chisq") # adding mass_diff improves fit 
 ```
-
 The multinomial (ML) prediction equations are:
 
-<div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_0}) = -0.77 + 69.21 x$ 
+```{r}
+# -1 / 1 | Flew in T1, not T2
+I = (table[1,1] - table[2,1])
+M = (table[1,2] - table[2,2])
+EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), " Mass Change     Flew in T1, not T2" )
 
-$\log(\hat{\pi_{1}}/\hat{\pi_0}) = -2.13 + 6.70 x$
+# 2 / -1 | Flew in both, not T1
+I = (table[3,1] - table[1,1])
+M = (table[3,2] - table[1,2])
+EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", round(M,2), " Mass Change     Flew in both, not T1" )
 
-$\log(\hat{\pi_2}/\hat{\pi_0}) = 0.42 + 25.32 x$</div><br/>
+# 2 / 1 | Flew in both, not T2
+I = (table[3,1] - table[2,1])
+M = (table[3,2] - table[2,2])
+EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", round(M,2),  " Mass Change     Flew in both, not T2")
 
-The estimated log odds that the response is -1 (Flew in T1, not T2) rather than 1 (flew in T2, not T1) equals:
-
-<div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = (-0.77 - (-2.13)) + (69.21 - (6.70)) x = 1.36 + 62.51 x$ </div><br/>
-
-The estimated log odds that the response is 2 (Flew in both trials) rather than -1 (flew in T1, not T2) equals:
-
-<div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = (0.42 - (-0.77)) + (25.32 - (69.21)) x = 1.19 - 43.89 x$ </div><br/>
-
-The estimated log odds that the response is 2 (Flew in both trials) rather than 1 (flew in T2, not T1) equals:
-
-<div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = (0.42 - (-2.13)) + (25.32 - (6.70)) x = 2.55 - 18.62 x$
-
-where x = mass_diff </div><br/>
-
+EQ1
+EQ2
+EQ3
+```
 
 ```{r echo=FALSE}
 eq1 = "Flew in T1 only rather than T2 only = 1.36 + 62.51 Mass Change"
-eq2 = "Flew in both rather than T1 only = 1.19 - 43.89 Mass Change"
-eq3 = "Flew in both rather than T2 only = 2.55 - 18.62 Mass Change"
+eq2 = "Flew in both rather than T1 only = 1.19 - 43.88 Mass Change"
+eq3 = "Flew in both rather than T2 only = 2.55 + 18.63 Mass Change"
 
 t = cbind(n_trials, c(eq1, eq2, eq3))
 colnames(t) = c("N","Model")
@@ -408,13 +414,19 @@ times the estimated odds at mass_diff x (g).
 For bugs of mass_diff x + 1/50 (0.02) g, the estimated odds that flight_case = 2 rather than flew_diff = -1 equals
 
 ```{r}
-exp(-43.89/50)
+exp(-43.88/50)
 ```
 
 times the estimated odds at mass_diff x (g). (So about half times as less likely to fly twice as gain 0.02 g).
 
+For bugs of mass_diff x + 1/50 (0.02) g, the estimated odds that flight_case = 2 rather than flew_diff = 1 equals
+
 ```{r}
-exp(coef(model)/50)
+exp(exp(-18.63/50))
+```
+
+```{r}
+exp(coef(model)/50) # this compares to not flying, the baseline 
 ```
 
 **Predicted probabilities** 
@@ -442,6 +454,8 @@ abline(v=-0.022, lty=2, col="black")
 #        col=c("red","black","darkred"))
 ```
 
+**Mass Perc**
+
 **Re-order**
 
 ```{r}
@@ -466,6 +480,63 @@ cat("AIC: ", s$AIC, "\n")
 table
 ```
 ```{r}
+# -1 / 1 | Flew in T1, not T2
+I = (table[1,1] - table[2,1])
+M = (table[1,2] - table[2,2])
+EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), " Mass %     Flew in T1, not T2" )
+
+# 2 / -1 | Flew in both, not T1
+I = (table[3,1] - table[1,1])
+M = (table[3,2] - table[1,2])
+EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", round(M,2), " Mass %     Flew in both, not T1" )
+
+# 2 / 1 | Flew in both, not T2
+I = (table[3,1] - table[2,1])
+M = (table[3,2] - table[2,2])
+EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", round(M,2),  " Mass %     Flew in both, not T2")
+
+EQ1
+EQ2
+EQ3
+```
+
+```{r echo=FALSE}
+eq1 = "Flew in T1 only rather than T2 only = 1.22 + 0.04 Mass %"
+eq2 = "Flew in both rather than T1 only = 1.25 - 0.02 Mass %"
+eq3 = "Flew in both rather than T2 only = 2.28 + 0.02 Mass %"
+
+t = cbind(n_trials, c(eq1, eq2, eq3))
+colnames(t) = c("N","Model")
+
+kable(t) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
+```
+
+For bugs of mass_perc x + 125*(0.04%) = 5%, the estimated odds that flight_case = -1 rather than flight_case = 1 equals
+
+```{r}
+exp(0.04*125)
+```
+
+times the estimated odds at mass_perc x (g).
+
+For bugs of mass_perc x + 250*(-0.02%) = -5%, the estimated odds that flight_case = 2 rather than flew_diff = -1 equals
+
+```{r}
+exp(-250*0.02) # 125 times less likely
+```
+
+For bugs of mass_perc x + 250*(0.02%) = 5%, the estimated odds that flight_case = 2 rather than flew_diff = 1 equals
+
+```{r}
+exp(250*0.02) # 125 times more likely
+```
+
+```{r}
+exp(coef(model)*125) # this compares to no fly, the baseline
+```
+
+```{r}
 head(pp <- fitted(model))
 ```
 
@@ -489,6 +560,11 @@ abline(v=-28, lty=2, col="black")
 #        col=c("red","black","darkred"))
 ```
 **Now let's compare some models:**
+
+```{r}
+df <- df[with(df, order(mass_diff)),]
+```
+
 
 ```{r}
 data <- data.frame(R = df$flew_diff, 
@@ -521,24 +597,14 @@ colnames(table) <- c("(Intercept)","coeff mass_diff", "coeff sex_c","DF",
 cat("\n", "AIC: ", s$AIC, "\n", "MD = mass_diff", "\n") 
 table
 ```
-
-The general ML prediction equation is:
-
-<div align="center">$\log(\hat{\pi_{j}}/\hat{\pi_0}) =\alpha_{j} + \beta_{-1}^{\delta mass} x_1 + \beta_{j}^{sex} x_2$ 
-
-where j = -1 or 1</div><br/>
-
-The individual ML prediction equations are:
-
-<div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_0}) = -1.86 + 61.25 (\delta mass) - 0.29 (sex)$ and
-
-$\log(\hat{\pi_1}/\hat{\pi_0}) = -8.90 - 55.87 (\delta mass) - 6.35 (sex)$</div><br/>
-
-The estimated log odds that the response is -1 (Flew in T1, not T2) rather than 1 (flew in T2, not T1) equals:
-
-<div align="center">$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = (-1.86 - (-8.90)) + (61.25 - (- 55.87)) \delta mass + (-0.29 - (-6.35)) sex$
-
-$\log(\hat{\pi_{-1}}/\hat{\pi_1}) = 7.04 + 117.12 \delta mass + 6.06 sex$</div><br/>
+```{r}
+# -1 / 1 | Flew in T1, not T2
+I = (table[1,1] - table[2,1])
+M = (table[1,2] - table[2,2])
+S = (table[1,3] - table[2,3])
+EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), " Mass Change"," + ", round(S,2), " Sex","     Flew in T1, not T2" )
+EQ1
+```
 
 ```{r echo=FALSE}
 eq = "Flew in T1 rather than T2 = 7.04 + 117.12 Mass Change + 6.06 Sex"
@@ -567,7 +633,7 @@ exp((117.12-6.06)/50)
 times the estimated odds at mass_diff x (g).
 
 ```{r}
-exp(coef(delta_mass_model)/50)
+exp(coef(delta_mass_model)/50) # compares to the baseline
 ```
 
 **Predicted Probabilities**
@@ -625,7 +691,60 @@ As females loose mass they are much more likely than males to fly in T2 than T1.
 
 More on multinomial plotting for when have more than 1 predictor variables: https://stats.idre.ucla.edu/r/dae/multinomial-logistic-regression/
 
+**Flight case and mass_diff**
+
+```{r}
+data <- data.frame(R = df$flight_case, 
+         A = df$mass_diff,
+         B = df$sex_c)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic multinomial models- multinom 1RF + 2 FF.R")
+```
+
+```{r}
+anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
+```
+```{r}
+delta_mass_model <- multinom(flight_case ~ mass_diff + sex_c, data = df)
+
+# compute p-values using Wald tests (i.e. z-tests)
+s <- summary(delta_mass_model) 
+z <- s$coefficients/s$standard.errors
+wald <- z^2
+p <- (1 - pnorm(abs(z), 0, 1)) * 2
+
+# summary table (similar to lm, glm, or lmer function)
+table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[,2:3], z[,2:3], wald[,2:3], p[,2:3])
+colnames(table) <- c("(Intercept)","coeff mass_per", "coeff sex_c","DF", 
+                     "MD SE", "sex SE", "MD z", "sex z", 
+                     "MD wald","sex wald","MD P > |z|", "sex P > |z|")
+cat("\n", "AIC: ", s$AIC, "\n", "MD = mass_per", "\n") 
+table
+```
+
+```{r}
+# -1 over 1
+I = 
+```
+
+-1 over 1 = (-1.0154279 - (-6.8204622)) + (0.042521764 - (-0.009162539)) + (-0.6917921 - (-5.6256871))
+2 over -1 = (0.1236475 - (-1.0154279 )) + (0.019385661 - ( 0.042521764 )) + (-0.9015721 - (-0.6917921))
+2 over 1 = (0.1236475 - (-6.8204622)) + (0.019385661 - (-0.009162539)) + (-0.9015721 - (-5.6256871))
+
+
 **Flight case and mass_per**
+
+```{r}
+df <- df[with(df, order(mass_per)),]
+```
+
+```{r}
+df$flight_case = 0
+df$flight_case = df$num_flew
+df$flight_case[df$flew_diff == -1] = -1
+df$flight_case = as.factor(df$flight_case)
+df$flight_case
+```
 
 ```{r}
 data <- data.frame(R = df$flight_case, 
@@ -689,18 +808,34 @@ Frows = females$index
 Mrows = males$index
 ```
 
+```{r}
+df$no_response_b[Frows]
+```
+
+pch=c(2,3)[as.factor(df$no_response_b[Frows])]
+
 ```{r echo=FALSE}
-plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red", type="l", ylab="Predicted Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) # no flight_diff
-points(df$mass_per[Mrows], pp[Mrows,1], col="red", type="l", lty=2) # no flight_diff
-points(df$mass_per[Frows], pp[Frows,2], col="blue", type="l") # flew in T1 but not T2
-points(df$mass_per[Mrows], pp[Mrows,2], col="blue", type="l", lty=2)
-points(df$mass_per[Frows], pp[Frows,3], col="darkgreen", type="l") # flew in T2 but not T1
-points(df$mass_per[Mrows], pp[Mrows,3], col="darkgreen", type="l", lty=2) 
-points(df$mass_per[Frows], pp[Frows,4], col="darkred", type="l") # flew in both
-points(df$mass_per[Mrows], pp[Mrows,4], col="darkred", type="l", lty=2) 
-text(-27,0.9, labels="Did Not Fly", col="red")
+plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="blue",
+     type="l",
+     #type="b", cex=0.45, pch=16, 
+     ylab="Predicted Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) # flew in T1 but not T2
+#points(df$mass_per[Mrows], pp[Mrows,1], col="blue", type="b", cex=0.45, lty=2) 
+points(df$mass_per[Frows], pp[Frows,2], col="red", 
+       type="l",
+       #type="b", cex=0.45, pch=16
+       ) # did not fly in either
+#points(df$mass_per[Mrows], pp[Mrows,2], col="red", type="b", cex=0.45, lty=2)
+#points(df$mass_per[Frows], pp[Frows,3], col="darkgreen", cex=0.45, type="l", pch=16) # flew in T2 but not T1
+#points(df$mass_per[Mrows], pp[Mrows,3], col="darkgreen", type="b", cex=0.45, lty=2) 
+points(df$mass_per[Frows], pp[Frows,4], col="darkred", 
+       type="l",
+       #type="b", cex=0.45, pch=16
+       ) # flew in both
+#points(df$mass_per[Mrows], pp[Mrows,4], col="darkred", type="b", cex=0.45, lty=2) 
 text(80,0.8, labels="Flew in T1 only", col="blue")
-text(75,0.05, labels="Flew in T2 only", col="darkgreen")
+text(-27,0.9, labels="Did Not Fly", col="red")
+text(13,0.37, labels="Flew Twice", col="darkred")
+#text(75,0.05, labels="Flew in T2 only", col="darkgreen")
 # female line is always higher
 # text(0.0,0.96, labels="F", col="red")
 # text(0.0,0.7, labels="M", col="red")
@@ -708,12 +843,17 @@ text(75,0.05, labels="Flew in T2 only", col="darkgreen")
 # text(0.0,0.25, labels="M", col="blue")
 # text(0.025,0.05, labels="F", col="darkgreen")
 # text(0.01,0.10, labels="M", col="darkgreen")
-#abline(v=40.5, lty=1, col="black")
-#abline(v=-17, lty=3, col="black")
-rect(56,-4,-24,2,col = rgb(0.5,0.5,0.5,1/4))
+# abline(v=40.5, lty=1, col="black")
+# abline(v=7.5, lty=3, col="black")
+# abline(v=-17, lty=3, col="black")
+#rect(56,-4,-24,2,col = rgb(0.5,0.5,0.5,1/4))
 # abline(v=-0.008, lty=2, col="slategrey")
+# legend(84, 1.02,
+#        legend = c("female","male"),
+#        lty=1:2,
+#        col="black",
+#        cex=0.8)
 ```
-
 
 <a id="egg_diff"></a>
 
@@ -722,9 +862,20 @@ rect(56,-4,-24,2,col = rgb(0.5,0.5,0.5,1/4))
 ```{r}
 df <- d %>%
   filter(!is.na(egg_diff), !is.na(flew_diff), sex_c == 1)
+
+df <- df[with(df, order(egg_diff)),]
+
 n_tfemales = nrow(df)
-  
+
 df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
+```
+
+```{r}
+df$flight_case = 0
+df$flight_case = df$num_flew
+df$flight_case[df$flew_diff == -1] = -1
+df$flight_case = as.factor(df$flight_case)
+df$flight_case
 ```
 
 ```{r echo=FALSE}
@@ -846,55 +997,3 @@ gf_point(flew_diff ~ mass_diff, data=df, col=~egg_diff)
 ```
 
 ### Summary
-
-```{r}
-delta_mass_model
-```
-
-Look within the 'Delta flight response' tab to see the making of the graphs generated from this model. Here is the graph:
-
-```{r echo=FALSE}
-df <- d %>%
-  filter(!is.na(mass_diff), !is.na(flew_diff)) 
-  
-df <- df[with(df, order(mass_diff)),]
-
-df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
-
-pp <- fitted(delta_mass_model)
-```
-
-```{r}
-df$index = 1:nrow(df)
-females = df %>%
-  filter(sex=="F")
-males = df %>%
-  filter(sex=="M")
-Frows = females$index
-Mrows = males$index
-```
-
-```{r echo=FALSE}
-plot(df$mass_diff[Frows], pp[Frows,1], ylim=c(0,1), col="red", type="l", ylab="Predicted Probability", xlab="Changes in Mass From T1 to T2 (g)") # no flight_diff
-points(df$mass_diff[Mrows], pp[Mrows,1], col="red", type="l") # no flight_diff
-points(df$mass_diff[Frows], pp[Frows,2], col="blue", type="l") # flew in T1 but not T2
-points(df$mass_diff[Mrows], pp[Mrows,2], col="blue", type="l")
-points(df$mass_diff[Frows], pp[Frows,3], col="darkgreen", type="l") # flew in T2 but not T1
-points(df$mass_diff[Mrows], pp[Mrows,3], col="darkgreen", type="l") 
-text(0.019,0.9, labels="No Flight Diff", col="red")
-text(0.008,0.5, labels="Flew in T1 but not T2", col="blue")
-text(0.052,0.1, labels="Flew in T2 but not T1", col="darkgreen")
-# female line is always higher
-text(0.0,0.96, labels="F", col="red")
-text(0.0,0.7, labels="M", col="red")
-text(0.02,0.2, labels="F", col="blue")
-text(0.0,0.25, labels="M", col="blue")
-text(0.025,0.05, labels="F", col="darkgreen")
-text(0.01,0.10, labels="M", col="darkgreen")
-abline(v=0.035, lty=2, col="slategrey")
-abline(v=-0.008, lty=2, col="slategrey")
-```
-
-```{r}
-tidy_regression(delta_egg_model, is_color = output_col)
-```

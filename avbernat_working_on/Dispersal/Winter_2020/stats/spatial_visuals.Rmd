@@ -65,15 +65,15 @@ data_all <- data[[2]] # bugs tested
 ```
 
 ```{r}
-data_all$flew_b<-0
-data_all$flew_b[data_all$flew=="Y"]<-1
-
-data_all$eggs_b<-0
-data_all$eggs_b[data_all$EWM=="Y"]<-1
-
-data_all$sym_dist<-abs(data_all$latitude-25.49197)
-
-data_all
+# data_all$flew_b<-0
+# data_all$flew_b[data_all$flew=="Y"]<-1
+# 
+# data_all$eggs_b<-0
+# data_all$eggs_b[data_all$EWM=="Y"]<-1
+# 
+# data_all$sym_dist<-abs(data_all$latitude-25.49197)
+# 
+# data_all
 ```
 
 ## Filter for only the columns you need.
@@ -209,71 +209,38 @@ county_valid_report <- st_is_valid(counties_transformed)
 county_valid_report
 
 # Make any invalid polygons valid
-df_final_pop <- st_make_valid(df_transformed) %>%
-  st_cast("MULTIPOLYGON") 
-
 df_final_counties <- st_make_valid(counties_transformed) %>%
   st_cast("MULTIPOLYGON") 
 
 # Check the final report
+county_valid_report2 <- st_is_valid(df_final_counties)
+county_valid_report2
+```
+
+```{r}
+# this stopped working so don't run:
+
+df_final_pop <- st_make_valid(df_transformed) %>% # stopped working but not necessary for map making
+  st_cast("MULTIPOLYGON") 
+
 poly_valid_report2 <- st_is_valid(df_final_pop)
 poly_valid_report2
 
-county_valid_report2 <- st_is_valid(df_final_counties)
-county_valid_report2
+tm_shape(df_final_pop) +
+  tm_polygons("populations") +
+  tm_basemap("Hydda.Base")
 ```
 
 ```{r}
 tmap_mode("view")
 tmap_mode("plot")
 
-tm_shape(df_final_pop) +
-  tm_polygons("populations") +
-  tm_basemap("Hydda.Base")
-
 # test
-colors = c("lightblue", "darkolivegreen3")
-#"BuGn"
-tm_shape(FL_transformed, bbox=big_bb) +
-  tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey") +
-  tm_fill(col="white", alpha= 0.3) +
-  tm_polygons("State") +
-  tm_scale_bar(position = c("left", "bottom")) +
-tm_shape(combined_filtered) +
-  tm_polygons("host_temp", tm_legend="Host Plant", palette=colors) +
-  tm_basemap("Hydda.Base") +
-tm_shape(dispersal_main) +
-  tm_dots(alpha = 0.8, size=0.2, shape=2, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) 
-#+ tm_layout(bg.color = "skyblue", inner.margins = c(0, .02, .02, .02))
-
-dispersal_main = dispersal_filtered %>%
-  filter(host_temp=="K. elegans")
-
-dispersal_keys = dispersal_filtered %>%
-  filter(host_temp=="C. corindum")
-
 tm_shape(df_final_counties) +
-  #tm_polygons("counties") +
-  tm_fill(col="grey") +
+  tm_polygons("counties") +
   tm_basemap("Hydda.Base")
-
-tm_shape(combined_filtered, bbox=keys_bb) + # only place where it would matter is in the keys.
-    #tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey") +
-    tm_polygons("host_temp", labels = NULL, legend.show = FALSE, palette=colors) +
-    #tm_fill(col="cornflowerblue")
-    tm_scale_bar(position = c("right", "bottom")) +
-tm_shape(dispersal_keys) +
-  tm_dots(alpha = 0.9, size= 0.2, shape=2, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) 
-#+ tm_text("zmap_site", size = 0.4, xmod = -1.7, ymod = 0.15)
-
 ```
 
-```{r}
-big_bb <- st_bbox(FL_transformed)
-big_bb[2] = big_bb[2]-100000
-keys_bb
-?tm_dots
-```
 
 (xii) Combine the comprehensive sf dataframe with the sf dataframe mapping the populations to the polygon shapes.
 
@@ -304,6 +271,44 @@ experiment_bugs <- combined %>%
 # Remove NA mass vales
 mass_data <- combined_filtered %>%
   filter(!is.na(mass))
+```
+
+```{r}
+# Plots for ASN 2021:
+
+## mainland
+big_bb <- st_bbox(FL_transformed)
+big_bb[2] = big_bb[2]-100000
+
+dispersal_main = dispersal_filtered %>%
+  filter(host_temp=="K. elegans")
+
+colors = c("lightblue", "darkolivegreen3") # this one takes a few minutes (~4 min) to load
+tm_shape(FL_transformed, bbox=big_bb) +
+  tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey") +
+  tm_fill(col="white", alpha= 0.3) +
+  tm_polygons("State") +
+  tm_scale_bar(position = c("left", "bottom")) +
+tm_shape(combined_filtered) +
+  tm_polygons("host_temp", tm_legend="Host Plant", palette=colors) +
+  tm_basemap("Hydda.Base") +
+tm_shape(dispersal_main) +
+  tm_dots(alpha = 0.8, size=0.2, shape=2, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) 
+
+## keys
+keys_bb <- st_bbox(combined_filtered %>% filter(counties %in% c("North Key Largo", "Key Largo", "Plantation Key")) )
+
+dispersal_keys = dispersal_filtered %>%
+  filter(host_temp=="C. corindum")
+
+tm_shape(combined_filtered, bbox=keys_bb) + 
+    tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey") +
+    tm_polygons("host_temp", labels = NULL, legend.show = FALSE, palette=colors) +
+    tm_scale_bar(position = c("right", "bottom")) +
+tm_shape(dispersal_keys) +
+  tm_dots(alpha = 0.9, size= 0.2, shape=2, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) 
+#+ tm_text("zmap_site", size = 0.4, xmod = -1.7, ymod = 0.15)
+
 ```
 
 ```{r}
@@ -452,10 +457,10 @@ keys_bb <- st_bbox(combined_filtered %>% filter(counties %in% c("North Key Largo
 
 m21 <- tm_shape(combined_filtered, bbox=keys_bb) + # only place where it would matter is in the keys.
     tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "azure2") +
-    tm_fill("distance", labels = NULL, legend.show = FALSE) +
+    tm_polygons("host_temp", labels = NULL, legend.show = FALSE, palette=colors) +
     tm_scale_bar(position = c("right", "bottom")) +
 tm_shape(site_buffer_data) + # NKL_buffer
-  tm_fill("distance", alpha=0.02, legend.show = FALSE) + # can change the color, col = "blue"
+  tm_fill("distance", alpha=0.02, legend.show = FALSE, col = "lightblue") + # can change the color, col = "blue"
 tm_shape(dispersal_filtered) +
   tm_dots(alpha = 0.9, title = 'Collection Sites', labels = "geometry") +
   tm_text("zmap_site", size = 0.4, xmod = -1.7, ymod = 0.15)
