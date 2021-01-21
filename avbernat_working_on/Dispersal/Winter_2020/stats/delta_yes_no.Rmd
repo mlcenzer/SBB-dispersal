@@ -870,6 +870,17 @@ n_tfemales = nrow(df)
 df$flew_diff <- relevel(as.factor(df$flew_diff), ref = "0")
 ```
 
+```{r fig.height=2.4, fig.width=2.7}
+data_fem = data_tested %>%
+  filter(sex=="F")
+counts <- table(data_fem$eggs_b, data_fem$trial_type) # data_tested$flew_b
+counts <- counts[1:2,2:3]
+barplot(counts, #main="Flight Distribution by Trial",
+  xlab="Trial", col=c("lightblue","darkgoldenrod2"),
+  legend = c("no eggs", "yes eggs"), ylim=c(0,100), beside=TRUE)
+```
+
+
 ```{r}
 df$flight_case = 0
 df$flight_case = df$num_flew
