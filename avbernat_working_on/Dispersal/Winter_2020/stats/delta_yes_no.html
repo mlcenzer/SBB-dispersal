@@ -614,8 +614,8 @@ summary {
 <h3>Delta Flight Response (T1 vs. T2)</h3>
 <p><a href="#intro">Introduction</a></p>
 <p><a href="#clean_data">Clean the Data</a></p>
-<p><a href="#mass_diff">Flight Case ~ Mass Diff</a></p>
-<p><a href="#mass_per">Flight Case ~ Mass Per</a></p>
+<p><a href="#mass_difference">Flight Case ~ Mass Diff</a></p>
+<p><a href="#mass_percentage">Flight Case ~ Mass Per</a></p>
 <p><a href="#adding_sex">Flight Case ~ Mass Diff or Mass Perc + Sex</a></p>
 <p><a href="#host_plant">Flight Case ~ Mass Diff or Mass Perc + Sex + Host Plant</a></p>
 <p>Females Only</p>
@@ -760,7 +760,7 @@ barplot(counts, #main=&quot;Flight Distribution by Trial&quot;,
 <h4>Modeling</h4>
 <p>Below I used the <strong>multinom function</strong> from the <strong>nnet package</strong> to estimate a <em>multinomial logistic regression</em> model. There are other functions in other R packages capable of multinomial regression. I chose the multinom function because it does not require the data to be reshaped (as the mlogit package does) and to mirror the example code found in Hilbe’s <em>Logistic Regression Models</em>.</p>
 <p>First, I chose the baseline by specifying the level using relevel function. Then, I ran our model using multinom. The multinom package does not include p-value calculations for the regression coefficients, so I calculated <em>P</em> using <strong>Wald tests (i.e. z-tests)</strong>.</p>
-<p><a id="mass_diff"></a></p>
+<p><a id="mass_difference"></a></p>
 <p>Finally, I considered <strong>mass difference</strong> as my predictor variable where a (+) sign means the bug gained mass between trials and a (-) sign means the bug lost mass between trials.</p>
 <table class="table table-striped" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
@@ -956,7 +956,7 @@ abline(v=-0.022, lty=2, col=&quot;black&quot;)</code></pre>
 #        pch = c(2,1, 3),
 #        title=&quot;Flight Count&quot;,
 #        col=c(&quot;red&quot;,&quot;black&quot;,&quot;darkred&quot;))</code></pre>
-<p><a id="mass_per"></a></p>
+<p><a id="mass_percentage"></a></p>
 <p><strong>Multinom model: flight case ~ mass_per</strong></p>
 <p><strong>Re-order</strong></p>
 <pre class="r"><code>df &lt;- df[with(df, order(mass_per)),]</code></pre>
@@ -1141,9 +1141,9 @@ model_comparisonsAIC(&quot;src/generic multinomial models- multinom 1RF + 2 FF.R
 ## 2   -5.625585  2.5021842   31.64721 1.136885e-01 1.848803e-08</code></pre>
 <pre class="r"><code>prediction_equations2(model_table)</code></pre>
 <pre><code>## [1] &quot;Where F = 1&quot;</code></pre>
-<pre><code>## [1] &quot;log(pi_-1 / pi_1) = 16.5 + 98.29 Mass Percent Change + 15.49 Sex      Flew in T1, rather than T2&quot;  
-## [2] &quot;log(pi_2 / pi_-1) = 1.17 + -50.49 Mass Percent Change + -0.1 Sex      Flew in both, rather than T1&quot;
-## [3] &quot;log(pi_2 / pi_1) = 17.67 + 47.8 Mass Percent Change + 15.39 Sex      Flew in both, rather than T2&quot;</code></pre>
+<pre><code>## [1] &quot;log(pi_-1 / pi_1) = 16.5 + 98.29 Mass Change + 15.49 Sex      Flew in T1, rather than T2&quot;  
+## [2] &quot;log(pi_2 / pi_-1) = 1.17 + -50.49 Mass Change + -0.1 Sex      Flew in both, rather than T1&quot;
+## [3] &quot;log(pi_2 / pi_1) = 17.67 + 47.8 Mass Change + 15.39 Sex      Flew in both, rather than T2&quot;</code></pre>
 <table class="table table-striped" style="width: auto !important; margin-left: auto; margin-right: auto;">
 <thead>
 <tr>
@@ -1161,7 +1161,7 @@ Model
 278
 </td>
 <td style="text-align:left;">
-Flew in T1 only rather than T2 only = 16.5 + 98.29 Mass % + 15.49 Sex
+Flew in T1 only rather than T2 only = 16.5 + 98.29 Mass Change + 15.49 Sex
 </td>
 </tr>
 <tr>
@@ -1169,7 +1169,7 @@ Flew in T1 only rather than T2 only = 16.5 + 98.29 Mass % + 15.49 Sex
 278
 </td>
 <td style="text-align:left;">
-Flew in both rather than T1 only = 1.25 - 50.49 Mass % - 0.1 Sex
+Flew in both rather than T1 only = 1.25 - 50.49 Mass Change - 0.1 Sex
 </td>
 </tr>
 <tr>
@@ -1177,7 +1177,7 @@ Flew in both rather than T1 only = 1.25 - 50.49 Mass % - 0.1 Sex
 278
 </td>
 <td style="text-align:left;">
-Flew in both rather than T2 only = 17.67 + 47.8 Mass % + 15.39 Sex
+Flew in both rather than T2 only = 17.67 + 47.8 Mass Change + 15.39 Sex
 </td>
 </tr>
 </tbody>
@@ -1225,7 +1225,7 @@ model_comparisonsAIC(&quot;src/generic multinomial models- multinom 1RF + 2 FF.R
 ## -1  -3.408333 19.2715935  11.61673 1.133807e-05 6.536117e-04
 ## 1  -30.720742  0.1208558 943.76396 7.281082e-01 0.000000e+00
 ## 2   -5.684196  5.4472786  32.31009 1.959883e-02 1.314291e-08</code></pre>
-<pre class="r"><code>prediction_equations2(model_table)</code></pre>
+<pre class="r"><code>gsub(&quot;Mass Change&quot;,  &quot;Mass Percent Change&quot;, prediction_equations2(model_table))</code></pre>
 <pre><code>## [1] &quot;Where F = 1&quot;</code></pre>
 <pre><code>## [1] &quot;log(pi_-1 / pi_1) = 5.81 + 0.05 Mass Percent Change + 4.93 Sex      Flew in T1, rather than T2&quot;    
 ## [2] &quot;log(pi_2 / pi_-1) = 1.14 + -0.02 Mass Percent Change + -0.21 Sex      Flew in both, rather than T1&quot;
@@ -1313,9 +1313,8 @@ Flew in both rather than T2 only = 6.94 + 0.03 Mass % + 4.72 Sex
 ## 2  8.433568e-02 0.6786069 6.775721e+07</code></pre>
 <ul>
 <li>If F and gain a lot of mass then most likely to fly only in T1 rather than none.</li>
-<li>If F and loose mass then most likely to fly in T2 only rather than none. (but none did that)</li>
+<li>If F and loose mass then most likely to not fly in either trial.</li>
 </ul>
-<p>? How to properly interpret these odds?</p>
 <p><strong>Predicted Probabilities</strong></p>
 <pre class="r"><code>head(pp &lt;- fitted(delta_mass_model))</code></pre>
 <pre><code>##           0         -1            1         2

@@ -1,0 +1,226 @@
+---
+title: "Predicting Fall"
+author: "Anastasia Bernat"
+date: "1/25/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
+setwd(dir) 
+
+library(dplyr)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Using delta_yes_no.Rmd models to predict Fall delta flight response.
+
+```{r}
+data = read.csv("data/all_flight_data-Fall2019.csv",header=TRUE, sep=",", stringsAsFactors=TRUE) 
+head(data)
+```
+
+**Keeping only the tests that were similar to Winter experiment design**
+
+```{r}
+data_mass = data %>%
+  filter(!is.na(mass))
+
+# 60 min trial
+data60 = data_mass %>%
+  filter(set_number < 53)
+
+# 90 min trial
+data90 = data_mass %>%
+  filter(set_number < 72 & set_number > 52)
+
+# ongoing trial
+ongoing_data = data_mass %>%
+  filter(set_number > 71)
+```
+
+**Clean the data**
+
+```{r}
+data_all = ongoing_data
+
+#ID
+data_all$ID<-as.factor(data_all$ID)
+
+# Yes-No Flew
+data_all$flew_b<-0
+data_all$flew_b[data_all$flew=="Y"]<-1
+    
+# Host
+data_all$host_temp[data_all$host_plant=="K.elegans"]<- "K. elegans"
+data_all$host_temp[data_all$host_plant=="C. corindum"]<- "C. corindum"
+data_all$host_c[data_all$host_temp=="K. elegans"]<- 1
+data_all$host_c[data_all$host_plant=="C. corindum"]<- -1
+    
+# Sex
+data_all$sex_c<--1
+data_all$sex_c[data_all$sex=="F"]<-1
+    
+# Wing Morph
+data_all$w_morph_c <- -1 # short wing
+data_all$w_morph_c[data_all$w_morph=="L"] <- 1 
+data_all$w_morph_c[data_all$w_morph=="l"] <- 1
+data_all$w_morph_c[data_all$w_morph=="LS"]<- 0
+  
+# Yes-No Eggs on Flight Trial Day
+data_all$eggs_b<-0
+data_all$eggs_b[data_all$eggs=="Y"]<-1
+
+
+center_data <- function(d) {
+
+  # Distance From Sympatric Zone
+  d$lat_c<-d$latitude-mean(d$latitude)
+  d$sym_dist<-abs(d$latitude-25.49197)
+
+  # Average Mass
+  d$mass_c <- d$mass-mean(d$mass, na.rm=TRUE) 
+
+  return(d)
+}
+
+data_all = center_data(data_all)
+head(data_all)
+```
+
+```{r}
+d <- data_all %>%
+    group_by(ID, sex, population, site, host_plant, latitude, longitude, 
+             host_c, sex_c, w_morph_c, lat_c, sym_dist) %>%
+    summarise_all(funs(list(na.omit(.))))
+
+d$num_flew <- 0
+d$num_notflew <- 0
+d$average_mass <- 0
+  
+d$egg_diff <- 0
+d$mass_diff <- 0
+d$flew_diff <- 0
+d$dist_diff <- 0
+d$speed_diff <- 0
+d$mass_per <- 0 
+d$num_flew_twice <- 0
+ 
+  for(row in 1:length(d$flew_b)){
+    
+    n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails
+    d$num_flew[[row]] <- n_flew 
+    
+    n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
+    d$num_notflew[[row]] <- n_notflew
+    
+    avg_mass <- mean(d$mass[[row]])
+    d$average_mass[[row]] <- avg_mass
+    
+    # mass, flight, distance, and speed changes between T1 and T2
+    
+    d$num_flew_twice[[row]] <- d$flew_b[[row]][2] + d$flew_b[[row]][1]
+    d$mass_diff[[row]] <- d$mass[[row]][2] - d$mass[[row]][1]  # T2 - T1
+    d$mass_per[[row]] <- (d$mass_diff[[row]] / d$mass[[row]][1]) * 100
+    d$flew_diff[[row]] <- d$flew_b[[row]][2] - d$flew_b[[row]][1]  # T2 - T1
+    d$dist_diff[[row]] <- d$distance[[row]][2] - d$distance[[row]][1]  # T2 - T1
+    d$speed_diff[[row]] <- d$average_speed[[row]][2] - d$average_speed[[row]][1]  # T2 - T1
+    d$egg_diff[[row]] <- d$eggs_b[[row]][2] - d$eggs_b[[row]][1]  # T2 - T1
+    
+  }
+  
+d <- select(d, -filename, -channel_letter, -set_number)
+
+# Filter out bugs that were not tested twice:
+  rows_remove <- c()
+  for (row in 1:nrow(d)){
+    if (length(d$flew[[row]]) < 2) {
+      rows_remove <- c(rows_remove, row)
+    }
+  }
+d <- d[-rows_remove, ]
+
+# for flight case building
+
+d$flight_case = NA
+d$flight_case[d$num_flew_twice == 0] = 0
+d$flight_case[d$num_flew_twice == 2] = 2
+d$flight_case[d$flew_diff == -1] = -1
+d$flight_case[d$flew_diff == 1] = 1
+d$flight_case = as.factor(d$flight_case)
+
+d$flight_case
+```
+
+[1] "Where F = 1"
+[1] "log(pi_-1 / pi_1) = 5.81 + 0.05 Mass Percent Change + 4.93 Sex      Flew in T1, rather than T2"    
+[2] "log(pi_2 / pi_-1) = 1.14 + -0.02 Mass Percent Change + -0.21 Sex      Flew in both, rather than T1"
+[3] "log(pi_2 / pi_1) = 6.94 + 0.03 Mass Percent Change + 4.72 Sex      Flew in both, rather than T2"
+
+[4] "log(pi_-1 / pi_0) = -1.02 + 0.043 Mass Percent Change - 0.69 Sex      Flew in T1, rather than none"    
+[5] "log(pi_1 / pi_0) = -6.82 - 0.009 Mass Percent Change - 5.63 Sex      Flew in both, rather than none"
+[6] "log(pi_2 / pi_0) = 0.12 + 0.019 Mass Percent Change - 0.90 Sex      Flew in both, rather than none"
+
+```{r}
+neither = c()
+T1_rather_than_none = c()
+T2_rather_than_none = c()
+both_rather_than_none = c()
+for (i in 1:nrow(d)) {
+  mp = d$mass_per[[i]]
+  s = d$sex_c[[i]]
+  top0 = 1
+  top1 = exp(-1.02 + 0.043*mp - 0.69*s)
+  top2 = exp(-6.82 - 0.009*mp - 5.63*s)
+  top3 = exp(0.12 + 0.019*mp- 0.90*s)
+  bottom = top0 + top1 + top2 + top3
+  neither = c(neither, top0/bottom)
+  T1_rather_than_none = c(T1_rather_than_none, top1/bottom)
+  T2_rather_than_none = c(T2_rather_than_none, top2/bottom)
+  both_rather_than_none = c(both_rather_than_none, top3/bottom)
+}
+```
+
+```{r}
+plot(d$mass_per, T1_rather_than_none, ylim=c(0,1), xlim=c(-25, 40), col="blue", ylab="Flight Case Probability", xlab="Percent Changes in Mass From T1 to T2 (g)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
+points(d$mass_per, T2_rather_than_none, col="darkgreen", pch=3, cex=0.45)
+points(d$mass_per, both_rather_than_none, col="maroon", cex=0.45) # flew in T1 but not T2
+points(d$mass_per, neither, col="red", cex=0.45) # flew in T2 but not T1
+
+text(-20,0.9, labels="Did Not Fly", col="red")
+text(0,0.5, labels="Flew Twice", col="maroon")
+text(30,0.85, labels="Flew in T1 only", col="blue")
+text(30,0.1, labels="Flew in T2 only", col="darkgreen")
+```
+
+**Accuracy**
+
+```{r}
+probs = round(cbind(neither, T1_rather_than_none, T2_rather_than_none, both_rather_than_none),2)
+summary_probs = cbind(as.character(d$flight_case), as.character(d$sex), probs)
+colnames(summary_probs) = c("event", "sex", "none", "T1", "T2", "both")
+dataframe = as.data.frame(summary_probs)
+dataframe
+```
+
+```{r}
+# overall
+correct = 25
+incorrect = 20
+accuracy = 25/40
+paste("Overall prediction accuracy, ", accuracy)
+
+correctF = 5
+incorrectF = 8
+accuracyF = 5/13
+paste("Female prediction accuracy, ", round(accuracyF,3))
+
+correctM = 20
+incorrectM = 12
+accuracyM = 20/32
+paste("Male prediction accuracy, ", accuracyM)
+```
+
+

@@ -36,9 +36,9 @@ Flight Trials Winter 2020 were conducted from 2/17/2020 - 3/10/2020. Soapberry b
 
 [Clean the Data](#clean_data)
 
-[Flight Case ~ Mass Diff ](#mass_diff)
+[Flight Case ~ Mass Diff ](#mass_difference)
 
-[Flight Case ~ Mass Per ](#mass_per)
+[Flight Case ~ Mass Per ](#mass_percentage)
 
 [Flight Case ~ Mass Diff or Mass Perc + Sex ](#adding_sex)
 
@@ -143,7 +143,7 @@ Below I used the **multinom function** from the **nnet package** to estimate a *
 
 First, I chose the baseline by specifying the level using relevel function. Then, I ran our model using multinom. The multinom package does not include p-value calculations for the regression coefficients, so I calculated *P* using **Wald tests (i.e. z-tests)**.
 
-<a id="mass_diff"></a>
+<a id="mass_difference"></a>
 
 Finally, I considered **mass difference** as my predictor variable where a (+) sign means the bug gained mass between trials and a (-) sign means the bug lost mass between trials.
 
@@ -320,7 +320,7 @@ pp1 <- fitted(model)
 df1 <- df # for summary purposes
 ```
 
-<a id="mass_per"></a>
+<a id="mass_percentage"></a>
 
 **Multinom model: flight case ~ mass_per**
 
@@ -464,19 +464,19 @@ prediction_equations2 = function(tb) {
   I = (tb[1,1] - tb[2,1])
   M = (tb[1,2] - tb[2,2])
   S = (tb[1,3] - tb[2,3])
-  EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), " Mass Percent Change", " + ", round(S, 2), " Sex ", "     Flew in T1, rather than T2" )
+  EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), " Mass Change", " + ", round(S, 2), " Sex ", "     Flew in T1, rather than T2" )
   
   # 2 / -1 | Flew in both, not T1
   I = (tb[3,1] - tb[1,1])
   M = (tb[3,2] - tb[1,2])
   S = (tb[3,3] - tb[1,3])
-  EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", round(M,2), " Mass Percent Change", " + ", round(S, 2), " Sex ", "     Flew in both, rather than T1" )
+  EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", round(M,2), " Mass Change", " + ", round(S, 2), " Sex ", "     Flew in both, rather than T1" )
   
   # 2 / 1 | Flew in both, not T2
   I = (tb[3,1] - tb[2,1])
   M = (tb[3,2] - tb[2,2])
   S = (tb[3,3] - tb[2,3])
-  EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", round(M,2),  " Mass Percent Change", " + ", round(S, 2), " Sex ", "     Flew in both, rather than T2")
+  EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", round(M,2),  " Mass Change", " + ", round(S, 2), " Sex ", "     Flew in both, rather than T2")
   
   eqs = c(EQ1, EQ2, EQ3)
   print("Where F = 1")
@@ -489,9 +489,9 @@ prediction_equations2(model_table)
 ```
 
 ```{r echo=FALSE}
-eq1 = "Flew in T1 only rather than T2 only = 16.5 + 98.29 Mass % + 15.49 Sex"
-eq2 = "Flew in both rather than T1 only = 1.25 - 50.49 Mass % - 0.1 Sex"
-eq3 = "Flew in both rather than T2 only = 17.67 + 47.8 Mass % + 15.39 Sex"
+eq1 = "Flew in T1 only rather than T2 only = 16.5 + 98.29 Mass Change + 15.49 Sex"
+eq2 = "Flew in both rather than T1 only = 1.25 - 50.49 Mass Change - 0.1 Sex"
+eq3 = "Flew in both rather than T2 only = 17.67 + 47.8 Mass Change + 15.39 Sex"
 
 t = cbind(n_trials, c(eq1, eq2, eq3))
 colnames(t) = c("N","Model")
@@ -523,7 +523,7 @@ model_table = calculate_P2(delta_mass_model)
 ```
 
 ```{r}
-prediction_equations2(model_table)
+gsub("Mass Change",  "Mass Percent Change", prediction_equations2(model_table))
 ```
 
 ```{r echo=FALSE}
@@ -587,9 +587,7 @@ exp(coef(delta_mass_model)*-20) # loose large % mass
 ```
 
 - If F and gain a lot of mass then most likely to fly only in T1 rather than none.
-- If F and loose mass then most likely to fly in T2 only rather than none. (but none did that)
-
-? How to properly interpret these odds?
+- If F and loose mass then most likely to not fly in either trial. 
 
 **Predicted Probabilities**
 
