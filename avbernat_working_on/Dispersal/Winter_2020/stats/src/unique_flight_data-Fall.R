@@ -60,7 +60,5 @@ create_delta_data.Fall <- function(data) {
   d$flight_case[d$flew_diff == 1] = 1
   d$flight_case = as.factor(d$flight_case)
   
-  print(d$flight_case)
-  
   return(d)
 }
