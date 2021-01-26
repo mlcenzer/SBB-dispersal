@@ -17,9 +17,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Using delta_yes_no.Rmd models to predict Fall delta flight response.
 
+**Clean the data**
+
 ```{r}
-data = read.csv("data/all_flight_data-Fall2019.csv",header=TRUE, sep=",", stringsAsFactors=TRUE) 
-head(data)
+source("src/clean_flight_data-Fall.R")
+data = clean_flight_data.Fall("data/all_flight_data-Fall2019.csv")
 ```
 
 **Keeping only the tests that were similar to Winter experiment design**
@@ -41,127 +43,35 @@ ongoing_data = data_mass %>%
   filter(set_number > 71)
 ```
 
-**Clean the data**
+**Create delta data**
 
 ```{r}
-data_all = ongoing_data
-
-#ID
-data_all$ID<-as.factor(data_all$ID)
-
-# Yes-No Flew
-data_all$flew_b<-0
-data_all$flew_b[data_all$flew=="Y"]<-1
-    
-# Host
-data_all$host_temp[data_all$host_plant=="K.elegans"]<- "K. elegans"
-data_all$host_temp[data_all$host_plant=="C. corindum"]<- "C. corindum"
-data_all$host_c[data_all$host_temp=="K. elegans"]<- 1
-data_all$host_c[data_all$host_plant=="C. corindum"]<- -1
-    
-# Sex
-data_all$sex_c<--1
-data_all$sex_c[data_all$sex=="F"]<-1
-    
-# Wing Morph
-data_all$w_morph_c <- -1 # short wing
-data_all$w_morph_c[data_all$w_morph=="L"] <- 1 
-data_all$w_morph_c[data_all$w_morph=="l"] <- 1
-data_all$w_morph_c[data_all$w_morph=="LS"]<- 0
-  
-# Yes-No Eggs on Flight Trial Day
-data_all$eggs_b<-0
-data_all$eggs_b[data_all$eggs=="Y"]<-1
-
-
-center_data <- function(d) {
-
-  # Distance From Sympatric Zone
-  d$lat_c<-d$latitude-mean(d$latitude)
-  d$sym_dist<-abs(d$latitude-25.49197)
-
-  # Average Mass
-  d$mass_c <- d$mass-mean(d$mass, na.rm=TRUE) 
-
-  return(d)
-}
-
-data_all = center_data(data_all)
-head(data_all)
+source("src/unique_flight_data-Fall.R")
+d = create_delta_data.Fall(ongoing_data)
 ```
+
+**Calculating individual predicted probabilities**
+
+This is the format:
+
+<div align="center">$\pi_j = \frac{e^{\alpha_j + \beta_j x}}{\sum_he^{\alpha_h + \beta_h x}}, j=1,...,J$</div> <br/>
+
+Here are the equations:
+
+- [1] "Where F = 1"
+- [1] "log(pi_-1 / pi_1) = 5.81 + 0.05 Mass Percent Change + 4.93 Sex      Flew in T1, rather than T2"    
+- [2] "log(pi_2 / pi_-1) = 1.14 + -0.02 Mass Percent Change + -0.21 Sex      Flew in both, rather than T1"
+- [3] "log(pi_2 / pi_1) = 6.94 + 0.03 Mass Percent Change + 4.72 Sex      Flew in both, rather than T2"
+
+- [4] "log(pi_-1 / pi_0) = -1.02 + 0.043 Mass Percent Change - 0.69 Sex      Flew in T1, rather than none"    
+- [5] "log(pi_1 / pi_0) = -6.82 - 0.009 Mass Percent Change - 5.63 Sex      Flew in both, rather than none"
+- [6] "log(pi_2 / pi_0) = 0.12 + 0.019 Mass Percent Change - 0.90 Sex      Flew in both, rather than none"
+
+**Codifying individual predicted probability equations**
 
 ```{r}
-d <- data_all %>%
-    group_by(ID, sex, population, site, host_plant, latitude, longitude, 
-             host_c, sex_c, w_morph_c, lat_c, sym_dist) %>%
-    summarise_all(funs(list(na.omit(.))))
-
-d$num_flew <- 0
-d$num_notflew <- 0
-d$average_mass <- 0
-  
-d$egg_diff <- 0
-d$mass_diff <- 0
-d$flew_diff <- 0
-d$dist_diff <- 0
-d$speed_diff <- 0
-d$mass_per <- 0 
-d$num_flew_twice <- 0
- 
-  for(row in 1:length(d$flew_b)){
-    
-    n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails
-    d$num_flew[[row]] <- n_flew 
-    
-    n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
-    d$num_notflew[[row]] <- n_notflew
-    
-    avg_mass <- mean(d$mass[[row]])
-    d$average_mass[[row]] <- avg_mass
-    
-    # mass, flight, distance, and speed changes between T1 and T2
-    
-    d$num_flew_twice[[row]] <- d$flew_b[[row]][2] + d$flew_b[[row]][1]
-    d$mass_diff[[row]] <- d$mass[[row]][2] - d$mass[[row]][1]  # T2 - T1
-    d$mass_per[[row]] <- (d$mass_diff[[row]] / d$mass[[row]][1]) * 100
-    d$flew_diff[[row]] <- d$flew_b[[row]][2] - d$flew_b[[row]][1]  # T2 - T1
-    d$dist_diff[[row]] <- d$distance[[row]][2] - d$distance[[row]][1]  # T2 - T1
-    d$speed_diff[[row]] <- d$average_speed[[row]][2] - d$average_speed[[row]][1]  # T2 - T1
-    d$egg_diff[[row]] <- d$eggs_b[[row]][2] - d$eggs_b[[row]][1]  # T2 - T1
-    
-  }
-  
-d <- select(d, -filename, -channel_letter, -set_number)
-
-# Filter out bugs that were not tested twice:
-  rows_remove <- c()
-  for (row in 1:nrow(d)){
-    if (length(d$flew[[row]]) < 2) {
-      rows_remove <- c(rows_remove, row)
-    }
-  }
-d <- d[-rows_remove, ]
-
-# for flight case building
-
-d$flight_case = NA
-d$flight_case[d$num_flew_twice == 0] = 0
-d$flight_case[d$num_flew_twice == 2] = 2
-d$flight_case[d$flew_diff == -1] = -1
-d$flight_case[d$flew_diff == 1] = 1
-d$flight_case = as.factor(d$flight_case)
-
-d$flight_case
+d <- d[with(d, order(mass_per)),]
 ```
-
-[1] "Where F = 1"
-[1] "log(pi_-1 / pi_1) = 5.81 + 0.05 Mass Percent Change + 4.93 Sex      Flew in T1, rather than T2"    
-[2] "log(pi_2 / pi_-1) = 1.14 + -0.02 Mass Percent Change + -0.21 Sex      Flew in both, rather than T1"
-[3] "log(pi_2 / pi_1) = 6.94 + 0.03 Mass Percent Change + 4.72 Sex      Flew in both, rather than T2"
-
-[4] "log(pi_-1 / pi_0) = -1.02 + 0.043 Mass Percent Change - 0.69 Sex      Flew in T1, rather than none"    
-[5] "log(pi_1 / pi_0) = -6.82 - 0.009 Mass Percent Change - 5.63 Sex      Flew in both, rather than none"
-[6] "log(pi_2 / pi_0) = 0.12 + 0.019 Mass Percent Change - 0.90 Sex      Flew in both, rather than none"
 
 ```{r}
 neither = c()
@@ -171,7 +81,7 @@ both_rather_than_none = c()
 for (i in 1:nrow(d)) {
   mp = d$mass_per[[i]]
   s = d$sex_c[[i]]
-  top0 = 1
+  top0 = exp(0) # just equals 1
   top1 = exp(-1.02 + 0.043*mp - 0.69*s)
   top2 = exp(-6.82 - 0.009*mp - 5.63*s)
   top3 = exp(0.12 + 0.019*mp- 0.90*s)
@@ -183,17 +93,55 @@ for (i in 1:nrow(d)) {
 }
 ```
 
+**Plotting predicted probabilities**
+
 ```{r}
-plot(d$mass_per, T1_rather_than_none, ylim=c(0,1), xlim=c(-25, 40), col="blue", ylab="Flight Case Probability", xlab="Percent Changes in Mass From T1 to T2 (g)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
-points(d$mass_per, T2_rather_than_none, col="darkgreen", pch=3, cex=0.45)
-points(d$mass_per, both_rather_than_none, col="maroon", cex=0.45) # flew in T1 but not T2
-points(d$mass_per, neither, col="red", cex=0.45) # flew in T2 but not T1
+d$index = 1:nrow(d)
+females = d %>%
+  filter(sex=="F")
+males = d %>%
+  filter(sex=="M")
+Frows = females$index
+Mrows = males$index
+```
+
+```{r}
+plot(d$mass_per[Frows], T1_rather_than_none[Frows], ylim=c(0,1), xlim=c(-40,104), col="blue", type="l",
+     ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) #T1 only
+points(d$mass_per[Mrows], T1_rather_than_none[Mrows], col="blue", type="l", lty=2)
+points(d$mass_per[Frows], T2_rather_than_none[Frows], col="darkgreen", type="l", lty=1)
+points(d$mass_per[Mrows], T2_rather_than_none[Mrows], col="darkgreen", type="l", lty=2)
+points(d$mass_per[Frows], both_rather_than_none[Frows], col="maroon", type="l", lty=1)
+points(d$mass_per[Mrows], both_rather_than_none[Mrows], col="maroon", type="l", lty=2)
+points(d$mass_per[Frows], neither[Frows], col="red", type="l", lty=1)
+points(d$mass_per[Mrows], neither[Mrows], col="red", type="l", lty=2)
 
 text(-20,0.9, labels="Did Not Fly", col="red")
 text(0,0.5, labels="Flew Twice", col="maroon")
 text(30,0.85, labels="Flew in T1 only", col="blue")
 text(30,0.1, labels="Flew in T2 only", col="darkgreen")
+
+legend(84, 1.02,
+       legend = c("female","male"),
+       lty=1:2,
+       col="black",
+       cex=0.8)
 ```
+
+
+```{r echo=FALSE}
+plot(d$mass_per, T1_rather_than_none, ylim=c(0,1), xlim=c(-25, 40), col="blue", ylab="Flight Case Probability", xlab="Percent Changes in Mass From T1 to T2 (g)", pch=2, cex=0.45) # T1 only
+points(d$mass_per, T2_rather_than_none, col="darkgreen", pch=3, cex=0.45) # T2 only
+points(d$mass_per, both_rather_than_none, col="maroon", cex=0.45) # flew in both
+points(d$mass_per, neither, col="red", cex=0.45) # flew in neither
+
+text(-20,0.9, labels="Did Not Fly", col="red")
+text(0,0.5, labels="Flew Twice", col="maroon")
+text(30,0.55, labels="Flew in T1 only", col="blue")
+text(30,0.1, labels="Flew in T2 only", col="darkgreen")
+```
+
+Notice that the percent change masses are much lower than the scale we had in the Winter. This suggests that there are a lot of males and few females.
 
 **Accuracy**
 
@@ -202,25 +150,148 @@ probs = round(cbind(neither, T1_rather_than_none, T2_rather_than_none, both_rath
 summary_probs = cbind(as.character(d$flight_case), as.character(d$sex), probs)
 colnames(summary_probs) = c("event", "sex", "none", "T1", "T2", "both")
 dataframe = as.data.frame(summary_probs)
-dataframe
 ```
 
 ```{r}
-# overall
-correct = 25
-incorrect = 20
-accuracy = 25/40
-paste("Overall prediction accuracy, ", accuracy)
-
-correctF = 5
-incorrectF = 8
-accuracyF = 5/13
-paste("Female prediction accuracy, ", round(accuracyF,3))
-
-correctM = 20
-incorrectM = 12
-accuracyM = 20/32
-paste("Male prediction accuracy, ", accuracyM)
+calculate_accuracy = function(data, cfirst, clast) {
+  
+  probs = data[cfirst:clast]
+  most_likely_events = colnames(probs)[apply(probs,1,which.max)]
+  actual_events = c()
+  
+  for (i in 1:nrow(data)) {
+    if (data[i,1] == "0") {
+      actual_event = "none"
+    }
+    if (data[i,1] == "-1") {
+      actual_event = "T1"
+    }
+    if (data[i,1] == "1") {
+      actual_event = "T2"
+    }
+    if (data[i,1] == "2") {
+      actual_event = "both"
+    }
+    actual_events = c(actual_events, actual_event)
+  }
+  
+  events = actual_events == most_likely_events
+  accurate_events = sum(events)
+  total_events = length(events)
+  accuracy = accurate_events / total_events
+  
+  return(accuracy)
+}
 ```
 
+**Overall and Grouped Accuracies**
+
+```{r}
+# overall
+acc = calculate_accuracy(dataframe,3,6)
+paste("Overall prediction accuracy, ", round(acc,2))
+
+# by sex
+femdata = dataframe %>%
+  filter(sex=="F")
+maledata = dataframe %>%
+  filter(sex=="M")
+
+accF = calculate_accuracy(femdata,3,6)
+paste("Female prediction accuracy, ", round(accF,2))
+accM = calculate_accuracy(maledata,3,6)
+paste("Male prediction accuracy, ", round(accM,2))
+```
+
+It seems like for males, this model will lead you to overestimating its flight probability. Males will not only fly twice, but they will be most likely to fly twice. Additionally, predicting female flight is much less accurate because of egg-laying events. So, let's use the mass + eggs laid model to predict female flight case probabilities. 
+
+**Females Only**
+
+```{r}
+d = d %>%
+  filter(sex=="F")
+```
+
+*Problem with these models is that there is no case in which females only fly in T2 so that's a possible underestimation in our model.*
+
+- [1] "log(pi_-1 / pi_1) = -1.15 + 0.66 Egg Change + 31.91 Mass Change       Flew in T1, rather than T2 trials"
+- [2] "log(pi_-1 / pi_0) = -2.09 + 2.02 Egg Change + 44.75 Mass Change       Flew in T1, rather than none"
+- [3] "log(pi_2 / pi_0) = -0.94 + 1.36 Egg Change + 12.85 Mass Change       Flew in T1, rather than none"
+
+```{r}
+d <- d[with(d, order(mass_diff)),]
+```
+
+```{r}
+neither = c()
+T1_rather_than_none = c()
+both_rather_than_none = c()
+for (i in 1:nrow(d)) {
+  md = d$mass_diff[[i]]
+  ed = d$egg_diff[[i]]
+  top0 = exp(0) # just equals 1
+  top1 = exp(-2.09 + 2.02*ed + 44.75*md )
+  top2 = exp(-0.94 + 1.36*ed + 12.85*md)
+  bottom = top0 + top1 + top2
+  neither = c(neither, top0/bottom)
+  T1_rather_than_none = c(T1_rather_than_none, top1/bottom)
+  both_rather_than_none = c(both_rather_than_none, top2/bottom)
+}
+```
+
+**Plotting predicted probabilities**
+
+```{r}
+plot(d$mass_diff, T1_rather_than_none, ylim=c(0,1), col="blue", type="l",
+     ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)", lty=1) #T1 only
+points(d$mass_diff, both_rather_than_none, col="maroon", type="l", lty=1)
+points(d$mass_diff, neither, col="red", type="l", lty=1)
+
+text(0,0.75, labels="Did Not Fly", col="red")
+text(0,0.35, labels="Flew Twice", col="maroon")
+text(0,0.15, labels="Flew in T1 only", col="blue")
+```
+
+**Accuracy**
+
+```{r}
+probs = round(cbind(neither, T1_rather_than_none, both_rather_than_none),2)
+summary_probs = cbind(as.character(d$flight_case), as.character(d$egg_diff), probs)
+colnames(summary_probs) = c("event", "egg_diff", "none", "T1", "both")
+
+egg2 = c(1,2,3,5,6,7,9,10,11,13)
+noegg = c(4,8,12)
+
+dataframe = as.data.frame(summary_probs)
+dataframe$egg_cat = c(2,2,2,0,2,2,2,0,2,2,2,0,2)
+```
+
+**Re-plot**
+
+```{r echo=FALSE}
+plot(d$mass_diff[egg2], T1_rather_than_none[egg2], ylim=c(0,1), col="blue", type="l",
+     ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)", lty=2) #T1 only
+points(d$mass_diff[noegg], T1_rather_than_none[noegg], col="blue", type="l", lty=1)
+points(d$mass_diff[egg2], both_rather_than_none[egg2], col="maroon", type="l", lty=2)
+points(d$mass_diff[noegg], both_rather_than_none[noegg], col="maroon", type="l", lty=1)
+points(d$mass_diff[egg2], neither[egg2], col="red", type="l", lty=2)
+points(d$mass_diff[noegg], neither[noegg], col="red", type="l", lty=1)
+
+text(0,0.75, labels="Did Not Fly", col="red")
+text(0,0.35, labels="Flew Twice", col="maroon")
+text(0,0.15, labels="Flew in T1 only", col="blue")
+legend(0.01, 0.98,
+       legend = c("no eggs","2 eggs"),
+       lty=1:2,
+       col="black",
+       cex=0.8)
+```
+
+**Calculate Accuracy**
+
+```{r}
+accF_eggs = calculate_accuracy(dataframe,3,5)
+paste("Female prediction accuracy for mass diff and egg model, ", round(accF_eggs,2))
+```
+Female flight was underestimated, and, considering that the prediction for females is so low, this leads me to believe that *season* is an important factor in predicting flight case probability.
 
