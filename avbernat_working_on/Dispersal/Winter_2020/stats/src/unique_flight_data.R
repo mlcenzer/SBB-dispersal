@@ -11,6 +11,7 @@ create_delta_data = function(data) {
   d$num_flew <- 0
   d$num_notflew <- 0
   d$average_mass <- 0
+  d$num_egg <- 0
   
   d$egg_diff <- 0
   d$mass_diff <- 0

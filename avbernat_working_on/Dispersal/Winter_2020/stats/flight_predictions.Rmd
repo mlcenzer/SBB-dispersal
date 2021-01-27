@@ -12,7 +12,10 @@ setwd(dir)
 
 library(dplyr)
 library(cvms)
-
+library(binom)
+library(ggimage)
+library(ggnewscale)
+library(rsvg)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -107,7 +110,7 @@ Frows = females$index
 Mrows = males$index
 ```
 
-```{r}
+```{r echo=FALSE}
 plot(d$mass_per[Frows], T1_rather_than_none[Frows], ylim=c(0,1), xlim=c(-40,104), col="blue", type="l",
      ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) #T1 only
 points(d$mass_per[Mrows], T1_rather_than_none[Mrows], col="blue", type="l", lty=2)
@@ -256,9 +259,6 @@ get_confusion_matrix = function(data, cfirst, clast) {
 ```{r}
 acc_table = get_confusion_matrix(dataframe,3,6)
 acc_table
-```
-
-```{r}
 confusion_matrix <- acc_table$'Confusion Matrix'[[1]]
 confusion_matrix
 plot_confusion_matrix(confusion_matrix, add_sums=TRUE)
@@ -275,9 +275,9 @@ d = d %>%
 
 *Problem with these models is that there is no case in which females only fly in T2 so that's a possible underestimation in our model.*
 
-- [1] "log(pi_-1 / pi_1) = -1.15 + 0.66 Egg Change + 31.91 Mass Change       Flew in T1, rather than T2 trials"
-- [2] "log(pi_-1 / pi_0) = -2.09 + 2.02 Egg Change + 44.75 Mass Change       Flew in T1, rather than none"
-- [3] "log(pi_2 / pi_0) = -0.94 + 1.36 Egg Change + 12.85 Mass Change       Flew in T1, rather than none"
+- [1] "log(pi_-1 / pi_1) = -1.41 + 0.56 Egg Case + 38.73 Mass Change     Flew in T1, rather than T2 trials"
+- [2] "log(pi_-1 / pi_0) = -0.88 + -0.53 Egg Case + 57.43 Mass Change       Flew in T1, rather than none"
+- [3] "log(pi_2 / pi_0) = -0.53 + -1.09 Egg Case + 18.67 Mass Change       Flew in T1, rather than none"
 
 ```{r}
 d <- d[with(d, order(mass_diff)),]
@@ -291,26 +291,13 @@ for (i in 1:nrow(d)) {
   md = d$mass_diff[[i]]
   ed = d$egg_diff[[i]]
   top0 = exp(0) # just equals 1
-  top1 = exp(-2.09 + 2.02*ed + 44.75*md )
-  top2 = exp(-0.94 + 1.36*ed + 12.85*md)
+  top1 = exp(-0.88 - 0.53*ed + 57.43*md )
+  top2 = exp(-0.53 - 1.09*ed + 18.67*md)
   bottom = top0 + top1 + top2
   neither = c(neither, top0/bottom)
   T1_rather_than_none = c(T1_rather_than_none, top1/bottom)
   both_rather_than_none = c(both_rather_than_none, top2/bottom)
 }
-```
-
-**Plotting predicted probabilities**
-
-```{r}
-plot(d$mass_diff, T1_rather_than_none, ylim=c(0,1), col="blue", type="l",
-     ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)", main="Females Only", lty=1) #T1 only
-points(d$mass_diff, both_rather_than_none, col="maroon", type="l", lty=1)
-points(d$mass_diff, neither, col="red", type="l", lty=1)
-
-text(0,0.75, labels="Did Not Fly", col="red")
-text(0,0.35, labels="Flew Twice", col="maroon")
-text(0,0.15, labels="Flew in T1 only", col="blue")
 ```
 
 **Accuracy**
@@ -327,7 +314,7 @@ dataframe = as.data.frame(summary_probs)
 dataframe$egg_cat = c(2,2,2,0,2,2,2,0,2,2,2,0,2)
 ```
 
-**Re-plot**
+**Plotting predicted probabilities**
 
 ```{r echo=FALSE}
 plot(d$mass_diff[egg2], T1_rather_than_none[egg2], ylim=c(0,1), col="blue", type="l",
@@ -354,7 +341,18 @@ legend(0.01, 0.98,
 accF_eggs = calculate_accuracy(dataframe,3,5)
 paste("Female prediction accuracy for mass diff and egg model, ", round(accF_eggs,2))
 ```
+
 Female flight was underestimated, and, considering that the prediction for females is so low, this leads me to believe that *season* is an important factor in predicting flight case probability.
+
+**Confusion Matrix**
+
+```{r}
+acc_table = get_confusion_matrix(dataframe,3,5)
+acc_table
+confusion_matrix <- acc_table$'Confusion Matrix'[[1]]
+confusion_matrix
+plot_confusion_matrix(confusion_matrix, add_sums=TRUE)
+```
 
 **Season**
 
@@ -401,7 +399,6 @@ sd$f_prob<-sd$num_flew/(sd$num_flew+sd$num_notflew)
 ```
 
 ```{r}
-library(binom)
 ####season vs. flight prob
 data_temp <- aggregate(f_prob~season, data=sd, FUN=mean)
 data_temp$trials <-c(sum(sd$num_flew[sd$season=="fall"]+sd$num_notflew[sd$season=="fall"]), sum(sd$num_flew[sd$season=="winter"]+sd$num_notflew[sd$season=="winter"]))
@@ -412,7 +409,7 @@ data_temp$CI<-binom.confint(data_temp$successes, data_temp$trials, methods="exac
 ```
 
 
-```{r}
+```{r echo=FALSE}
 par(mai=c(1, 1, .2, .2), ps=22) # fig.height=2.7, fig.width=2.7
 
 plot(data_temp$CI$mean~c(1,2), xaxt='n', ylab="Flight probability", xlab="Season", ylim=c(0,1), xlim=c(0.5,2.5), cex=3, pch=19, col=c("red", "blue"))

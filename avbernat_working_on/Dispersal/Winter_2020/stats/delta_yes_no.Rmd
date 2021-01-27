@@ -1285,5 +1285,5 @@ legend(0.033, 1.07,
 - Egg case and egg diff not factors. Not sure how to work around this problem.
 - Subtracting equations when p values are not significant...is that possible? What are the implications if it is?
 - Animate plots?
-
+- For Fall season some bugs were tested more than 2 times (up to four times), but which to pull from and from which experiments?
 
