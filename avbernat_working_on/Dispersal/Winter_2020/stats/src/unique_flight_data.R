@@ -27,6 +27,9 @@ create_delta_data = function(data) {
     n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
     d$num_notflew[[row]] <- n_notflew
     
+    n_egg <- sum(d$eggs_b[[row]] == 1) # total number of times did fly among trails
+    d$num_egg[[row]] <- n_egg 
+    
     avg_mass <- mean(d$mass[[row]])
     d$average_mass[[row]] <- avg_mass
     
@@ -40,6 +43,8 @@ create_delta_data = function(data) {
     d$egg_diff[[row]] <- d$eggs_b[[row]][2] - d$eggs_b[[row]][1]  # T2 - T1
     
   }
+ 
+  d$num_egg = unlist(d$num_egg)
   
   d <- select(d, -filename, -channel_letter, -set_number)
   
@@ -53,15 +58,15 @@ create_delta_data = function(data) {
   d <- d[-rows_remove, ]
   
   # for flight case building
-  d$no_response_b = NA
-  d$no_response_b[d$num_flew == 0] = 0
-  d$no_response_b[d$num_flew == 2] = 2
-  
   d$flight_case = NA
   d$flight_case = d$num_flew
   d$flight_case[d$flew_diff == -1] = -1
   d$flight_case = as.factor(d$flight_case)
-  d$flight_case
+  
+  # for egg case building
+  d$egg_case = NA
+  d$egg_case = d$num_egg
+  d$egg_case[d$egg_diff == -1] = -1
   
   return(d)
 }

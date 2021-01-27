@@ -47,6 +47,7 @@ Flight Trials Winter 2020 were conducted from 2/17/2020 - 3/10/2020. Soapberry b
 Females Only
 
 - [Flew Diff ~ Egg Diff ](#fem_only)
+- [Flew Diff ~ Egg Case ](#fem_only_case)
 
 <a id="intro"></a>
 
@@ -129,7 +130,7 @@ Age also plays a role in this dataset, but age was unknown because the soapberry
 # fig.height=2.4, fig.width=2.7
 ```
 
-```{r}
+```{r echo=FALSE}
 counts <- table(data_tested$flew_b, data_tested$trial_type)
 counts <- counts[1:2,2:3]
 barplot(counts, #main="Flight Distribution by Trial",
@@ -296,7 +297,7 @@ You can calculate these predicted probabilities for each of our outcome levels u
 ```{r}
 head(pp <- fitted(model))
 ```
-```{r}
+```{r echo=FALSE}
 plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="l", ylab="Flight Case Probability", xlab="Changes in Mass From T1 to T2 (g)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
 points(df$mass_diff, pp[,4], col="darkred", type="l", pch=3, cex=0.45)
 points(df$mass_diff, pp[,2], col="blue", type="l", cex=0.45) # flew in T1 but not T2
@@ -385,7 +386,7 @@ exp(coef(model)*-20) # loose large % mass
 head(pp <- fitted(model))
 ```
 
-```{r}
+```{r echo=FALSE}
 plot(df$mass_per, pp[,1], xlim=c(-40, 103), ylim=c(0,1), col="red", type="l", ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
 points(df$mass_per, pp[,4], col="darkred", type="l", pch=3, cex=0.45)
 points(df$mass_per, pp[,2], col="blue", type="l", cex=0.45) # flew in T1 but not T2
@@ -435,7 +436,7 @@ anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
 ```
 
 ```{r echo=FALSE}
-calculate_P2 = function(model) {
+calculate_P2 = function(model, var1, var2) {
   # compute p-values using Wald tests (i.e. z-tests)
   s <- summary(model) 
   z <- s$coefficients/s$standard.errors 
@@ -444,48 +445,57 @@ calculate_P2 = function(model) {
   
   # summary table (similar to lm, glm, or lmer function)
   model_table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[,2:3], z[,2:3], wald[,2:3], p[,2:3])
-  colnames(model_table) <- c("(Intercept)","coeff mass_per", "coeff sex_c","DF", 
-                            "m% SE", "sex SE", "m% z", "sex z", 
-                            "ML wald","sex wald","m% P > |z|", "sex P > |z|")
-  cat("\n", "AIC: ", s$AIC, "\n", "m% = mass_per", "\n") 
-  print(model_table)
+  colnames(model_table) <- c("(Intercept)", var1, var2,"DF", 
+                            "SE1", "SE2", "z1", "z2", 
+                            "ML wald","sex wald","P1 > |z|", "P2 > |z|")
+  cat("\n", "AIC: ", s$AIC, "\n") 
+  print(round(model_table,3))
   return(model_table)
 }
 ```
 
 ```{r}
 delta_mass_model <- multinom(flight_case ~ mass_diff + sex_c, data = df)
-model_table = calculate_P2(delta_mass_model)
+model_table = calculate_P2(delta_mass_model, "mass_diff", "sex_c")
 ```
 
 ```{r echo=FALSE}
-prediction_equations2 = function(tb) {
+prediction_equations2 = function(tb, var1, var2, third_eq = TRUE) {
   # -1 / 1 | Flew in T1, not T2
   I = (tb[1,1] - tb[2,1])
   M = (tb[1,2] - tb[2,2])
   S = (tb[1,3] - tb[2,3])
-  EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), " Mass Change", " + ", round(S, 2), " Sex ", "     Flew in T1, rather than T2" )
+  EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), var1, " + ", round(S, 2), var2, "     Flew in T1, rather than T2" )
   
-  # 2 / -1 | Flew in both, not T1
-  I = (tb[3,1] - tb[1,1])
-  M = (tb[3,2] - tb[1,2])
-  S = (tb[3,3] - tb[1,3])
-  EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", round(M,2), " Mass Change", " + ", round(S, 2), " Sex ", "     Flew in both, rather than T1" )
+  if (third_eq) {
+    # 2 / -1 | Flew in both, not T1
+    I = (tb[3,1] - tb[1,1])
+    M = (tb[3,2] - tb[1,2])
+    S = (tb[3,3] - tb[1,3])
+    EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", round(M,2), var1, " + ", round(S, 2), var2, "     Flew in both, rather than T1" )
+  }
+
+  if (third_eq) {
+    # 2 / 1 | Flew in both, not T2
+    I = (tb[3,1] - tb[2,1])
+    M = (tb[3,2] - tb[2,2])
+    S = (tb[3,3] - tb[2,3])
+    EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", round(M,2),  var1, " + ", round(S, 2), var2, "     Flew in both, rather than T2")
+  }
   
-  # 2 / 1 | Flew in both, not T2
-  I = (tb[3,1] - tb[2,1])
-  M = (tb[3,2] - tb[2,2])
-  S = (tb[3,3] - tb[2,3])
-  EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", round(M,2),  " Mass Change", " + ", round(S, 2), " Sex ", "     Flew in both, rather than T2")
+  eqs = EQ1
   
-  eqs = c(EQ1, EQ2, EQ3)
+  if (third_eq) {
+    eqs = c(EQ1, EQ2, EQ3)
+  }
+  
   print("Where F = 1")
   return(eqs)
 }
 ```
 
 ```{r}
-prediction_equations2(model_table)
+prediction_equations2(model_table, " Mass Change", " Sex ")
 ```
 
 ```{r echo=FALSE}
@@ -519,11 +529,11 @@ anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
 
 ```{r}
 delta_mass_model <- multinom(flight_case ~ mass_per + sex_c, data = df)
-model_table = calculate_P2(delta_mass_model)
+model_table = calculate_P2(delta_mass_model, "mass_per", "sex_c")
 ```
 
 ```{r}
-gsub("Mass Change",  "Mass Percent Change", prediction_equations2(model_table))
+prediction_equations2(model_table, " Mass Percent Change", " Sex ")
 ```
 
 ```{r echo=FALSE}
@@ -687,7 +697,7 @@ Host plant is not significant.
 df <- d %>%
   filter(!is.na(egg_diff), !is.na(mass_diff), !is.na(flew_diff), sex_c == 1)
 
-df <- df[with(df, order(egg_diff)),]
+df <- df[with(df, order(mass_diff)),]
 
 n_tfemales = nrow(df)
 
@@ -696,7 +706,7 @@ df$flight_case <- relevel(as.factor(df$flight_case), ref = "0")
 
 **Barplot**
 
-```{r}
+```{r echo=FALSE}
 # fig.height=2.4, fig.width=2.7
 data_fem = data_tested %>%
   filter(sex=="F")
@@ -739,19 +749,7 @@ null <- multinom(flight_case ~ 1, data = df)
 
 ```{r}
 model <- multinom(flight_case ~ egg_diff, data = df) 
-
-# compute p-values using Wald tests (i.e. z-tests)
-s <- summary(model) 
-z <- s$coefficients/s$standard.errors  
-wald <- z^2
-p <- (1 - pnorm(abs(z), 0, 1)) * 2
-
-# summary table (similar to lm, glm, or lmer function)
-table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[2], z[2], wald[2], p[2])
-colnames(table) <- c("Intercept", "egg_diff","DF", "Std. Err.", "z", "wald", "P > |z|")
-cat("\n")
-cat("AIC: ", s$AIC, "\n")
-table
+model_table = calculate_P(model)
 ```
 
 ```{r}
@@ -800,19 +798,7 @@ Host is not in the best fit model.
 
 ```{r}
 model <- multinom(flight_case ~ egg_diff + mass_diff, data = df) 
-
-# compute p-values using Wald tests (i.e. z-tests)
-s <- summary(model) 
-z <- s$coefficients/s$standard.errors  
-wald <- z^2
-p <- (1 - pnorm(abs(z), 0, 1)) * 2
-
-# summary table (similar to lm, glm, or lmer function)
-model_table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[2], z[2], wald[2], p[2])
-colnames(model_table) <- c("Intercept","egg_diff", "mass_diff", "DF", "Std. Err.", "z", "wald", "P > |z|")
-cat("\n")
-cat("AIC: ", s$AIC, "\n")
-model_table
+model_table = calculate_P2(model, "egg_diff", "mass_diff")
 ```
 
 **The multinomial (ML) prediction equations are:**
@@ -860,11 +846,6 @@ exp(-coef(model)/50) # lost mass
 head(pp <- fitted(model))
 ```
 
-```{r echo=FALSE}
-pp4 = fitted(model)
-df4 = df
-```
-
 ```{r}
 df$index = 1:nrow(df)
 
@@ -883,35 +864,181 @@ egg_T2rows = egg_T2$index
 ```{r echo=FALSE}
 df <- df[with(df, order(mass_diff)),]
 # only laid eggs in T1
-plot(df$mass_diff[egg_T1rows], pp[egg_T1rows,1], ylim=c(0,1), xlim=c(-0.045,0.06), col="red", type="l", lty=1,
+plot(df$mass_diff[egg_T1rows], pp[egg_T1rows,1], ylim=c(0,1), xlim=c(-0.045,0.07), col="red", type="l", lty=1,
      main="Females Only",
      #type="b", cex=0.45, pch=16, 
      ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)") # flew in neither
 points(df$mass_diff[egg_T1rows], pp[egg_T1rows,2], col="blue", type="l", lty=1, cex=0.45)  # flew in T1 only
-points(df$mass_diff[egg_T1rows], pp[egg_T1rows,3], col="maroon", type="l", lty=1, cex=0.45) # flew in both
+points(df$mass_diff[egg_T1rows], pp[egg_T1rows,3], col="black", type="l", lty=1, cex=0.45) # flew in both
 # no egg change
 points(df$mass_diff[egg_nochange_rows], pp[egg_nochange_rows,1], col="red", type="l", lty=2) # did not fly in either
 points(df$mass_diff[egg_nochange_rows], pp[egg_nochange_rows,2], col="blue", type="l", lty=2) # flew in T1 only
-points(df$mass_diff[egg_nochange_rows], pp[egg_nochange_rows,3], col="maroon", type="l", lty=2) # flew in both
+points(df$mass_diff[egg_nochange_rows], pp[egg_nochange_rows,3], col="black", type="l", lty=2) # flew in both
 # only laid eggs in T2
 points(df$mass_diff[egg_T2rows], pp[egg_T2rows,1], col="red", type="l", lty=3) # flew in neither
 points(df$mass_diff[egg_T2rows], pp[egg_T2rows,2], col="blue", type="l", lty=3) # flew in T1 only
-points(df$mass_diff[egg_T2rows], pp[egg_T2rows,3], col="maroon", type="l", lty=3) # flew in both
+points(df$mass_diff[egg_T2rows], pp[egg_T2rows,3], col="black", type="l", lty=3) # flew in both
 
-text(0.04,0.6, labels="Flew in T1 only", col="blue")
-text(-0.035,0.8, labels="Did Not Fly", col="red")
-text(-0.02,0.37, labels="Flew Twice", col="darkred")
-legend(0.025, 1.0,
+text(0.034,0.7, labels="Flew in T1 only", col="blue")
+text(-0.035,0.85, labels="Did Not Fly", col="red")
+text(-0.02,0.3, labels="Flew Twice", col="black")
+legend(0.02, 1.02,
        legend = c("laid eggs in T1","no egg laying change", "laid eggs in T2"),
        lty=1:3,
        col="black",
        cex=0.8)
+rect(-0.038,-1,0.064,2, NA, col = rgb(0.5,0.5,0.5,1/15))
+rect(-0.045,-1,0.038,2, NA, col = rgb(0.5,0.5,0.5,1/15))
+rect(-0.039,-1,0.008,2, NA, col = rgb(0.5,0.5,0.5,1/15))
+# turn this into an animated graph
+```
+
+- Eggs laid only in T1: most likely to not fly
+- No egg laying change: most likely to not fly 
+- Eggs laid in T2:  most likely to fly twice if lost mass but most likely to only fly in T1 if gained more than about 0.015 g. (largest mass change interval)
+
+```{r echo=FALSE}
+pp4 = fitted(model)
+df4 = df
+```
+
+<a id="fem_only_case"></a>
+
+**Egg Case**
+
+```{r echo=FALSE}
+# key = response in T2 - response in T1
+Event = c("laid eggs in both trials", "laid eggs in T2 only", "laid eggs in neither trials", "laid eggs in T1 only")
+Encoding = c(2, 1,0,-1)
+key = cbind(Event, Encoding)
+
+kable(key) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  add_header_above(c("Delta Egg Response Key" = 2 )) 
+```
+
+**Baseline**
+
+```{r}
+df <- d %>%
+  filter(!is.na(egg_case), !is.na(mass_diff), !is.na(flew_diff), sex_c == 1)
+
+df <- df[with(df, order(mass_diff)),]
+
+n_tfemales = nrow(df)
+
+df$flight_case <- relevel(as.factor(df$flight_case), ref = "0")
+```
+
+**Null model**
+
+```{r}
+df$flight_case = droplevels(df$flight_case) # no female bug only flew in T2
+null <- multinom(flight_case ~ 1, data = df) 
+```
+
+**Multinom model: flew_diff ~ egg_case**
+
+```{r}
+model <- multinom(flight_case ~ egg_case, data = df) 
+model_table = calculate_P(model)
+```
+```{r}
+anova(null, model, test="Chisq") # adding egg_case improves fit
+```
+
+
+```{r}
+data <- data.frame(R = df$flight_case, 
+         A = df$egg_case,
+         B = df$mass_diff,
+         C = df$host_c)
+source("src/compare_models.R")
+model_comparisonsAIC("src/generic multinomial models- multinom 1RF + 3 FF.R")
+```
+```{r}
+anova(m4, m7, test="Chisq") # Adding C does not improve fit
+anova(m7, m13, test="Chisq") # Adding  mass_diff*host does not improve fit
+```
+```{r}
+model <- multinom(flight_case ~ mass_diff + egg_case, data = df) 
+model_table = calculate_P2(model, "mass_diff", "egg_case")
 ```
 
 ```{r}
-gf_point(flew_diff ~ mass_diff, data=df, col=~egg_diff) 
-gf_point(flight_case ~ mass_diff, data=df, col=~egg_diff) 
+prediction_equations2(model_table, " Mass Diff", " Egg Case ", third_eq = FALSE)
 ```
+
+**Predicted Probabilities**
+
+```{r}
+head(pp <- fitted(model))
+```
+```{r echo=FALSE}
+df$index = 1:nrow(df)
+
+eggT1 = df %>%
+  filter(egg_case==-1)
+egg0 = df %>%
+  filter(egg_case==0)
+egg2 = df %>%
+  filter(egg_case==2)
+eggT2 = df %>%
+  filter(egg_case==1)
+
+eggT1_rows = eggT1$index
+egg_0rows = egg0$index
+egg_2rows = egg2$index
+eggT2_rows = eggT2$index
+```
+
+```{r echo=FALSE}
+df <- df[with(df, order(mass_diff)),]
+# only laid eggs in T1
+plot(df$mass_diff[eggT1_rows], pp[eggT1_rows,1], ylim=c(0,1.05), xlim=c(-0.045,0.07), col="red", type="l", lty=1,main="Females Only", ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)") 
+points(df$mass_diff[eggT1_rows], pp[eggT1_rows,2], col="blue", type="l", lty=1, cex=0.45) 
+points(df$mass_diff[eggT1_rows], pp[eggT1_rows,3], col="black", type="l", lty=1, cex=0.45) 
+# no egg change
+points(df$mass_diff[egg_0rows], pp[egg_0rows,1], col="red", type="l", lty=2) # did not fly in either
+points(df$mass_diff[egg_0rows], pp[egg_0rows,2], col="blue", type="l", lty=2) # flew in T1 only
+points(df$mass_diff[egg_0rows], pp[egg_0rows,3], col="black", type="l", lty=2) # flew in both
+# eggs twice
+points(df$mass_diff[egg_2rows], pp[egg_2rows,1], col="red", type="l", lty=4) # did not fly in either
+points(df$mass_diff[egg_2rows], pp[egg_2rows,2], col="blue", type="l", lty=4) # flew in T1 only
+points(df$mass_diff[egg_2rows], pp[egg_2rows,3], col="black", type="l", lty=4) # flew in both
+# only laid eggs in T2
+points(df$mass_diff[eggT2_rows], pp[eggT2_rows,1], col="red", type="l", lty=3) # flew in neither
+points(df$mass_diff[eggT2_rows], pp[eggT2_rows,2], col="blue", type="l", lty=3) # flew in T1 only
+points(df$mass_diff[eggT2_rows], pp[eggT2_rows,3], col="black", type="l", lty=3) # flew in both
+
+
+rect(-0.038,-1,0.064,2, NA, col = rgb(0.5,0,0.5,1/15), border="pink") # most likely to not fly unless gain more than about 0.025 g mass and then fly only in T1 (eggs were laid twice).
+rect(-0.045,-1,0.038,2, NA, col = rgb(0.5,0.2,0.5,1/15), border="pink") # most likely to not fly (2nd widest mass change, and laid eggs in T2)
+rect(-0.039,-1,0.008,2, NA, col = rgb(0.1,0.5,0.5,1/10), border="lightblue") # most likely to fly twice (lost mass and laid eggs only in T1)
+rect(-0.005,-1,0.029,2, NA, col = rgb(0.4,0.5,0.5,1/4), border="lightblue") # most likely to fly twice always (smallest mass change and did not lay eggs)
+# turn this into an animated graph...!
+
+text(0.059,0.54, labels="Flew in T1 only", col="blue")
+text(-0.036,0.95, labels="Did Not Fly", col="red")
+text(-0.02,0.35, labels="Flew Twice", col="black")
+legend(0.033, 1.07,
+       legend = c("laid eggs in T1","no eggs laid", "eggs laid twice", "laid eggs in T2"),
+       lty=1:4,
+       col="black",
+       cex=0.8)
+```
+
+```{r echo=FALSE}
+pp5 = fitted(model)
+df5 = df
+```
+
+- Eggs laid twice: most likely to not fly unless gain more than about 0.025 g mass and then fly only in T1 (largest mass change)
+- Eggs laid in T2:  most likely to not fly (2nd widest mass change)
+- Eggs laid only in T1: most likely to fly twice (mostly only lost mass)
+- Eggs not laid: most likely to fly twice always (smallest mass change and mostly only gained about 0.030 g)
+
+
 
 ### Encodings
 
@@ -966,6 +1093,17 @@ kable(key) %>%
 # key = response in T2 - response in T1
 Event = c("laid eggs in T2 but not T1", "laid eggs T1 and T2 or neither trials", "laid eggs in T1 but not T2")
 Encoding = c(1,0,-1)
+key = cbind(Event, Encoding)
+
+kable(key) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  add_header_above(c("Delta Egg Response Key" = 2 )) 
+```
+
+```{r echo=FALSE}
+# key = response in T2 - response in T1
+Event = c("laid eggs in both trials", "laid eggs in T2 only", "laid eggs in neither trials", "laid eggs in T1 only")
+Encoding = c(2, 1,0,-1)
 key = cbind(Event, Encoding)
 
 kable(key) %>%
@@ -1067,30 +1205,85 @@ legend(84, 1.02,
 
 **females only**
 
+**flight case ~ mass diff and egg diff**
+
+
 ```{r echo=FALSE}
 df4 <- df4[with(df4, order(mass_diff)),]
 # only laid eggs in T1
-plot(df4$mass_diff[egg_T1rows], pp[egg_T1rows,1], ylim=c(0,1), xlim=c(-0.045,0.06), col="red", type="l", lty=1,
+plot(df4$mass_diff[egg_T1rows], pp4[egg_T1rows,1], ylim=c(0,1), xlim=c(-0.045,0.07), col="red", type="l", lty=1,
      main="Females Only",
      #type="b", cex=0.45, pch=16, 
      ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)") # flew in neither
-points(df4$mass_diff[egg_T1rows], pp[egg_T1rows,2], col="blue", type="l", lty=1, cex=0.45)  # flew in T1 only
-points(df4$mass_diff[egg_T1rows], pp[egg_T1rows,3], col="maroon", type="l", lty=1, cex=0.45) # flew in both
+points(df4$mass_diff[egg_T1rows], pp4[egg_T1rows,2], col="blue", type="l", lty=1, cex=0.45)  # flew in T1 only
+points(df4$mass_diff[egg_T1rows], pp4[egg_T1rows,3], col="black", type="l", lty=1, cex=0.45) # flew in both
 # no egg change
-points(df4$mass_diff[egg_nochange_rows], pp[egg_nochange_rows,1], col="red", type="l", lty=2) # did not fly in either
-points(df4$mass_diff[egg_nochange_rows], pp[egg_nochange_rows,2], col="blue", type="l", lty=2) # flew in T1 only
-points(df4$mass_diff[egg_nochange_rows], pp[egg_nochange_rows,3], col="maroon", type="l", lty=2) # flew in both
+points(df4$mass_diff[egg_nochange_rows], pp4[egg_nochange_rows,1], col="red", type="l", lty=2) # did not fly in either
+points(df4$mass_diff[egg_nochange_rows], pp4[egg_nochange_rows,2], col="blue", type="l", lty=2) # flew in T1 only
+points(df4$mass_diff[egg_nochange_rows], pp4[egg_nochange_rows,3], col="black", type="l", lty=2) # flew in both
 # only laid eggs in T2
-points(df4$mass_diff[egg_T2rows], pp[egg_T2rows,1], col="red", type="l", lty=3) # flew in neither
-points(df4$mass_diff[egg_T2rows], pp[egg_T2rows,2], col="blue", type="l", lty=3) # flew in T1 only
-points(df4$mass_diff[egg_T2rows], pp[egg_T2rows,3], col="maroon", type="l", lty=3) # flew in both
+points(df4$mass_diff[egg_T2rows], pp4[egg_T2rows,1], col="red", type="l", lty=3) # flew in neither
+points(df4$mass_diff[egg_T2rows], pp4[egg_T2rows,2], col="blue", type="l", lty=3) # flew in T1 only
+points(df4$mass_diff[egg_T2rows], pp4[egg_T2rows,3], col="black", type="l", lty=3) # flew in both
 
-text(0.04,0.6, labels="Flew in T1 only", col="blue")
-text(-0.035,0.8, labels="Did Not Fly", col="red")
-text(-0.02,0.37, labels="Flew Twice", col="darkred")
-legend(0.025, 1.0,
+text(0.034,0.7, labels="Flew in T1 only", col="blue")
+text(-0.035,0.85, labels="Did Not Fly", col="red")
+text(-0.02,0.3, labels="Flew Twice", col="black")
+legend(0.02, 1.02,
        legend = c("laid eggs in T1","no egg laying change", "laid eggs in T2"),
        lty=1:3,
        col="black",
        cex=0.8)
+rect(-0.038,-1,0.064,2, NA, col = rgb(0.5,0.5,0.5,1/15))
+rect(-0.045,-1,0.038,2, NA, col = rgb(0.5,0.5,0.5,1/15))
+rect(-0.039,-1,0.008,2, NA, col = rgb(0.5,0.5,0.5,1/15))
 ```
+
+**flight case ~ mass diff and egg case**
+
+```{r echo=FALSE}
+df5 <- df5[with(df5, order(mass_diff)),]
+# only laid eggs in T1
+plot(df5$mass_diff[eggT1_rows], pp5[eggT1_rows,1], ylim=c(0,1.05), xlim=c(-0.045,0.07), col="red", type="l", lty=1,
+     main="Females Only",
+     #type="b", cex=0.45, pch=16, 
+     ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)") # flew in neither
+points(df5$mass_diff[eggT1_rows], pp5[eggT1_rows,2], col="blue", type="l", lty=1, cex=0.45)  # flew in T1 only
+points(df5$mass_diff[eggT1_rows], pp5[eggT1_rows,3], col="black", type="l", lty=1, cex=0.45) # flew in both
+# no egg change
+points(df5$mass_diff[egg_0rows], pp5[egg_0rows,1], col="red", type="l", lty=2) # did not fly in either
+points(df5$mass_diff[egg_0rows], pp5[egg_0rows,2], col="blue", type="l", lty=2) # flew in T1 only
+points(df5$mass_diff[egg_0rows], pp5[egg_0rows,3], col="black", type="l", lty=2) # flew in both
+# eggs twice
+points(df5$mass_diff[egg_2rows], pp5[egg_2rows,1], col="red", type="l", lty=4) # did not fly in either
+points(df5$mass_diff[egg_2rows], pp5[egg_2rows,2], col="blue", type="l", lty=4) # flew in T1 only
+points(df5$mass_diff[egg_2rows], pp5[egg_2rows,3], col="black", type="l", lty=4) # flew in both
+# only laid eggs in T2
+points(df5$mass_diff[eggT2_rows], pp5[eggT2_rows,1], col="red", type="l", lty=3) # flew in neither
+points(df5$mass_diff[eggT2_rows], pp5[eggT2_rows,2], col="blue", type="l", lty=3) # flew in T1 only
+points(df5$mass_diff[eggT2_rows], pp5[eggT2_rows,3], col="black", type="l", lty=3) # flew in both
+
+
+rect(-0.038,-1,0.064,2, NA, col = rgb(0.5,0,0.5,1/15), border="pink") # most likely to not fly unless gain more than about 0.025 g mass and then fly only in T1 (eggs were laid twice).
+rect(-0.045,-1,0.038,2, NA, col = rgb(0.5,0.2,0.5,1/15), border="pink") # most likely to not fly (2nd widest mass change, and laid eggs in T2)
+rect(-0.039,-1,0.008,2, NA, col = rgb(0.1,0.5,0.5,1/10), border="lightblue") # most likely to fly twice (lost mass and laid eggs only in T1)
+rect(-0.005,-1,0.029,2, NA, col = rgb(0.4,0.5,0.5,1/4), border="lightblue") # most likely to fly twice always (smallest mass change and did not lay eggs)
+# turn this into an animated graph...!
+
+text(0.059,0.54, labels="Flew in T1 only", col="blue")
+text(-0.036,0.95, labels="Did Not Fly", col="red")
+text(-0.02,0.35, labels="Flew Twice", col="black")
+legend(0.033, 1.07,
+       legend = c("laid eggs in T1","no eggs laid", "eggs laid twice", "laid eggs in T2"),
+       lty=1:4,
+       col="black",
+       cex=0.8)
+```
+
+### Questions
+
+- Egg case and egg diff not factors. Not sure how to work around this problem.
+- Subtracting equations when p values are not significant...is that possible? What are the implications if it is?
+- Animate plots?
+
+
