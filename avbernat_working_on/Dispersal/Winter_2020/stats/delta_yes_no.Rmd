@@ -119,6 +119,14 @@ source("src/unique_flight_data.R")
 d <- create_delta_data(data_tested)
 ```
 
+```{r echo=FALSE}
+# for machine learning
+#test = d[,c(1:30,59,63:73)] # for machine learning
+#short_test = d[,c(1:2,5,66:68,71:73)]
+#write.csv(test, file="unique_data-Winter2020.csv")
+#write.csv(short_test, file="unique_data-Winter2020.csv")
+```
+
 ```{r}
 colnames(d)
 ```
