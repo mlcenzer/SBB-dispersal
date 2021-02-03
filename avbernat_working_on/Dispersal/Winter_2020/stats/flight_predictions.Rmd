@@ -26,7 +26,11 @@ Using delta_yes_no.Rmd models to predict Fall delta flight response.
 
 ```{r}
 source("src/clean_flight_data-Fall.R")
-data = clean_flight_data.Fall("data/all_flight_data-Fall2019.csv")
+all_data = clean_flight_data.Fall("data/all_flight_data-Fall2019.csv")
+morph_data = read.csv("data/bug_morphology_flight-trials-Autumn2019.csv", header=TRUE, sep=",", stringsAsFactors=TRUE)
+data <- merge(all_data, morph_data, by=c("ID")) # I must be missing some morphology. Need to check - also need to check that the sexes match. AND population
+# sort(unique(data$ID))
+# sort(unique(all_data$ID))
 ```
 
 **Keeping only the tests that were similar to Winter experiment design**
@@ -46,13 +50,16 @@ data90 = data_mass %>%
 # ongoing trial
 ongoing_data = data_mass %>%
   filter(set_number > 71)
+
+colnames(ongoing_data)[18] = "sex"
+colnames(ongoing_data)[19] = "population"
 ```
 
 **Create delta data**
 
 ```{r}
 source("src/unique_flight_data-Fall.R")
-d = create_delta_data.Fall(ongoing_data)
+d = create_delta_data.Fall(ongoing_data) # dataset changed. Need to find out why.
 ```
 
 **Calculating individual predicted probabilities**
@@ -133,20 +140,7 @@ legend(84, 1.02,
        cex=0.8)
 ```
 
-
-```{r echo=FALSE}
-plot(d$mass_per, T1_rather_than_none, ylim=c(0,1), xlim=c(-25, 40), col="blue", ylab="Flight Case Probability", xlab="Percent Changes in Mass From T1 to T2 (g)", pch=2, cex=0.45) # T1 only
-points(d$mass_per, T2_rather_than_none, col="darkgreen", pch=3, cex=0.45) # T2 only
-points(d$mass_per, both_rather_than_none, col="maroon", cex=0.45) # flew in both
-points(d$mass_per, neither, col="red", cex=0.45) # flew in neither
-
-text(-20,0.9, labels="Did Not Fly", col="red")
-text(0,0.5, labels="Flew Twice", col="maroon")
-text(30,0.55, labels="Flew in T1 only", col="blue")
-text(30,0.1, labels="Flew in T2 only", col="darkgreen")
-```
-
-Notice that the percent change masses are much lower than the scale we had in the Winter. This suggests that there are a lot of males and few females.
+Notice that the percent change masses are much narrower than the scale we had in the Winter. This suggests that there are a lot of males and few females.
 
 **Accuracy**
 
@@ -155,6 +149,7 @@ probs = round(cbind(neither, T1_rather_than_none, T2_rather_than_none, both_rath
 summary_probs = cbind(as.character(d$flight_case), as.character(d$sex), probs)
 colnames(summary_probs) = c("event", "sex", "none", "T1", "T2", "both")
 dataframe = as.data.frame(summary_probs)
+dataframe
 ```
 
 ```{r}
@@ -265,6 +260,58 @@ plot_confusion_matrix(confusion_matrix, add_sums=TRUE)
 ```
 
 For more on confusion maxtrices see: https://cran.r-project.org/web/packages/cvms/vignettes/Creating_a_confusion_matrix.html
+
+**wing2body**
+
+**Calculating individual predicted probabilities**
+
+Here are the equations:
+
+- [1] "Where F = 1"
+- [1] "log(pi_-1 / pi_0) = -17.862 + 0.041m - 0.571s + 23.558w    Flew in T1, rather than none"    
+- [2] "log(pi_1 / pi_0) = -4.395 - 0.005m - 9.580s - 8.937w      Flew in both, rather than none"
+- [3] "log(pi_2 / pi_0) = -19.931 + 0.018m - 0.760s + 28.019w      Flew in both, rather than none"
+
+```{r}
+neither = c()
+T1_rather_than_none = c()
+T2_rather_than_none = c()
+both_rather_than_none = c()
+for (i in 1:nrow(d)) {
+  m = d$mass_per[[i]]
+  s = d$sex_c[[i]]
+  w = d$wing[[i]] / d$body[[i]]
+  top0 = exp(0) # just equals 1
+  top1 = exp(-17.862 + 0.041*m - 0.571*s + 23.558*w )
+  top2 = exp(-4.395 - 0.005*m - 9.580*s - 8.937*w)
+  top3 = exp(-19.931 + 0.018*m - 0.760*s + 28.019*w)
+  bottom = top0 + top1 + top2 + top3
+  neither = c(neither, top0/bottom)
+  T1_rather_than_none = c(T1_rather_than_none, top1/bottom)
+  T2_rather_than_none = c(T2_rather_than_none, top2/bottom)
+  both_rather_than_none = c(both_rather_than_none, top3/bottom)
+}
+```
+
+**Accuracy**
+
+```{r}
+probs = round(cbind(neither, T1_rather_than_none, T2_rather_than_none, both_rather_than_none),2)
+summary_probs = cbind(as.character(d$flight_case), as.character(d$sex), probs)
+colnames(summary_probs) = c("event", "sex", "none", "T1", "T2", "both")
+dataframe = as.data.frame(summary_probs)
+dataframe
+```
+
+
+```{r}
+acc_table = get_confusion_matrix(dataframe,3,6)
+acc_table
+confusion_matrix <- acc_table$'Confusion Matrix'[[1]]
+confusion_matrix
+plot_confusion_matrix(confusion_matrix, add_sums=TRUE)
+```
+
 
 **Females Only**
 

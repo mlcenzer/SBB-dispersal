@@ -22,6 +22,7 @@ library(kableExtra)
 # plotting
 library(rethinking) 
 library(ggformula)
+library(plot.matrix)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -122,7 +123,7 @@ d <- create_delta_data(data_tested)
 ```
 
 ```{r echo=FALSE}
-# for machine learning
+# for machine learning | creates CSV files to be read into the python script
 #test = d[,c(1:30,59,63:73)] # for machine learning
 #short_test = d[,c(1:2,5,66:68,71:73)]
 #write.csv(test, file="unique_data-Winter2020.csv")
@@ -130,8 +131,9 @@ d <- create_delta_data(data_tested)
 ```
 
 ```{r}
-colnames(d)
+colnames(d)[c(1:2,5,66:68,71:73)]
 ```
+
 #### Age Effect 
 
 Age also plays a role in this dataset, but age was unknown because the soapberry bugs were field collected.
@@ -178,7 +180,7 @@ df <- d %>%
 df <- df[with(df, order(mass_diff)),]
 n_trials = nrow(df)
 
-df$flight_case <- relevel(as.factor(df$flight_case), ref = "0")
+df$flight_case <- relevel(as.factor(df$flight_case), ref = "2")
 ```
 
 **Null model**
@@ -190,7 +192,7 @@ null <- multinom(flight_case ~ 1, data = df)
 **Multinom model: flight_case ~ mass_diff**
 
 ```{r echo=FALSE}
-calculate_P = function(model) {
+calculate_P = function(model, print_table=TRUE) {
   # compute p-values using Wald tests (i.e. z-tests)
   s <- summary(model) 
   z <- s$coefficients/s$standard.errors 
@@ -198,10 +200,13 @@ calculate_P = function(model) {
   p <- (1 - pnorm(abs(z), 0, 1)) * 2
   
   # summary table (similar to lm, glm, or lmer function)
-  model_table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[,2], z[,2], wald[,2], p[,2])
+  model_table <- cbind(s$coefficients, c(s$edf, s$edf, s$edf), s$standard.errors[,2], z[,2], wald[,2], p[,2])
   colnames(model_table) <- c("(Intercept)"," Estimate","DF", "Std. Err.", "z", "wald", "P > |z|")
-  cat("\n", "AIC: ", s$AIC, "\n")
-  print(model_table)
+  
+  if (print_table) {
+     cat("\n", "AIC: ", s$AIC, "\n")
+    print(round(model_table,3))
+  }
   return(model_table)
 }
 ```
@@ -210,8 +215,60 @@ calculate_P = function(model) {
 model <- multinom(flight_case ~ mass_diff, data = df) 
 model_table = calculate_P(model)
 ```
+
 ```{r}
 anova(null, model, test="Chisq") # adding mass_diff improves fit 
+```
+
+**Which multinomial model equations are significant:**
+
+```{r echo=FALSE}
+get_significant_models = function(){
+  baselines = -1:2
+  pvalues = matrix(NA, nrow = 4, ncol = 4)
+  r = 0
+  for (i in baselines) {
+    r = r + 1
+    df$flight_case <- relevel(as.factor(df$flight_case), ref = as.character(i))
+    model <- multinom(flight_case ~ mass_diff, trace=FALSE, data = df) 
+    model_table = calculate_P(model, print_table=FALSE)
+    cat("Baseline is: ", i, "\n")
+    
+    eqs = rownames(model_table)
+    c = 0
+    for (e in eqs){
+      c = c + 1
+      e = as.integer(e) + 2 
+      #cat("row: ", r, "   col:", e, "    pval: ", model_table[c,7], "     true col:",e - 2, "\n")
+      pvalues[r,e] = model_table[c,7]
+    } 
+    
+    pvals = model_table[,7]
+    for (i in 1:length(pvals)){
+      if (pvals[i] > 0.05) {
+        cat("\tEquation is", eqs[i], "\tP is", pvals[i], "\n")
+      }
+    }
+  }
+  
+  cat("\nBaselines are the rows and the equations are the columns. \n")
+  colnames(pvalues) = baselines
+  rownames(pvalues) = baselines 
+  print(round(pvalues,3))
+  
+  #plot
+  par(mar=c(5.1, 4.1, 3.1, 4.1))
+  plot(pvalues, ylab="Baselines", xlab="Equation", main="p-values", 
+     na.col="white", col=rev(grey.colors(7)), digits=4, 
+     breaks=c(0.05,0.10, 0.5, 0.8, 1),
+     text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')
+  
+  return(pvalues)
+}
+```
+
+```{r}
+get_significant_models()
 ```
 
 **The multinomial (ML) prediction equations are:**
@@ -239,7 +296,7 @@ prediction_equations = function(tb) {
 ```
 
 ```{r}
-prediction_equations(model_table)
+prediction_equations(model_table) 
 ```
 
 ```{r echo=FALSE}
@@ -247,8 +304,9 @@ eq1 = "Flew in T1 only rather than T2 only = 1.36 + 62.51 Mass Change"
 eq2 = "Flew in both rather than T1 only = 1.19 - 43.88 Mass Change"
 eq3 = "Flew in both rather than T2 only = 2.55 + 18.63 Mass Change"
 
-t = cbind(n_trials, c(eq1, eq2, eq3))
-colnames(t) = c("N","Model")
+significance = c("not sig", "sig", "not sig")
+t = cbind(n_trials, c(eq1, eq2, eq3), significance)
+colnames(t) = c("N","Model", "P")
 
 kable(t) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
