@@ -180,7 +180,7 @@ df <- d %>%
 df <- df[with(df, order(mass_diff)),]
 n_trials = nrow(df)
 
-df$flight_case <- relevel(as.factor(df$flight_case), ref = "2")
+df$flight_case <- relevel(as.factor(df$flight_case), ref = "0")
 ```
 
 **Null model**
@@ -223,6 +223,10 @@ anova(null, model, test="Chisq") # adding mass_diff improves fit
 **Which multinomial model equations are significant:**
 
 ```{r echo=FALSE}
+run_multinom_model = function(d){
+  m <- multinom(flight_case ~ mass_diff, trace=FALSE, data = d) 
+  return(m)
+}
 get_significant_models = function(){
   baselines = -1:2
   pvalues = matrix(NA, nrow = 4, ncol = 4)
@@ -230,40 +234,26 @@ get_significant_models = function(){
   for (i in baselines) {
     r = r + 1
     df$flight_case <- relevel(as.factor(df$flight_case), ref = as.character(i))
-    model <- multinom(flight_case ~ mass_diff, trace=FALSE, data = df) 
-    model_table = calculate_P(model, print_table=FALSE)
-    cat("Baseline is: ", i, "\n")
+    m = run_multinom_model(df)
+    model_table = calculate_P(m, print_table=FALSE)
     
     eqs = rownames(model_table)
     c = 0
     for (e in eqs){
       c = c + 1
       e = as.integer(e) + 2 
-      #cat("row: ", r, "   col:", e, "    pval: ", model_table[c,7], "     true col:",e - 2, "\n")
       pvalues[r,e] = model_table[c,7]
     } 
-    
-    pvals = model_table[,7]
-    for (i in 1:length(pvals)){
-      if (pvals[i] > 0.05) {
-        cat("\tEquation is", eqs[i], "\tP is", pvals[i], "\n")
-      }
-    }
   }
-  
-  cat("\nBaselines are the rows and the equations are the columns. \n")
   colnames(pvalues) = baselines
   rownames(pvalues) = baselines 
-  print(round(pvalues,3))
-  
+
   #plot
   par(mar=c(5.1, 4.1, 3.1, 4.1))
   plot(pvalues, ylab="Baselines", xlab="Equation", main="p-values", 
      na.col="white", col=rev(grey.colors(7)), digits=4, 
      breaks=c(0.05,0.10, 0.5, 0.8, 1),
      text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')
-  
-  return(pvalues)
 }
 ```
 
@@ -314,32 +304,16 @@ kable(t) %>%
 
 **Estimated Odds**
 
-For bugs of mass_diff x + 1 * (1/50 g or 0.02 g), the estimated odds that the bug flew in T1 rather than T2 equals
-
-```{r}
-exp(62.51/50)
-```
-
-times the estimated odds at mass_diff x (g). As gain mass, then less likely to fly again.
-
 For bugs of mass_diff x + 1/50 (0.02) g, the estimated odds that the bug flew twice rather than only in T1 equals
 
 ```{r}
 exp(-43.88/50)
 ```
 
-times the estimated odds at mass_diff x (g). Same idea - as gain mass, then less likely to fly again. 
-
-For bugs of mass_diff x + 1/50 (0.02) g, the estimated odds that the bug flew twice rather than only in T2 equals
+times the estimated odds at mass_diff x (g). As gain mass, then less likely to fly again. 
 
 ```{r}
-exp(18.63/50)
-```
-
-times the estimated odds at mass_diff x (g). As gain mass, then more likely to fly twice rather than fly only in T2. So the case of flying twice is more likely than only flying in T2 more so because only flying in T2 is a very rare case if you gain mass. So flying twice is more likely when a bug gains mass but not necessarily *most likely*. What is most likely is flying only in T1 if a bug gains mass
-
-```{r}
-exp(coef(model)/50) # this compares to not flying, the baseline 
+exp(coef(model)/50) # this compares to not flying, the baseline | 1/0 not significant
 ```
 
 **Predicted probabilities** 
@@ -384,6 +358,7 @@ abline(v=-0.022, lty=2, col="black")
 #        title="Flight Count",
 #        col=c("red","black","darkred"))
 ```
+
 ```{r echo=FALSE}
 pp1 <- fitted(model)
 df1 <- df # for summary purposes
@@ -405,6 +380,16 @@ model_table = calculate_P(model)
 ```
 Model comparing flying only in T2 to the baseline (not flying at all) **is not significant (P = 0.97)**. That is probably because so few bugs (only male) flew in T2 only.
 
+**Significant ML equations**
+
+```{r}
+run_multinom_model = function(d) {
+  m <- multinom(flight_case ~ mass_per, trace=FALSE, data = d) 
+  return(m)
+}
+get_significant_models()
+```
+
 **The multinomial (ML) prediction equations are:**
 
 ```{r}
@@ -416,8 +401,9 @@ eq1 = "Flew in T1 only rather than T2 only = 1.22 + 0.04 Mass %"
 eq2 = "Flew in both rather than T1 only = 1.25 - 0.02 Mass %"
 eq3 = "Flew in both rather than T2 only = 2.48 + 0.02 Mass %"
 
-t = cbind(n_trials, c(eq1, eq2, eq3))
-colnames(t) = c("N","Model")
+significance = c("sig", "sig", "not sig")
+t = cbind(n_trials, c(eq1, eq2, eq3), significance)
+colnames(t) = c("N","Model", "P")
 
 kable(t) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
@@ -447,6 +433,7 @@ exp(coef(model)*20) # this compares to no fly, the baseline # gain large % mass
 exp(coef(model)*5) # gain small % mass
 exp(coef(model)*-5) # loose small % mass
 exp(coef(model)*-20) # loose large % mass
+# 1/0 not significant
 ```
 1 vs. 0 is not significant as already stated. However, -1 vs. 0 shows that as gain more mass then become increasingly more likely to only fly once. If loose mass then most likely to not fly at all, and more likely to fly twice then fly only once.
 
@@ -504,7 +491,7 @@ anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
 ```
 
 ```{r echo=FALSE}
-calculate_P2 = function(model, var1, var2) {
+calculate_P2 = function(model, var1, var2, print_table=TRUE) {
   # compute p-values using Wald tests (i.e. z-tests)
   s <- summary(model) 
   z <- s$coefficients/s$standard.errors 
@@ -512,12 +499,14 @@ calculate_P2 = function(model, var1, var2) {
   p <- (1 - pnorm(abs(z), 0, 1)) * 2
   
   # summary table (similar to lm, glm, or lmer function)
-  model_table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[,2:3], z[,2:3], wald[,2:3], p[,2:3])
+  model_table <- cbind(s$coefficients, c(s$edf, s$edf, s$edf), s$standard.errors[,2:3], z[,2:3], wald[,2:3], p[,2:3])
   colnames(model_table) <- c("(Intercept)", var1, var2,"DF", 
                             "SE1", "SE2", "z1", "z2", 
                             "ML wald","sex wald","P1 > |z|", "P2 > |z|")
-  cat("\n", "AIC: ", s$AIC, "\n") 
-  print(round(model_table,3))
+  if (print_table) {
+    cat("\n", "AIC: ", s$AIC, "\n") 
+    print(round(model_table,3))
+  }
   return(model_table)
 }
 ```
@@ -525,6 +514,48 @@ calculate_P2 = function(model, var1, var2) {
 ```{r}
 delta_mass_model <- multinom(flight_case ~ mass_diff + sex_c, data = df)
 model_table = calculate_P2(delta_mass_model, "mass_diff", "sex_c")
+```
+
+**Significant models**
+
+```{r echo=FALSE}
+run_multinom_model = function(d) {
+  m <- multinom(flight_case ~ mass_diff + sex_c, trace=FALSE, data = d) 
+  model_table = calculate_P2(m, "mass_diff", "sex_c", print_table=FALSE)
+  return(model_table)
+}
+get_significant_models = function(val_num){
+  baselines = -1:2
+  pvalues = matrix(NA, nrow = 4, ncol = 4)
+  r = 0
+  for (i in baselines) {
+    r = r + 1
+    df$flight_case <- relevel(as.factor(df$flight_case), ref = as.character(i))
+    model_table = run_multinom_model(df)
+
+    eqs = rownames(model_table)
+    c = 0
+    for (e in eqs){
+      c = c + 1
+      e = as.integer(e) + 2 
+      pvalues[r,e] = model_table[c,val_num]
+    } 
+  }
+  colnames(pvalues) = baselines
+  rownames(pvalues) = baselines 
+
+  #plot
+  par(mar=c(5.1, 4.1, 3.1, 4.1))
+  plot(pvalues, ylab="Baselines", xlab="Equation", main="p-values", 
+     na.col="white", col=rev(grey.colors(7)), digits=4, 
+     breaks=c(0.05,0.10, 0.5, 0.8, 1),
+     text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')
+}
+```
+
+```{r}
+get_significant_models(11) # mass_diff
+get_significant_models(12) # sex
 ```
 
 ```{r echo=FALSE}
@@ -571,8 +602,9 @@ eq1 = "Flew in T1 only rather than T2 only = 16.5 + 98.29 Mass Change + 15.49 Se
 eq2 = "Flew in both rather than T1 only = 1.25 - 50.49 Mass Change - 0.1 Sex"
 eq3 = "Flew in both rather than T2 only = 17.67 + 47.8 Mass Change + 15.39 Sex"
 
-t = cbind(n_trials, c(eq1, eq2, eq3))
-colnames(t) = c("N","Model")
+significance = c("not mass | sex**", "mass** | not sex", " not mass | sex** ")
+t = cbind(n_trials, c(eq1, eq2, eq3), significance)
+colnames(t) = c("N","Model", "P")
 
 kable(t) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
@@ -603,14 +635,26 @@ model_table = calculate_P2(delta_mass_model, "mass_per", "sex_c")
 ```{r}
 prediction_equations2(model_table, " Mass Percent Change", " Sex ")
 ```
+**Significant models**
+
+```{r}
+run_multinom_model = function(d) {
+  m <- multinom(flight_case ~ mass_per + sex_c, trace=FALSE, data = d) 
+  model_table = calculate_P2(m, "mass_diff", "sex_c", print_table=FALSE)
+  return(model_table)
+}
+get_significant_models(11)
+get_significant_models(12)
+```
 
 ```{r echo=FALSE}
 eq1 = "Flew in T1 only rather than T2 only = 5.81 + 0.05 Mass % + 4.93 Sex"
 eq2 = "Flew in both rather than T1 only = 1.14 - 0.02 Mass % - 0.21 Sex"
 eq3 = "Flew in both rather than T2 only = 6.94 + 0.03 Mass % + 4.72 Sex"
 
-t = cbind(n_trials, c(eq1, eq2, eq3))
-colnames(t) = c("N","Model")
+significance = c("mass** | sex**", "mass** | not sex", "not mass | sex**")
+t = cbind(n_trials, c(eq1, eq2, eq3), significance)
+colnames(t) = c("N","Model", "P")
 
 kable(t) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
@@ -662,6 +706,7 @@ exp(coef(delta_mass_model)*20) # this compares to no fly, the baseline # gain la
 exp(coef(delta_mass_model)*5) # gain small % mass
 exp(coef(delta_mass_model)*-5) # loose small % mass
 exp(coef(delta_mass_model)*-20) # loose large % mass
+# 1/0 mass not sig but sex**
 ```
 
 - If F and gain a lot of mass then most likely to fly only in T1 rather than none.
@@ -778,24 +823,47 @@ anova(m7, m13, test="Chisq") # Adding B*C does not improve fit
 ```
 
 ```{r}
-model <- multinom(flight_case ~ mass_per + sex_c + wing2body, data = df)
-
-# compute p-values using Wald tests (i.e. z-tests)
-s <- summary(model) 
-z <- s$coefficients/s$standard.errors 
-wald <- z^2
-p <- (1 - pnorm(abs(z), 0, 1)) * 2
+calculate_P3 = function(m, print_table=TRUE) {
   
-# summary table (similar to lm, glm, or lmer function)
-model_table <- cbind(s$coefficients, c(s$edf, s$edf), s$standard.errors[,2:4], z[,2:4], wald[,2:4], p[,2:4])
-colnames(model_table) <- c("(Intercept)", "mass %", "sex","wing2body","DF", 
-                            "SE1", "SE2", "SE3", "z1", "z2", "z3",
-                            "wald2","wald1", "wald3", "P1>|z|", "P2>|z|", "P3>|z|")
-cat("\n", "AIC: ", s$AIC, "\n") 
-print(round(model_table,3))
+  # compute p-values using Wald tests (i.e. z-tests)
+  s <- summary(m) 
+  z <- s$coefficients/s$standard.errors 
+  wald <- z^2
+  p <- (1 - pnorm(abs(z), 0, 1)) * 2
+    
+  # summary table (similar to lm, glm, or lmer function)
+  model_table <- cbind(s$coefficients, c(s$edf, s$edf, s$edf), s$standard.errors[,2:4], z[,2:4], wald[,2:4], p[,2:4])
+  colnames(model_table) <- c("(Intercept)", "mass %", "sex","wing2body","DF", 
+                              "SE1", "SE2", "SE3", "z1", "z2", "z3",
+                              "wald2","wald1", "wald3", "P1>|z|", "P2>|z|", "P3>|z|")
+  if (print_table){
+    cat("\n", "AIC: ", s$AIC, "\n") 
+    print(round(model_table,3))    
+  }
+  return(model_table)
+}
+```
+
+```{r}
+model <- multinom(flight_case ~ mass_per + sex_c + wing2body, data = df)
+model_table = calculate_P3(model)
 ```
 
 Signal of flying in only T2 is weak, which is probably why the equation in the model was not significant. It does not differ much from not flying at all.
+
+**Significant equations**
+
+```{r}
+run_multinom_model = function(d) {
+  m <- multinom(flight_case ~ mass_per + sex_c + wing2body, trace=FALSE, data = d)
+  model_table = calculate_P3(m, print_table=FALSE)
+  return(model_table)
+}
+get_significant_models(15) # mass%
+get_significant_models(16) # sex
+get_significant_models(17) # wing2body
+```
+
 
 **Predicted Probabilities**
 
@@ -954,6 +1022,50 @@ model_table = calculate_P(model)
 anova(null, model, test="Chisq") # adding egg_case improves fit
 ```
 
+**Significant models**
+
+```{r echo=FALSE}
+run_multinom_model = function(d) {
+  m <- multinom(flight_case ~ egg_case, trace=FALSE, data = d) 
+  model_table = calculate_P(m, print_table=FALSE)
+  return(model_table)
+}
+get_significant_modelsf = function(num_val){
+  baselines = c(-1, 0, 2)
+  pvalues = matrix(NA, nrow = 4, ncol = 4)
+  r = 0
+  for (b in baselines) {
+    r = r + 1
+    df$flight_case <- relevel(as.factor(df$flight_case), ref = as.character(b))
+    model_table = run_multinom_model(df)
+
+    eqs = rownames(model_table)
+    c = 0
+    for (e in eqs){
+      if (r == 3) {
+        r =4
+      }
+      c = c + 1
+      e = as.integer(e) + 2 
+      pvalues[r,e] = model_table[c,num_val]
+    } 
+  }
+  colnames(pvalues) = c(-1, 0, NA, 2)
+  rownames(pvalues) = c(-1, 0, NA, 2) 
+
+  #plot
+  par(mar=c(5.1, 4.1, 3.1, 4.1))
+  plot(pvalues, ylab="Baselines", xlab="Equation", main="p-values", 
+     na.col="white", col=rev(grey.colors(7)), digits=4, 
+     breaks=c(0.05,0.10, 0.5, 0.8, 1),
+     text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')
+}
+```
+
+```{r}
+get_significant_modelsf(7) #-1/0 egg case not sig | 0/-1 or 2/-1 egg case not sig | -1/2 egg case not sig | but 0/2 and 2/0 egg case**
+```
+
 **Comparing models: adding host**
 
 Adding host with egg_diff and mass_diff
@@ -986,8 +1098,27 @@ model <- multinom(flight_case ~ mass_diff + egg_case, data = df)
 model_table = calculate_P2(model, "mass_diff", "egg_case")
 ```
 
+**Significant eqs**
+
 ```{r}
-prediction_equations2(model_table, " Mass Diff", " Egg Case ", third_eq = FALSE)
+run_multinom_model = function(d) {
+  m <- multinom(flight_case ~ mass_diff + egg_case, trace=FALSE, data = d) 
+  model_table = calculate_P2(m, "mass_diff", "egg_case", print_table=FALSE)
+  return(model_table)
+}
+get_significant_modelsf(11) # mass diff
+get_significant_modelsf(12) # egg_case
+```
+
+
+```{r}
+tb = model_table
+# -1 / 2 | Flew in T1, not T2
+I = (tb[1,1] - tb[2,1])
+M = (tb[1,2] - tb[2,2])
+E = (tb[1,3] - tb[2,3])
+EQ1 = paste0("log(pi_-1 / pi_2) = ", round(I, 2), " + ", round(M,2), " Mass Diff", " + ", round(E, 2), " Egg Case", "     Flew in T1, rather than both" )
+EQ1  # mass_dff** | sex not
 ```
 
 **Predicted Probabilities**
