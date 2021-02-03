@@ -143,11 +143,14 @@ Age also plays a role in this dataset, but age was unknown because the soapberry
 ```
 
 ```{r echo=FALSE}
-counts <- table(data_tested$flew_b, data_tested$trial_type)
-counts <- counts[1:2,2:3]
-barplot(counts, #main="Flight Distribution by Trial",
+bar = function() {
+  counts <- table(data_tested$flew_b, data_tested$trial_type)
+  counts <- counts[1:2,2:3]
+  barplot(counts, #main="Flight Distribution by Trial",
   xlab="Trial", col=c("lightblue","darkgoldenrod2"),
   legend = c("no flew", "yes flew"), ylim=c(0,250), beside=TRUE)
+}
+bar()
 ```
 
 #### Modeling
@@ -340,28 +343,28 @@ You can calculate these predicted probabilities for each of our outcome levels u
 head(pp <- fitted(model))
 ```
 ```{r echo=FALSE}
-plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="l", ylab="Flight Case Probability", xlab="Changes in Mass From T1 to T2 (g)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
-points(df$mass_diff, pp[,4], col="darkred", type="l", pch=3, cex=0.45)
-points(df$mass_diff, pp[,2], col="blue", type="l", cex=0.45) # flew in T1 but not T2
-points(df$mass_diff, pp[,3], col="darkgreen", type="l", cex=0.45) # flew in T2 but not T1
-text(-0.035,0.7, labels="Did Not Fly", col="red")
-text(0.007,0.6, labels="Flew Twice", col="darkred")
-text(0.05,0.85, labels="Flew in T1 only", col="blue")
-text(0.014,0.1, labels="Flew in T2 only", col="darkgreen")
-#abline(v=0.011, lty=2, col="black")
-abline(v=0.027, lty=2, col="black")
-abline(v=-0.0165, lty=2, col="black")
-abline(v=-0.022, lty=2, col="black")
-# legend(-0.015, 0.99,
-#        legend = c("0","1", "2"),
-#        pch = c(2,1, 3),
-#        title="Flight Count",
-#        col=c("red","black","darkred"))
-```
-
-```{r echo=FALSE}
+plot1 = function(df, pp) {
+   plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="l", ylab="Flight Case Probability", xlab="Changes in Mass From T1 to T2 (g)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
+  points(df$mass_diff, pp[,4], col="darkred", type="l", pch=3, cex=0.45)
+  points(df$mass_diff, pp[,2], col="blue", type="l", cex=0.45) # flew in T1 but not T2
+  points(df$mass_diff, pp[,3], col="darkgreen", type="l", cex=0.45) # flew in T2 but not T1
+  text(-0.035,0.7, labels="Did Not Fly", col="red")
+  text(0.007,0.6, labels="Flew Twice", col="darkred")
+  text(0.05,0.85, labels="Flew in T1 only", col="blue")
+  text(0.014,0.1, labels="Flew in T2 only", col="darkgreen")
+  #abline(v=0.011, lty=2, col="black")
+  abline(v=0.027, lty=2, col="black")
+  abline(v=-0.0165, lty=2, col="black")
+  abline(v=-0.022, lty=2, col="black")
+  # legend(-0.015, 0.99,
+  #        legend = c("0","1", "2"),
+  #        pch = c(2,1, 3),
+  #        title="Flight Count",
+  #        col=c("red","black","darkred")) 
+}
 pp1 <- fitted(model)
 df1 <- df # for summary purposes
+plot1(df1,pp1)
 ```
 
 <a id="mass_percentage"></a>
@@ -442,31 +445,32 @@ head(pp <- fitted(model))
 ```
 
 ```{r echo=FALSE}
-plot(df$mass_per, pp[,1], xlim=c(-40, 103), ylim=c(0,1), col="red", type="l", ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
-points(df$mass_per, pp[,4], col="darkred", type="l", pch=3, cex=0.45)
-points(df$mass_per, pp[,2], col="blue", type="l", cex=0.45) # flew in T1 but not T2
-points(df$mass_per, pp[,3], col="darkgreen", type="l", cex=0.45) # flew in T2 but not T1
-text(-36,0.65, labels="Did Not \nFly", col="red")
-text(20,0.6, labels="Flew Twice", col="darkred")
-text(85,0.85, labels="Flew in T1 only", col="blue")
-text(20,0.1, labels="Flew in T2 only", col="darkgreen")
-#abline(v=0.011, lty=2, col="black")
-abline(v=53, lty=2, col="black")
-abline(v=-16.5, lty=2, col="black")
-abline(v=-28, lty=2, col="black")
-# legend(-0.015, 0.99,
-#        legend = c("0","1", "2"),
-#        pch = c(2,1, 3),
-#        title="Flight Count",
-#        col=c("red","black","darkred"))
+plot2 = function(df, pp) {
+    plot(df$mass_per, pp[,1], xlim=c(-40, 103), ylim=c(0,1), col="red", type="l", ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
+  points(df$mass_per, pp[,4], col="darkred", type="l", pch=3, cex=0.45)
+  points(df$mass_per, pp[,2], col="blue", type="l", cex=0.45) # flew in T1 but not T2
+  points(df$mass_per, pp[,3], col="darkgreen", type="l", cex=0.45) # flew in T2 but not T1
+  text(-36,0.65, labels="Did Not \nFly", col="red")
+  text(20,0.6, labels="Flew Twice", col="darkred")
+  text(85,0.85, labels="Flew in T1 only", col="blue")
+  text(20,0.1, labels="Flew in T2 only", col="darkgreen")
+  #abline(v=0.011, lty=2, col="black")
+  abline(v=53, lty=2, col="black")
+  abline(v=-16.5, lty=2, col="black")
+  abline(v=-28, lty=2, col="black")
+  # legend(-0.015, 0.99,
+  #        legend = c("0","1", "2"),
+  #        pch = c(2,1, 3),
+  #        title="Flight Count",
+  #        col=c("red","black","darkred"))
+}
+
+pp2 = fitted(model)
+df2 <- df # for summary purposes
+plot2(df2,pp2)
 ```
 
 For more on multinomial plotting for when have more than 1 predictor variables see the following: https://stats.idre.ucla.edu/r/dae/multinomial-logistic-regression/
-
-```{r echo=FALSE}
-pp2 = fitted(model)
-df2 <- df # for summary purposes
-```
 
 <a id="adding_sex"></a>
 
@@ -729,50 +733,50 @@ Mrows = males$index
 ```
 
 ```{r echo=FALSE}
-plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",
+plot3 = function(df, pp) {
+  plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",
      type="l",
      #type="b", cex=0.45, pch=16, 
      ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) # flew in T1 but not T2
-points(df$mass_per[Mrows], pp[Mrows,1], col="red", type="l", cex=0.45, lty=2) 
-# pch=c(2,3)[as.factor(df$no_response_b[Frows])]
-points(df$mass_per[Frows], pp[Frows,2], col="blue", 
-       type="l",
-       #type="b", cex=0.45, pch=16
-       ) # did not fly in either
-points(df$mass_per[Mrows], pp[Mrows,2], col="blue", type="l", cex=0.45, lty=2)
-points(df$mass_per[Frows], pp[Frows,3], col="darkgreen", cex=0.45, type="l", pch=16) # flew in T2 but not T1
-points(df$mass_per[Mrows], pp[Mrows,3], col="darkgreen", type="l", cex=0.45, lty=2) 
-points(df$mass_per[Frows], pp[Frows,4], col="darkred", 
-       type="l",
-       #type="b", cex=0.45, pch=16
-       ) # flew in both
-points(df$mass_per[Mrows], pp[Mrows,4], col="darkred", type="l", cex=0.45, lty=2) 
-text(68,0.7, labels="Flew in T1 only", col="blue")
-text(-27,0.9, labels="Did Not Fly", col="red")
-text(13,0.37, labels="Flew Twice", col="darkred")
-#text(75,0.05, labels="Flew in T2 only", col="darkgreen")
-# female line is always higher
-# text(0.0,0.96, labels="F", col="red")
-# text(0.0,0.7, labels="M", col="red")
-# text(0.02,0.2, labels="F", col="blue")
-# text(0.0,0.25, labels="M", col="blue")
-# text(0.025,0.05, labels="F", col="darkgreen")
-# text(0.01,0.10, labels="M", col="darkgreen")
-# abline(v=40.5, lty=1, col="black")
-# abline(v=7.5, lty=3, col="black")
-# abline(v=-17, lty=3, col="black")
-# rect(56,-4,-24,2,col = rgb(0.5,0.5,0.5,1/4))
-# abline(v=-0.008, lty=2, col="slategrey")
-legend(83, 1.0,
-       legend = c("female","male"),
-       lty=1:2,
-       col="black",
-       cex=0.8)
-```
-
-```{r echo=FALSE}
+  points(df$mass_per[Mrows], pp[Mrows,1], col="red", type="l", cex=0.45, lty=2) 
+  # pch=c(2,3)[as.factor(df$no_response_b[Frows])]
+  points(df$mass_per[Frows], pp[Frows,2], col="blue", 
+         type="l",
+         #type="b", cex=0.45, pch=16
+         ) # did not fly in either
+  points(df$mass_per[Mrows], pp[Mrows,2], col="blue", type="l", cex=0.45, lty=2)
+  points(df$mass_per[Frows], pp[Frows,3], col="darkgreen", cex=0.45, type="l", pch=16) # flew in T2 but not T1
+  points(df$mass_per[Mrows], pp[Mrows,3], col="darkgreen", type="l", cex=0.45, lty=2) 
+  points(df$mass_per[Frows], pp[Frows,4], col="darkred", 
+         type="l",
+         #type="b", cex=0.45, pch=16
+         ) # flew in both
+  points(df$mass_per[Mrows], pp[Mrows,4], col="darkred", type="l", cex=0.45, lty=2) 
+  text(68,0.7, labels="Flew in T1 only", col="blue")
+  text(-27,0.9, labels="Did Not Fly", col="red")
+  text(13,0.37, labels="Flew Twice", col="darkred")
+  #text(75,0.05, labels="Flew in T2 only", col="darkgreen")
+  # female line is always higher
+  # text(0.0,0.96, labels="F", col="red")
+  # text(0.0,0.7, labels="M", col="red")
+  # text(0.02,0.2, labels="F", col="blue")
+  # text(0.0,0.25, labels="M", col="blue")
+  # text(0.025,0.05, labels="F", col="darkgreen")
+  # text(0.01,0.10, labels="M", col="darkgreen")
+  # abline(v=40.5, lty=1, col="black")
+  # abline(v=7.5, lty=3, col="black")
+  # abline(v=-17, lty=3, col="black")
+  # rect(56,-4,-24,2,col = rgb(0.5,0.5,0.5,1/4))
+  # abline(v=-0.008, lty=2, col="slategrey")
+  legend(83, 1.0,
+         legend = c("female","male"),
+         lty=1:2,
+         col="black",
+         cex=0.8)  
+}
 pp3 <- fitted(delta_mass_model)
 df3 <- df # for summary purposes
+plot3(df3,pp3)
 ```
 
 No females flew in T2 only.
@@ -882,72 +886,76 @@ Mrows = males$index
 ```
 
 ```{r echo=FALSE}
-plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",type="l", 
-     ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", main="Females - including wing2body", lty=1) # flew in T1 but not T2
-points(df$mass_per[Frows], pp[Frows,2], col="blue", type="l") # did not fly in either
-#points(df$mass_per[Frows], pp[Frows,3], col="darkgreen", cex=0.45, type="l", pch=16) # flew in T2 but not T1
-points(df$mass_per[Frows], pp[Frows,4], col="darkred", type="l") # flew in both
-text(68,0.7, labels="Flew in T1 only", col="blue")
-text(-27,0.95, labels="Did Not Fly", col="red")
-text(-31,0.37, labels="Flew Twice", col="darkred")
-
-# Mark points in the graph with high wing2body ratio vs. points with low wing2body ratio.
-test <- df[with(df, order(wing2body)),] # ascending order
-#test$index
-
-small = test %>%
-  filter(sex =="F", wing2body < 0.7184934)
-large = test %>%
-  filter(sex == "F", wing2body > 0.7184934)
-srows = small$index
-lrows = large$index
-
-points(df$mass_per[lrows], pp[lrows,1], col="red", type="p", cex=0.45, pch=16)
-points(df$mass_per[srows], pp[srows,1], col="red", type="p", cex=0.45) # those with smaller wing2body ratio were more likely to NOT fly
-points(df$mass_per[lrows], pp[lrows,2], col="blue", type="p", cex=0.45, pch=16)
-points(df$mass_per[srows], pp[srows,2], col="blue", type="p", cex=0.45) 
-points(df$mass_per[lrows], pp[lrows,4], col="darkred", type="p", cex=0.45, pch=16)
-points(df$mass_per[srows], pp[srows,4], col="darkred", type="p", cex=0.45) 
+plot4 = function(df, pp) {
+    plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",type="l", 
+       ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", main="Females - including wing2body", lty=1) # flew in T1 but not T2
+  points(df$mass_per[Frows], pp[Frows,2], col="blue", type="l") # did not fly in either
+  #points(df$mass_per[Frows], pp[Frows,3], col="darkgreen", cex=0.45, type="l", pch=16) # flew in T2 but not T1
+  points(df$mass_per[Frows], pp[Frows,4], col="darkred", type="l") # flew in both
+  text(68,0.7, labels="Flew in T1 only", col="blue")
+  text(-27,0.95, labels="Did Not Fly", col="red")
+  text(-31,0.37, labels="Flew Twice", col="darkred")
+  
+  # Mark points in the graph with high wing2body ratio vs. points with low wing2body ratio.
+  test <- df[with(df, order(wing2body)),] # ascending order
+  #test$index
+  
+  small = test %>%
+    filter(sex =="F", wing2body < 0.7184934)
+  large = test %>%
+    filter(sex == "F", wing2body > 0.7184934)
+  srows = small$index
+  lrows = large$index
+  
+  points(df$mass_per[lrows], pp[lrows,1], col="red", type="p", cex=0.45, pch=16)
+  points(df$mass_per[srows], pp[srows,1], col="red", type="p", cex=0.45) # those with smaller wing2body ratio were more likely to NOT fly
+  points(df$mass_per[lrows], pp[lrows,2], col="blue", type="p", cex=0.45, pch=16)
+  points(df$mass_per[srows], pp[srows,2], col="blue", type="p", cex=0.45) 
+  points(df$mass_per[lrows], pp[lrows,4], col="darkred", type="p", cex=0.45, pch=16)
+  points(df$mass_per[srows], pp[srows,4], col="darkred", type="p", cex=0.45) 
+    
+}
+pp6 = pp
+df6 = df
+plot4(df6,pp6)
 ```
 
 ```{r echo=FALSE}
-plot(df$mass_per[Mrows], pp[Mrows,1], ylim=c(0,0.8), xlim=c(-25,85), col="red",type="l", 
-     ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", main="Males - including wing2body", lty=1)
-points(df$mass_per[Mrows], pp[Mrows,2], col="blue", type="l", cex=0.45, lty=1)
-points(df$mass_per[Mrows], pp[Mrows,3], col="darkgreen", type="l", cex=0.45, lty=1) 
-points(df$mass_per[Mrows], pp[Mrows,4], col="darkred", type="l", cex=0.45, lty=1) 
-text(73,0.42, labels="Flew in T1 only", col="blue")
-text(70,0.1, labels="Did Not Fly", col="red")
-text(73,0.02, labels="Flew in T2 only", col="darkgreen")
-text(13,0.77, labels="Flew Twice", col="darkred")
-
-# Mark points in the graph with high wing2body ratio vs. points with low wing2body ratio.
-test <- df[with(df, order(wing2body)),] # ascending order
-#test$index
-
-small = test %>%
-  filter(sex =="M", wing2body < 0.7184934)
-large = test %>%
-  filter(sex == "M", wing2body > 0.7184934)
-srows = small$index
-lrows = large$index
-
-points(df$mass_per[lrows], pp[lrows,1], col="red", type="p", cex=0.45, pch=16)
-points(df$mass_per[srows], pp[srows,1], col="red", type="p", cex=0.45) # those with smaller wing2body ratio were more likely to NOT fly
-points(df$mass_per[lrows], pp[lrows,2], col="blue", type="p", cex=0.45, pch=16)
-points(df$mass_per[srows], pp[srows,2], col="blue", type="p", cex=0.45) 
-points(df$mass_per[lrows], pp[lrows,3], col="darkgreen", type="p", cex=0.45, pch=16)
-points(df$mass_per[srows], pp[srows,3], col="darkgreen", type="p", cex=0.45) 
-points(df$mass_per[lrows], pp[lrows,4], col="darkred", type="p", cex=0.45, pch=16)
-points(df$mass_per[srows], pp[srows,4], col="darkred", type="p", cex=0.45) 
+plot5 = function(df, pp) {
+  plot(df$mass_per[Mrows], pp[Mrows,1], ylim=c(0,0.8), xlim=c(-25,85), col="red",type="l", 
+       ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", main="Males - including wing2body", lty=1)
+  points(df$mass_per[Mrows], pp[Mrows,2], col="blue", type="l", cex=0.45, lty=1)
+  points(df$mass_per[Mrows], pp[Mrows,3], col="darkgreen", type="l", cex=0.45, lty=1) 
+  points(df$mass_per[Mrows], pp[Mrows,4], col="darkred", type="l", cex=0.45, lty=1) 
+  text(73,0.42, labels="Flew in T1 only", col="blue")
+  text(70,0.1, labels="Did Not Fly", col="red")
+  text(73,0.02, labels="Flew in T2 only", col="darkgreen")
+  text(13,0.77, labels="Flew Twice", col="darkred")
+  
+  # Mark points in the graph with high wing2body ratio vs. points with low wing2body ratio.
+  test <- df[with(df, order(wing2body)),] # ascending order
+  #test$index
+  
+  small = test %>%
+    filter(sex =="M", wing2body < 0.7184934)
+  large = test %>%
+    filter(sex == "M", wing2body > 0.7184934)
+  srows = small$index
+  lrows = large$index
+  
+  points(df$mass_per[lrows], pp[lrows,1], col="red", type="p", cex=0.45, pch=16)
+  points(df$mass_per[srows], pp[srows,1], col="red", type="p", cex=0.45) # those with smaller wing2body ratio were more likely to NOT fly
+  points(df$mass_per[lrows], pp[lrows,2], col="blue", type="p", cex=0.45, pch=16)
+  points(df$mass_per[srows], pp[srows,2], col="blue", type="p", cex=0.45) 
+  points(df$mass_per[lrows], pp[lrows,3], col="darkgreen", type="p", cex=0.45, pch=16)
+  points(df$mass_per[srows], pp[srows,3], col="darkgreen", type="p", cex=0.45) 
+  points(df$mass_per[lrows], pp[lrows,4], col="darkred", type="p", cex=0.45, pch=16)
+  points(df$mass_per[srows], pp[srows,4], col="darkred", type="p", cex=0.45)  
+}
+plot5(df6,pp6)
 ```
 
 Amazing to see what a clear impact wing2body ratio has for whether bugs are more likely to fly twice or not fly at all. Those with wing2body ratios above the mean wing2body ratio appear to be more likely to fly twice and less likely to not fly. This is true across females and males.
-
-```{r echo=FALSE}
-pp6 = pp
-df6 = df
-```
 
 <a id="fem_only"></a>
 
@@ -969,14 +977,17 @@ df$flight_case <- relevel(as.factor(df$flight_case), ref = "0")
 **Barplot**
 
 ```{r echo=FALSE}
-# fig.height=2.4, fig.width=2.7
 data_fem = data_tested %>%
-  filter(sex=="F")
-counts <- table(data_fem$eggs_b, data_fem$trial_type) # data_tested$flew_b
-counts <- counts[1:2,2:3]
-barplot(counts, #main="Flight Distribution by Trial",
-  xlab="Trial", col=c("lightblue","darkgoldenrod2"),
-  legend = c("no eggs", "yes eggs"), ylim=c(0,110), beside=TRUE)
+    filter(sex=="F")
+bar2 = function() {
+  # fig.height=2.4, fig.width=2.7
+  counts <- table(data_fem$eggs_b, data_fem$trial_type) # data_tested$flew_b
+  counts <- counts[1:2,2:3]
+  barplot(counts, #main="Flight Distribution by Trial",
+    xlab="Trial", col=c("lightblue","darkgoldenrod2"),
+    legend = c("no eggs", "yes eggs"), ylim=c(0,110), beside=TRUE)
+} 
+bar2()
 ```
 
 **Egg Case**
@@ -1146,43 +1157,43 @@ eggT2_rows = eggT2$index
 
 ```{r echo=FALSE}
 df <- df[with(df, order(mass_diff)),]
-# only laid eggs in T1
-plot(df$mass_diff[eggT1_rows], pp[eggT1_rows,1], ylim=c(0,1.05), xlim=c(-0.045,0.07), col="red", type="l", lty=1,main="Females Only", ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)") 
-points(df$mass_diff[eggT1_rows], pp[eggT1_rows,2], col="blue", type="l", lty=1, cex=0.45) 
-points(df$mass_diff[eggT1_rows], pp[eggT1_rows,3], col="black", type="l", lty=1, cex=0.45) 
-# no egg change
-points(df$mass_diff[egg_0rows], pp[egg_0rows,1], col="red", type="l", lty=2) # did not fly in either
-points(df$mass_diff[egg_0rows], pp[egg_0rows,2], col="blue", type="l", lty=2) # flew in T1 only
-points(df$mass_diff[egg_0rows], pp[egg_0rows,3], col="black", type="l", lty=2) # flew in both
-# eggs twice
-points(df$mass_diff[egg_2rows], pp[egg_2rows,1], col="red", type="l", lty=4) # did not fly in either
-points(df$mass_diff[egg_2rows], pp[egg_2rows,2], col="blue", type="l", lty=4) # flew in T1 only
-points(df$mass_diff[egg_2rows], pp[egg_2rows,3], col="black", type="l", lty=4) # flew in both
-# only laid eggs in T2
-points(df$mass_diff[eggT2_rows], pp[eggT2_rows,1], col="red", type="l", lty=3) # flew in neither
-points(df$mass_diff[eggT2_rows], pp[eggT2_rows,2], col="blue", type="l", lty=3) # flew in T1 only
-points(df$mass_diff[eggT2_rows], pp[eggT2_rows,3], col="black", type="l", lty=3) # flew in both
-
-
-rect(-0.038,-1,0.064,2, NA, col = rgb(0.5,0,0.5,1/15), border="pink") # most likely to not fly unless gain more than about 0.025 g mass and then fly only in T1 (eggs were laid twice).
-rect(-0.045,-1,0.038,2, NA, col = rgb(0.5,0.2,0.5,1/15), border="pink") # most likely to not fly (2nd widest mass change, and laid eggs in T2)
-rect(-0.039,-1,0.008,2, NA, col = rgb(0.1,0.5,0.5,1/10), border="lightblue") # most likely to fly twice (lost mass and laid eggs only in T1)
-rect(-0.005,-1,0.029,2, NA, col = rgb(0.4,0.5,0.5,1/4), border="lightblue") # most likely to fly twice always (smallest mass change and did not lay eggs)
-# turn this into an animated graph...!
-
-text(0.059,0.54, labels="Flew in T1 only", col="blue")
-text(-0.036,0.95, labels="Did Not Fly", col="red")
-text(-0.02,0.35, labels="Flew Twice", col="black")
-legend(0.033, 1.07,
-       legend = c("laid eggs in T1","no eggs laid", "eggs laid twice", "laid eggs in T2"),
-       lty=1:4,
-       col="black",
-       cex=0.8)
-```
-
-```{r echo=FALSE}
+plot6 = function(df, pp) {
+  # only laid eggs in T1
+  plot(df$mass_diff[eggT1_rows], pp[eggT1_rows,1], ylim=c(0,1.05), xlim=c(-0.045,0.07), col="red", type="l", lty=1,main="Females Only", ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)") 
+  points(df$mass_diff[eggT1_rows], pp[eggT1_rows,2], col="blue", type="l", lty=1, cex=0.45) 
+  points(df$mass_diff[eggT1_rows], pp[eggT1_rows,3], col="black", type="l", lty=1, cex=0.45) 
+  # no egg change
+  points(df$mass_diff[egg_0rows], pp[egg_0rows,1], col="red", type="l", lty=2) # did not fly in either
+  points(df$mass_diff[egg_0rows], pp[egg_0rows,2], col="blue", type="l", lty=2) # flew in T1 only
+  points(df$mass_diff[egg_0rows], pp[egg_0rows,3], col="black", type="l", lty=2) # flew in both
+  # eggs twice
+  points(df$mass_diff[egg_2rows], pp[egg_2rows,1], col="red", type="l", lty=4) # did not fly in either
+  points(df$mass_diff[egg_2rows], pp[egg_2rows,2], col="blue", type="l", lty=4) # flew in T1 only
+  points(df$mass_diff[egg_2rows], pp[egg_2rows,3], col="black", type="l", lty=4) # flew in both
+  # only laid eggs in T2
+  points(df$mass_diff[eggT2_rows], pp[eggT2_rows,1], col="red", type="l", lty=3) # flew in neither
+  points(df$mass_diff[eggT2_rows], pp[eggT2_rows,2], col="blue", type="l", lty=3) # flew in T1 only
+  points(df$mass_diff[eggT2_rows], pp[eggT2_rows,3], col="black", type="l", lty=3) # flew in both
+  
+  
+  rect(-0.038,-1,0.064,2, NA, col = rgb(0.5,0,0.5,1/15), border="pink") # most likely to not fly unless gain more than about 0.025 g mass and then fly only in T1 (eggs were laid twice).
+  rect(-0.045,-1,0.038,2, NA, col = rgb(0.5,0.2,0.5,1/15), border="pink") # most likely to not fly (2nd widest mass change, and laid eggs in T2)
+  rect(-0.039,-1,0.008,2, NA, col = rgb(0.1,0.5,0.5,1/10), border="lightblue") # most likely to fly twice (lost mass and laid eggs only in T1)
+  rect(-0.005,-1,0.029,2, NA, col = rgb(0.4,0.5,0.5,1/4), border="lightblue") # most likely to fly twice always (smallest mass change and did not lay eggs)
+  # turn this into an animated graph...!
+  
+  text(0.059,0.54, labels="Flew in T1 only", col="blue")
+  text(-0.036,0.95, labels="Did Not Fly", col="red")
+  text(-0.02,0.35, labels="Flew Twice", col="black")
+  legend(0.033, 1.07,
+         legend = c("laid eggs in T1","no eggs laid", "eggs laid twice", "laid eggs in T2"),
+         lty=1:4,
+         col="black",
+         cex=0.8)
+}
 pp5 = fitted(model)
 df5 = df
+plot6(df5,pp5)
 ```
 
 - Eggs laid twice: most likely to not fly unless gain more than about 0.025 g mass and then fly only in T1 (largest mass change)
@@ -1290,202 +1301,43 @@ kable(key) %>%
 **flight case ~ mass diff**
 
 ```{r echo=FALSE}
-df1 <- df1[with(df1, order(mass_diff)),]
-plot(df1$mass_diff, pp1[,1], ylim=c(0,1), col="red", type="l", ylab="Flight Case Probability", xlab="Changes in Mass From T1 to T2 (g)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
-points(df1$mass_diff, pp1[,4], col="darkred", type="l", pch=3, cex=0.45)
-points(df1$mass_diff, pp1[,2], col="blue", type="l", cex=0.45) # flew in T1 but not T2
-points(df1$mass_diff, pp1[,3], col="darkgreen", type="l", cex=0.45) # flew in T2 but not T1
-text(-0.035,0.7, labels="Did Not Fly", col="red")
-text(0.007,0.6, labels="Flew Twice", col="darkred")
-text(0.05,0.85, labels="Flew in T1 only", col="blue")
-text(0.014,0.1, labels="Flew in T2 only", col="darkgreen")
-#abline(v=0.011, lty=2, col="black")
-abline(v=0.027, lty=2, col="black")
-abline(v=-0.0165, lty=2, col="black")
-abline(v=-0.022, lty=2, col="black")
-# legend(-0.015, 0.99,
-#        legend = c("0","1", "2"),
-#        pch = c(2,1, 3),
-#        title="Flight Count",
-#        col=c("red","black","darkred"))
+plot1(df1,pp1)
 ```
 
 **flight case ~ mass per**
 
 ```{r echo=FALSE}
-plot(df2$mass_per, pp2[,1], xlim=c(-40, 103), ylim=c(0,1), col="red", type="l", ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
-points(df2$mass_per, pp2[,4], col="darkred", type="l", pch=3, cex=0.45)
-points(df2$mass_per, pp2[,2], col="blue", type="l", cex=0.45) # flew in T1 but not T2
-points(df2$mass_per, pp2[,3], col="darkgreen", type="l", cex=0.45) # flew in T2 but not T1
-text(-36,0.65, labels="Did Not \nFly", col="red")
-text(20,0.6, labels="Flew Twice", col="darkred")
-text(85,0.85, labels="Flew in T1 only", col="blue")
-text(20,0.1, labels="Flew in T2 only", col="darkgreen")
-#abline(v=0.011, lty=2, col="black")
-abline(v=53, lty=2, col="black")
-abline(v=-16.5, lty=2, col="black")
-abline(v=-28, lty=2, col="black")
-# legend(-0.015, 0.99,
-#        legend = c("0","1", "2"),
-#        pch = c(2,1, 3),
-#        title="Flight Count",
-#        col=c("red","black","darkred"))
+plot2(df2,pp2)
 ```
 
 **flight case ~ mass per and sex**
 
 ```{r echo=FALSE}
-df3 <- df3[with(df3, order(mass_per)),]
-plot(df3$mass_per[Frows], pp3[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",
-     type="l",
-     #type="b", cex=0.45, pch=16, 
-     ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) # flew in T1 but not T2
-points(df3$mass_per[Mrows], pp3[Mrows,1], col="red", type="l", cex=0.45, lty=2) 
-# pch=c(2,3)[as.factor(df3$no_response_b[Frows])]
-points(df3$mass_per[Frows], pp3[Frows,2], col="blue", 
-       type="l",
-       #type="b", cex=0.45, pch=16
-       ) # did not fly in either
-points(df3$mass_per[Mrows], pp3[Mrows,2], col="blue", type="l", cex=0.45, lty=2)
-points(df3$mass_per[Frows], pp3[Frows,3], col="darkgreen", cex=0.45, type="l", pch=16) # flew in T2 but not T1
-points(df3$mass_per[Mrows], pp3[Mrows,3], col="darkgreen", type="l", cex=0.45, lty=2) 
-points(df3$mass_per[Frows], pp3[Frows,4], col="darkred", 
-       type="l",
-       #type="b", cex=0.45, pch=16
-       ) # flew in both
-points(df3$mass_per[Mrows], pp3[Mrows,4], col="darkred", type="l", cex=0.45, lty=2) 
-text(68,0.7, labels="Flew in T1 only", col="blue")
-text(-27,0.9, labels="Did Not Fly", col="red")
-text(13,0.37, labels="Flew Twice", col="darkred")
-#text(75,0.05, labels="Flew in T2 only", col="darkgreen")
-# female line is always higher
-# text(0.0,0.96, labels="F", col="red")
-# text(0.0,0.7, labels="M", col="red")
-# text(0.02,0.2, labels="F", col="blue")
-# text(0.0,0.25, labels="M", col="blue")
-# text(0.025,0.05, labels="F", col="darkgreen")
-# text(0.01,0.10, labels="M", col="darkgreen")
-# abline(v=40.5, lty=1, col="black")
-# abline(v=7.5, lty=3, col="black")
-# abline(v=-17, lty=3, col="black")
-# rect(56,-4,-24,2,col = rgb(0.5,0.5,0.5,1/4))
-# abline(v=-0.008, lty=2, col="slategrey")
-legend(84, 1.02,
-       legend = c("female","male"),
-       lty=1:2,
-       col="black",
-       cex=0.8)
+plot3(df3,pp3)
 ```
 
 **wing2body**
 
 ```{r echo=FALSE}
-plot(df6$mass_per[Frows], pp6[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",type="l", 
-     ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", main="Females - including wing2body", lty=1) # flew in T1 but not T2
-points(df6$mass_per[Frows], pp6[Frows,2], col="blue", type="l") # did not fly in either
-points(df6$mass_per[Frows], pp6[Frows,4], col="darkred", type="l") # flew in both
-text(68,0.7, labels="Flew in T1 only", col="blue")
-text(-27,0.95, labels="Did Not Fly", col="red")
-text(-31,0.37, labels="Flew Twice", col="darkred")
-
-# Mark points in the graph with high wing2body ratio vs. points with low wing2body ratio.
-test <- df6[with(df6, order(wing2body)),] # ascending order
-#test$index
-
-small = test %>%
-  filter(sex =="F", wing2body < 0.7184934)
-large = test %>%
-  filter(sex == "F", wing2body > 0.7184934)
-srows = small$index
-lrows = large$index
-
-points(df6$mass_per[lrows], pp6[lrows,1], col="red", type="p", cex=0.45, pch=16)
-points(df6$mass_per[srows], pp6[srows,1], col="red", type="p", cex=0.45) # those with smaller wing2body ratio were more likely to NOT fly
-points(df6$mass_per[lrows], pp6[lrows,2], col="blue", type="p", cex=0.45, pch=16)
-points(df6$mass_per[srows], pp6[srows,2], col="blue", type="p", cex=0.45) 
-points(df6$mass_per[lrows], pp6[lrows,4], col="darkred", type="p", cex=0.45, pch=16)
-points(df6$mass_per[srows], pp6[srows,4], col="darkred", type="p", cex=0.45) 
+plot4(df6,pp6)
 ```
 
 ```{r echo=FALSE}
-plot(df6$mass_per[Mrows], pp6[Mrows,1], ylim=c(0,0.8), xlim=c(-25,85), col="red",type="l", 
-     ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", main="Males - including wing2body", lty=1)
-points(df6$mass_per[Mrows], pp6[Mrows,2], col="blue", type="l", cex=0.45, lty=1)
-points(df6$mass_per[Mrows], pp6[Mrows,3], col="darkgreen", type="l", cex=0.45, lty=1) 
-points(df6$mass_per[Mrows], pp6[Mrows,4], col="darkred", type="l", cex=0.45, lty=1) 
-text(73,0.42, labels="Flew in T1 only", col="blue")
-text(70,0.1, labels="Did Not Fly", col="red")
-text(73,0.02, labels="Flew in T2 only", col="darkgreen")
-text(13,0.77, labels="Flew Twice", col="darkred")
-
-# Mark points in the graph with high wing2body ratio vs. points with low wing2body ratio.
-test <- df6[with(df6, order(wing2body)),] # ascending order
-#test$index
-
-small = test %>%
-  filter(sex =="M", wing2body < 0.7184934)
-large = test %>%
-  filter(sex == "M", wing2body > 0.7184934)
-srows = small$index
-lrows = large$index
-
-points(df6$mass_per[lrows], pp6[lrows,1], col="red", type="p", cex=0.45, pch=16)
-points(df6$mass_per[srows], pp6[srows,1], col="red", type="p", cex=0.45) # those with smaller wing2body ratio were more likely to NOT fly
-points(df6$mass_per[lrows], pp6[lrows,2], col="blue", type="p", cex=0.45, pch=16)
-points(df6$mass_per[srows], pp6[srows,2], col="blue", type="p", cex=0.45) 
-points(df6$mass_per[lrows], pp6[lrows,3], col="darkgreen", type="p", cex=0.45, pch=16)
-points(df6$mass_per[srows], pp6[srows,3], col="darkgreen", type="p", cex=0.45) 
-points(df6$mass_per[lrows], pp6[lrows,4], col="darkred", type="p", cex=0.45, pch=16)
-points(df6$mass_per[srows], pp6[srows,4], col="darkred", type="p", cex=0.45) 
+plot5(df6,pp6)
 ```
+
 
 **females only**
 
 **flight case ~ mass diff and egg case**
 
 ```{r echo=FALSE}
-df5 <- df5[with(df5, order(mass_diff)),]
-# only laid eggs in T1
-plot(df5$mass_diff[eggT1_rows], pp5[eggT1_rows,1], ylim=c(0,1.05), xlim=c(-0.045,0.07), col="red", type="l", lty=1,
-     main="Females Only",
-     #type="b", cex=0.45, pch=16, 
-     ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)") # flew in neither
-points(df5$mass_diff[eggT1_rows], pp5[eggT1_rows,2], col="blue", type="l", lty=1, cex=0.45)  # flew in T1 only
-points(df5$mass_diff[eggT1_rows], pp5[eggT1_rows,3], col="black", type="l", lty=1, cex=0.45) # flew in both
-# no egg change
-points(df5$mass_diff[egg_0rows], pp5[egg_0rows,1], col="red", type="l", lty=2) # did not fly in either
-points(df5$mass_diff[egg_0rows], pp5[egg_0rows,2], col="blue", type="l", lty=2) # flew in T1 only
-points(df5$mass_diff[egg_0rows], pp5[egg_0rows,3], col="black", type="l", lty=2) # flew in both
-# eggs twice
-points(df5$mass_diff[egg_2rows], pp5[egg_2rows,1], col="red", type="l", lty=4) # did not fly in either
-points(df5$mass_diff[egg_2rows], pp5[egg_2rows,2], col="blue", type="l", lty=4) # flew in T1 only
-points(df5$mass_diff[egg_2rows], pp5[egg_2rows,3], col="black", type="l", lty=4) # flew in both
-# only laid eggs in T2
-points(df5$mass_diff[eggT2_rows], pp5[eggT2_rows,1], col="red", type="l", lty=3) # flew in neither
-points(df5$mass_diff[eggT2_rows], pp5[eggT2_rows,2], col="blue", type="l", lty=3) # flew in T1 only
-points(df5$mass_diff[eggT2_rows], pp5[eggT2_rows,3], col="black", type="l", lty=3) # flew in both
-
-
-rect(-0.038,-1,0.064,2, NA, col = rgb(0.5,0,0.5,1/15), border="pink") # most likely to not fly unless gain more than about 0.025 g mass and then fly only in T1 (eggs were laid twice).
-rect(-0.045,-1,0.038,2, NA, col = rgb(0.5,0.2,0.5,1/15), border="pink") # most likely to not fly (2nd widest mass change, and laid eggs in T2)
-rect(-0.039,-1,0.008,2, NA, col = rgb(0.1,0.5,0.5,1/10), border="lightblue") # most likely to fly twice (lost mass and laid eggs only in T1)
-rect(-0.005,-1,0.029,2, NA, col = rgb(0.4,0.5,0.5,1/4), border="lightblue") # most likely to fly twice always (smallest mass change and did not lay eggs)
-# turn this into an animated graph...!
-
-text(0.059,0.54, labels="Flew in T1 only", col="blue")
-text(-0.036,0.95, labels="Did Not Fly", col="red")
-text(-0.02,0.35, labels="Flew Twice", col="black")
-legend(0.033, 1.07,
-       legend = c("laid eggs in T1","no eggs laid", "eggs laid twice", "laid eggs in T2"),
-       lty=1:4,
-       col="black",
-       cex=0.8)
+plot6(df5,pp5)
 ```
 
 ### Questions
 
 - Egg case and egg diff not factors. Not sure how to work around this problem.
-- Subtracting equations when p values are not significant...is that possible? What are the implications if it is?
 - Animate plots?
 - For Fall season some bugs were tested more than 2 times (up to four times), but which to pull from and from which experiments?
 
