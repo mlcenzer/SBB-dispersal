@@ -1,11 +1,11 @@
 ---
 title: "All Morphology: Wing Statistics"
-author: "Anastasia Bernat"
 date: "2/18/2021"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
+rm(list=ls())
 library(lme4)
 library(zoo)
 library(rethinking)
@@ -24,7 +24,18 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Base statistics of all morphology for wing morph and wing2body ratio (in long-winged bugs).
 
-## Cleaning Data
+## Cleaning Data and Sourcing Scripts
+
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("compare_models.R","regression_output.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+```
 
 ### Read the data
 
@@ -97,8 +108,8 @@ data<-data.frame(R=raw_data$wing_morph_binom,
                  B=raw_data$pophost_binom, 
                  C=(raw_data$month_of_year))
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
+model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
+model_comparisonsAIC(model_script)
 ```
 * Males are more likely to be long-winged.
 * K.elegans more likely to be long-winged.
@@ -106,7 +117,6 @@ model_comparisonsAIC("src/generic models-binomial glm 3-FF.R")
 * (-) effect of getting later in the season (month_of_year), such that short wing morphs become increasingly likely later in the year. 
 
 ```{r}
-source("src/regression_output.R")
 tidy_regression(m7, is_color=FALSE)
 ```
 ## Wing2Body
@@ -153,7 +163,7 @@ boxplot(wing2body~compare_dates,
         col=c(col.alpha( "red" , alpha = 0.4 ), 
               col.alpha( "orange" , alpha = 0.4)),
         border="gray30",
-        names=c("Past", "Winter 2020"), pch=1,
+        names=c("2013-2020", "Winter 2020"), pch=1,
         cex=1.56, cex.lab=1.8, cex.axis=1.56
 )
 means <- tapply(data_long$wing2body,data_long$compare_dates, mean, na.rm=TRUE)
@@ -168,9 +178,10 @@ data<-data.frame(R=(data_long$wing2body-mean(data_long$wing2body, na.rm=TRUE)), 
                  C=(data_long$month_of_year-mean(data_long$month_of_year, na.rm=TRUE)), 
                  D=(data_long$months_since_start-mean(data_long$months_since_start, na.rm=TRUE))) 
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glm 3-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glm 3-FF.R")
+model_comparisonsAIC(model_script)
 ```
+
 ```{r}
 anova(m15, m17, test="Chisq") # Adding A*C does not improve fit
 anova(m11, m15, test="Chisq") # Adding B*C does improve fit
@@ -196,10 +207,48 @@ plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.fact
 
 ```{r}
 rm(list=ls())
-output_col = TRUE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
-source("src/clean_flight_data.R") # Script that loads and cleans up the data
-source("src/regression_output.R") # Cleans up regression outputs, prints in color or black & white
-source("src/center_flight_data.R")
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("center_flight_data.R", # Needs to load first
+                 "clean_flight_data.R",  # Script that loads and cleans up the data
+                 "regression_output.R")  # Cleans up regression outputs, prints in color or B&W
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+  }
 ```
 
+```{r}
+##read in and clean up data
+data_winter_full <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_winter_all <- data_winter_full[[1]]
+data_winter_tested <- data_winter_full[[2]]
+
+###for these analyses, morphology only
+data_winter <- data_winter_tested[,c('beak','thorax', 'wing', 'body', 'w_morph', 'morph_notes')]
+
+##load full dataset & pare to long-winged bugs only
+raw_data<-read.csv("data/allmorphology9.21.20.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+```
+
+```{r}
+####standardize population names!
+raw_data$population[raw_data$population=="Key Largo"]<-"Key_Largo"
+raw_data$population[raw_data$population=="North Key Largo"]<-"North_Key_Largo"
+raw_data$population[raw_data$population=="Plantation Key"]<-"Plantation_Key"
+raw_data$population[raw_data$population=="Lake Wales"]<-"Lake_Wales"
+raw_data$pophost[raw_data$pophost=="C. corindum"]<-"C.corindum"
+raw_data$pophost[raw_data$pophost=="K. elegans"]<-"K.elegans"
+raw_data$pophost[raw_data$pophost=="K. elegans "]<-"K.elegans"
+
+raw_data<-raw_data[raw_data$pophost=="C.corindum" | raw_data$pophost=="K.elegans",]
+raw_data<-raw_data[raw_data$sex=="F" | raw_data$sex=="M",]
+raw_data$wing2thorax <- raw_data$wing/raw_data$thorax
+
+raw_data$w_morph[raw_data$w_morph=="" & raw_data$wing2thorax<=2.2]<-"S"
+raw_data$w_morph[raw_data$w_morph=="" & raw_data$wing2thorax>=2.35]<-"L"
+
+data_all_dates<-raw_data[raw_data$w_morph=="L",c('beak','thorax', 'wing', 'body', 'w_morph', 'notes')]
+```
 

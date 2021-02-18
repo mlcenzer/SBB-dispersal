@@ -1,10 +1,49 @@
+---
+title: "All Morphology: Wing Plots"
+date: "2/18/2021"
+output: html_document
+---
 
+```{r setup, include=FALSE}
 rm(list=ls())
+library(lme4)
+library(zoo)
+library(rethinking)
 
-#input allmorphology
-raw_data<-read.csv("~/Dropbox/SBB datasheets 2019/Morphology/allmorphology data/allmorphology9.21.20.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+library(dplyr)
+library(ggplotify)
+library(gridExtra)
+library(ggformula)
+library(tidyselect)
 
-####standardize population names!
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+setwd(dir)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Cleaning Data and Sourcing Scripts
+
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("compare_models.R","regression_output.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+```
+
+### Read the data
+
+```{r}
+raw_data<-read.csv("data/allmorphology9.21.20.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+```
+
+### Standardize population names
+
+```{r}
 raw_data$population[raw_data$population=="Key Largo"]<-"Key_Largo"
 raw_data$population[raw_data$population=="North Key Largo"]<-"North_Key_Largo"
 raw_data$population[raw_data$population=="Plantation Key"]<-"Plantation_Key"
@@ -29,6 +68,9 @@ raw_data$month_of_year <- (raw_data$months_since_start+7)%%12+1
 
 data_long<-raw_data[raw_data$w_morph=="L",]
 
+```
+
+```{r}
 ###remove individuals with torn wings first.
 data_long$drop <- FALSE
 
@@ -45,13 +87,10 @@ data_long$wing2body <- data_long$wing/as.numeric(data_long$body)
 
 
 ###remind yourself how the months are laid out
-cbind(data_long$month_of_year, data_long$month)
+#cbind(data_long$month_of_year, data_long$month)
+```
 
-
-
-
-
-
+```{r}
 ##################wing2body ratio plots
 
 ##Results to visualize: sex, pophost, year
@@ -62,11 +101,12 @@ wing2body_summary$color <- rgb(1,0.3,0,0.7)
 wing2body_summary$color[wing2body_summary$pophost=="K.elegans"] <- rgb(0,0.8,1,0.7)
 #jitter slightly
 wing2body_summary$months_since_start <- wing2body_summary$months_since_start+runif(n=nrow(wing2body_summary), min=-0.5, max=0.5)
+```
 
 
-#One panel: males as open circles
+### Plot 1: Males as open circles 
 
-setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
+```{r}
 pdf(file="wing2body_1_panel.pdf", width=8, height=5.8)
 
 par(ps=18)
@@ -87,15 +127,11 @@ mtext("Wing-to-body ratio by year", side=3, adj=0.01)
 legend(-2, 0.709, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
 
 dev.off()
+```
 
+### Plot  
 
-
-
-
-
-#Two panels: a for females, b for males; both with host*months_since_start
-
-setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
+```{r}
 pdf(file="wing2body_2_panel.pdf", width=12, height=5.8)
 
 par(ps=18)
@@ -139,15 +175,10 @@ mtext("B. Males", side=3, adj=0.01)
 
 close.screen(all.screens=TRUE)
 dev.off()
+```
 
-
-
-
-
-
-
+```{r}
 #Two panels: a for females, b for males; both with host*month_of_year
-
 
 wing2body_summary<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=mean)
 wing2body_summary$se<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=function(x){sd(x)/sqrt(length(x))})$wing2body
@@ -156,9 +187,9 @@ wing2body_summary$color[wing2body_summary$pophost=="K.elegans"] <- rgb(0,0.8,1,0
 #jitter slightly
 wing2body_summary$month_of_year <- wing2body_summary$month_of_year+runif(n=nrow(wing2body_summary), min=-0.1, max=0.1)
 
+```
 
-
-setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
+```{r}
 pdf(file="wing2body_2_panel-month_of_year.pdf", width=12, height=5.8)
 
 par(ps=18)
@@ -202,24 +233,18 @@ mtext("B. Males", side=3, adj=0.01)
 
 close.screen(all.screens=TRUE)
 dev.off()
+```
 
-
-
-
-
-
-
-
-
-
+```{r}
 #############wing morph plots
 
 ##Results to visualize: sex, host, months_since_start.
 
 w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=mean)
 
-#One panel: males as open circles
-setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
+```
+
+```{r}
 pdf(file="wing_morph_1_panel.pdf", width=8, height=5.8)
 
 par(ps=18)
@@ -233,12 +258,10 @@ mtext("Wing morph over the season", side=3, adj=0.01)
 legend(0.9, 0.2, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
 
 dev.off()
+```
 
-
-
-
+```{r}
 #Two panels: a for females, b for males; both with host*month_of_year
-setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
 pdf(file="wing_morph_2_panel.pdf", width=10, height=5.8)
 
 par(ps=18)
@@ -264,6 +287,7 @@ mtext("B. Males", side=3, adj=0.01)
 
 close.screen(all.screens=TRUE)
 dev.off()
+```
 
 
 
@@ -278,17 +302,7 @@ dev.off()
 
 
 
-
-
-
-
-
-
-
-
-
-
-
+```{r}
 #####Old plots, probably delete-able
 ###################plot of wing2body ratio by year and site; one sex at a time
 
@@ -393,5 +407,7 @@ abline(lm(wing_summary$wing[wing_summary$population=="Lake_Wales"]~wing_summary$
 abline(lm(wing_summary$wing[wing_summary$population=="Leesburg"]~wing_summary$year[wing_summary$population=="Leesburg"]), lty=3, col=rgb(0,0,1,.6))
 
 dev.off()
+
+```
 
 
