@@ -1,0 +1,397 @@
+
+rm(list=ls())
+
+#input allmorphology
+raw_data<-read.csv("~/Dropbox/SBB datasheets 2019/Morphology/allmorphology data/allmorphology9.21.20.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+
+####standardize population names!
+raw_data$population[raw_data$population=="Key Largo"]<-"Key_Largo"
+raw_data$population[raw_data$population=="North Key Largo"]<-"North_Key_Largo"
+raw_data$population[raw_data$population=="Plantation Key"]<-"Plantation_Key"
+raw_data$population[raw_data$population=="Lake Wales"]<-"Lake_Wales"
+raw_data$pophost[raw_data$pophost=="C. corindum"]<-"C.corindum"
+raw_data$pophost[raw_data$pophost=="K. elegans"]<-"K.elegans"
+raw_data$pophost[raw_data$pophost=="K. elegans "]<-"K.elegans"
+
+raw_data<-raw_data[raw_data$pophost=="C.corindum" | raw_data$pophost=="K.elegans",]
+raw_data<-raw_data[raw_data$sex=="F" | raw_data$sex=="M",]
+
+raw_data$w_morph_binom<-NA
+raw_data$wing_morph_binom[raw_data$w_morph=="S"]<-0
+raw_data$wing_morph_binom[raw_data$w_morph=="L"]<-1
+
+raw_data$wing2thorax <- raw_data$wing/raw_data$thorax
+
+raw_data$w_morph[raw_data$w_morph=="" & raw_data$wing2thorax<=2.2]<-"S"
+raw_data$w_morph[raw_data$w_morph=="" & raw_data$wing2thorax>=2.35]<-"L"
+
+raw_data$month_of_year <- (raw_data$months_since_start+7)%%12+1
+
+data_long<-raw_data[raw_data$w_morph=="L",]
+
+###remove individuals with torn wings first.
+data_long$drop <- FALSE
+
+for(row in 1:nrow(data_long)){
+	if(length(unlist(strsplit(strsplit(paste("test ", data_long$notes[row], " test", sep=""), "torn")[[1]], "wing")))>2){
+		 #browser()	
+		 data_long$drop[row] <- TRUE
+		 }
+}
+
+data_long <- data_long[data_long$drop==FALSE,]
+
+data_long$wing2body <- data_long$wing/as.numeric(data_long$body)
+
+
+###remind yourself how the months are laid out
+cbind(data_long$month_of_year, data_long$month)
+
+
+
+
+
+
+##################wing2body ratio plots
+
+##Results to visualize: sex, pophost, year
+
+wing2body_summary<-aggregate(wing2body~sex*pophost*months_since_start, data=data_long, FUN=mean)
+wing2body_summary$se<-aggregate(wing2body~sex*pophost*months_since_start, data=data_long, FUN=function(x){sd(x)/sqrt(length(x))})$wing2body
+wing2body_summary$color <- rgb(1,0.3,0,0.7)
+wing2body_summary$color[wing2body_summary$pophost=="K.elegans"] <- rgb(0,0.8,1,0.7)
+#jitter slightly
+wing2body_summary$months_since_start <- wing2body_summary$months_since_start+runif(n=nrow(wing2body_summary), min=-0.5, max=0.5)
+
+
+#One panel: males as open circles
+
+setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
+pdf(file="wing2body_1_panel.pdf", width=8, height=5.8)
+
+par(ps=18)
+par(mai=c(1,1,0.5,0.2))
+plot(wing2body~months_since_start, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost)], pch=c(19,21)[as.factor(wing2body_summary$sex)], data=wing2body_summary, ylab="Wing-to-body ratio", xlab="Year", ylim=c(0.7,0.75), cex=2, xaxt='n')
+
+#add standard error
+for(row in 1:nrow(wing2body_summary)){
+
+	lines(x=rep(wing2body_summary$months_since_start[row],2), y=c((wing2body_summary$wing2body[row]+wing2body_summary$se[row]), (wing2body_summary$wing2body[row]-wing2body_summary$se[row])), col=wing2body_summary$color[row], lwd=1)
+	
+}
+
+axis(side=1, labels=c("2013", "2015", "2017", "2019"), at=c(3,27,51,75))
+
+mtext("Wing-to-body ratio by year", side=3, adj=0.01)
+
+legend(-2, 0.709, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
+
+dev.off()
+
+
+
+
+
+
+#Two panels: a for females, b for males; both with host*months_since_start
+
+setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
+pdf(file="wing2body_2_panel.pdf", width=12, height=5.8)
+
+par(ps=18)
+split.screen(rbind(c(0,0.54,0,1), c(0.54,1,0,1)))
+
+screen(1)
+par(mai=c(1,1,0.5,0.2))
+plot(wing2body~months_since_start, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="F"])], pch=19, data=wing2body_summary[wing2body_summary$sex=="F",], ylab="Wing-to-body ratio", xlab="Year", ylim=c(0.7,0.75), cex=2, xaxt='n')
+
+#add standard error
+wing2body_summary_F<-wing2body_summary[wing2body_summary$sex=="F",]
+
+for(row in 1:nrow(wing2body_summary_F)){
+
+	lines(x=rep(wing2body_summary_F$months_since_start[row],2), y=c((wing2body_summary_F$wing2body[row]+wing2body_summary_F$se[row]), (wing2body_summary_F$wing2body[row]-wing2body_summary_F$se[row])), col=wing2body_summary_F$color[row], lwd=1)
+	
+}
+
+axis(side=1, labels=c("2013", "2015", "2017", "2019"), at=c(3,27,51,75))
+
+mtext("A. Females", side=3, adj=0.01)
+
+legend(54, 0.709, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
+
+screen(2)
+par(mai=c(1,0.1,0.5,0.2))
+plot(wing2body~months_since_start, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="M"])], pch=19, data=wing2body_summary[wing2body_summary$sex=="M",], ylab="Wing-to-body ratio", xlab="Year", ylim=c(0.7,0.75), cex=2, xaxt='n', yaxt='n')
+
+#add standard error
+wing2body_summary_M<-wing2body_summary[wing2body_summary$sex=="M",]
+
+for(row in 1:nrow(wing2body_summary_F)){
+
+	lines(x=rep(wing2body_summary_M$months_since_start[row],2), y=c((wing2body_summary_M$wing2body[row]+wing2body_summary_M$se[row]), (wing2body_summary_M$wing2body[row]-wing2body_summary_M$se[row])), col=wing2body_summary_M$color[row], lwd=1)
+	
+}
+
+axis(side=1, labels=c("2013", "2015", "2017", "2019"), at=c(3,27,51,75))
+
+mtext("B. Males", side=3, adj=0.01)
+
+close.screen(all.screens=TRUE)
+dev.off()
+
+
+
+
+
+
+
+#Two panels: a for females, b for males; both with host*month_of_year
+
+
+wing2body_summary<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=mean)
+wing2body_summary$se<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=function(x){sd(x)/sqrt(length(x))})$wing2body
+wing2body_summary$color <- rgb(1,0.3,0,0.7)
+wing2body_summary$color[wing2body_summary$pophost=="K.elegans"] <- rgb(0,0.8,1,0.7)
+#jitter slightly
+wing2body_summary$month_of_year <- wing2body_summary$month_of_year+runif(n=nrow(wing2body_summary), min=-0.1, max=0.1)
+
+
+
+setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
+pdf(file="wing2body_2_panel-month_of_year.pdf", width=12, height=5.8)
+
+par(ps=18)
+split.screen(rbind(c(0,0.54,0,1), c(0.54,1,0,1)))
+
+screen(1)
+par(mai=c(1,1,0.5,0.2))
+plot(wing2body~month_of_year, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="F"])], pch=19, data=wing2body_summary[wing2body_summary$sex=="F",], ylab="Wing-to-body ratio", xlab="Month", ylim=c(0.7,0.75), cex=2, xaxt='n')
+
+#add standard error
+wing2body_summary_F<-wing2body_summary[wing2body_summary$sex=="F",]
+
+for(row in 1:nrow(wing2body_summary_F)){
+
+	lines(x=rep(wing2body_summary_F$month_of_year[row],2), y=c((wing2body_summary_F$wing2body[row]+wing2body_summary_F$se[row]), (wing2body_summary_F$wing2body[row]-wing2body_summary_F$se[row])), col=wing2body_summary_F$color[row], lwd=1)
+	
+}
+
+axis(side=1, labels=c("Nov", "Feb", "May", "Aug"), at=c(2,5,8,11))
+
+mtext("A. Females", side=3, adj=0.01)
+
+legend(1, 0.709, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
+
+screen(2)
+par(mai=c(1,0.1,0.5,0.2))
+plot(wing2body~month_of_year, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="M"])], pch=19, data=wing2body_summary[wing2body_summary$sex=="M",], ylab="Wing-to-body ratio", xlab="Month", ylim=c(0.7,0.75), cex=2, xaxt='n', yaxt='n')
+
+#add standard error
+wing2body_summary_M<-wing2body_summary[wing2body_summary$sex=="M",]
+
+for(row in 1:nrow(wing2body_summary_F)){
+
+	lines(x=rep(wing2body_summary_M$month_of_year[row],2), y=c((wing2body_summary_M$wing2body[row]+wing2body_summary_M$se[row]), (wing2body_summary_M$wing2body[row]-wing2body_summary_M$se[row])), col=wing2body_summary_M$color[row], lwd=1)
+	
+}
+
+axis(side=1, labels=c("Nov", "Feb", "May", "Aug"), at=c(2,5,8,11))
+
+mtext("B. Males", side=3, adj=0.01)
+
+close.screen(all.screens=TRUE)
+dev.off()
+
+
+
+
+
+
+
+
+
+
+#############wing morph plots
+
+##Results to visualize: sex, host, months_since_start.
+
+w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=mean)
+
+#One panel: males as open circles
+setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
+pdf(file="wing_morph_1_panel.pdf", width=8, height=5.8)
+
+par(ps=18)
+par(mai=c(1,1,0.5,0.2))
+plot(wing_morph_binom~month_of_year, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(w_morph_summary$pophost)], pch=c(19,21)[as.factor(w_morph_summary$sex)], data=w_morph_summary, ylab="Frequency of long-winged morph", xlab="Month", ylim=c(0,1), cex=2, xaxt='n')
+
+axis(side=1, labels=c("Nov", "Feb", "May", "Aug"), at=c(2,5,8,11))
+
+mtext("Wing morph over the season", side=3, adj=0.01)
+
+legend(0.9, 0.2, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
+
+dev.off()
+
+
+
+
+#Two panels: a for females, b for males; both with host*month_of_year
+setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
+pdf(file="wing_morph_2_panel.pdf", width=10, height=5.8)
+
+par(ps=18)
+split.screen(rbind(c(0,0.54,0,1), c(0.54,1,0,1)))
+
+screen(1)
+par(mai=c(1,1,0.5,0.2))
+plot(wing_morph_binom~month_of_year, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(w_morph_summary$pophost[w_morph_summary$sex=="F"])], pch=19, data=w_morph_summary[w_morph_summary$sex=="F",], ylab="Frequency of long-winged morph", xlab="Month", ylim=c(0,1), cex=2, xaxt='n')
+
+axis(side=1, labels=c("Nov", "Feb", "May", "Aug"), at=c(2,5,8,11))
+
+mtext("A. Females", side=3, adj=0.01)
+
+legend(1, 0.2, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
+
+screen(2)
+par(mai=c(1,0.1,0.5,0.2))
+plot(wing_morph_binom~month_of_year, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(w_morph_summary$pophost[w_morph_summary$sex=="M"])], pch=19, data=w_morph_summary[w_morph_summary$sex=="M",], xlab="Month", ylab="", ylim=c(0,1), yaxt="n", xaxt="n", cex=2)
+
+axis(side=1, labels=c("Nov", "Feb", "May", "Aug"), at=c(2,5,8,11))
+
+mtext("B. Males", side=3, adj=0.01)
+
+close.screen(all.screens=TRUE)
+dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#####Old plots, probably delete-able
+###################plot of wing2body ratio by year and site; one sex at a time
+
+#jitter years to keep reduce overlap
+wing2body_summary$jyear<-wing2body_summary$year+rnorm(length(wing2body_summary$year), 0, .04)
+
+#print to file
+
+#functionalize
+wing2body_by_year<-function(sex){
+setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
+pdf(file="wing2bodybyyear_males.pdf", width=10, height=7)
+
+par(ps=18)
+par(bty='l') #drop box on top and right
+plot(wing2body_summary$jyear[wing2body_summary$pophost=="C.corindum"], wing2body_summary$wing2body[wing2body_summary$pophost=="C.corindum"], pch=21, bg=rgb(1,0,0,.6),  ylim=c(0,0.2), xlim=c(2013,2020), xlab='', ylab='', cex=1.4)
+
+points(wing2body_summary$jyear[wing2body_summary$pophost=="K.elegans"], wing2body_summary$wing2body[wing2body_summary$pophost=="K.elegans"], pch=21, bg=rgb(0,0,1,.6), cex=1.4)
+
+#95% confidence intervals
+for(n in 1:length(wing2body_summary$year)){
+	lines(x=xy.coords(x=c(wing2body_summary$jyear[n],wing2body_summary$jyear[n]),y=c(wing2body_summary$max[n],wing2body_summary$min[n])))
+}
+
+title(xlab="Year", line=2.4)
+title(ylab="wing2body length (mm)", line=2.4)
+
+abline(lm(wing2body_summary$wing2body[wing2body_summary$population=="Plantation_Key"]~wing2body_summary$year[wing2body_summary$population=="Plantation_Key"]), col=rgb(1,0,0,.6))
+
+abline(lm(wing2body_summary$wing2body[wing2body_summary$population=="Key_Largo" | wing2body_summary$population=="North_Key_Largo"]~wing2body_summary$year[wing2body_summary$population=="Key_Largo" | wing2body_summary$population=="North_Key_Largo"]), col=rgb(1,0,0,.6))
+
+abline(lm(wing2body_summary$wing2body[wing2body_summary$population=="Ft.Myers"]~wing2body_summary$year[wing2body_summary$population=="Ft.Myers"]), lty=3, col=rgb(0,0,1,.6))
+
+abline(lm(wing2body_summary$wing2body[wing2body_summary$population=="Lake_Wales"]~wing2body_summary$year[wing2body_summary$population=="Lake_Wales"]), lty=3, col=rgb(0,0,1,.6))
+
+abline(lm(wing2body_summary$wing2body[wing2body_summary$population=="Leesburg"]~wing2body_summary$year[wing2body_summary$population=="Leesburg"]), lty=3, col=rgb(0,0,1,.6))
+
+dev.off()
+
+}
+
+
+
+
+
+
+#############plot wing length
+#input allmorphology here
+raw_data_1<-read.csv("~/Dropbox/SBB datasheets 2019/Morphology/allmorphology data/allmorphology6.04.20.csv")
+
+#long wing only
+raw_data<-raw_data_1[raw_data_1$w_morph=="L",]
+
+####standardize population names!
+raw_data$population[raw_data$population=="Key Largo"]<-"Key_Largo"
+raw_data$population[raw_data$population=="North Key Largo"]<-"North_Key_Largo"
+raw_data$population[raw_data$population=="Plantation Key"]<-"Plantation_Key"
+raw_data$population[raw_data$population=="Lake Wales"]<-"Lake_Wales"
+raw_data$pophost[raw_data$pophost=="C. corindum"]<-"C.corindum"
+
+
+#generate summary stats
+wing_means<-aggregate(wing~year*population*pophost, data=raw_data[raw_data$sex=="M",], FUN=mean)
+wing_means$se<-aggregate(wing~year*population*pophost, data=raw_data[raw_data$sex=="M",], FUN=function(x){sd(x)/sqrt(length(x))})$beak
+
+#only previously measured populations
+wing_summary<-wing_means[wing_means$population=="Key_Largo" | wing_means$population=="Plantation_Key" | wing_means$population=="North_Key_Largo" | wing_means$population=="Lake_Wales" | wing_means$population=="Leesburg" | wing_means$population=="Ft.Myers",]
+
+
+##################without axis gap
+#jitter years to keep se bars from overlapping so much
+wing_summary$jyear<-wing_summary$year+rnorm(length(wing_summary$year), 0, .04)
+
+#print to file
+
+setwd("~/Documents/R/soapberry bugs/allmorph plots")
+
+pdf(file="wingsbyyear_males.pdf", width=10, height=7)
+
+par(ps=18)
+par(bty='l') #drop box on top and right
+plot(wing_summary$jyear[wing_summary$pophost=="C.corindum"], wing_summary$wing[wing_summary$pophost=="C.corindum"], pch=21, bg=rgb(1,0,0,.6),  ylim=c(6,10.5), xlim=c(2013,2020), xlab='', ylab='', cex=1.4)
+
+points(wing_summary$jyear[wing_summary$pophost=="K.elegans"], wing_summary$wing[wing_summary$pophost=="K.elegans"], pch=21, bg=rgb(0,0,1,.6), cex=1.4)
+
+#95% confidence intervals
+for(n in 1:length(wing_summary$year)){
+	lines(x=xy.coords(x=c(wing_summary$jyear[n],wing_summary$jyear[n]),y=c(wing_summary$max[n],wing_summary$min[n])))
+}
+
+title(xlab="Year", line=2.4)
+title(ylab="wing length (mm)", line=2.4)
+
+abline(lm(wing_summary$wing[wing_summary$population=="Plantation_Key"]~wing_summary$year[wing_summary$population=="Plantation_Key"]), col=rgb(1,0,0,.6))
+
+abline(lm(wing_summary$wing[wing_summary$population=="Key_Largo" | wing_summary$population=="North_Key_Largo"]~wing_summary$year[wing_summary$population=="Key_Largo" | wing_summary$population=="North_Key_Largo"]), col=rgb(1,0,0,.6))
+
+abline(lm(wing_summary$wing[wing_summary$population=="Ft.Myers"]~wing_summary$year[wing_summary$population=="Ft.Myers"]), lty=3, col=rgb(0,0,1,.6))
+
+abline(lm(wing_summary$wing[wing_summary$population=="Lake_Wales"]~wing_summary$year[wing_summary$population=="Lake_Wales"]), lty=3, col=rgb(0,0,1,.6))
+
+abline(lm(wing_summary$wing[wing_summary$population=="Leesburg"]~wing_summary$year[wing_summary$population=="Leesburg"]), lty=3, col=rgb(0,0,1,.6))
+
+dev.off()
+
+
