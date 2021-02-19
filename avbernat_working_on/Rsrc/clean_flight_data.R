@@ -1,7 +1,6 @@
 # A function that loads and cleans up the flight data via 6 steps.
 
 library(lubridate) # For Date and Time Objects 
-#source("Rsrc/center_flight_data.R") # center_data function
 
 ################ Loading the data #####################
 

@@ -29,7 +29,8 @@ Base statistics of all morphology for wing morph and wing2body ratio (in long-wi
 ```{r}
 source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
 
-script_names = c("compare_models.R","regression_output.R")
+script_names = c("compare_models.R","regression_output.R", "clean_morph_data.R",
+                 "AICprobabilities.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -40,22 +41,11 @@ for (script in script_names) {
 ### Read the data
 
 ```{r}
-raw_data<-read.csv("data/allmorphology9.21.20.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
-```
-
-### Standardize population names
-
-```{r}
-raw_data$population[raw_data$population=="Key Largo"]<-"Key_Largo"
-raw_data$population[raw_data$population=="North Key Largo"]<-"North_Key_Largo"
-raw_data$population[raw_data$population=="Plantation Key"]<-"Plantation_Key"
-raw_data$population[raw_data$population=="Lake Wales"]<-"Lake_Wales"
-raw_data$pophost[raw_data$pophost=="C. corindum"]<-"C.corindum"
-raw_data$pophost[raw_data$pophost=="K. elegans"]<-"K.elegans"
-raw_data$pophost[raw_data$pophost=="K. elegans "]<-"K.elegans"
-
-raw_data<-raw_data[raw_data$pophost=="C.corindum" | raw_data$pophost=="K.elegans",]
-raw_data<-raw_data[raw_data$sex=="F" | raw_data$sex=="M",]
+data_list <- read_morph_data("data/allmorphology9.21.20.csv")
+raw_data = data_list[[1]]
+data_long = data_list[[2]]
+###remind yourself how the months are laid out
+#cbind(data_long$month_of_year, data_long$month)
 ```
 
 ## Wing Morph
@@ -83,6 +73,50 @@ hist(raw_data$wing[raw_data$w_morph=="S"]/raw_data$thorax[raw_data$w_morph=="S"]
       breaks=seq(0.5,3.8,by=0.05))
 ```
 
+### Plotting Data Points Across Time
+
+```{r}
+# Datetime
+raw_data$date <- paste(raw_data$month, raw_data$year, sep="/")
+raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
+raw_data$datetime <- as.factor(raw_data$datetime)
+n_missing_dates = nrow(raw_data[is.na(raw_data$datetime),])
+cat("number of missing dates:", n_missing_dates)
+```
+
+```{r echo=FALSE}
+
+#hist(raw_data$year, main="Numbers Collected", xlab="Year")
+
+colors = c("#999999", "#E69F00", "#56B4E9",
+           "ivory2", "gold", "royalblue4", "coral1", 
+           "orange4", "palegreen4")
+
+p = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=population)) + 
+    geom_bar(position='stack', color="black", width=0.7) +
+    theme_bw()
+p + labs(title=" ", 
+         x="Field Collection Month", y = "Number of Bugs Collected")+
+   scale_fill_manual(values=colors) +
+   theme_classic() +theme(axis.text=element_text(size=5),
+        axis.title=element_text(size=17,face="bold"))  +
+theme(axis.title.x = element_text(vjust = -3)) +
+theme(axis.title.y = element_text(vjust = 4)) +
+  theme(plot.margin=unit(c(1,1,1.1,1.2),"cm"))
+
+p = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
+    geom_bar(position='stack', color="black", width=0.7) +
+    theme_bw()
+p + labs(title=" ", 
+         x="Field Collection Month", y = "Number of Bugs Collected")+
+   scale_fill_manual(values=c("#56B4E9", "chartreuse4")) +
+   theme_classic() +theme(axis.text=element_text(size=6), # 9
+        axis.title=element_text(size=17,face="bold"))  +
+theme(axis.title.x = element_text(vjust = -3)) +
+theme(axis.title.y = element_text(vjust = 4)) +
+  theme(plot.margin=unit(c(1,1,1.1,1.2),"cm"))
+```
+
 ### Binomial Regression: wing morph
 
 ```{r}
@@ -102,6 +136,8 @@ raw_data$pophost_binom[raw_data$pophost=="K.elegans"] <- 1
 raw_data$month_of_year <- (raw_data$months_since_start+7)%%12+1
 ```
 
+What determines wing morph using all the data? Does sex? host plant? month of the year?
+
 ```{r}
 data<-data.frame(R=raw_data$wing_morph_binom, 
                  A=raw_data$sex_binom, 
@@ -119,6 +155,7 @@ model_comparisonsAIC(model_script)
 ```{r}
 tidy_regression(m7, is_color=FALSE)
 ```
+
 ## Wing2Body
 
 ### Cleaning data
@@ -154,6 +191,7 @@ tidy_regression(compare_dates_model, is_color=FALSE)
 Yes, bugs from this collection date have detectably smaller wing2body ratios on average than other collection dates, even when controlling for sex and host plant.
 
 ```{r echo=FALSE}
+# fig.width=3, fig.height=2.7,
 par(mar = c(5, 5, 2, 0)) 
 par(bty = 'n')
 boxplot(wing2body~compare_dates,
@@ -170,6 +208,8 @@ means <- tapply(data_long$wing2body,data_long$compare_dates, mean, na.rm=TRUE)
 points(means,pch=18, cex=2, col="white")
 #title("(a)", adj = 0.05, line = 0, cex.main=1.8)
 ```
+
+What effects wing2body ratio? sex? host plant? month of the year? months since start?
 
 ```{r}
 data<-data.frame(R=(data_long$wing2body-mean(data_long$wing2body, na.rm=TRUE)), # centered
@@ -211,7 +251,8 @@ source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc
 
 script_names = c("center_flight_data.R", # Needs to load first
                  "clean_flight_data.R",  # Script that loads and cleans up the data
-                 "regression_output.R")  # Cleans up regression outputs, prints in color or B&W
+                 "regression_output.R",
+                 "clean_morph_data.R")  # Cleans up regression outputs, prints in color or B&W
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -229,26 +270,12 @@ data_winter_tested <- data_winter_full[[2]]
 data_winter <- data_winter_tested[,c('beak','thorax', 'wing', 'body', 'w_morph', 'morph_notes')]
 
 ##load full dataset & pare to long-winged bugs only
-raw_data<-read.csv("data/allmorphology9.21.20.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+data_list <- read_morph_data("data/allmorphology9.21.20.csv")
+raw_data = data_list[[1]]
+data_long = data_list[[2]]
 ```
 
 ```{r}
-####standardize population names!
-raw_data$population[raw_data$population=="Key Largo"]<-"Key_Largo"
-raw_data$population[raw_data$population=="North Key Largo"]<-"North_Key_Largo"
-raw_data$population[raw_data$population=="Plantation Key"]<-"Plantation_Key"
-raw_data$population[raw_data$population=="Lake Wales"]<-"Lake_Wales"
-raw_data$pophost[raw_data$pophost=="C. corindum"]<-"C.corindum"
-raw_data$pophost[raw_data$pophost=="K. elegans"]<-"K.elegans"
-raw_data$pophost[raw_data$pophost=="K. elegans "]<-"K.elegans"
-
-raw_data<-raw_data[raw_data$pophost=="C.corindum" | raw_data$pophost=="K.elegans",]
-raw_data<-raw_data[raw_data$sex=="F" | raw_data$sex=="M",]
-raw_data$wing2thorax <- raw_data$wing/raw_data$thorax
-
-raw_data$w_morph[raw_data$w_morph=="" & raw_data$wing2thorax<=2.2]<-"S"
-raw_data$w_morph[raw_data$w_morph=="" & raw_data$wing2thorax>=2.35]<-"L"
-
 data_all_dates<-raw_data[raw_data$w_morph=="L",c('beak','thorax', 'wing', 'body', 'w_morph', 'notes')]
 ```
 

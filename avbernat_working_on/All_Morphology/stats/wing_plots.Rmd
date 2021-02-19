@@ -27,7 +27,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
 
-script_names = c("compare_models.R","regression_output.R")
+script_names = c("compare_models.R","regression_output.R", "clean_morph_data.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -38,54 +38,9 @@ for (script in script_names) {
 ### Read the data
 
 ```{r}
-raw_data<-read.csv("data/allmorphology9.21.20.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
-```
-
-### Standardize population names
-
-```{r}
-raw_data$population[raw_data$population=="Key Largo"]<-"Key_Largo"
-raw_data$population[raw_data$population=="North Key Largo"]<-"North_Key_Largo"
-raw_data$population[raw_data$population=="Plantation Key"]<-"Plantation_Key"
-raw_data$population[raw_data$population=="Lake Wales"]<-"Lake_Wales"
-raw_data$pophost[raw_data$pophost=="C. corindum"]<-"C.corindum"
-raw_data$pophost[raw_data$pophost=="K. elegans"]<-"K.elegans"
-raw_data$pophost[raw_data$pophost=="K. elegans "]<-"K.elegans"
-
-raw_data<-raw_data[raw_data$pophost=="C.corindum" | raw_data$pophost=="K.elegans",]
-raw_data<-raw_data[raw_data$sex=="F" | raw_data$sex=="M",]
-
-raw_data$w_morph_binom<-NA
-raw_data$wing_morph_binom[raw_data$w_morph=="S"]<-0
-raw_data$wing_morph_binom[raw_data$w_morph=="L"]<-1
-
-raw_data$wing2thorax <- raw_data$wing/raw_data$thorax
-
-raw_data$w_morph[raw_data$w_morph=="" & raw_data$wing2thorax<=2.2]<-"S"
-raw_data$w_morph[raw_data$w_morph=="" & raw_data$wing2thorax>=2.35]<-"L"
-
-raw_data$month_of_year <- (raw_data$months_since_start+7)%%12+1
-
-data_long<-raw_data[raw_data$w_morph=="L",]
-
-```
-
-```{r}
-###remove individuals with torn wings first.
-data_long$drop <- FALSE
-
-for(row in 1:nrow(data_long)){
-	if(length(unlist(strsplit(strsplit(paste("test ", data_long$notes[row], " test", sep=""), "torn")[[1]], "wing")))>2){
-		 #browser()	
-		 data_long$drop[row] <- TRUE
-		 }
-}
-
-data_long <- data_long[data_long$drop==FALSE,]
-
-data_long$wing2body <- data_long$wing/as.numeric(data_long$body)
-
-
+data_list <- read_morph_data("data/allmorphology9.21.20.csv")
+raw_data = data_list[[1]]
+data_long = data_list[[2]]
 ###remind yourself how the months are laid out
 #cbind(data_long$month_of_year, data_long$month)
 ```
