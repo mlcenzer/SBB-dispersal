@@ -94,7 +94,12 @@ split.screen(rbind(c(0,0.54,0,1), c(0.54,1,0,1)))
 
 screen(1)
 par(mai=c(1,1,0.5,0.2))
-plot(wing2body~months_since_start, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="F"])], pch=19, data=wing2body_summary[wing2body_summary$sex=="F",], ylab="Wing-to-body ratio", xlab="Year", ylim=c(0.7,0.75), cex=2, xaxt='n')
+plot(wing2body~months_since_start,
+     col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="F"])], 
+     pch=19, 
+     data=wing2body_summary[wing2body_summary$sex=="F",], 
+     ylab="Wing-to-body ratio", xlab="Year", 
+     ylim=c(0.7,0.75), cex=2, xaxt='n')
 
 #add standard error
 wing2body_summary_F<-wing2body_summary[wing2body_summary$sex=="F",]
@@ -113,7 +118,10 @@ legend(54, 0.709, legend=c(expression(italic("K. elegans")), expression(italic("
 
 screen(2)
 par(mai=c(1,0.1,0.5,0.2))
-plot(wing2body~months_since_start, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="M"])], pch=19, data=wing2body_summary[wing2body_summary$sex=="M",], ylab="Wing-to-body ratio", xlab="Year", ylim=c(0.7,0.75), cex=2, xaxt='n', yaxt='n')
+plot(wing2body~months_since_start,
+     col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="M"])], 
+     pch=19, data=wing2body_summary[wing2body_summary$sex=="M",], 
+     ylab="Wing-to-body ratio", xlab="Year", ylim=c(0.7,0.75), cex=2, xaxt='n', yaxt='n')
 
 #add standard error
 wing2body_summary_M<-wing2body_summary[wing2body_summary$sex=="M",]
@@ -204,7 +212,11 @@ pdf(file="wing_morph_1_panel.pdf", width=8, height=5.8)
 
 par(ps=18)
 par(mai=c(1,1,0.5,0.2))
-plot(wing_morph_binom~month_of_year, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(w_morph_summary$pophost)], pch=c(19,21)[as.factor(w_morph_summary$sex)], data=w_morph_summary, ylab="Frequency of long-winged morph", xlab="Month", ylim=c(0,1), cex=2, xaxt='n')
+plot(wing_morph_binom~month_of_year, 
+     col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(w_morph_summary$pophost)],
+     pch=c(19,21)[as.factor(w_morph_summary$sex)], 
+     data=w_morph_summary, ylab="Frequency of long-winged morph", 
+     xlab="Month", ylim=c(0,1), cex=2, xaxt='n')
 
 axis(side=1, labels=c("Nov", "Feb", "May", "Aug"), at=c(2,5,8,11))
 

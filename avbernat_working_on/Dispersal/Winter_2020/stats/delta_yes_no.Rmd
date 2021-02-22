@@ -108,17 +108,27 @@ Let's apply it to our data now:
 
 #### Cleaning the Data
 
-```{r message=FALSE, warning=FALSE}
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("center_flight_data.R", # Re-centers data 
+                 "clean_flight_data.R", # Loads and cleans data
+                 "unique_flight_data.R",
+                 "get_warnings.R", 
+                 "compare_models.R",
+                 "regression_output.R", # Cleans regression outputs; prints in color or B&W
+                 "AICprobabilities.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
 output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if generating an HTML
-source("src/clean_flight_data.R") # Loads and cleans data
-source("src/regression_output.R") # Cleans regression outputs; prints in color or black & white
-source("src/center_flight_data.R") # Re-centers data
-source("src/get_warnings.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
-source("src/unique_flight_data.R")
 d <- create_delta_data(data_tested)
 ```
 
@@ -817,8 +827,8 @@ data <- data.frame(R = df$flight_case,
          A = df$mass_per,
          B = df$sex_c,
          C = df$wing2body)
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic multinomial models- multinom 1RF + 3 FF.R")
+model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}
@@ -886,53 +896,114 @@ Mrows = males$index
 ```
 
 ```{r echo=FALSE}
-plot4 = function(df, pp) {
-    plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",type="l", 
-       ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", main="Females - including wing2body", lty=1) # flew in T1 but not T2
-  points(df$mass_per[Frows], pp[Frows,2], col="blue", type="l") # did not fly in either
-  #points(df$mass_per[Frows], pp[Frows,3], col="darkgreen", cex=0.45, type="l", pch=16) # flew in T2 but not T1
-  points(df$mass_per[Frows], pp[Frows,4], col="darkred", type="l") # flew in both
+plot4 = function(df, pp, gradient=TRUE, circles=TRUE) {
+  c = 0.65
+  plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",type="l", 
+       ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", 
+       lty=1, cex.axis=1.2, cex.lab=1.3) 
+  points(df$mass_per[Frows], pp[Frows,2], col="blue", type="l")
+  points(df$mass_per[Frows], pp[Frows,4], col="darkred", type="l") 
+  mtext("A. Females", side=3, adj=0.01, line=0.5, cex=1.5, font=2)
   text(68,0.7, labels="Flew in T1 only", col="blue")
   text(-27,0.95, labels="Did Not Fly", col="red")
   text(-31,0.37, labels="Flew Twice", col="darkred")
+  #text(53, 0.99, labels = expression(italic("flight_case ~ mass% + sex + wing2body")), cex=1.2)
+  # legend(49, 1.1, 
+  #        lty=1, 
+  #        col=c("darkred", "blue", "darkgreen", "red"), 
+  #        legend=c("Flew Twice", "Flew T1 Only", "Flew T2 Only", "Did Not Fly"), 
+  #        text.col=c("darkred", "blue", "darkgreen", "red"),
+  #        cex=1.1)
   
+  if (gradient) {
+    rbPal <- colorRampPalette(c('black','red'))
+    df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+    points(df$mass_per[Frows], pp[Frows, 1], pch=20, col=df$w2b_col[Frows])
+    
+    rbPal <- colorRampPalette(c('black','blue'))
+    df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+    points(df$mass_per[Frows], pp[Frows, 2], pch=20, col=df$w2b_col[Frows])
+    
+    rbPal <- colorRampPalette(c('black','violetred1'))
+    df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+    points(df$mass_per[Frows], pp[Frows, 4], pch=20, col=df$w2b_col[Frows])
+  }
+
+ if (circles) {
   # Mark points in the graph with high wing2body ratio vs. points with low wing2body ratio.
   test <- df[with(df, order(wing2body)),] # ascending order
-  #test$index
-  
+
   small = test %>%
     filter(sex =="F", wing2body < 0.7184934)
   large = test %>%
     filter(sex == "F", wing2body > 0.7184934)
   srows = small$index
   lrows = large$index
+
+  points(df$mass_per[lrows], pp[lrows,1], col="red", type="p", cex=c, pch=16)
+  points(df$mass_per[srows], pp[srows,1], col="red", type="p", cex=c)
+  # those with smaller wing2body ratio were more likely to NOT fly
+  points(df$mass_per[lrows], pp[lrows,2], col="blue", type="p", cex=c, pch=16)
+  points(df$mass_per[srows], pp[srows,2], col="blue", type="p", cex=c)
+  points(df$mass_per[lrows], pp[lrows,4], col="darkred", type="p", cex=c, pch=16)
+  points(df$mass_per[srows], pp[srows,4], col="darkred", type="p", cex=c)
+ }
   
-  points(df$mass_per[lrows], pp[lrows,1], col="red", type="p", cex=0.45, pch=16)
-  points(df$mass_per[srows], pp[srows,1], col="red", type="p", cex=0.45) # those with smaller wing2body ratio were more likely to NOT fly
-  points(df$mass_per[lrows], pp[lrows,2], col="blue", type="p", cex=0.45, pch=16)
-  points(df$mass_per[srows], pp[srows,2], col="blue", type="p", cex=0.45) 
-  points(df$mass_per[lrows], pp[lrows,4], col="darkred", type="p", cex=0.45, pch=16)
-  points(df$mass_per[srows], pp[srows,4], col="darkred", type="p", cex=0.45) 
-    
 }
 pp6 = pp
 df6 = df
-plot4(df6,pp6)
 ```
 
-```{r echo=FALSE}
-plot5 = function(df, pp) {
-  plot(df$mass_per[Mrows], pp[Mrows,1], ylim=c(0,0.8), xlim=c(-25,85), col="red",type="l", 
-       ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", main="Males - including wing2body", lty=1)
+```{r}
+plot5 = function(df, pp, gradient=TRUE, circles=TRUE) {
+  c = 0.65
+  plot(df$mass_per[Mrows], pp[Mrows,1], ylim=c(0,0.8), xlim=c(-25,81), col="red",type="l", 
+       ylab=" ", xlab="Percent Mass Change from T1 to T2 (%)", 
+       lty=1, cex.axis=1.2, cex.lab=1.3)
   points(df$mass_per[Mrows], pp[Mrows,2], col="blue", type="l", cex=0.45, lty=1)
   points(df$mass_per[Mrows], pp[Mrows,3], col="darkgreen", type="l", cex=0.45, lty=1) 
   points(df$mass_per[Mrows], pp[Mrows,4], col="darkred", type="l", cex=0.45, lty=1) 
-  text(73,0.42, labels="Flew in T1 only", col="blue")
-  text(70,0.1, labels="Did Not Fly", col="red")
-  text(73,0.02, labels="Flew in T2 only", col="darkgreen")
-  text(13,0.77, labels="Flew Twice", col="darkred")
-  
-  # Mark points in the graph with high wing2body ratio vs. points with low wing2body ratio.
+  #text(-20,0.78, labels="Males", cex=1.5)
+  mtext("B. Males", side=3, adj=0.01, line=0.5, cex=1.5, font=2)
+  text(58,0.32, labels="Flew in T1 only", col="blue")
+  text(58,0.17, labels="Did Not Fly", col="red")
+  text(70,0.02, labels="Flew in T2 only", col="darkgreen")
+  text(65,0.53, labels="Flew Twice", col="darkred") # 13,0.77
+  if (circles) {
+    legend(56.5, .81, 
+         pch=c(16,1), 
+         title="Wing-to-body", 
+         legend=c("> mean", "< mean"), 
+         cex=1.1)
+  }
+  if (gradient) {
+    legend(56.5, .81, 
+           pch=c(16), 
+           title="Wing-to-body", 
+           col=c("grey", "black"),
+           legend=c("high", "low"), 
+           cex=1.1)
+  }
+  if (gradient) {
+    rbPal <- colorRampPalette(c('black','red'))
+    df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+    points(df$mass_per[Mrows], pp[Mrows, 1], pch=20, col=df$w2b_col[Mrows])
+    
+    rbPal <- colorRampPalette(c('black','blue'))
+    df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+    points(df$mass_per[Mrows], pp[Mrows, 2], pch=20, col=df$w2b_col[Mrows])
+    
+    rbPal <- colorRampPalette(c('black','palegreen2'))
+    df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+    points(df$mass_per[Mrows], pp[Mrows, 3], pch=20, col=df$w2b_col[Mrows])
+    
+    rbPal <- colorRampPalette(c('black','violetred1'))
+    df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+    points(df$mass_per[Mrows], pp[Mrows, 4], pch=20, col=df$w2b_col[Mrows])
+  }
+
+ if (circles) {
+  # Mark points in the graph with high wing2body ratio vs. points with low wing2body ratio. 
   test <- df[with(df, order(wing2body)),] # ascending order
   #test$index
   
@@ -943,17 +1014,114 @@ plot5 = function(df, pp) {
   srows = small$index
   lrows = large$index
   
-  points(df$mass_per[lrows], pp[lrows,1], col="red", type="p", cex=0.45, pch=16)
-  points(df$mass_per[srows], pp[srows,1], col="red", type="p", cex=0.45) # those with smaller wing2body ratio were more likely to NOT fly
-  points(df$mass_per[lrows], pp[lrows,2], col="blue", type="p", cex=0.45, pch=16)
-  points(df$mass_per[srows], pp[srows,2], col="blue", type="p", cex=0.45) 
-  points(df$mass_per[lrows], pp[lrows,3], col="darkgreen", type="p", cex=0.45, pch=16)
-  points(df$mass_per[srows], pp[srows,3], col="darkgreen", type="p", cex=0.45) 
-  points(df$mass_per[lrows], pp[lrows,4], col="darkred", type="p", cex=0.45, pch=16)
-  points(df$mass_per[srows], pp[srows,4], col="darkred", type="p", cex=0.45)  
+  points(df$mass_per[lrows], pp[lrows,1], col="red", type="p", cex=c, pch=16)
+  points(df$mass_per[srows], pp[srows,1], col="red", type="p", cex=c)
+  # those with smaller wing2body ratio were more likely to NOT fly
+  points(df$mass_per[lrows], pp[lrows,2], col="blue", type="p", cex=c, pch=16)
+  points(df$mass_per[srows], pp[srows,2], col="blue", type="p", cex=c)
+  points(df$mass_per[lrows], pp[lrows,3], col="darkgreen", type="p", cex=c, pch=16)
+  points(df$mass_per[srows], pp[srows,3], col="darkgreen", type="p", cex=c)
+  points(df$mass_per[lrows], pp[lrows,4], col="darkred", type="p", cex=c, pch=16)
+  points(df$mass_per[srows], pp[srows,4], col="darkred", type="p", cex=c)
+ }
+  
 }
-plot5(df6,pp6)
 ```
+
+```{r echo=FALSE, fig.width=3.2*1.7, fig.height=2.8}
+par(mfrow=c(1,2), tcl=-0.5) # length of tick marks set at default
+
+par(mai=c(1,0.85,0.4,0)) # bottom, right, top, left
+plot4(df6,pp6, gradient=TRUE, circles=FALSE)
+
+par(mai=c(1,0.6,0.4,0.05))
+plot5(df6,pp6, gradient=TRUE, circles=FALSE)
+```
+
+```{r}
+plot5 = function(df, pp, gradient=TRUE, circles=TRUE) {
+  c = 0.65
+  plot(df$mass_per[Mrows], pp[Mrows,1], ylim=c(-0.00,0.8), xlim=c(-25,58), col="red",type="l", 
+       ylab=" ", xlab="Percent Mass Change from T1 to T2 (%)", 
+       lty=1, cex.axis=1.2, cex.lab=1.3)
+  points(df$mass_per[Mrows], pp[Mrows,2], col="blue", type="l", cex=0.45, lty=1)
+  points(df$mass_per[Mrows], pp[Mrows,3], col="darkgreen", type="l", cex=0.45, lty=1) 
+  points(df$mass_per[Mrows], pp[Mrows,4], col="darkred", type="l", cex=0.45, lty=1) 
+  #text(-20,0.78, labels="Males", cex=1.5)
+  mtext("B. Males", side=3, adj=0.01, line=0.5, cex=1.5, font=2)
+  text(22,0.35, labels="Flew in T1 only", col="blue")
+  text(52,0.17, labels="Did Not Fly", col="red")
+  text(-16,0, labels="Flew in T2 only", col="darkgreen")
+  text(13,0.77, labels="Flew Twice", col="maroon") # 13,0.77
+  if (circles) {
+    legend(38.5, .81, 
+           pch=c(16,1), 
+           title="Wing-to-body", 
+           legend=c("> mean", "< mean"), 
+           cex=1.1)
+  }
+  if (gradient) {
+    legend(38.5, .81, 
+           pch=c(16), 
+           title="Wing-to-body", 
+           col=c("grey", "black"),
+           legend=c("high", "low"), 
+           cex=1.1)
+  }
+  
+  if (gradient) {
+    rbPal <- colorRampPalette(c('black','red'))
+    df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+    points(df$mass_per[Mrows], pp[Mrows, 1], pch=20, col=df$w2b_col[Mrows])
+    
+    rbPal <- colorRampPalette(c('black','blue'))
+    df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+    points(df$mass_per[Mrows], pp[Mrows, 2], pch=20, col=df$w2b_col[Mrows])
+    
+    rbPal <- colorRampPalette(c('black','palegreen2'))
+    df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+    points(df$mass_per[Mrows], pp[Mrows, 3], pch=20, col=df$w2b_col[Mrows])
+    
+    rbPal <- colorRampPalette(c('black','violetred1'))
+    df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+    points(df$mass_per[Mrows], pp[Mrows, 4], pch=20, col=df$w2b_col[Mrows])
+  }
+
+ if (circles) {
+  # Mark points in the graph with high wing2body ratio vs. points with low wing2body ratio. 
+  test <- df[with(df, order(wing2body)),] # ascending order
+  #test$index
+  
+  small = test %>%
+    filter(sex =="M", wing2body < 0.7184934)
+  large = test %>%
+    filter(sex == "M", wing2body > 0.7184934)
+  srows = small$index
+  lrows = large$index
+  
+  points(df$mass_per[lrows], pp[lrows,1], col="red", type="p", cex=c, pch=16)
+  points(df$mass_per[srows], pp[srows,1], col="red", type="p", cex=c)
+  # those with smaller wing2body ratio were more likely to NOT fly
+  points(df$mass_per[lrows], pp[lrows,2], col="blue", type="p", cex=c, pch=16)
+  points(df$mass_per[srows], pp[srows,2], col="blue", type="p", cex=c)
+  points(df$mass_per[lrows], pp[lrows,3], col="darkgreen", type="p", cex=c, pch=16)
+  points(df$mass_per[srows], pp[srows,3], col="darkgreen", type="p", cex=c)
+  points(df$mass_per[lrows], pp[lrows,4], col="darkred", type="p", cex=c, pch=16)
+  points(df$mass_per[srows], pp[srows,4], col="darkred", type="p", cex=c)
+ }
+}
+```
+
+```{r echo=FALSE, fig.width=3.2*1.7, fig.height=2.8}
+par(mfrow=c(1,2), tcl=-0.5) # length of tick marks set at default
+
+par(mai=c(1,0.85,0.4,0)) # bottom, right, top, left
+plot4(df6,pp6, gradient=TRUE, circles=FALSE)
+
+par(mai=c(1,0.6,0.4,0.05))
+plot5(df6,pp6, gradient=TRUE, circles=FALSE)
+```
+
 
 Amazing to see what a clear impact wing2body ratio has for whether bugs are more likely to fly twice or not fly at all. Those with wing2body ratios above the mean wing2body ratio appear to be more likely to fly twice and less likely to not fly. This is true across females and males.
 
