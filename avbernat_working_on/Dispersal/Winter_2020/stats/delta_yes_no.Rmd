@@ -18,6 +18,8 @@ library(kableExtra)
 library(rethinking) 
 library(ggformula)
 library(plot.matrix)
+library(plotly)
+library(tidyr)
 
 # modeling and data manipulation
 library(lme4)
@@ -1275,7 +1277,6 @@ plot6 = function(df, pp) {
   rect(-0.045,-1,0.038,2, NA, col = rgb(0.5,0.2,0.5,1/15), border="pink") # most likely to not fly (2nd widest mass change, and laid eggs in T2)
   rect(-0.039,-1,0.008,2, NA, col = rgb(0.1,0.5,0.5,1/10), border="lightblue") # most likely to fly twice (lost mass and laid eggs only in T1)
   rect(-0.005,-1,0.029,2, NA, col = rgb(0.4,0.5,0.5,1/4), border="lightblue") # most likely to fly twice always (smallest mass change and did not lay eggs)
-  # turn this into an animated graph...!
   
   text(0.059,0.54, labels="Flew in T1 only", col="blue")
   text(-0.036,0.95, labels="Did Not Fly", col="red")
@@ -1291,8 +1292,18 @@ df5 = df
 plot6(df5,pp5)
 ```
 
+
 ```{r}
-plot6(df5,pp5)
+matrix = rbind(cbind(df$mass_diff[eggT1_rows], 
+            pp[eggT1_rows,1],pp[eggT1_rows,2], pp[eggT1_rows,3]),
+      cbind(df$mass_diff[egg_0rows], pp[egg_0rows,1], pp[egg_0rows,2],
+            pp[egg_0rows,3]), 
+      cbind(df$mass_diff[egg_2rows], pp[egg_2rows,1], pp[egg_2rows,2],
+            pp[egg_2rows,3]),
+      cbind(df$mass_diff[eggT2_rows], pp[eggT2_rows,1], pp[eggT2_rows,2], 
+            pp[eggT2_rows,3]))
+colnames(matrix) = c("mass_diff", "No", "T1", "Twice")
+#write.csv(matrix, "data/animate_eggs.csv") # for interactive graphs
 ```
 
 - Eggs laid twice: most likely to not fly unless gain more than about 0.025 g mass and then fly only in T1 (largest mass change)
