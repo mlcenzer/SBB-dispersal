@@ -18,6 +18,7 @@ library(tidyselect)
 library(zoo)
 library(knitr)
 library(kableExtra)
+library(webshot)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -33,15 +34,51 @@ data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
 
-data_all <- data_all %>%
+all_data <- data_all %>%
   filter(trial_type != "T2")
-data_all <- center_data(data_all)
+all_data <- center_data(all_data)
 
-data_tested <- data_all[data_all$tested == "yes",]
+data_tested <- all_data[all_data$tested == "yes",]
 data_tested <- center_data(data_tested)
 ```
 
 ## Counts
+
+### Grouped by Season
+
+```{r echo=FALSE}
+Fall = read.csv("/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Autumn_2019/stats/data/full_data3.csv")
+mass = Fall %>% filter(mass != 0)
+#length(unique(mass$ID))
+min30 = Fall %>% filter(set_number <= 30) # where is set002?
+min60 = Fall %>% filter(set_number > 30 & set_number <= 52)
+min90 = Fall %>% filter(set_number > 52 & set_number <= 71)
+unlimited = Fall %>% filter(set_number >= 72)
+T1 = data_all %>% filter(trial_type =="T1")
+T2 = data_all %>% filter(trial_type =="T2")
+
+n_30 = length(unique(min30$ID))
+n_60 = length(unique(min60$ID))
+n_90 = length(unique(min90$ID))
+n_unlimited = length(unique(unlimited$ID))
+
+season = c("Fall", "Fall", "Fall", "Fall", "Winter", "Winter")
+year = c("2019","2019","2019","2019","2020","2020")
+dates = c("October 15 to October 23", "October 23 to October 29", "October 30 to November 4", "November 5 to November 8", "February 17 to February 28", "March 3 to March 10")
+exp_setup = c("30 min", "60 min", "90 min", "unlimited", "unlimited", "unlimited")
+n_tested = c(n_30, n_60, n_90, n_unlimited, nrow(T1), nrow(T2))
+wing_morph = c("short and long", "short and long","short and long","long","long","long")
+
+table_season = cbind(season, year,dates, exp_setup, n_tested, wing_morph)
+colnames(table_season) <- c("Season", "Year", "Dates", "Experimental Setup", "N Tested", "Wing Morph")
+
+paper_table = kable(table_season) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  
+paper_table
+#save_kable(paper_table, "table2.pdf")
+```
+
+## Winter
 
 ### Grouped by Sex
 
@@ -158,11 +195,12 @@ table2b <- table2b[order(-table2b$latitude),]
 write.table(table2b, "tables/table1.csv", sep=",", row.names=FALSE)
 
 rownames(table2b) <- NULL
-kable(table2b) %>%
+paper_table = kable(table2b) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
   add_header_above(c(" ", " ", " ", "Coordinates" = 2, "Sample Sizes" = 2 )) %>% 
-  add_header_above(c("Tested Bugs By Host Plant, Population, and Site" = 7 ))
-
+  add_header_above(c("Tested Bugs By Host Plant, Population, and Site" = 7 )) 
+paper_table
+#save_kable(paper_table,"test.pdf")
 ```
 
 ## Data Stats

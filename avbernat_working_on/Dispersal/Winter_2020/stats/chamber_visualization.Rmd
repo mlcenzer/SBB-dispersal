@@ -47,9 +47,10 @@ for(set in sets) {
   
   data_list <- list(dataA, dataB)
 
-  png(paste0("output/set", set, ".png"), width = 2100, height = 1250)
-  par(mar=c(4.5,6,4.5,2))
-  par(mfrow=c(2,1))
+  pdf(paste0("output/set", set, ".pdf"), width = 30, height = 20) #width = 2100, height = 1250) #for png() .png
+  #par(mar=c(4.5,6,4.5,2))
+  par(mar=c(54.5,6,4.5,2))
+  #par(mfrow=c(2,1))
   for(data in data_list) {
     rand_colors <- randomColor(nrow(data), luminosity="bright")
 
