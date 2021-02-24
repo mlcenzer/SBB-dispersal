@@ -75,4 +75,13 @@ source("AICprobabilities.R")
 source("generic models-gaussian glm 3-FF.R")
 sort(summary$AIC)
 sort(P, decreasing=TRUE, index.return=TRUE)
+#m8, m11, m4
+
+anova(m8,m11, test="Chisq") #adding sym_dist does not help
+anova(m8, m4, test="Chisq") #adding host*sex interaction does help
+
+#Consistent with entire collection across time in FL:
+#females have shorter wings than males for their body size
+#Bugs from K.elegans have longer wings for their size than bugs from C.corindum; note that this effect vanishes if sym_dist is included in the model.
+#The effects of host are stronger on females
 
