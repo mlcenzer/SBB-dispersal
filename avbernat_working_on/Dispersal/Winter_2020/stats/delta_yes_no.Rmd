@@ -251,10 +251,12 @@ get_significant_models = function(){
   pvalues = matrix(NA, nrow = 4, ncol = 4)
   r = 0
   for (i in baselines) {
+    print(i)
     r = r + 1
     df$flight_case <- relevel(as.factor(df$flight_case), ref = as.character(i))
     m = run_multinom_model(df)
     model_table = calculate_P(m, print_table=FALSE)
+    print(model_table)
     
     eqs = rownames(model_table)
     c = 0
@@ -278,6 +280,36 @@ get_significant_models = function(){
 
 ```{r}
 get_significant_models()
+```
+
+```{r echo=FALSE}
+# 2 vs. -1
+odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T1\\, only)}$", " ")
+effect = c("Intercept", "$\\delta$ Mass (g)")
+pars = c("$\\alpha$", "$\\beta_1$")
+estimate = round(c(1.1808369, -42.94895),2)
+SE = c(" ", 13.95)
+exp.b = c(" ",round(exp(-42.94895/50),2))
+wald = c(" ",round(9.474699,2))
+pvals = c(" ",round(2.083251e-03,2))
+key1 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+
+# 2 vs. 0
+odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=did\\, not\\, fly)}$", " ")
+estimate = round(c(0.4195114, 25.328344),2)
+SE = c(" ", 12.66)
+exp.b = c(" ", 1.66)
+wald = c(" ",round(0.1733724,2))
+pvals = c(" ",round(4.545664e-02,2))
+key2 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+
+key = rbind(key1,key2)
+colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\frac{\\beta}{50}$)", "Wald", "p")
+
+kable(key) %>%
+  kable_styling(bootstrap_options = "hover", full_width = F)  %>%
+  add_header_above(c("Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model" = 8 )) %>%
+  column_spec(1, width="6cm")
 ```
 
 **The multinomial (ML) prediction equations are:**
@@ -408,6 +440,52 @@ run_multinom_model = function(d) {
 }
 get_significant_models()
 ```
+
+```{r echo=FALSE}
+# 2 vs. -1
+odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T1\\, only)}$", " ")
+effect = c("Intercept", "$\\delta$ Mass %")
+pars = c("$\\alpha$", "$\\beta_1$")
+estimate = round(c(1.2530401, -0.02354676),2)
+SE = c(" ", round(0.007814186,2))
+exp.b = c(" ",round(exp(-0.02354676*20),2))
+wald = c(" ",round(9.08019,2))
+pvals = c(" ",round(2.583931e-03,2))
+key1 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+
+# 2 vs. 0
+odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=did\\, not\\, fly)}$", " ")
+estimate = round(c(0.3436623, 0.0205503655),2)
+SE =c(" ", round(0.008238958,2))
+exp.b = c(" ",round(exp(0.0205503655*20),2))
+wald = c(" ",round(6.221491411,2))
+pvals = c(" ",round(1.262088e-02,2))
+key2 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+
+# -1 vs. 1
+odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ")
+estimate = round(c(1.217852, 0.0432625817),2)
+SE =c(" ", round(0.02012413,2))
+exp.b = c(" ",round(exp(0.0432625817*20),2))
+wald = c(" ",round(4.621580358,2))
+pvals = c(" ",round(0.03157214,2))
+key3 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+
+key = rbind(key1, key2, key3)
+colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta*20$)", "Wald", "p")
+
+kable(key) %>%
+  kable_styling(bootstrap_options = "hover", full_width = F)  %>%
+  add_header_above(c("Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model" = 8 )) %>%
+  column_spec(1, width="6cm")
+
+# kable(key, "latex", booktabs = T) %>%
+#   kable_styling(bootstrap_options = "hover", full_width = F)  %>%
+#   add_header_above(c("Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model" = 8 )) %>%
+#   column_spec(1, width="6cm") %>%
+#   as_image()
+```
+
 
 **The multinomial (ML) prediction equations are:**
 
@@ -548,11 +626,13 @@ get_significant_models = function(val_num){
   baselines = -1:2
   pvalues = matrix(NA, nrow = 4, ncol = 4)
   r = 0
+  model_list = list()
   for (i in baselines) {
     r = r + 1
     df$flight_case <- relevel(as.factor(df$flight_case), ref = as.character(i))
     model_table = run_multinom_model(df)
-
+    model_list[[r]] = as.data.frame(model_table)
+    
     eqs = rownames(model_table)
     c = 0
     for (e in eqs){
@@ -570,12 +650,16 @@ get_significant_models = function(val_num){
      na.col="white", col=rev(grey.colors(7)), digits=4, 
      breaks=c(0.05,0.10, 0.5, 0.8, 1),
      text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')
+  
+  return(model_list)
 }
 ```
 
 ```{r}
-get_significant_models(11) # mass_diff
-get_significant_models(12) # sex
+MASS_ML = get_significant_models(11) # mass_diff
+MASS_ML
+SEX_ML = get_significant_models(12) # sex
+SEX_ML
 ```
 
 ```{r echo=FALSE}
@@ -660,11 +744,82 @@ prediction_equations2(model_table, " Mass Percent Change", " Sex ")
 ```{r}
 run_multinom_model = function(d) {
   m <- multinom(flight_case ~ mass_per + sex_c, trace=FALSE, data = d) 
-  model_table = calculate_P2(m, "mass_diff", "sex_c", print_table=FALSE)
+  model_table = calculate_P2(m, "mass_per", "sex_c", print_table=FALSE)
   return(model_table)
 }
-get_significant_models(11)
-get_significant_models(12)
+MASS_ML = get_significant_models(11) # mass per
+MASS_ML
+SEX_ML = get_significant_models(12) # sex
+SEX_ML
+```
+
+```{r echo=FALSE}
+# 2 vs. -1
+odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T1\\, only)}$", " ", " ")
+effect = c("Intercept", "$\\delta$ Mass %", "Sex")
+pars = c("$\\alpha$", "$\\beta_1$", "$\\beta_2=F$")
+estimate = round(c(1.139438, -0.02314856, -0.2096559),2)
+SE = c(" ", round(c(0.008374107, 0.1965823),2))
+exp.b = c(" ",round(c(exp(-0.02314856), exp(-0.2096559)),2))
+wald = c(" ",round(c(7.641369,1.137432),2))
+pvals = c(" ",round(c(5.704460e-03, 0.2861957009),2))
+key1 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+
+# 2 vs. 1
+odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ", " ")
+estimate = round(c(6.996531, 0.028594653, 4.776587),2)
+SE = c(" ", round(c(0.02573154, 0.1901576),2))
+exp.b = c(" ",round(c(exp(0.028594653),exp(4.776587)),2))
+wald = c(" ",round(c(1.2349177, 630.9692),2))
+pvals = c(" ",round(c(0.2664528,0),2))
+key2 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+
+# 2 vs. 0
+odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=did\\, not\\, fly)}$", " ", " ")
+estimate = round(c(0.1236475, 0.019385661, -0.9015721),2)
+SE = c(" ", round(c(0.008305979, 0.1586103),2))
+exp.b =  c(" ",round(c(exp(0.019385661),exp(-0.9015721)),2))
+wald = c(" ",round(c(5.4472786, 32.31009),2))
+pvals = c(" ",round(c(1.959883e-02,0),2))
+key3 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+
+# -1 vs. 1
+odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ", " ")
+estimate = round(c(5.857132, 0.051742281, 4.986267),2)
+SE = c(" ", round(c(0.02639275, 0.2103403),2))
+exp.b =  c(" ",round(c(exp(3.8434553),exp(4.986267)),2))
+wald = c(" ",round(c(4.621580358, 561.9610),2))
+pvals = c(" ",round(c(0.0499405, 0),2))
+key4 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+
+# -1 vs. 0
+odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ")
+estimate = round(c(-1.0154279, 0.042521764, -0.6917921),2)
+SE = c(" ", round(c(0.009686178, 0.2029708),2))
+exp.b = c(" ",round(c(exp(0.042521764), exp(-0.6917921)),2))
+wald = c(" ",round(c(19.2715935,11.61673),2))
+pvals = c(" ",round(c(1.133807e-05, 0),2))
+key5 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+
+# 1 vs. 0
+odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ")
+estimate = round(c(-6.8204622, -0.009162539, -5.6256871),2)
+SE = c(" ", round(c(0.026356158, 0.1831234),2))
+exp.b = c(" ",round(c(exp(-0.009162539), exp(-5.6256871)),2))
+wald = c(" ",round(c(0.1208558,943.76396),2))
+pvals = c(" ",round(c(7.281082e-01,0),2))
+key6 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+
+key = rbind(key1, key2, key3, key4, key5, key6)
+colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta$)", "Wald", "p")
+```
+
+```{r echo=FALSE}
+kable(key) %>%
+  kable_styling(bootstrap_options = "hover", full_width = F)  %>%
+  add_header_above(c("Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model" = 8 )) %>%
+  column_spec(1, width="6cm")
+# save_kable("model_table.pdf)
 ```
 
 ```{r echo=FALSE}
@@ -825,13 +980,14 @@ Host plant is not significant.
 
 ```{r}
 df <- df[with(df, order(mass_per)),]
+df$wing2body_c = df$wing2body - mean(df$wing2body)
 ```
 
 ```{r}
 data <- data.frame(R = df$flight_case, 
          A = df$mass_per,
          B = df$sex_c,
-         C = df$wing2body)
+         C = df$wing2body_c)
 model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 FF.R")
 model_comparisonsAIC(model_script)
 ```
@@ -854,7 +1010,7 @@ calculate_P3 = function(m, print_table=TRUE) {
   model_table <- cbind(s$coefficients, c(s$edf, s$edf, s$edf), s$standard.errors[,2:4], z[,2:4], wald[,2:4], p[,2:4])
   colnames(model_table) <- c("(Intercept)", "mass %", "sex","wing2body","DF", 
                               "SE1", "SE2", "SE3", "z1", "z2", "z3",
-                              "wald2","wald1", "wald3", "P1>|z|", "P2>|z|", "P3>|z|")
+                              "wald1","wald2", "wald3", "P1>|z|", "P2>|z|", "P3>|z|")
   if (print_table){
     cat("\n", "AIC: ", s$AIC, "\n") 
     print(round(model_table,3))    
@@ -864,7 +1020,9 @@ calculate_P3 = function(m, print_table=TRUE) {
 ```
 
 ```{r}
-model <- multinom(flight_case ~ mass_per + sex_c + wing2body, data = df)
+#model <- multinom(flight_case ~ mass_per + sex_c + wing2body, data = df)
+#model_table = calculate_P3(model)
+model <- multinom(flight_case ~ mass_per + sex_c + wing2body_c, data = df)
 model_table = calculate_P3(model)
 ```
 
@@ -874,13 +1032,102 @@ Signal of flying in only T2 is weak, which is probably why the equation in the m
 
 ```{r}
 run_multinom_model = function(d) {
-  m <- multinom(flight_case ~ mass_per + sex_c + wing2body, trace=FALSE, data = d)
+  m <- multinom(flight_case ~ mass_per + sex_c + wing2body_c, trace=FALSE, data = d)
   model_table = calculate_P3(m, print_table=FALSE)
   return(model_table)
 }
-get_significant_models(15) # mass%
-get_significant_models(16) # sex
-get_significant_models(17) # wing2body
+MASS_PER_ML = get_significant_models(15) # mass%
+SEX_ML = get_significant_models(16) # sex
+WING2BODY_ML = get_significant_models(17) # wing2body
+```
+
+```{r}
+getting_odds = function(Odds, effect, pars, odds, r) {
+  # Odds:     Equation of the odds written out as vector of strings.
+  # effect:   Main effects written out as a vector of strings.
+  # pars:     Parameters written out as a vector of strings
+  # odds:     Model table ML equations for the given outcome and baseline.
+  # r:        Row in which the outcome is indexed. 
+  estimate = round(unlist(odds[r,1:4]),2)
+  SE = c(" ", round(unlist(odds[r,6:8]),2))
+  for (i in 2:4) {
+    if (i == 2) {
+      estimate[i] = estimate[i]*20
+    }
+    if (i == 4) {
+      estimate[i] = round(estimate[i]/100,2)
+    }
+  }
+  exp.b = c(" ",round(exp(estimate[2:4]),2))
+  wald = c(" ",round(unlist(odds[r,12:14]),2))
+  pvals = c(" ",round(unlist(odds[r,15:17]),2))
+  key = cbind(Odds, effect, pars, estimate, SE, exp.b, wald, pvals) 
+  
+  return(key)
+}
+```
+
+```{r}
+# 2 vs. -1
+Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T1\\, only)}$", " ", " ", " ")
+effect = c("Intercept", "$\\delta$ Mass %", "Sex", "Wing-to-Body")
+pars = c("$\\alpha$", "$\\beta_1$", "$\\beta_2\\, (F=1 | M=-1)$", "$\\beta_3\\,(\\mu=0)$ ")
+key1 = getting_odds(Odds, effect, pars, MASS_PER_ML[[1]], 3) 
+
+# 2 vs. 1
+Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ", " ", " ")
+key2 = getting_odds(Odds, effect, pars, MASS_PER_ML[[3]], 3) 
+
+# 2 vs. 0
+Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
+key3 = getting_odds(Odds, effect, pars, MASS_PER_ML[[2]], 3) 
+
+# -1 vs. 0
+Odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
+key4 = getting_odds(Odds, effect, pars, MASS_PER_ML[[2]], 1) 
+
+# 1 vs. 0
+Odds = c("$\\frac{P(Yi=flew\\, in\\, T2\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
+key5 = getting_odds(Odds, effect, pars, MASS_PER_ML[[2]], 2) 
+
+# -1 vs. 1
+Odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=flew\\, in\\, T2\\, only}$", " ", " ", " ")
+key6 = getting_odds(Odds, effect, pars, MASS_PER_ML[[3]], 2)
+
+key = rbind(key1, key2, key3, key4, key5, key6)
+rownames(key)<-NULL
+colnames(key) = c("Odds","Effect", "Parameter", "Estimate*", "SE", "exp($\\beta$)*", "Wald", "p")
+```
+
+```{r}
+kable(key, caption="Table 1. Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model") %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  column_spec(1, width="6cm") %>%
+  kable_classic(html_font = "Cambria") %>%
+  row_spec(c(4,8,12,16,20), extra_css = "border-bottom: 1px solid")
+```
+
+```{r echo=FALSE}
+kable(key) %>%
+  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  add_header_above(c("Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model" = 8)) %>%
+  column_spec(1, width="6cm") 
+#%>% row_spec(0, italic=T)
+# save_kable("model_table.pdf)
+```
+
+Need to get the intercept SE and values 
+
+**Odds**
+
+```{r}
+exp(0.02*20 - 0.76 + 28.09/100) # 20% increase in mass, female, and 1/20 increase in the wing2body ratio length
+
+exp(0.02*20 + 0.76 + 28.09/100)
+
+# confidence interval for wing2body ratio
+exp((28.09 + 1.96*9.72)/100) 
+exp((28.09 - 1.96*9.72)/100)
 ```
 
 

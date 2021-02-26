@@ -115,7 +115,6 @@ for (i in 1:nrow(d)) {
 
 **Plotting predicted probabilities**
 
-
 ```{r}
 d$index = 1:nrow(d)
 females = d %>%
