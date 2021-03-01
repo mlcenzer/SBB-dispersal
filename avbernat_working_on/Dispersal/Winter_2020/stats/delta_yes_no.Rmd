@@ -1007,10 +1007,11 @@ calculate_P3 = function(m, print_table=TRUE) {
   p <- (1 - pnorm(abs(z), 0, 1)) * 2
     
   # summary table (similar to lm, glm, or lmer function)
-  model_table <- cbind(s$coefficients, c(s$edf, s$edf, s$edf), s$standard.errors[,2:4], z[,2:4], wald[,2:4], p[,2:4])
-  colnames(model_table) <- c("(Intercept)", "mass %", "sex","wing2body","DF", 
-                              "SE1", "SE2", "SE3", "z1", "z2", "z3",
-                              "wald1","wald2", "wald3", "P1>|z|", "P2>|z|", "P3>|z|")
+  model_table <- cbind(s$coefficients, c(s$edf, s$edf, s$edf), 
+                       s$standard.errors[,1:4], z[,1:4], wald[,1:4], p[,1:4])
+  colnames(model_table) <- c("(Intercept)", "mass %", "sex","wing2body","DF", "SEi",
+                              "SE1", "SE2", "SE3","zi", "z1", "z2", "z3",
+                              "waldi", "wald1","wald2", "wald3", "Pi>|z|", "P1>|z|", "P2>|z|", "P3>|z|")
   if (print_table){
     cat("\n", "AIC: ", s$AIC, "\n") 
     print(round(model_table,3))    
@@ -1036,9 +1037,11 @@ run_multinom_model = function(d) {
   model_table = calculate_P3(m, print_table=FALSE)
   return(model_table)
 }
-MASS_PER_ML = get_significant_models(15) # mass%
-SEX_ML = get_significant_models(16) # sex
-WING2BODY_ML = get_significant_models(17) # wing2body
+
+# ML's below are all the same
+MASS_PER_ML = get_significant_models(19) # mass%
+SEX_ML = get_significant_models(20) # sex
+WING2BODY_ML = get_significant_models(21) # wing2body
 ```
 
 ```{r}
@@ -1049,7 +1052,7 @@ getting_odds = function(Odds, effect, pars, odds, r) {
   # odds:     Model table ML equations for the given outcome and baseline.
   # r:        Row in which the outcome is indexed. 
   estimate = round(unlist(odds[r,1:4]),2)
-  SE = c(" ", round(unlist(odds[r,6:8]),2))
+  SE = c(round(unlist(odds[r,6:9]),2))
   for (i in 2:4) {
     if (i == 2) {
       estimate[i] = estimate[i]*20
@@ -1058,9 +1061,15 @@ getting_odds = function(Odds, effect, pars, odds, r) {
       estimate[i] = round(estimate[i]/100,2)
     }
   }
-  exp.b = c(" ",round(exp(estimate[2:4]),2))
-  wald = c(" ",round(unlist(odds[r,12:14]),2))
-  pvals = c(" ",round(unlist(odds[r,15:17]),2))
+  exp.b = c(round(exp(estimate[1:4]),2))
+  wald = c(round(unlist(odds[r,14:17]),2))
+  pvals = c(round(unlist(odds[r,18:21]),3))
+  
+  for (i in 1:length(pvals)){
+    if (pvals[i] == "0") {
+      pvals[i] = "<0.001"
+    }
+  }
   key = cbind(Odds, effect, pars, estimate, SE, exp.b, wald, pvals) 
   
   return(key)
@@ -1069,42 +1078,54 @@ getting_odds = function(Odds, effect, pars, odds, r) {
 
 ```{r}
 # 2 vs. -1
-Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T1\\, only)}$", " ", " ", " ")
+#Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T1\\, only)}$", " ", " ", " ")
+Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T1\\, only)$", " ", " ")
 effect = c("Intercept", "$\\delta$ Mass %", "Sex", "Wing-to-Body")
 pars = c("$\\alpha$", "$\\beta_1$", "$\\beta_2\\, (F=1 | M=-1)$", "$\\beta_3\\,(\\mu=0)$ ")
 key1 = getting_odds(Odds, effect, pars, MASS_PER_ML[[1]], 3) 
 
 # 2 vs. 1
-Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ", " ", " ")
+#Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ", " ", " ")
+Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T2\\, only)$", " ", " ")
 key2 = getting_odds(Odds, effect, pars, MASS_PER_ML[[3]], 3) 
 
 # 2 vs. 0
-Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
+#Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
+Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=did\\, not\\, fly)$", " ", " ")
 key3 = getting_odds(Odds, effect, pars, MASS_PER_ML[[2]], 3) 
 
 # -1 vs. 0
-Odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
+#Odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
+Odds = c("$\\underline{P(Yi=flew\\, in\\, T1\\, only)}$", "$P(Yi=did\\, not\\, fly)$", " ", " ")
 key4 = getting_odds(Odds, effect, pars, MASS_PER_ML[[2]], 1) 
 
 # 1 vs. 0
-Odds = c("$\\frac{P(Yi=flew\\, in\\, T2\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
+#Odds = c("$\\frac{P(Yi=flew\\, in\\, T2\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
+Odds = c("$\\underline{P(Yi=flew\\, in\\, T2\\, only)}$", "$P(Yi=did\\, not\\, fly)$", " ", " ")
 key5 = getting_odds(Odds, effect, pars, MASS_PER_ML[[2]], 2) 
 
 # -1 vs. 1
-Odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=flew\\, in\\, T2\\, only}$", " ", " ", " ")
+#Odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ", " ", " ")
+Odds = c("$\\underline{P(Yi=flew\\, in\\, T1\\, only)}$", "$P(Yi=flew\\, in\\, T2\\, only)$", " ", " ")
 key6 = getting_odds(Odds, effect, pars, MASS_PER_ML[[3]], 2)
 
 key = rbind(key1, key2, key3, key4, key5, key6)
 rownames(key)<-NULL
-colnames(key) = c("Odds","Effect", "Parameter", "Estimate*", "SE", "exp($\\beta$)*", "Wald", "p")
+colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta$)*", "Wald", "p")
 ```
 
 ```{r}
 kable(key, caption="Table 1. Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model") %>%
-  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
-  column_spec(1, width="6cm") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  column_spec(1, width="6cm", background="white") %>%
   kable_classic(html_font = "Cambria") %>%
-  row_spec(c(4,8,12,16,20), extra_css = "border-bottom: 1px solid")
+  row_spec(c(4,8,12,16,20), extra_css = "border-bottom: 1px solid") %>%
+  #column_spec(1, color = "black", background = "white") %>%
+  footnote(general = " * Instead of a 1% mass increase, which is relatively too small, or a 1 unit increase in the ratio, which is 2 magnitudes higher than approximately one standard deviation from the mean, mass and wing-to-body ratio estimates were multiplied by 20 and divided by 100, respectively, before calculating the log odds. These changes better represent experimental observation and offers a more realistic impact on the odds. ",
+           general_title = " ", number_title = "* "
+           )
+
+# https://haozhu233.github.io/kableExtra/awesome_table_in_html.html
 ```
 
 ```{r echo=FALSE}
