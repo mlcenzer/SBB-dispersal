@@ -112,7 +112,8 @@ for(row in 1:nrow(wing2body_summary_F)){
 
 axis(side=1, labels=c("2013", "2015", "2017", "2019"), at=c(3,27,51,75))
 
-mtext("A. Females", side=3, adj=0.01)
+mtext(expression(italic("Females")), side=3, adj=0.05, line=-2, cex=1.15, font=2)
+mtext("A", side=3, adj=0.01, cex=1.5, line=0.5)
 
 legend(54, 0.709, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
 
@@ -134,7 +135,8 @@ for(row in 1:nrow(wing2body_summary_F)){
 
 axis(side=1, labels=c("2013", "2015", "2017", "2019"), at=c(3,27,51,75))
 
-mtext("B. Males", side=3, adj=0.01)
+mtext(expression(italic("Males")), side=3, adj=0.05, line=-2, cex=1.15, font=2)
+mtext("B", side=3, adj=0.01, cex=1.5, line=0.5)
 
 close.screen(all.screens=TRUE)
 dev.off()
@@ -220,7 +222,7 @@ plot(wing_morph_binom~month_of_year,
 
 axis(side=1, labels=c("Nov", "Feb", "May", "Aug"), at=c(2,5,8,11))
 
-mtext("Wing morph over the season", side=3, adj=0.01)
+mtext("Wing morph over the season", side=3, adj=0.01, line=0.5)
 
 legend(0.9, 0.2, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
 

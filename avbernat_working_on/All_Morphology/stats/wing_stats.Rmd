@@ -84,7 +84,17 @@ n_missing_dates = nrow(raw_data[is.na(raw_data$datetime),])
 cat("number of missing dates:", n_missing_dates)
 ```
 
-```{r echo=FALSE}
+```{r}
+# merge May 2015 with April 2015 because very few bugs were collected in May 2015.
+raw_data$date[raw_data$date == "May/2015"] = "April/2015"
+
+raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
+raw_data$datetime <- as.factor(raw_data$datetime)
+```
+
+
+
+```{r echo=FALSE fig.width=4, fig.height=6}
 
 #hist(raw_data$year, main="Numbers Collected", xlab="Year")
 
@@ -95,10 +105,12 @@ colors = c("#999999", "#E69F00", "#56B4E9",
 p = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=population)) + 
     geom_bar(position='stack', color="black", width=0.7) +
     theme_bw()
-p + labs(title=" ", 
+p1 = p + labs(title=" ", 
          x="Field Collection Month", y = "Number of Bugs Collected")+
    scale_fill_manual(values=colors) +
-   theme_classic() +theme(axis.text=element_text(size=5),
+   theme_classic() +theme(
+     axis.text.y = element_text(size=11),
+     axis.text.x=element_text(size=11, angle = 45, hjust = 1.1),
         axis.title=element_text(size=17,face="bold"))  +
 theme(axis.title.x = element_text(vjust = -3)) +
 theme(axis.title.y = element_text(vjust = 4)) +
@@ -107,14 +119,34 @@ theme(axis.title.y = element_text(vjust = 4)) +
 p = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
     geom_bar(position='stack', color="black", width=0.7) +
     theme_bw()
-p + labs(title=" ", 
+p2 = p + labs(title=" ", 
          x="Field Collection Month", y = "Number of Bugs Collected")+
    scale_fill_manual(values=c("#56B4E9", "chartreuse4")) +
-   theme_classic() +theme(axis.text=element_text(size=6), # 9
+   theme_classic() + theme(
+        axis.text.y = element_text(size=11),
+        axis.text.x=element_text(size=11, angle = 45, hjust = 1.1), # 9
         axis.title=element_text(size=17,face="bold"))  +
 theme(axis.title.x = element_text(vjust = -3)) +
 theme(axis.title.y = element_text(vjust = 4)) +
   theme(plot.margin=unit(c(1,1,1.1,1.2),"cm"))
+
+p = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=sex)) + 
+    geom_bar(position='stack', color="black", width=0.7) +
+    theme_bw()
+p3 = p + labs(title=" ", 
+         x="Field Collection Month", y = "Number of Bugs Collected")+
+   scale_fill_manual(values=c("salmon1", "darkslategray3")) +
+   theme_classic() +theme(     
+        axis.text.y = element_text(size=11),
+        axis.text.x=element_text(size=11, angle = 45, hjust = 1.1), # 9
+        axis.title=element_text(size=17,face="bold"))  +
+theme(axis.title.x = element_text(vjust = -3)) +
+theme(axis.title.y = element_text(vjust = 4)) +
+  theme(plot.margin=unit(c(1,1,1.1,1.2),"cm"))
+
+p1
+p2
+p3
 ```
 
 ### Binomial Regression: wing morph

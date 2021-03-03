@@ -20,45 +20,63 @@ knitr::opts_chunk$set(echo = TRUE)
 Using plotly to create interactive plots.(e.g. https://plotly.com/r/legend/)
 
 ```{r}
-d = read.csv("data/animate_eggs.csv")
+d = read.csv("data/animate_eggs-perc.csv")
 ```
 
 ```{r}
-fig <- plot_ly(d, x = ~mass_diff[1:6], y = ~No[1:6], type = 'scatter', mode = 'lines',
-        legendgroup = 'group1', name = 'T1 Eggs - Did Not Fly', line = list(color = 'rgb(205, 12, 24)'))
+no_fly_color = 'rgb(224, 59, 40)'
+T1_fly_color = 'rgb(69, 84, 255)'
+both_fly_color = 'black'
+
+ax_label = 24
+ax_num = 25
+line_width = 3
+
+fig <- plot_ly(d, x = ~mass_per[1:6], y = ~No[1:6], type = 'scatter', mode = 'lines',
+        legendgroup = 'group1', name = 'T1 Eggs - Did Not Fly', 
+        line = list(color = no_fly_color, width=line_width))
 
 fig <- fig %>% add_trace(y = ~T1[1:6], legendgroup = 'group1', name = 'T1 Eggs - T1 Flew',
-                         line = list(color = 'blue'))
+                         line = list(color = T1_fly_color, width=line_width)) 
 fig <- fig %>% add_trace(y = ~Twice[1:6], legendgroup = 'group1', name = 'T1 Eggs - Flew Twice',
-                         line = list(color = 'maroon'))
+                         line = list(color = both_fly_color, width=line_width))
 
-fig <- fig %>% add_trace(x = ~mass_diff[7:20], y = ~No[7:20], legendgroup = 'group2', name = 'No Eggs - Did Not Fly',
-                         line = list(color = 'rgb(205, 12, 24)', dash = 'dash')) 
-fig <- fig %>% add_trace(x = ~mass_diff[7:20], y = ~T1[7:20], legendgroup = 'group2', name = 'No Eggs - T1 Flew',
-                         line = list(color = 'blue', dash = 'dash'))
-fig <- fig %>% add_trace(x = ~mass_diff[7:20], y = ~Twice[7:20], legendgroup = 'group2', name = 'No Eggs - Flew Twice',
-                         line = list(color = 'maroon', dash = 'dash'))
+fig <- fig %>% add_trace(x = ~mass_per[7:20], y = ~No[7:20], legendgroup = 'group2', name = 'No Eggs - Did Not Fly',
+                         line = list(color = no_fly_color, dash = 'dash', width=line_width)) 
+fig <- fig %>% add_trace(x = ~mass_per[7:20], y = ~T1[7:20], legendgroup = 'group2', name = 'No Eggs - T1 Flew',
+                         line = list(color = T1_fly_color, dash = 'dash', width=line_width))
+fig <- fig %>% add_trace(x = ~mass_per[7:20], y = ~Twice[7:20], legendgroup = 'group2', name = 'No Eggs - Flew Twice',
+                         line = list(color = both_fly_color, dash = 'dash', width=line_width))
 
-fig <- fig %>% add_trace(x = ~mass_diff[21:65], y = ~No[21:65], legendgroup = 'group3', name = '2 Eggs - Did Not Fly',
-                         line = list(color = 'rgb(205, 12, 24)', dash = 'dashdot'))
-fig <- fig %>% add_trace(x = ~mass_diff[21:65], y = ~T1[21:65], legendgroup = 'group3', name = '2 Eggs - T1 Flew',
-                         line = list(color = 'blue', dash = 'dashdot'))
-fig <- fig %>% add_trace(x = ~mass_diff[21:65], y = ~Twice[21:65], legendgroup = 'group3', name = '2 Eggs - Flew Twice',
-                         line = list(color = 'maroon', dash='dashdot'))
+fig <- fig %>% add_trace(x = ~mass_per[21:65], y = ~No[21:65], legendgroup = 'group3', name = '2 Eggs - Did Not Fly',
+                         line = list(color = no_fly_color, dash = 'dashdot', width=line_width))
+fig <- fig %>% add_trace(x = ~mass_per[21:65], y = ~T1[21:65], legendgroup = 'group3', name = '2 Eggs - T1 Flew',
+                         line = list(color = T1_fly_color, dash = 'dashdot', width=line_width))
+fig <- fig %>% add_trace(x = ~mass_per[21:65], y = ~Twice[21:65], legendgroup = 'group3', name = '2 Eggs - Flew Twice',
+                         line = list(color = both_fly_color, dash='dashdot', width=line_width))
 
-fig <- fig %>% add_trace(x = ~mass_diff[66:93], y = ~No[66:93], legendgroup = 'group4', name = 'T2 Eggs - Did Not Fly',
-                         line = list(color = 'rgb(205, 12, 24)', dash='dot'))
-fig <- fig %>% add_trace(x = ~mass_diff[66:93], y = ~T1[66:93], legendgroup = 'group4', name = 'T2 Eggs - T1 Flew',
-                         line = list(color = 'blue', dash='dot'))
-fig <- fig %>% add_trace(x = ~mass_diff[66:93], y = ~Twice[66:93], legendgroup = 'group4', name = 'T2 Eggs - Flew Twice',
-                         line = list(color = 'maroon', dash='dot'))
+fig <- fig %>% add_trace(x = ~mass_per[66:93], y = ~No[66:93], legendgroup = 'group4', name = 'T2 Eggs - Did Not Fly',
+                         line = list(color = no_fly_color, dash='dot', width=line_width))
+fig <- fig %>% add_trace(x = ~mass_per[66:93], y = ~T1[66:93], legendgroup = 'group4', name = 'T2 Eggs - T1 Flew',
+                         line = list(color = T1_fly_color, dash='dot', width=line_width))
+fig <- fig %>% add_trace(x = ~mass_per[66:93], y = ~Twice[66:93], legendgroup = 'group4', name = 'T2 Eggs - Flew Twice',
+                         line = list(color = both_fly_color, dash='dot', width=line_width))
 
-fig <- fig %>% layout(xaxis = list(title="Mass Change from T1 to T2 (g)"), 
-                      yaxis = list(title="Flight Case Probability"))
+fig <- fig %>% layout(xaxis = list(title="Percent Change in Mass from T1 to T2 (g)", 
+                                   titlefont = list(size = ax_label),
+                                   tickfont = list(size = ax_num)), 
+                      yaxis = list(title="Flight Case Probability", 
+                                   titlefont = list(size = ax_label),
+                                   tickfont = list(size = ax_num)))
+ax <- list(zeroline = FALSE, showticklabels = TRUE, showline = TRUE, mirror = T, showgrid=FALSE)
+fig <- fig %>% layout(xaxis = ax, yaxis = ax)
+
 ```
 
 ```{r fig.width=10, fig.height=7}
 fig
 ```
+
+
 
 

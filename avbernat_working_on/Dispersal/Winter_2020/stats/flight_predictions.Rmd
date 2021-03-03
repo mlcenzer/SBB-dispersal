@@ -280,19 +280,38 @@ Here are the equations:
 - [2] "log(pi_1 / pi_0) = -4.395 - 0.005m - 9.580s - 8.937w      Flew in both, rather than none"
 - [3] "log(pi_2 / pi_0) = -19.931 + 0.018m - 0.760s + 28.019w      Flew in both, rather than none"
 
+Edits 03/01/2021 - need to center the wing2body data I have
+-1      -0.935  0.041 -0.571    23.739
+1       -8.177 -0.005 -6.954    -6.595 
+2        0.201  0.018 -0.760    28.094
+
+```{r}
+d$wing2body = 0
+for (i in 1:nrow(d)) {
+  d$wing2body[i] = d$wing[[i]][1] / d$body[[i]][1]
+}
+d$wing2body_c = 0
+d$wing2body_c = d$wing2body - mean(d$wing2body)
+```
+
 ```{r}
 neither = c()
 T1_rather_than_none = c()
 T2_rather_than_none = c()
 both_rather_than_none = c()
+
 for (i in 1:nrow(d)) {
   m = d$mass_per[[i]]
   s = d$sex_c[[i]]
-  w = d$wing[[i]] / d$body[[i]]
+  #w = d$wing[[i]][1] / d$body[[i]][1]
+  w = d$wing2body_c[i]
   top0 = exp(0) # just equals 1
-  top1 = exp(-17.862 + 0.041*m - 0.571*s + 23.558*w )
-  top2 = exp(-4.395 - 0.005*m - 9.580*s - 8.937*w)
-  top3 = exp(-19.931 + 0.018*m - 0.760*s + 28.019*w)
+  #top1 = exp(-17.862 + 0.041*m - 0.571*s + 23.558*w )
+  #top2 = exp(-4.395 - 0.005*m - 9.580*s - 8.937*w)
+  #top3 = exp(-19.931 + 0.018*m - 0.760*s + 28.019*w)
+  top1 = exp(-0.935 + 0.041*m - 0.571*s + 23.739*w)
+  top2 = exp(-8.177 - 0.005*m - 6.954*s - 6.595*w)
+  top3 = exp(0.201 + 0.018*m - 0.760*s + 28.094*w)
   bottom = top0 + top1 + top2 + top3
   neither = c(neither, top0/bottom)
   T1_rather_than_none = c(T1_rather_than_none, top1/bottom)
@@ -335,7 +354,6 @@ confusion_matrix <- acc_table$'Confusion Matrix'[[1]]
 confusion_matrix
 plot_confusion_matrix(confusion_matrix, add_sums=TRUE)
 ```
-
 
 **Females Only**
 
