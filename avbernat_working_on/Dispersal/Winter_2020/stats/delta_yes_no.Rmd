@@ -39,8 +39,6 @@ Flight Trials Winter 2020 were conducted from 2/17/2020 - 3/10/2020. Soapberry b
 
 [Clean the Data](#clean_data)
 
-[Flight Case ~ Mass Diff ](#mass_difference)
-
 [Flight Case ~ Mass Per ](#mass_percentage)
 
 [Flight Case ~ Mass Diff or Mass Perc + Sex ](#adding_sex)
@@ -119,7 +117,8 @@ script_names = c("center_flight_data.R", # Re-centers data
                  "get_warnings.R", 
                  "compare_models.R",
                  "regression_output.R", # Cleans regression outputs; prints in color or B&W
-                 "AICprobabilities.R")
+                 "AICprobabilities.R",
+                 "multinom_functions.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -144,17 +143,16 @@ d <- create_delta_data(data_tested)
 
 ```{r}
 colnames(d)[c(1:2,5,66:68,71:73)]
+# for wing-to-body ratio color creating
+d$w2b_col <- 0
 ```
 
 #### Age Effect 
 
 Age also plays a role in this dataset, but age was unknown because the soapberry bugs were field collected.
 
-```{r, echo=FALSE}
-# fig.height=2.4, fig.width=2.7
-```
-
 ```{r echo=FALSE}
+# fig.height=2.4, fig.width=2.7
 bar = function() {
   counts <- table(data_tested$flew_b, data_tested$trial_type)
   counts <- counts[1:2,2:3]
@@ -165,13 +163,13 @@ bar = function() {
 bar()
 ```
 
+<a id="mass_percentage"></a>
+
 #### Modeling
 
 Below I used the **multinom function** from the **nnet package** to estimate a *multinomial logistic regression* model. There are other functions in other R packages capable of multinomial regression. I chose the multinom function because it does not require the data to be reshaped (as the mlogit package does) and to mirror the example code found in Hilbe’s *Logistic Regression Models*.
 
 First, I chose the baseline by specifying the level using relevel function. Then, I ran our model using multinom. The multinom package does not include p-value calculations for the regression coefficients, so I calculated *P* using **Wald tests (i.e. z-tests)**.
-
-<a id="mass_difference"></a>
 
 Finally, I considered **mass difference** as my predictor variable where a (+) sign means the bug gained mass between trials and a (-) sign means the bug lost mass between trials.
 
@@ -186,243 +184,24 @@ kable(key) %>%
   add_header_above(c("Delta Mass Key" = 2 )) 
 ```
 
+**Multinom model: flight case ~ mass_per**
+
 **Baseline**
 
 ```{r}
 df <- d %>%
   filter(!is.na(mass_diff), !is.na(flight_case)) 
   
-df <- df[with(df, order(mass_diff)),]
+df <- df[with(df, order(mass_per)),]
 n_trials = nrow(df)
 
 df$flight_case <- relevel(as.factor(df$flight_case), ref = "0")
-```
-
-```{r echo=FALSE}
-df$w2b_col <- 0
 ```
 
 **Null model**
 
 ```{r}
 null <- multinom(flight_case ~ 1, data = df) 
-```
-
-**Multinom model: flight_case ~ mass_diff**
-
-```{r echo=FALSE}
-calculate_P = function(model, print_table=TRUE) {
-  # compute p-values using Wald tests (i.e. z-tests)
-  s <- summary(model) 
-  z <- s$coefficients/s$standard.errors 
-  wald <- z^2
-  p <- (1 - pnorm(abs(z), 0, 1)) * 2
-  
-  # summary table (similar to lm, glm, or lmer function)
-  model_table <- cbind(s$coefficients, c(s$edf, s$edf, s$edf), s$standard.errors[,2], z[,2], wald[,2], p[,2])
-  colnames(model_table) <- c("(Intercept)"," Estimate","DF", "Std. Err.", "z", "wald", "P > |z|")
-  
-  if (print_table) {
-     cat("\n", "AIC: ", s$AIC, "\n")
-    print(round(model_table,3))
-  }
-  return(model_table)
-}
-```
-
-```{r}
-model <- multinom(flight_case ~ mass_diff, data = df) 
-model_table = calculate_P(model)
-```
-
-```{r}
-anova(null, model, test="Chisq") # adding mass_diff improves fit 
-```
-
-**Which multinomial model equations are significant:**
-
-```{r echo=FALSE}
-run_multinom_model = function(d){
-  m <- multinom(flight_case ~ mass_diff, trace=FALSE, data = d) 
-  return(m)
-}
-get_significant_models = function(){
-  baselines = -1:2
-  pvalues = matrix(NA, nrow = 4, ncol = 4)
-  r = 0
-  for (i in baselines) {
-    print(i)
-    r = r + 1
-    df$flight_case <- relevel(as.factor(df$flight_case), ref = as.character(i))
-    m = run_multinom_model(df)
-    model_table = calculate_P(m, print_table=FALSE)
-    print(model_table)
-    
-    eqs = rownames(model_table)
-    c = 0
-    for (e in eqs){
-      c = c + 1
-      e = as.integer(e) + 2 
-      pvalues[r,e] = model_table[c,7]
-    } 
-  }
-  colnames(pvalues) = baselines
-  rownames(pvalues) = baselines 
-
-  #plot
-  par(mar=c(5.1, 4.1, 3.1, 4.1))
-  plot(pvalues, ylab="Baselines", xlab="Equation", main="p-values", 
-     na.col="white", col=rev(grey.colors(7)), digits=4, 
-     breaks=c(0.05,0.10, 0.5, 0.8, 1),
-     text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')
-}
-```
-
-```{r}
-get_significant_models()
-```
-
-```{r echo=FALSE}
-# 2 vs. -1
-odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T1\\, only)}$", " ")
-effect = c("Intercept", "$\\delta$ Mass (g)")
-pars = c("$\\alpha$", "$\\beta_1$")
-estimate = round(c(1.1808369, -42.94895),2)
-SE = c(" ", 13.95)
-exp.b = c(" ",round(exp(-42.94895/50),2))
-wald = c(" ",round(9.474699,2))
-pvals = c(" ",round(2.083251e-03,2))
-key1 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
-
-# 2 vs. 0
-odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=did\\, not\\, fly)}$", " ")
-estimate = round(c(0.4195114, 25.328344),2)
-SE = c(" ", 12.66)
-exp.b = c(" ", 1.66)
-wald = c(" ",round(0.1733724,2))
-pvals = c(" ",round(4.545664e-02,2))
-key2 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
-
-key = rbind(key1,key2)
-colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\frac{\\beta}{50}$)", "Wald", "p")
-
-kable(key) %>%
-  kable_styling(bootstrap_options = "hover", full_width = F)  %>%
-  add_header_above(c("Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model" = 8 )) %>%
-  column_spec(1, width="6cm")
-```
-
-**The multinomial (ML) prediction equations are:**
-
-```{r echo=FALSE}
-prediction_equations = function(tb) {
-  # -1 / 1 | Flew in T1, not T2
-  I = (tb[1,1] - tb[2,1])
-  M = (tb[1,2] - tb[2,2])
-  EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), " Mass Change     Flew in T1, rather than T2" )
-  
-  # 2 / -1 | Flew in both, not T1
-  I = (tb[3,1] - tb[1,1])
-  M = (tb[3,2] - tb[1,2])
-  EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", round(M,2), " Mass Change     Flew in both, rather than T1" )
-  
-  # 2 / 1 | Flew in both, not T2
-  I = (tb[3,1] - tb[2,1])
-  M = (tb[3,2] - tb[2,2])
-  EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", round(M,2),  " Mass Change     Flew in both, rather than T2")
-  
-  eqs = c(EQ1, EQ2, EQ3)
-  return(eqs)
-}
-```
-
-```{r}
-prediction_equations(model_table) 
-```
-
-```{r echo=FALSE}
-eq1 = "Flew in T1 only rather than T2 only = 1.36 + 62.51 Mass Change"
-eq2 = "Flew in both rather than T1 only = 1.19 - 43.88 Mass Change"
-eq3 = "Flew in both rather than T2 only = 2.55 + 18.63 Mass Change"
-
-significance = c("not sig", "sig", "not sig")
-t = cbind(n_trials, c(eq1, eq2, eq3), significance)
-colnames(t) = c("N","Model", "P")
-
-kable(t) %>%
-  kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
-```
-
-**Estimated Odds**
-
-For bugs of mass_diff x + 1/50 (0.02) g, the estimated odds that the bug flew twice rather than only in T1 equals
-
-```{r}
-exp(-43.88/50)
-```
-
-times the estimated odds at mass_diff x (g). As gain mass, then less likely to fly again. 
-
-```{r}
-exp(coef(model)/50) # this compares to not flying, the baseline | 1/0 not significant
-```
-
-**Predicted probabilities** 
-
-You can also use predicted probabilities to help you understand the model. **The multicategory logit model has an alternative expression in terms of the response probabilities**. This is
-
-<div align="center">$\pi_j = \frac{e^{\alpha_j + \beta_j x}}{\sum_he^{\alpha_h + \beta_h x}}, j=1,...,J$</div> <br/>
-
-The denominator is the same for each probability, and the numerators for various j sum to the denominator where $\sum_j \pi_j = 1$. The parameters ($\alpha$ and$\beta$) equal zero for whichever category is the baseline in the logit expressions. So these would be the equations for the model above:
-
-<div align="center">$\hat{\pi_{-1}} = \frac{e^{-1.77 + 69.21 x}}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
-
-$\hat{\pi_1} = \frac{e^{-2.13 - 6.70 x}}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
-
-$\hat{\pi_2} = \frac{e^{0.42 + 25.33 x}}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
-
-$\hat{\pi_0} = \frac{e^{0 + 0 x} = 1}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
-
-x = mass_diff, which can give you the estimated probabilities.</div><br/>
-
-You can calculate these predicted probabilities for each of our outcome levels using the fitted function. You can start by generating the predicted probabilities for the observations in our dataset and viewing the first few rows. Then, you can plot them.
-
-```{r}
-head(pp <- fitted(model))
-```
-```{r echo=FALSE}
-plot1 = function(df, pp) {
-   plot(df$mass_diff, pp[,1], ylim=c(0,1), col="red", type="l", ylab="Flight Case Probability", xlab="Changes in Mass From T1 to T2 (g)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
-  points(df$mass_diff, pp[,4], col="darkred", type="l", pch=3, cex=0.45)
-  points(df$mass_diff, pp[,2], col="blue", type="l", cex=0.45) # flew in T1 but not T2
-  points(df$mass_diff, pp[,3], col="darkgreen", type="l", cex=0.45) # flew in T2 but not T1
-  text(-0.035,0.7, labels="Did Not Fly", col="red")
-  text(0.007,0.6, labels="Flew Twice", col="darkred")
-  text(0.05,0.85, labels="Flew in T1 only", col="blue")
-  text(0.014,0.1, labels="Flew in T2 only", col="darkgreen")
-  #abline(v=0.011, lty=2, col="black")
-  abline(v=0.027, lty=2, col="black")
-  abline(v=-0.0165, lty=2, col="black")
-  abline(v=-0.022, lty=2, col="black")
-  # legend(-0.015, 0.99,
-  #        legend = c("0","1", "2"),
-  #        pch = c(2,1, 3),
-  #        title="Flight Count",
-  #        col=c("red","black","darkred")) 
-}
-pp1 <- fitted(model)
-df1 <- df # for summary purposes
-plot1(df1,pp1)
-```
-
-<a id="mass_percentage"></a>
-
-**Multinom model: flight case ~ mass_per**
-
-**Re-order**
-
-```{r}
-df <- df[with(df, order(mass_per)),]
 ```
 
 ```{r}
@@ -433,59 +212,15 @@ Model comparing flying only in T2 to the baseline (not flying at all) **is not s
 
 **Significant ML equations**
 
+
 ```{r}
 run_multinom_model = function(d) {
   m <- multinom(flight_case ~ mass_per, trace=FALSE, data = d) 
-  return(m)
+  model_table = calculate_P(m, print_table=FALSE)
+  return(model_table)
 }
-get_significant_models()
+ML_eqs = get_significant_models(7)
 ```
-
-```{r echo=FALSE}
-# 2 vs. -1
-odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T1\\, only)}$", " ")
-effect = c("Intercept", "$\\delta$ Mass %")
-pars = c("$\\alpha$", "$\\beta_1$")
-estimate = round(c(1.2530401, -0.02354676),2)
-SE = c(" ", round(0.007814186,2))
-exp.b = c(" ",round(exp(-0.02354676*20),2))
-wald = c(" ",round(9.08019,2))
-pvals = c(" ",round(2.583931e-03,2))
-key1 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
-
-# 2 vs. 0
-odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=did\\, not\\, fly)}$", " ")
-estimate = round(c(0.3436623, 0.0205503655),2)
-SE =c(" ", round(0.008238958,2))
-exp.b = c(" ",round(exp(0.0205503655*20),2))
-wald = c(" ",round(6.221491411,2))
-pvals = c(" ",round(1.262088e-02,2))
-key2 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
-
-# -1 vs. 1
-odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ")
-estimate = round(c(1.217852, 0.0432625817),2)
-SE =c(" ", round(0.02012413,2))
-exp.b = c(" ",round(exp(0.0432625817*20),2))
-wald = c(" ",round(4.621580358,2))
-pvals = c(" ",round(0.03157214,2))
-key3 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
-
-key = rbind(key1, key2, key3)
-colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta*20$)", "Wald", "p")
-
-kable(key) %>%
-  kable_styling(bootstrap_options = "hover", full_width = F)  %>%
-  add_header_above(c("Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model" = 8 )) %>%
-  column_spec(1, width="6cm")
-
-# kable(key, "latex", booktabs = T) %>%
-#   kable_styling(bootstrap_options = "hover", full_width = F)  %>%
-#   add_header_above(c("Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model" = 8 )) %>%
-#   column_spec(1, width="6cm") %>%
-#   as_image()
-```
-
 
 **The multinomial (ML) prediction equations are:**
 
@@ -534,13 +269,40 @@ exp(coef(model)*-20) # loose large % mass
 ```
 1 vs. 0 is not significant as already stated. However, -1 vs. 0 shows that as gain more mass then become increasingly more likely to only fly once. If loose mass then most likely to not fly at all, and more likely to fly twice then fly only once.
 
+**Predicted probabilities** 
+
+You can also use predicted probabilities to help you understand the model. **The multicategory logit model has an alternative expression in terms of the response probabilities**. This is
+
+<div align="center">$\pi_j = \frac{e^{\alpha_j + \beta_j x}}{\sum_he^{\alpha_h + \beta_h x}}, j=1,...,J$</div> <br/>
+
+The denominator is the same for each probability, and the numerators for various j sum to the denominator where $\sum_j \pi_j = 1$. The parameters ($\alpha$ and$\beta$) equal zero for whichever category is the baseline in the logit expressions. So these would be the equations for the mass diff model (code not show):
+
+   (Intercept)  Estimate DF Std. Err.     z   wald P > |z|
+-1      -0.909     0.044  6     0.010 4.492 20.179   0.000
+1       -2.132     0.001  6     0.020 0.043  0.002   0.965
+2        0.344     0.021  6     0.008 2.494  6.221   0.013
+
+<div align="center">$\hat{\pi_{-1}} = \frac{e^{-1.77 + 69.21 x}}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
+
+$\hat{\pi_1} = \frac{e^{-2.13 - 6.70 x}}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
+
+$\hat{\pi_2} = \frac{e^{0.42 + 25.33 x}}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
+
+$\hat{\pi_0} = \frac{e^{0 + 0 x} = 1}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
+
+x = mass_diff, which can give you the estimated probabilities.</div><br/>
+
+You can calculate these predicted probabilities for each of our outcome levels using the fitted function. You can start by generating the predicted probabilities for the observations in our dataset and viewing the first few rows. Then, you can plot them.
+
 ```{r}
 head(pp <- fitted(model))
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
 plot2 = function(df, pp) {
-    plot(df$mass_per, pp[,1], xlim=c(-40, 103), ylim=c(0,1), col="red", type="l", ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", pch=2, cex=0.45) # no flight_diff | 0 is triangle
+    plot(df$mass_per, pp[,1], xlim=c(-40, 103), ylim=c(0,1), col="red", type="l", 
+         ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", 
+         pch=2, cex=0.45) # no flight_diff
   points(df$mass_per, pp[,4], col="darkred", type="l", pch=3, cex=0.45)
   points(df$mass_per, pp[,2], col="blue", type="l", cex=0.45) # flew in T1 but not T2
   points(df$mass_per, pp[,3], col="darkgreen", type="l", cex=0.45) # flew in T2 but not T1
@@ -548,15 +310,9 @@ plot2 = function(df, pp) {
   text(20,0.6, labels="Flew Twice", col="darkred")
   text(85,0.85, labels="Flew in T1 only", col="blue")
   text(20,0.1, labels="Flew in T2 only", col="darkgreen")
-  #abline(v=0.011, lty=2, col="black")
   abline(v=53, lty=2, col="black")
   abline(v=-16.5, lty=2, col="black")
   abline(v=-28, lty=2, col="black")
-  # legend(-0.015, 0.99,
-  #        legend = c("0","1", "2"),
-  #        pch = c(2,1, 3),
-  #        title="Flight Count",
-  #        col=c("red","black","darkred"))
 }
 
 pp2 = fitted(model)
@@ -570,151 +326,7 @@ For more on multinomial plotting for when have more than 1 predictor variables s
 
 #### Now let's compare some models
 
-**First: flight_case, mass_diff, and sex**
-
-```{r}
-df <- df[with(df, order(mass_diff)),]
-```
-
-```{r, warnings = FALSE}
-data <- data.frame(R = df$flight_case, 
-         A = df$mass_diff,
-         B = df$sex_c)
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic multinomial models- multinom 1RF + 2 FF.R")
-```
-
-```{r}
-anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
-```
-
-```{r echo=FALSE}
-calculate_P2 = function(model, var1, var2, print_table=TRUE) {
-  # compute p-values using Wald tests (i.e. z-tests)
-  s <- summary(model) 
-  z <- s$coefficients/s$standard.errors 
-  wald <- z^2
-  p <- (1 - pnorm(abs(z), 0, 1)) * 2
-  
-  # summary table (similar to lm, glm, or lmer function)
-  model_table <- cbind(s$coefficients, c(s$edf, s$edf, s$edf), s$standard.errors[,1:3], z[,1:3], wald[,1:3], p[,1:3])
-  colnames(model_table) <- c("(Intercept)", var1, var2,"DF", 
-                            "SEi", "SE1", "SE2", "zi", "z1", "z2", 
-                            "waldi", "wald1","wald2","Pi > |z|", "P1 > |z|", "P2 > |z|")
-  if (print_table) {
-    cat("\n", "AIC: ", s$AIC, "\n") 
-    print(round(model_table,3))
-  }
-  return(model_table)
-}
-```
-
-```{r}
-delta_mass_model <- multinom(flight_case ~ mass_diff + sex_c, data = df)
-model_table = calculate_P2(delta_mass_model, "mass_diff", "sex_c")
-```
-
-**Significant models**
-
-```{r echo=FALSE}
-run_multinom_model = function(d) {
-  m <- multinom(flight_case ~ mass_diff + sex_c, trace=FALSE, data = d) 
-  model_table = calculate_P2(m, "mass_diff", "sex_c", print_table=FALSE)
-  return(model_table)
-}
-get_significant_models = function(val_num){
-  baselines = -1:2
-  pvalues = matrix(NA, nrow = 4, ncol = 4)
-  r = 0
-  model_list = list()
-  for (i in baselines) {
-    r = r + 1
-    df$flight_case <- relevel(as.factor(df$flight_case), ref = as.character(i))
-    model_table = run_multinom_model(df)
-    model_list[[r]] = as.data.frame(model_table)
-    
-    eqs = rownames(model_table)
-    c = 0
-    for (e in eqs){
-      c = c + 1
-      e = as.integer(e) + 2 
-      pvalues[r,e] = model_table[c,val_num]
-    } 
-  }
-  colnames(pvalues) = baselines
-  rownames(pvalues) = baselines 
-
-  #plot
-  par(mar=c(5.1, 4.1, 3.1, 4.1))
-  plot(pvalues, ylab="Baselines", xlab="Equation", main="p-values", 
-     na.col="white", col=rev(grey.colors(7)), digits=4, 
-     breaks=c(0.05,0.10, 0.5, 0.8, 1),
-     text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')
-  
-  return(model_list)
-}
-```
-
-```{r}
-MASS_ML = get_significant_models(11) # mass_diff
-MASS_ML
-SEX_ML = get_significant_models(12) # sex
-SEX_ML
-```
-
-```{r echo=FALSE}
-prediction_equations2 = function(tb, var1, var2, third_eq = TRUE) {
-  # -1 / 1 | Flew in T1, not T2
-  I = (tb[1,1] - tb[2,1])
-  M = (tb[1,2] - tb[2,2])
-  S = (tb[1,3] - tb[2,3])
-  EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), var1, " + ", round(S, 2), var2, "     Flew in T1, rather than T2" )
-  
-  if (third_eq) {
-    # 2 / -1 | Flew in both, not T1
-    I = (tb[3,1] - tb[1,1])
-    M = (tb[3,2] - tb[1,2])
-    S = (tb[3,3] - tb[1,3])
-    EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", round(M,2), var1, " + ", round(S, 2), var2, "     Flew in both, rather than T1" )
-  }
-
-  if (third_eq) {
-    # 2 / 1 | Flew in both, not T2
-    I = (tb[3,1] - tb[2,1])
-    M = (tb[3,2] - tb[2,2])
-    S = (tb[3,3] - tb[2,3])
-    EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", round(M,2),  var1, " + ", round(S, 2), var2, "     Flew in both, rather than T2")
-  }
-  
-  eqs = EQ1
-  
-  if (third_eq) {
-    eqs = c(EQ1, EQ2, EQ3)
-  }
-  
-  print("Where F = 1")
-  return(eqs)
-}
-```
-
-```{r}
-prediction_equations2(model_table, " Mass Change", " Sex ")
-```
-
-```{r echo=FALSE}
-eq1 = "Flew in T1 only rather than T2 only = 16.5 + 98.29 Mass Change + 15.49 Sex"
-eq2 = "Flew in both rather than T1 only = 1.25 - 50.49 Mass Change - 0.1 Sex"
-eq3 = "Flew in both rather than T2 only = 17.67 + 47.8 Mass Change + 15.39 Sex"
-
-significance = c("not mass | sex**", "mass** | not sex", " not mass | sex** ")
-t = cbind(n_trials, c(eq1, eq2, eq3), significance)
-colnames(t) = c("N","Model", "P")
-
-kable(t) %>%
-  kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
-```
-
-**Second: flight_case, mass_per, and sex**
+**flight_case, mass_per, and sex**
 
 ```{r}
 df <- df[with(df, order(mass_per)),]
@@ -739,6 +351,7 @@ model_table = calculate_P2(delta_mass_model, "mass_per", "sex_c")
 ```{r}
 prediction_equations2(model_table, " Mass Percent Change", " Sex ")
 ```
+
 **Significant models**
 
 ```{r}
@@ -747,79 +360,53 @@ run_multinom_model = function(d) {
   model_table = calculate_P2(m, "mass_per", "sex_c", print_table=FALSE)
   return(model_table)
 }
-MASS_ML = get_significant_models(11) # mass per
-MASS_ML
-SEX_ML = get_significant_models(12) # sex
-SEX_ML
+par(mfrow=c(1,2))
+MASS_ML = get_significant_models(15) # mass per
+SEX_ML = get_significant_models(16) # sex
 ```
 
 ```{r echo=FALSE}
 # 2 vs. -1
-odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T1\\, only)}$", " ", " ")
+Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T1\\, only)$", " ")
 effect = c("Intercept", "$\\delta$ Mass %", "Sex")
-pars = c("$\\alpha$", "$\\beta_1$", "$\\beta_2=F$")
-estimate = round(c(1.139438, -0.02314856, -0.2096559),2)
-SE = c(" ", round(c(0.008374107, 0.1965823),2))
-exp.b = c(" ",round(c(exp(-0.02314856), exp(-0.2096559)),2))
-wald = c(" ",round(c(7.641369,1.137432),2))
-pvals = c(" ",round(c(5.704460e-03, 0.2861957009),2))
-key1 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+pars = c("$\\alpha$", "$\\beta_1$", "$\\beta_2\\, (F=1 | M=-1)$")
+key1 = getting_oddsf(Odds, effect, pars, MASS_ML[[1]], 3) 
 
 # 2 vs. 1
-odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ", " ")
-estimate = round(c(6.996531, 0.028594653, 4.776587),2)
-SE = c(" ", round(c(0.02573154, 0.1901576),2))
-exp.b = c(" ",round(c(exp(0.028594653),exp(4.776587)),2))
-wald = c(" ",round(c(1.2349177, 630.9692),2))
-pvals = c(" ",round(c(0.2664528,0),2))
-key2 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T2\\, only)$", " ")
+key2 = getting_oddsf(Odds, effect, pars, MASS_ML[[3]], 3) 
 
 # 2 vs. 0
-odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=did\\, not\\, fly)}$", " ", " ")
-estimate = round(c(0.1236475, 0.019385661, -0.9015721),2)
-SE = c(" ", round(c(0.008305979, 0.1586103),2))
-exp.b =  c(" ",round(c(exp(0.019385661),exp(-0.9015721)),2))
-wald = c(" ",round(c(5.4472786, 32.31009),2))
-pvals = c(" ",round(c(1.959883e-02,0),2))
-key3 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
-
-# -1 vs. 1
-odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ", " ")
-estimate = round(c(5.857132, 0.051742281, 4.986267),2)
-SE = c(" ", round(c(0.02639275, 0.2103403),2))
-exp.b =  c(" ",round(c(exp(3.8434553),exp(4.986267)),2))
-wald = c(" ",round(c(4.621580358, 561.9610),2))
-pvals = c(" ",round(c(0.0499405, 0),2))
-key4 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=did\\, not\\, fly)$", " ")
+key3 = getting_oddsf(Odds, effect, pars, MASS_ML[[2]], 3) 
 
 # -1 vs. 0
-odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ")
-estimate = round(c(-1.0154279, 0.042521764, -0.6917921),2)
-SE = c(" ", round(c(0.009686178, 0.2029708),2))
-exp.b = c(" ",round(c(exp(0.042521764), exp(-0.6917921)),2))
-wald = c(" ",round(c(19.2715935,11.61673),2))
-pvals = c(" ",round(c(1.133807e-05, 0),2))
-key5 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+Odds = c("$\\underline{P(Yi=flew\\, in\\, T1\\, only)}$", "$P(Yi=did\\, not\\, fly)$", " ")
+key4 = getting_oddsf(Odds, effect, pars, MASS_ML[[2]], 1) 
 
 # 1 vs. 0
-odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ")
-estimate = round(c(-6.8204622, -0.009162539, -5.6256871),2)
-SE = c(" ", round(c(0.026356158, 0.1831234),2))
-exp.b = c(" ",round(c(exp(-0.009162539), exp(-5.6256871)),2))
-wald = c(" ",round(c(0.1208558,943.76396),2))
-pvals = c(" ",round(c(7.281082e-01,0),2))
-key6 = cbind(odds, effect, pars, estimate, SE, exp.b, wald, pvals)
+Odds = c("$\\underline{P(Yi=flew\\, in\\, T2\\, only)}$", "$P(Yi=did\\, not\\, fly)$", " ")
+key5 = getting_oddsf(Odds, effect, pars, MASS_ML[[2]], 2) 
+
+# -1 vs. 1
+Odds = c("$\\underline{P(Yi=flew\\, in\\, T1\\, only)}$", "$P(Yi=flew\\, in\\, T2\\, only)$", " ")
+key6 = getting_oddsf(Odds, effect, pars, MASS_ML[[3]], 2)
 
 key = rbind(key1, key2, key3, key4, key5, key6)
-colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta$)", "Wald", "p")
+rownames(key)<-NULL
+colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta$)*", "Wald", "p")
 ```
 
 ```{r echo=FALSE}
-kable(key) %>%
-  kable_styling(bootstrap_options = "hover", full_width = F)  %>%
-  add_header_above(c("Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model" = 8 )) %>%
-  column_spec(1, width="6cm")
-# save_kable("model_table.pdf)
+kable(key, caption="Table 1. Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  column_spec(1, width="6cm", background="white") %>%
+  kable_classic(html_font = "Cambria") %>%
+  row_spec(c(3,6,9,12,15), extra_css = "border-bottom: 1px solid") %>%
+  #column_spec(1, color = "black", background = "white") %>%
+  footnote(general = " * Instead of a 1% mass increase, which is relatively too small, the mass percent change estimates were multiplied by 20 before calculating the log odds. These changes better represent experimental observation and offers a more realistic odds. ",
+           general_title = " ", number_title = "* "
+           )
 ```
 
 ```{r echo=FALSE}
@@ -903,7 +490,7 @@ Frows = females$index
 Mrows = males$index
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
 plot3 = function(df, pp) {
   plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",
      type="l",
@@ -956,12 +543,12 @@ No females flew in T2 only.
 #### Adding Host Plant
 
 ```{r}
-df <- df[with(df, order(mass_diff)),]
+df <- df[with(df, order(mass_per)),]
 ```
 
 ```{r}
 data <- data.frame(R = df$flight_case, 
-         A = df$mass_diff,
+         A = df$mass_per,
          B = df$sex_c,
          C = df$host_c)
 source("src/compare_models.R")
@@ -981,6 +568,7 @@ Host plant is not significant.
 ```{r}
 df <- df[with(df, order(mass_per)),]
 df$wing2body_c = df$wing2body - mean(df$wing2body)
+df$wing2body_scaled = df$wing2body_c/sd(df$wing2body)*100 # normalized and then multiplied by 100
 ```
 
 ```{r}
@@ -998,43 +586,13 @@ anova(m7, m13, test="Chisq") # Adding B*C does not improve fit
 ```
 
 ```{r}
-calculate_P3 = function(m, print_table=TRUE) {
-  
-  # compute p-values using Wald tests (i.e. z-tests)
-  s <- summary(m) 
-  z <- s$coefficients/s$standard.errors 
-  wald <- z^2
-  p <- (1 - pnorm(abs(z), 0, 1)) * 2
-    
-  # summary table (similar to lm, glm, or lmer function)
-  model_table <- cbind(s$coefficients, c(s$edf, s$edf, s$edf), 
-                       s$standard.errors[,1:4], z[,1:4], wald[,1:4], p[,1:4])
-  colnames(model_table) <- c("(Intercept)", "mass %", "sex","wing2body","DF", "SEi",
-                              "SE1", "SE2", "SE3","zi", "z1", "z2", "z3",
-                              "waldi", "wald1","wald2", "wald3", "Pi>|z|", "P1>|z|", "P2>|z|", "P3>|z|")
-  if (print_table){
-    cat("\n", "AIC: ", s$AIC, "\n") 
-    print(round(model_table,3))    
-  }
-  return(model_table)
-}
-```
-
-```{r}
-df$wing2body_scaled = df$wing2body_c/sd(df$wing2body)*100 # normalized and then multiplied by 100
-```
-
-```{r}
-#model <- multinom(flight_case ~ mass_per + sex_c + wing2body, data = df)
-#model_table = calculate_P3(model)
-model <- multinom(flight_case ~ mass_per + sex_c + wing2body_scaled, data = df)
+model <- multinom(flight_case ~ mass_per + sex_c + wing2body_c, data = df)
 model_table = calculate_P3(model)
 ```
 
 Signal of flying in only T2 is weak, which is probably why the equation in the model was not significant. It does not differ much from not flying at all.
 
 **Significant equations**
-
 
 ```{r}
 run_multinom_model = function(d) {
@@ -1044,48 +602,11 @@ run_multinom_model = function(d) {
 }
 
 # ML's below are all the same
+par(mfrow=c(2,2))
 MASS_PER_ML = get_significant_models(19) # mass%
 SEX_ML = get_significant_models(20) # sex
 WING2BODY_ML = get_significant_models(21) # wing2body
 ```
-
-```{r}
-getting_odds = function(Odds, effect, pars, odds, r) {
-  # Odds:     Equation of the odds written out as vector of strings.
-  # effect:   Main effects written out as a vector of strings.
-  # pars:     Parameters written out as a vector of strings
-  # odds:     Model table ML equations for the given outcome and baseline.
-  # r:        Row in which the outcome is indexed. 
-  estimate = round(unlist(odds[r,1:4]),2)
-  SE = round(unlist(odds[r,6:9]),2)
-  estimates = format(estimate, nsmall = 2)
-  SEs = format(SE, nsmall = 2)
- 
-   for (i in 2:4) {
-    if (i == 2) {
-      estimate[i] = round(estimate[i]*20,2)
-    }
-    if (i == 4) {
-       estimate[i] = round(estimate[i]/100,2)
-    }
-  }
-  exp.b = c(round(exp(estimate[1:4]),2))
-  wald = c(round(unlist(odds[r,14:17]),2))
-  pvals = c(round(unlist(odds[r,18:21]),3))
-  
-  exps = format(exp.b, nsmall = 2)
-  for (i in 1:length(pvals)){
-    if (pvals[i] == "0") {
-      pvals[i] = "<0.001"
-    }
-  }
-  
-  key = cbind(Odds, effect, pars, estimates, SEs, exps, wald, pvals) 
-  
-  return(key)
-}
-```
-
 
 ```{r}
 # 2 vs. -1
@@ -1096,27 +617,22 @@ pars = c("$\\alpha$", "$\\beta_1$", "$\\beta_2\\, (F=1 | M=-1)$", "$\\beta_3\\,(
 key1 = getting_odds(Odds, effect, pars, MASS_PER_ML[[1]], 3) 
 
 # 2 vs. 1
-#Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ", " ", " ")
 Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T2\\, only)$", " ", " ")
 key2 = getting_odds(Odds, effect, pars, MASS_PER_ML[[3]], 3) 
 
 # 2 vs. 0
-#Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
 Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=did\\, not\\, fly)$", " ", " ")
 key3 = getting_odds(Odds, effect, pars, MASS_PER_ML[[2]], 3) 
 
 # -1 vs. 0
-#Odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
 Odds = c("$\\underline{P(Yi=flew\\, in\\, T1\\, only)}$", "$P(Yi=did\\, not\\, fly)$", " ", " ")
 key4 = getting_odds(Odds, effect, pars, MASS_PER_ML[[2]], 1) 
 
 # 1 vs. 0
-#Odds = c("$\\frac{P(Yi=flew\\, in\\, T2\\, only)}{P(Yi=did\\, not\\, fly)}$", " ", " ", " ")
 Odds = c("$\\underline{P(Yi=flew\\, in\\, T2\\, only)}$", "$P(Yi=did\\, not\\, fly)$", " ", " ")
 key5 = getting_odds(Odds, effect, pars, MASS_PER_ML[[2]], 2) 
 
 # -1 vs. 1
-#Odds = c("$\\frac{P(Yi=flew\\, in\\, T1\\, only)}{P(Yi=flew\\, in\\, T2\\, only)}$", " ", " ", " ")
 Odds = c("$\\underline{P(Yi=flew\\, in\\, T1\\, only)}$", "$P(Yi=flew\\, in\\, T2\\, only)$", " ", " ")
 key6 = getting_odds(Odds, effect, pars, MASS_PER_ML[[3]], 2)
 
@@ -1125,6 +641,8 @@ rownames(key)<-NULL
 colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta$)*", "Wald", "p")
 #  "exp($\\sum_{n=1}^{3}{\\beta_n}$)*"
 ```
+
+See here for more table parameters: https://haozhu233.github.io/kableExtra/awesome_table_in_html.html
 
 ```{r}
 kable(key, caption="Table 1. Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model") %>%
@@ -1136,20 +654,7 @@ kable(key, caption="Table 1. Estimated Parameters, Standard Errors, and Wald Tes
   footnote(general = " * Instead of a 1% mass increase, which is relatively too small, or a 1 unit increase in the ratio, which is 2 magnitudes higher than approximately one standard deviation from the mean, mass and wing-to-body ratio estimates were multiplied by 20 and divided by 100, respectively, before calculating the log odds. These changes better represent experimental observation and offers a more realistic impact on the odds. ",
            general_title = " ", number_title = "* "
            )
-
-# https://haozhu233.github.io/kableExtra/awesome_table_in_html.html
 ```
-
-```{r echo=FALSE}
-kable(key) %>%
-  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
-  add_header_above(c("Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model" = 8)) %>%
-  column_spec(1, width="6cm") 
-#%>% row_spec(0, italic=T)
-# save_kable("model_table.pdf)
-```
-
-Need to get the intercept SE and values 
 
 **Odds**
 
@@ -1162,7 +667,6 @@ exp(0.02*20 + 0.76 + 28.09/100)
 exp((28.09 + 1.96*9.72)/100) 
 exp((28.09 - 1.96*9.72)/100)
 ```
-
 
 **Predicted Probabilities**
 
@@ -1337,7 +841,7 @@ plot5 = function(df, pp, PP, gradient=TRUE, circles=TRUE, stochasticity=TRUE, po
 }
 ```
 
-```{r echo=FALSE, fig.width=3.2*1.7, fig.height=2.8}
+```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
 par(mfrow=c(1,2), tcl=-0.5) # length of tick marks set at default
 
 par(mai=c(1,0.85,0.4,0)) # bottom, right, top, left
@@ -1376,14 +880,14 @@ plot3 = function(df, pp) {
 }
 ```
 
-```{r echo=FALSE, fig.width=3.2*1.7, fig.height=2.8}
+```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
 par(mfrow=c(1,1), tcl=-0.5)
 #plot(0, xaxt = 'n', yaxt = 'n', bty = 'n', pch = '', ylab = '', xlab = '')
 #par(mai=c(1,0,0.4,0.05)) 
 plot3(df3,pp3)
 ```
 
-```{r fig.width=0.7, fig.height=1}
+```{r echo=FALSE, fig.width=0.7, fig.height=1}
 # Function to plot color bar
 color.bar <- function(lut, min, max=77, nticks=3, ticks=seq(min, max, len=nticks), title='') {
     scale = (length(lut)-1)/(max-min)
@@ -1488,44 +992,7 @@ run_multinom_model = function(d) {
   model_table = calculate_P(m, print_table=FALSE)
   return(model_table)
 }
-get_significant_modelsf = function(num_val){
-  baselines = c(-1, 0, 2)
-  pvalues = matrix(NA, nrow = 4, ncol = 4)
-  r = 0
-  model_list = list()
-  for (b in baselines) {
-    r = r + 1
-    df$flight_case <- relevel(as.factor(df$flight_case), ref = as.character(b))
-    model_table = run_multinom_model(df)
-    model_list[[r]] = as.data.frame(model_table)
-
-    eqs = rownames(model_table)
-    c = 0
-    for (e in eqs){
-      if (r == 3) {
-        r =4
-      }
-      c = c + 1
-      e = as.integer(e) + 2 
-      pvalues[r,e] = model_table[c,num_val]
-    } 
-  }
-  colnames(pvalues) = c(-1, 0, NA, 2)
-  rownames(pvalues) = c(-1, 0, NA, 2) 
-
-  #plot
-  par(mar=c(5.1, 4.1, 3.1, 4.1))
-  plot(pvalues, ylab="Baselines", xlab="Equation", main="p-values", 
-     na.col="white", col=rev(grey.colors(7)), digits=4, 
-     breaks=c(0.05,0.10, 0.5, 0.8, 1),
-     text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')
-  
-  return(model_list)
-}
-```
-
-```{r}
-get_significant_modelsf(7) #-1/0 egg case not sig | 0/-1 or 2/-1 egg case not sig | -1/2 egg case not sig | but 0/2 and 2/0 egg case**
+ML_eqs = get_significant_modelsf(7) #-1/0 egg case not sig | 0/-1 or 2/-1 egg case not sig | -1/2 egg case not sig | but 0/2 and 2/0 egg case**
 ```
 
 **Comparing models: adding host**
@@ -1570,38 +1037,9 @@ run_multinom_model = function(d) {
   model_table = calculate_P2(m, "mass_per", "egg_case", print_table=FALSE)
   return(model_table)
 }
-ML_eqs = get_significant_modelsf(11) # mass_per 
-get_significant_modelsf(12) # egg_case
-```
-
-
-```{r}
-getting_odds = function(Odds, effect, pars, odds, r) {
-  # Odds:     Equation of the odds written out as vector of strings.
-  # effect:   Main effects written out as a vector of strings.
-  # pars:     Parameters written out as a vector of strings
-  # odds:     Model table ML equations for the given outcome and baseline.
-  # r:        Row in which the outcome is indexed. 
-  estimate = round(unlist(odds[r,1:3]),2)
-  for (i in 2:4) {
-    if (i == 2) {
-      estimate[i] = estimate[i]*20
-    }
-  }
-  SE = c(round(unlist(odds[r,5:7]),2))
-  exp.b = c(round(exp(estimate),2))
-  wald = c(round(unlist(odds[r,11:13]),2))
-  pvals = c(round(unlist(odds[r,14:16]),3))
-  
-  for (i in 1:length(pvals)){
-    if (pvals[i] == "0") {
-      pvals[i] = "<0.001"
-    }
-  }
-  key = cbind(Odds, effect, pars, estimate, SE, exp.b, wald, pvals) 
-  
-  return(key)
-}
+par(mfrow=c(1,2)) 
+ML_eqs = get_significant_modelsf(15) # mass_per 
+ML_eqs = get_significant_modelsf(16) # egg_case
 ```
 
 
@@ -1610,15 +1048,15 @@ getting_odds = function(Odds, effect, pars, odds, r) {
 Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T1\\, only)$", " ")
 effect = c("Intercept", "$\\delta$ Mass %", "Egg Response")
 pars = c("$\\alpha$", "$\\beta_1$", "$\\beta_2$")
-key1 = getting_odds(Odds, effect, pars, ML_eqs[[1]], 2) 
+key1 = getting_oddsf(Odds, effect, pars, ML_eqs[[1]], 2) 
 
 # 2 vs. 0
 Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=did\\, not\\, fly)$", " ")
-key2 = getting_odds(Odds, effect, pars, ML_eqs[[2]], 2) 
+key2 = getting_oddsf(Odds, effect, pars, ML_eqs[[2]], 2) 
 
 # -1 vs. 0
 Odds = c("$\\underline{P(Yi=flew\\, in\\, T1\\, only)}$", "$P(Yi=did\\, not\\, fly)$", " ")
-key3 = getting_odds(Odds, effect, pars, ML_eqs[[2]], 1) 
+key3 = getting_oddsf(Odds, effect, pars, ML_eqs[[2]], 1) 
 
 key = rbind(key1, key2, key3)
 rownames(key)<-NULL
@@ -1670,7 +1108,7 @@ egg_2rows = egg2$index
 eggT2_rows = eggT2$index
 ```
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
 plot6 = function(df, pp) {
   # only laid eggs in T1
   plot(df$mass_per[eggT1_rows], pp[eggT1_rows,1], ylim=c(0,1.05), xlim=c(-36,108), col="red", type="l", lty=1,main="Females Only", ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (g)")
