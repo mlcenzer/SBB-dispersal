@@ -185,7 +185,9 @@ model_comparisonsAIC(model_script)
 * (-) effect of getting later in the season (month_of_year), such that short wing morphs become increasingly likely later in the year. 
 
 ```{r}
+#summary(glm(wing_morph_binom ~ months_since_start, data=raw_data, family="binomial"))
 tidy_regression(m7, is_color=FALSE)
+#summary(m7)
 ```
 
 ## Wing2Body
@@ -209,6 +211,7 @@ data_long <- data_long[data_long$drop==FALSE,]
 
 data_long$wing2body <- data_long$wing/as.numeric(data_long$body)
 ```
+
 
 ### Winter 2020 vs. other dates 
 
@@ -258,8 +261,15 @@ model_comparisonsAIC(model_script)
 anova(m15, m17, test="Chisq") # Adding A*C does not improve fit
 anova(m11, m15, test="Chisq") # Adding B*C does improve fit
 ```
+data<-data.frame(R=(data_long$wing2body-mean(data_long$wing2body, na.rm=TRUE)), # centered
+                 A=data_long$sex_binom, # sex
+                 B=data_long$pophost_binom, # host
+                 C=(data_long$month_of_year-mean(data_long$month_of_year, na.rm=TRUE)), 
+                 D=(data_long$months_since_start-mean(data_long$months_since_start, na.rm=TRUE))) 
+
 ```{r}
 tidy_regression(m15, is_color=FALSE)
+#summary(m15)
 ```
 
 * Males have larger wing2body ratios.

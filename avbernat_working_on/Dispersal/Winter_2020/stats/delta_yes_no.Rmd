@@ -659,9 +659,20 @@ kable(key, caption="Table 1. Estimated Parameters, Standard Errors, and Wald Tes
 **Odds**
 
 ```{r}
+# t1 vs. did not fly
+#exp(-0.01 - 0.76 + 28.09/100) # 20% increase in mass, female, and 1/20 increase in the wing2body ratio length
+1/40
+exp(23.74/40-.57)
+exp(23.74/40+.57)
+exp(0.02*0 + 0.76 + 28.09/100)
+
+min(d$wing2body) - max(d$wing2body)
+```
+
+```{r}
 exp(0.02*20 - 0.76 + 28.09/100) # 20% increase in mass, female, and 1/20 increase in the wing2body ratio length
 
-exp(0.02*20 + 0.76 + 28.09/100)
+exp(0.02*0 + 0.76 + 28.09/100)
 
 # confidence interval for wing2body ratio
 exp((28.09 + 1.96*9.72)/100) 
