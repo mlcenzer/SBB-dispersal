@@ -10,12 +10,12 @@ rm(list=ls())
 dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
 setwd(dir) 
 
-library(dplyr)
 library(cvms)
 library(binom)
 library(ggimage)
 library(ggnewscale)
 library(rsvg)
+library(dplyr)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -24,13 +24,25 @@ Using delta_yes_no.Rmd models to predict Fall delta flight response.
 
 **Clean the data**
 
-```{r}
-source("src/clean_flight_data-Fall.R")
-all_data = clean_flight_data.Fall("data/all_flight_data-Fall2019.csv")
-morph_data = read.csv("data/bug_morphology_flight-trials-Autumn2019.csv", header=TRUE, sep=",", stringsAsFactors=TRUE)
-data <- merge(all_data, morph_data, by=c("ID")) # I must be missing some morphology. Need to check - also need to check that the sexes match. AND population
-# sort(unique(data$ID))
-# sort(unique(all_data$ID))
+```{r warning=FALSE, message=FALSE}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("center_flight_data.R", # Re-centers data 
+                 "clean_flight_data-Fall.R", # Loads and cleans data
+                 "unique_flight_data-Fall.R",
+                 "clean_flight_data.R",
+                 "unique_flight_data.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+morph_d = read.csv("data/bug_morphology_flight-trials-Autumn2019.csv", header=TRUE, sep=",",
+                      stringsAsFactors=TRUE)
+data = clean_flight_data.Fall("data/all_flight_data-Fall2019.csv", morph_d)
+
+morph_d[morph_d$ID == 146,]$sex = data[data$ID == 146,]$sex # this bug broke apart before morph measurements taken so using flight sex identification
 ```
 
 **Keeping only the tests that were similar to Winter experiment design**
@@ -50,16 +62,12 @@ data90 = data_mass %>%
 # ongoing trial
 ongoing_data = data_mass %>%
   filter(set_number > 71)
-
-colnames(ongoing_data)[18] = "sex"
-colnames(ongoing_data)[19] = "population"
 ```
 
 **Create delta data**
 
 ```{r}
-source("src/unique_flight_data-Fall.R")
-d = create_delta_data.Fall(ongoing_data) # dataset changed. Need to find out why.
+d = create_delta_data.Fall(ongoing_data)
 ```
 
 **Calculating individual predicted probabilities**
@@ -128,9 +136,9 @@ points(d$mass_per[Mrows], both_rather_than_none[Mrows], col="maroon", type="l", 
 points(d$mass_per[Frows], neither[Frows], col="red", type="l", lty=1)
 points(d$mass_per[Mrows], neither[Mrows], col="red", type="l", lty=2)
 
-text(-20,0.9, labels="Did Not Fly", col="red")
+text(-20,0.85, labels="Did Not Fly", col="red")
 text(0,0.5, labels="Flew Twice", col="maroon")
-text(30,0.85, labels="Flew in T1 only", col="blue")
+text(40,0.25, labels="Flew in T1 only", col="blue")
 text(30,0.1, labels="Flew in T2 only", col="darkgreen")
 
 legend(84, 1.02,
@@ -149,7 +157,7 @@ probs = round(cbind(neither, T1_rather_than_none, T2_rather_than_none, both_rath
 summary_probs = cbind(as.character(d$flight_case), as.character(d$sex), probs)
 colnames(summary_probs) = c("event", "sex", "none", "T1", "T2", "both")
 dataframe = as.data.frame(summary_probs)
-dataframe
+nrow(dataframe)
 ```
 
 ```{r}
@@ -203,7 +211,7 @@ accM = calculate_accuracy(maledata,3,6)
 paste("Male prediction accuracy, ", round(accM,2))
 ```
 
-It seems like for males, this model will lead you to overestimating its flight probability. Males will not only fly twice, but they will be most likely to fly twice. Additionally, predicting female flight is much less accurate because of egg-laying events. So, let's use the mass + eggs laid model to predict female flight case probabilities. 
+It seems like for males, this model will lead you to overestimating its flight probability. Males will not always fly twice, but they will be **most likely** to fly twice. Additionally, predicting female flight is less accurate probably because of egg-laying events. So, let's use the mass + eggs laid model to predict female flight case probabilities. 
 
 **Confusion Matrix**
 
@@ -272,19 +280,38 @@ Here are the equations:
 - [2] "log(pi_1 / pi_0) = -4.395 - 0.005m - 9.580s - 8.937w      Flew in both, rather than none"
 - [3] "log(pi_2 / pi_0) = -19.931 + 0.018m - 0.760s + 28.019w      Flew in both, rather than none"
 
+Edits 03/01/2021 - need to center the wing2body data I have
+-1      -0.935  0.041 -0.571    23.739
+1       -8.177 -0.005 -6.954    -6.595 
+2        0.201  0.018 -0.760    28.094
+
+```{r}
+d$wing2body = 0
+for (i in 1:nrow(d)) {
+  d$wing2body[i] = d$wing[[i]][1] / d$body[[i]][1]
+}
+d$wing2body_c = 0
+d$wing2body_c = d$wing2body - mean(d$wing2body)
+```
+
 ```{r}
 neither = c()
 T1_rather_than_none = c()
 T2_rather_than_none = c()
 both_rather_than_none = c()
+
 for (i in 1:nrow(d)) {
   m = d$mass_per[[i]]
   s = d$sex_c[[i]]
-  w = d$wing[[i]] / d$body[[i]]
+  #w = d$wing[[i]][1] / d$body[[i]][1]
+  w = d$wing2body_c[i]
   top0 = exp(0) # just equals 1
-  top1 = exp(-17.862 + 0.041*m - 0.571*s + 23.558*w )
-  top2 = exp(-4.395 - 0.005*m - 9.580*s - 8.937*w)
-  top3 = exp(-19.931 + 0.018*m - 0.760*s + 28.019*w)
+  #top1 = exp(-17.862 + 0.041*m - 0.571*s + 23.558*w )
+  #top2 = exp(-4.395 - 0.005*m - 9.580*s - 8.937*w)
+  #top3 = exp(-19.931 + 0.018*m - 0.760*s + 28.019*w)
+  top1 = exp(-0.935 + 0.041*m - 0.571*s + 23.739*w)
+  top2 = exp(-8.177 - 0.005*m - 6.954*s - 6.595*w)
+  top3 = exp(0.201 + 0.018*m - 0.760*s + 28.094*w)
   bottom = top0 + top1 + top2 + top3
   neither = c(neither, top0/bottom)
   T1_rather_than_none = c(T1_rather_than_none, top1/bottom)
@@ -300,9 +327,25 @@ probs = round(cbind(neither, T1_rather_than_none, T2_rather_than_none, both_rath
 summary_probs = cbind(as.character(d$flight_case), as.character(d$sex), probs)
 colnames(summary_probs) = c("event", "sex", "none", "T1", "T2", "both")
 dataframe = as.data.frame(summary_probs)
-dataframe
+nrow(dataframe)
 ```
 
+```{r}
+# overall
+acc = calculate_accuracy(dataframe,3,6)
+paste("Overall prediction accuracy, ", round(acc,2))
+
+# by sex
+femdata = dataframe %>%
+  filter(sex=="F")
+maledata = dataframe %>%
+  filter(sex=="M")
+
+accF = calculate_accuracy(femdata,3,6)
+paste("Female prediction accuracy, ", round(accF,2))
+accM = calculate_accuracy(maledata,3,6)
+paste("Male prediction accuracy, ", round(accM,2))
+```
 
 ```{r}
 acc_table = get_confusion_matrix(dataframe,3,6)
@@ -311,7 +354,6 @@ confusion_matrix <- acc_table$'Confusion Matrix'[[1]]
 confusion_matrix
 plot_confusion_matrix(confusion_matrix, add_sums=TRUE)
 ```
-
 
 **Females Only**
 
@@ -400,76 +442,4 @@ confusion_matrix <- acc_table$'Confusion Matrix'[[1]]
 confusion_matrix
 plot_confusion_matrix(confusion_matrix, add_sums=TRUE)
 ```
-
-**Season**
-
-```{r}
-source("src/clean_flight_data.R") 
-source("src/center_flight_data.R")
-data <- read_flight_data("data/all_flight_data-Winter2020.csv")
-data_all <- data[[1]]
-data_tested <- data[[2]] 
-source("src/unique_flight_data.R")
-d_all <- create_delta_data(data_tested) # winter data
-winter <- center_data(d_all, is_not_binded = FALSE)
-
-source("src/clean_flight_data-Fall.R")
-d = clean_flight_data.Fall("data/all_flight_data-Fall2019.csv")
-source("src/unique_flight_data-Fall.R")
-fall = create_delta_data.Fall(d)
-
-fall$season <- "fall"
-winter$season <- "winter"
-```
-
-```{r}
-# just extract the first two trials 
-fall$num_flew <- 0
-fall$num_notflew <- 0
-  
-for(row in 1:length(fall$flew_b)){
-    n_flew <- sum(fall$flew_b[[row]][1:2] == 1)
-    fall$num_flew[[row]] <- n_flew 
-    
-    n_notflew <- sum(fall$flew_b[[row]][1:2] == 0)
-    fall$num_notflew[[row]] <- n_notflew
-    
-}
-```
-
-```{r}
-sd = rbind(fall, winter) # unique
-```
-
-```{r}
-sd$f_prob<-sd$num_flew/(sd$num_flew+sd$num_notflew)
-```
-
-```{r}
-####season vs. flight prob
-data_temp <- aggregate(f_prob~season, data=sd, FUN=mean)
-data_temp$trials <-c(sum(sd$num_flew[sd$season=="fall"]+sd$num_notflew[sd$season=="fall"]), sum(sd$num_flew[sd$season=="winter"]+sd$num_notflew[sd$season=="winter"]))
-
-#calculate binomial confidence interval
-data_temp$successes <- c(sum(sd$num_flew[sd$season=="fall"]), sum(sd$num_flew[sd$season=="winter"]))
-data_temp$CI<-binom.confint(data_temp$successes, data_temp$trials, methods="exact")
-```
-
-
-```{r echo=FALSE}
-par(mai=c(1, 1, .2, .2), ps=22) # fig.height=2.7, fig.width=2.7
-
-plot(data_temp$CI$mean~c(1,2), xaxt='n', ylab="Flight probability", xlab="Season", ylim=c(0,1), xlim=c(0.5,2.5), cex=3, pch=19, col=c("red", "blue"))
-
-lines(x=xy.coords(x=c(1,1), y=c(data_temp$CI$lower[1], data_temp$CI$upper[1])), lwd=3, col="red")
-lines(x=xy.coords(x=c(2,2), y=c(data_temp$CI$lower[2], data_temp$CI$upper[2])), lwd=3, col="blue")
-
-axis(side=1, at=c(1,2), labels=c("fall", "winter"))
-
-mtext(text=c("N=145", "N=281"), at=c(1,2), side=1, line=-1.2)
-```
-
-Seems like there is some difference by season for the first two trials of each bug (however, experimental setup differed). 
-
-The low accuracies could also be due to age - a factor not controlled for. Possibly younger reproductively active females fly more than older reproductively active females? It's unclear. 
 

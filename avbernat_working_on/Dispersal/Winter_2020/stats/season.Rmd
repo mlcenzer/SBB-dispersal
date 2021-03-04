@@ -1,0 +1,80 @@
+---
+title: "Season"
+author: "Anastasia Bernat"
+date: "2/24/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Season**
+
+```{r}
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]] 
+
+d_all <- create_delta_data(data_tested) # winter data
+winter <- center_data(d_all, is_not_binded = FALSE)
+
+
+fall = clean_flight_data.Fall("data/all_flight_data-Fall2019.csv", morph_d)
+fall = create_delta_data.Fall(d)
+
+fall$season <- "fall"
+winter$season <- "winter"
+```
+
+```{r}
+# just extract the first two trials 
+fall$num_flew <- 0
+fall$num_notflew <- 0
+  
+for(row in 1:length(fall$flew_b)){
+    n_flew <- sum(fall$flew_b[[row]][1:2] == 1)
+    fall$num_flew[[row]] <- n_flew 
+    
+    n_notflew <- sum(fall$flew_b[[row]][1:2] == 0)
+    fall$num_notflew[[row]] <- n_notflew
+    
+}
+```
+
+```{r}
+sd = rbind(fall, winter) # unique
+```
+
+```{r}
+sd$f_prob<-sd$num_flew/(sd$num_flew+sd$num_notflew)
+```
+
+```{r}
+####season vs. flight prob
+data_temp <- aggregate(f_prob~season, data=sd, FUN=mean)
+data_temp$trials <-c(sum(sd$num_flew[sd$season=="fall"]+sd$num_notflew[sd$season=="fall"]), sum(sd$num_flew[sd$season=="winter"]+sd$num_notflew[sd$season=="winter"]))
+
+#calculate binomial confidence interval
+data_temp$successes <- c(sum(sd$num_flew[sd$season=="fall"]), sum(sd$num_flew[sd$season=="winter"]))
+data_temp$CI<-binom.confint(data_temp$successes, data_temp$trials, methods="exact")
+```
+
+
+```{r echo=FALSE}
+par(mai=c(1, 1, .2, .2), ps=22) # fig.height=2.7, fig.width=2.7
+
+plot(data_temp$CI$mean~c(1,2), xaxt='n', ylab="Flight probability", xlab="Season", ylim=c(0,1), xlim=c(0.5,2.5), cex=3, pch=19, col=c("red", "blue"))
+
+lines(x=xy.coords(x=c(1,1), y=c(data_temp$CI$lower[1], data_temp$CI$upper[1])), lwd=3, col="red")
+lines(x=xy.coords(x=c(2,2), y=c(data_temp$CI$lower[2], data_temp$CI$upper[2])), lwd=3, col="blue")
+
+axis(side=1, at=c(1,2), labels=c("fall", "winter"))
+
+mtext(text=c("N=145", "N=281"), at=c(1,2), side=1, line=-1.2)
+```
+
+Seems like there is some difference by season for the first two trials of each bug (however, experimental setup differed). 
+
+The low accuracies could also be due to age - a factor not controlled for. Possibly younger reproductively active females fly more than older reproductively active females? It's unclear. 
+
