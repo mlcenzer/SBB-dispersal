@@ -34,12 +34,16 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 ### Cleaning the Data
 
 ```{r}
-rm(list=ls())
-output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if generating an HTML
-source("src/clean_flight_data.R") # Loads and cleans data
-source("src/regression_output.R") # Cleans up regression outputs; prints in color or black & white
-source("src/center_flight_data.R")
-source("src/get_warnings.R")
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("center_flight_data.R", # Re-centers data 
+                 "clean_flight_data.R" # Loads and cleans data
+                  )
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -90,28 +94,28 @@ for (i in seq(2,93, 1)) {
 
 ```{r}
 par(mfrow=c(1,2))
-hist(data_flew_all$max_speed,   # not normally distributed
+hist(data_flew_all$max_speed1,   # not normally distributed
      main="Max Speed Histogram", 
      xlab="Max Speed (m/s)", 
      ylim=c(0,100))
-boxplot(max_speed~sex,data=data_flew_all, 
-        main="Max Speed by Sex Boxplot",
-        ylab="Max Speed (m/s)", 
-        xlab="Sex")
+# boxplot(max_speed1~sex,data=data_flew_all, 
+#         main="Max Speed by Sex Boxplot",
+#         ylab="Max Speed (m/s)", 
+#         xlab="Sex")
 ```
 
 ```{r}
-sort(data_flew_all$max_speed) # need to do flight trajectories to see *where* these pop up
+sort(data_flew_all$max_speed1) # need to do flight trajectories to see *where* these pop up
 ```
 
 ```{r}
 # pwc = "Pairwise Wilcoxon test" between groups
 pwc <- data_flew_all %>% 
-  dunn_test(max_speed ~ sex, p.adjust.method = "bonferroni") %>%
+  dunn_test(max_speed1 ~ sex, p.adjust.method = "bonferroni") %>%
   add_xy_position(x = "sex")
-res.kruskal <- data_flew_all %>% kruskal_test(max_speed ~ sex)
+res.kruskal <- data_flew_all %>% kruskal_test(max_speed1 ~ sex)
 
-ggplot(data_flew_all, aes(sex, max_speed)) + 
+ggplot(data_flew_all, aes(sex, max_speed1)) + 
   geom_violin() +
     labs(
     subtitle = get_test_label(res.kruskal, detailed = TRUE), 

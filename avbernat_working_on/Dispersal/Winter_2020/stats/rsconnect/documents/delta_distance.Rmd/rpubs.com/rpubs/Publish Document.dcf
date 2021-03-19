@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/741370/1db257983a4e4237b2b36628469a984a
+bundleId: https://api.rpubs.com/api/v1/document/741370/1db257983a4e4237b2b36628469a984a
+url: http://rpubs.com/avbernat/741370
+when: 1616083105.37902

@@ -7,7 +7,7 @@
 # OUTPUT: returns a vector with the number of cases (integer) and sample proportion of binomial sucesses (numeric).
 #########################################################################################################
 
-group_calculations <- function(df_binned) {
+group_calculations2 <- function(df_binned) {
   successes <- sum(df_binned[2], na.rm = TRUE)
   n_cases <- nrow(df_binned)
   sample_prop <- successes / n_cases
@@ -29,7 +29,7 @@ group_calculations <- function(df_binned) {
 # explanatory variables
 #########################################################################################################
 
-categorize_data_MF <- function(data, c_exp_var, b_exp_var1, response_var, bin_interval, interval, initial_val) {
+categorize_data_MF2 <- function(data, c_exp_var, b_exp_var1, response_var, bin_interval, interval, initial_val) {
   
   df<- data[,c(c_exp_var,response_var, b_exp_var1)]
   df <- df[order(df[c_exp_var]),]
@@ -75,7 +75,7 @@ categorize_data_MF <- function(data, c_exp_var, b_exp_var1, response_var, bin_in
         next
       }
 
-      calculations <- group_calculations(binned_df_comb)
+      calculations <- group_calculations2(binned_df_comb)
       n_cases <- calculations[1]
       sample_prop <- calculations[2]
       # if (is.na(sample_prop)) { # Skips combinations where there were no cases in a given group. Comment out section to see all cases.

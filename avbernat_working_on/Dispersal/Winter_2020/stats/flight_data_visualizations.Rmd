@@ -36,19 +36,30 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 # Loading, cleaning, and recoding the data
 
 ```{r}
-source("src/clean_flight_data.R")
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("center_flight_data.R", # Re-centers data 
+                 "clean_flight_data.R", # Loads and cleans data
+                 # groups explanatory values into categories and calculates 
+                 # the sample of proportion of flight for each category
+                 "categorize_binomial_data.R",
+                 "categorize_binomial_data-MF.R", 
+                 "categorize_binomial_data3.R",
+                 "categorize_binomial_data-MF2.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if generating an HTML
+
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
 ```
 
 # ALL DATA PLOTS
-
-```{r}
-source("src/categorize_binomial_data.R")
-```
-
-categorize_data: It groups explanatory values into categories and calculates the sample of proportion of flight for each category
 
 ```{r fig.width=7, fig.height=2.5}
 cat_data1 <- categorize_data(data_tested, all_of("min_from_IncStart"), all_of("flew_b"), 30, 0, 30)
@@ -267,7 +278,6 @@ missing_mass <- subset(data_all, is.na(data_all$mass))
 data_mass <- data_all %>%
   filter(!is.na(mass))
 
-source("src/categorize_binomial_data-MF.R")
 cat_data5 <- categorize_data_MF(data_mass, all_of("mass"), all_of("sex_c"), 
                                 all_of("host_c"), all_of("flew_b"), 0.010, 0.015, 0.025)
 cat_data5
@@ -398,9 +408,10 @@ grid.arrange(pf1,pf2,pf3, ncol=3)
 ####### Sample proportion that laid eggs by mass ####### AND
 ####### Total eggs laid  by mass #######
 
-source("clean_flight_data.R")
-data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
-data_fem <- data_all[data_all$sex=="F",]
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+data_fem <- data_tested[data_tested$sex=="F",]
 
 # Data Manipulation - filtering, removing duplicates, and recentering mass
 data_fem_filtered <- data_fem %>%
@@ -411,7 +422,6 @@ data_fem_filtered <-data_fem_filtered[!duplicated(data_fem_filtered$ID,
 
 data_fem_filtered$mass_c <- data_fem_filtered$mass - mean(data_fem_filtered$mass)
 
-source("categorize_binomial_data.R") 
 cat_data8 <- categorize_data(data_fem_filtered, all_of("mass"), all_of("total_eggs"),  0.010, 0.015, 0.025) 
 ```
 
@@ -426,7 +436,7 @@ par(mfrow=c(1,2))
 
 # Plot 1 ---------------------------------------------------
 
-fit_prop <- lm(`Sample Proportion`~mass, data=cat_data8) 
+fit_prop <- lm(sample_prop~mass, data=cat_data8) 
 coeff <- coefficients(summary(fit_prop))
 
 eq <- paste0("portion_total_eggs = ", round(coeff[1],3),
@@ -475,7 +485,7 @@ shade(mu.PI, mass_c.seq)
 
 # Data Manipulation - filtering, removing duplicates, recentering mass, and calculating changes in mass
 
-data_fem <- data_all[data_all$sex=="F",] # 1.) Reselect the data (for integrity purposes)
+data_fem <- data_tested[data_tested$sex=="F",] # 1.) Reselect the data (for integrity purposes)
 data_f <- select(data_fem, ID, eggs_b)
 duplicates <- data_f[duplicated(data_f),] # 2.) This will give you duplicate rows:
 dim(data_f[duplicated(data_f),])[1] # 3.) This will give you the number of duplicates:
@@ -566,15 +576,14 @@ Three things noticed:
 
 ```{r}
 # Plot flight proportions by negative | positive mass_change. 
-source("categorize_binomial_data3.R") # categorize_binomial_data2.R works too
-cat_data9 <- categorize_data(egg_data_s2, all_of("mass_diff"), all_of("flew_delta"),  0.005, 0.010, -0.040) 
+cat_data9 <- categorize_data3(egg_data_s2, all_of("mass_diff"), all_of("flew_delta"),  0.005, 0.010, -0.040) 
 ```
 
 
 ```{r}
 ##### Proportion flew for females who laid eggs day of flight in one trial but not the other COMPARED to their variations/change in mass ########
 
-fit <- lm(`Sample Proportion`~mass_diff, data=cat_data9) 
+fit <- lm(sample_prop~mass_diff, data=cat_data9) 
 coeff <- coefficients(summary(fit))
 
 eq <- paste0("portion_flew = ", round(coeff[1],3),
@@ -608,8 +617,7 @@ egg_data_compact
 ```
 
 ```{r}
-source("categorize_binomial_data-MF2.R") 
-cat_data10 <- categorize_data_MF(egg_data_s2, all_of("mass_diff"), all_of("flew_count"), all_of("flew_delta"), 0.005, 0.010, -0.040) 
+cat_data10 <- categorize_data_MF2(egg_data_s2, all_of("mass_diff"), all_of("flew_count"), all_of("flew_delta"), 0.005, 0.010, -0.040) 
 ```
 
 ```{r}
@@ -658,13 +666,14 @@ legend("topright",
 ```
 
 ```{r}
-source("clean_flight_data.R")
-data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
 #  Eggs laid by week graph
-eggs_laid <- read.csv("egg_data-winter2020_final.csv") # go merge ID with population in Python - could also transpose this data into the data_all sheet
+eggs_laid <- read.csv("data/egg_data-Winter2020.csv") # go merge ID with population in Python - could also transpose this data into the data_all sheet
 
 # Check which ID's flew to see which female bugs were tested and only keep those
-highest_ID <- max(as.integer(data_all$ID))
+highest_ID <- max(as.integer(data_tested$ID))
 cat("Highest ID tested:", highest_ID)
 eggs_laid <- filter(eggs_laid, ID <= 333)
 
@@ -719,9 +728,6 @@ for(i in 1:max(df$ID)) {
 }
 lines(d, m, type="o")
 text(23.5,110, labels = c("mean"))
-
-
-
 ```
 
 ```{r}
@@ -769,15 +775,16 @@ for (p in 1:length(pops)) {
 ## MALE DATA PLOTS
 
 ```{r}
-source("clean_flight_data.R")
-data_all <- read_flight_data("complete_flight_data-Winter2020.csv")
-data_male <- data_all[data_all$sex=="M",]
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+data_male <- data_tested[data_tested$sex=="M",]
 ```
 
 ```{r fig.width=5, fig.height=3}
 plot(data_male$sym_dist, data_male$flew_b)
 
-male_sum <-aggregate(flew_b~host_plant*sym_dist, data=data_male, FUN=mean)
+male_sum <-aggregate(flew_b~host_plant*sym_dist, data=data_male, FUN="mean")
 male_sum
 
 par(mar=c(6.5, 5.5, 5.5, 9.5), xpd=TRUE) # Add extra space to right of plot area; change clipping to figure
@@ -798,7 +805,6 @@ legend("topright",
 
 
 ```{r}
-source("categorize_binomial_data.R")
 cat_data7 <- categorize_data(data_male, all_of("sym_dist"), all_of("flew_b"),  0.1, 0, 0.05) 
 
 fit_male <- lm(flew_b~sym_dist, data=data_male) 

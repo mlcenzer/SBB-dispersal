@@ -11,7 +11,7 @@
 # explanatory variable
 #########################################################################################################
 
-categorize_data <- function(data, explanatory_var, response_var, bin_interval, interval, initial_val) {
+categorize_data3 <- function(data, explanatory_var, response_var, bin_interval, interval, initial_val) {
   df<- data[,c(explanatory_var, response_var)]
   df <- df[order(df[explanatory_var]),]
   

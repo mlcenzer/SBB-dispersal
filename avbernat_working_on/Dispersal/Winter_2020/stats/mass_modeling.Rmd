@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-setwd("~/Desktop/Rstats-winter2020/")
+setwd("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/")
 
 # For Modeling
 library(lme4)
@@ -17,7 +17,6 @@ library(dplyr)
 library(mosaic)
 
 # For Plotting
-
 library(ggplotify)
 library(gridExtra) # "grid" graphics
 
@@ -43,12 +42,24 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 #### Reading the data
 
 ```{r}
-rm(list=ls())
-output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
-source("src/clean_flight_data.R") # Script that loads and cleans up the data
-source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
-source("src/center_flight_data.R")
-source("src/get_warnings.R")
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("center_flight_data.R", # Re-centers data 
+                 "clean_flight_data.R", # Loads and cleans data
+                 "get_warnings.R", 
+                 "compare_models.R",
+                 "regression_output.R", # Cleans regression outputs; prints in color or B&W
+                 "AICprobabilities.R",
+                 "plotting-lm.R",
+                 "plotting-lm2.R",
+                 "plotting-polyreg.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if generating an HTML
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -116,8 +127,8 @@ data<-data.frame(R=data_tested$mass_c,
                  C=data_tested$sym_dist, 
                  X=data_tested$ID)
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -153,8 +164,8 @@ data<-data.frame(R=data_tested$mass_c,
 data <- data %>%
   filter(!is.na(C))
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -179,8 +190,8 @@ data<-data.frame(R=data_tested$mass_c,
 data <- data %>%
   filter(!is.na(A))
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -207,7 +218,6 @@ tidy_regression(allmorph_model, is_color=output_col)
 #### Days from start by mass
 
 ```{r, warning=FALSE}
-source("src/plotting-lm.R") 
 lm_plot(data_tested, "days_from_start_c","mass_c", "Days From Start", "Mass (g)", "Mass by Days From Start") 
 tidy_regression(lmer(mass_c~days_from_start_c + (1|ID), data=data_tested, REML=FALSE), is_color=output_col)
 ```
@@ -297,8 +307,6 @@ legend("topright",
 # For both graphs: need to add xaxt="n" inside plot function to make the customized x-axis
 
 #pdf("lm-massbysex-model.pdf", width=6, height=6)
-source("src/plotting-lm.R") 
-source("src/plotting-lm2.R") 
 lm_plot2(data_tested, "sex_c","mass_c", "Sex", "Mass (g)", "Mass by Sex") 
 axis(1, at = seq(-1,1,.5),labels=c("M", " ", " ", " ", "F"))
 #dev.off()
@@ -381,7 +389,6 @@ d <- data_tested %>%
 
 ```{r warning=FALSE, results='hide'}
 #, fig.width=5, fig.height=4}
-source("src/plotting-lm.R") 
 lm_plot(d, "wing2body_c","mass_c", "Wing-to-Body Ratio", "Mass (g)", "Mass by Wing:Body") 
 
 par(mfrow=c(2,2))
@@ -395,7 +402,6 @@ lm_plot(d, "beak_c","mass_c", "Beak Length (mm)", "Mass (g)", "Mass by Beak Leng
 
 ```{r}
 #, fig.width=5, fig.height=4}
-source("src/plotting-polyreg.R")
 lm_polyplot(d, "wing2body_c","mass_c", "Wing-to-Body Ratio", "Mass (g)", "Mass by Wing:Body") 
 
 #par(mfrow=c(2,2))
@@ -452,13 +458,6 @@ grid.arrange(h3,h4,h5,h6,ncol=4)
 #### Reading the data
 
 ```{r}
-rm(list=ls())
-output_col = FALSE 
-source("src/clean_flight_data.R") 
-source("src/regression_output.R") 
-source("src/center_flight_data.R")
-source("src/get_warnings.R")
-
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
@@ -524,8 +523,8 @@ data<-data.frame(R=data_fem$mass_c,
                  B=data_fem$sym_dist,
                  X=data_fem$ID)
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 2-FF REMLF.R"))
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 2-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -552,8 +551,8 @@ data<-data.frame(R=data_fem$mass_c,
                  C=data_fem$eggs_b,
                  X=data_fem$ID)
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -578,8 +577,8 @@ data<-data.frame(R=data_fem$mass_c,
 data <- data %>%
   filter(!is.na(D))
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -611,8 +610,8 @@ data<-data.frame(R=data_fem$mass_c,
 data <- data %>%
   filter(!is.na(A))
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -647,11 +646,11 @@ data<-data.frame(R=data_fem$mass_c,
 data <- data %>%
   filter(!is.na(A), !is.na(B)) 
 
-## model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R") ## AB: wide difference between model selection, uncomment to compare.
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
-cat("Number of models that failed to converge: ", length(errors$warnings)) 
+## model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R") ## AB: wide difference between model selection, uncomment to compare.
 ```
 
 ```{r}
@@ -685,9 +684,9 @@ p
 #, fig.width=2.8, fig.height=2.3}
 data_eggs <- data_fem %>%
   filter(!is.na(total_eggs))
-source("src/plotting-lm.R") 
+
 lm_plot(data_eggs, "total_eggs_c", "mass_c", "Total Eggs Laid", "Mass (g)", "Mass by Total Eggs Laid")
-source("src/plotting-lm2.R") 
+
 lm_plot2(data_fem, "eggs_b", "mass_c", "Eggs Laid", "Mass (g)", "Mass by Egg Laid on Test Day")
 axis(1, at = seq(-1,1,.5),labels=c(" ", " ", "M ", " ", "F"))
 
@@ -699,7 +698,6 @@ lm_plot(data_fem, "sym_dist", "mass_c", "Distance From Sympatric Zone", "Mass (g
 ```{r, warning=FALSE}
 #, fig.width=2.8, fig.height=2.3}
 
-source("src/plotting-lm.R") 
 lm_plot(data_fem, "wing2body_c", "mass_c", "Wing:Body", "Mass (g)", "Mass by Wing:Body")
 lm_plot(data_fem, "thorax_c", "mass_c", "Thorax Length (mm)", "Mass (g)", "Mass by Thorax Length")
 lm_plot(data_fem, "wing_c", "mass_c", "Wing Length (mm)", "Mass (g)", "Mass by Wing Length")
@@ -708,7 +706,6 @@ lm_plot(data_fem, "beak_c", "mass_c", "Beak Length (mm)", "Mass (g)", "Mass by B
 ```
 
 ```{r}
-source("src/plotting-polyreg.R")
 lm_polyplot(data_fem, "wing2body_c", "mass_c", "Wing:Body", "Mass (g)", "Mass by Wing:Body")
 lm_polyplot(data_fem, "thorax_c", "mass_c", "Thorax Length (mm)", "Mass (g)", "Mass by Thorax Length")
 lm_polyplot(data_fem, "wing_c", "mass_c", "Wing Length (mm)", "Mass (g)", "Mass by Wing Length")
@@ -731,13 +728,6 @@ lm_polyplot(data_fem, "beak_c", "mass_c", "Beak Length (mm)", "Mass (g)", "Mass 
 #### Reading the data
 
 ```{r}
-rm(list=ls())
-output_col = FALSE 
-source("src/clean_flight_data.R") 
-source("src/regression_output.R") 
-source("src/center_flight_data.R")
-source("src/get_warnings.R")
-
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
@@ -791,9 +781,9 @@ data<-data.frame(R=data_male$mass_c,
                  B=data_male$sym_dist,
                  X=data_male$ID)
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 2-FF REMLF.R"))
-cat("Number of models that failed to converge: ", length(errors$warnings)) 
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 2-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -825,9 +815,9 @@ data<-data.frame(R=data_male$mass_c,
 data <- data %>%
   filter(!is.na(A))
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
-cat("Number of models that failed to converge: ", length(errors$warnings)) 
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -858,7 +848,6 @@ p1
 
 ```{r}
 #, fig.width=2.8, fig.height=2.3}
-source("src/plotting-lm.R") 
 lm_plot(data_mmale, "wing2body_c", "mass_c", "Wing:Body", "Mass (g)", "Mass by Wing:Body")
 lm_plot(data_mmale, "thorax_c", "mass_c", "Thorax Length (mm)", "Mass (g)", "Mass by Thorax Length")
 lm_plot(data_mmale, "wing_c", "mass_c", "Wing Length (mm)", "Mass (g)", "Mass by Wing Length")
@@ -890,13 +879,6 @@ p.morph
 #### Reading the data
 
 ```{r}
-rm(list=ls())
-output_col = FALSE
-source("src/clean_flight_data.R") 
-source("src/regression_output.R") 
-source("src/center_flight_data.R")
-source("src/get_warnings.R")
-
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
@@ -954,9 +936,9 @@ data<-data.frame(R=data_T1$mass_c,
                  C=data_T1$sex_c,
                  X=data_T1$population)
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
-cat("Number of models that failed to converge: ", length(errors$warnings)) 
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -987,9 +969,9 @@ data<-data.frame(R=data_T1$mass_c,
 data <- data %>%
   filter(!is.na(A))
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
-cat("Number of models that failed to converge: ", length(errors$warnings)) 
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -1016,9 +998,10 @@ data<-data.frame(R=data_T1$mass_c,
                  X=data_T1$population)
 data <- data %>%
   filter(!is.na(A))
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
-cat("Number of models that failed to converge: ", length(errors$warnings)) 
+
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -1053,13 +1036,6 @@ tidy_regression(T1_morph_model, is_color=output_col)
 #### Reading the data
 
 ```{r}
-rm(list=ls())
-output_col = FALSE 
-source("src/clean_flight_data.R") 
-source("src/regression_output.R") 
-source("src/center_flight_data.R")
-source("src/get_warnings.R")
-
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
@@ -1114,9 +1090,9 @@ data<-data.frame(R=data_T2$mass_c,
                  C=data_T2$sex_c,
                  X=data_T2$population)
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
-cat("Number of models that failed to converge: ", length(errors$warnings)) 
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -1145,8 +1121,8 @@ data<-data.frame(R=data_T2$mass_c,
 data <- data %>%
   filter(!is.na(A))
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF REMLF.R"))
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1168,8 +1144,8 @@ data<-data.frame(R=data_T2$mass_c,
 data <- data %>%
   filter(!is.na(A))
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 3-FF REMLF.R"))
+model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 

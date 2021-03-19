@@ -20,59 +20,35 @@ library(ggformula)
 library(tidyselect)
 library(zoo)
 library(binom)
+library(rethinking)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-##source scripts
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
 
-output_col = TRUE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
-source("src/clean_flight_data.R") # Script that loads and cleans up the data
-source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
-source("src/center_flight_data.R")
-source("src/get_warnings.R")
-```
+script_names = c("center_flight_data.R", # Re-centers data 
+                 "clean_flight_data.R", # Loads and cleans data
+                 "unique_flight_data.R",
+                 "regression_output.R") # Cleans regression outputs; prints in color or B&W
 
-```{r}
-##read in and clean up data
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if generating an HTML
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
+d_all <- create_delta_data(data_tested, tested_more_than_once=FALSE)
+```
 
-d <- data_tested %>%
-   group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, 
-            beak, thorax, wing, body, w_morph, morph_notes, tested,
-            host_c, sex_c, w_morph_c, lat_c, sym_dist, sym_dist_s, total_eggs_c, 
-            beak_c, thorax_c, thorax_s, body_c, wing_c, wing2body, wing2body_c, wing2body_s) %>%
-   summarise_all(funs(list(na.omit(.))))
 
-d$num_flew <- 0
-d$num_notflew <- 0
-d$average_mass <- 0
-d$avg_days <- 0
-
-for(row in 1:length(d$flew_b)){
-  
-  n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails
-  d$num_flew[[row]] <- n_flew 
-  
-  n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
-  d$num_notflew[[row]] <- n_notflew
-  
-  avg_mass <- mean(d$mass[[row]])
-  d$average_mass[[row]] <- avg_mass
-  
- avg_days <- mean(d$days_from_start[[row]]) ##MC: use average days as covariate
-  d$avg_days[[row]] <- avg_days
-
-}
-
-d_all <- select(d, -filename, -channel_letter, -set_number) ##MC: changed the name here to avoid re-loading all data to generate male and female only centered datasets
-
-##added 3 additional variables:
-#average days from start; this deals with the problem of individuals who were only tested early, who will have a low value here, and with any chance individuals who happened to get in early or late in both trials.
+```{r}
+##MC: use average days as covariate
 d_all$avg_days_c<-d_all$avg_days-mean(d_all$avg_days, na.rm=TRUE)
 
 ##this transformation gets average_mass to act normal and not give haywire effect estimates
@@ -83,13 +59,13 @@ d_all$average_mass_trans<-log(sqrt(d_all$average_mass))-mean(log(sqrt(d_all$aver
 d_all$wing2body_trans<-log(sqrt(0.85-d_all$wing2body))-mean(log(sqrt(0.85-d_all$wing2body)), na.rm=TRUE)
 
 d <- center_data(d_all, is_not_binded = FALSE)
+d
 ```
+
 
 ```{r}
 ##################### Females only
 data_fem <- d_all[d_all$sex=="F",]
-
-
 
 #######################Males only
 data_male <- d_all[d_all$sex=="M",]
@@ -110,7 +86,6 @@ data_temp$trials <-c(sum(d$num_flew[d$sex=="F"]+d$num_notflew[d$sex=="F"]), sum(
 #calculate binomial confidence interval
 data_temp$successes <- c(sum(d$num_flew[d$sex=="F"]), sum(d$num_flew[d$sex=="M"]))
 data_temp$CI<-binom.confint(data_temp$successes, data_temp$trials, methods="exact")
-
 ```
 
 ```{r fig.height=2.7, fig.width=2.7}

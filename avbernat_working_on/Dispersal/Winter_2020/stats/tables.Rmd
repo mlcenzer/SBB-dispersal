@@ -23,17 +23,24 @@ library(webshot)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, echo=FALSE, message=FALSE}
-output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
-source("src/clean_flight_data.R") # Script that loads and cleans up the data
-source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
-source("src/center_flight_data.R")
-#source("get_warnings.R")
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("center_flight_data.R", # Re-centers data 
+                 "clean_flight_data.R" # Loads and cleans data
+                 )
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
+```
 
+```{r, echo=FALSE, message=FALSE}
 all_data <- data_all %>%
   filter(trial_type != "T2")
 all_data <- center_data(all_data)

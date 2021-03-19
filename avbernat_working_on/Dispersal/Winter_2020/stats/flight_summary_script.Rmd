@@ -36,56 +36,34 @@ getwd()
 
 ### The Data
 
-#### Source Scripts 
+#### Source Scripts and Clean the Data
 
 ```{r}
-output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
-source("src/clean_flight_data.R") # Script that loads and cleans up the data
-source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
-source("src/center_flight_data.R")
-source("src/get_warnings.R")
-```
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
 
-####  Read and Clean the Data
+script_names = c("center_flight_data.R", # Re-centers data 
+                 "clean_flight_data.R", # Loads and cleans data
+                 "unique_flight_data.R",
+                 "get_warnings.R", 
+                 "compare_models.R",
+                 "regression_output.R", # Cleans regression outputs; prints in color or B&W
+                 "AICprobabilities.R")
 
-```{r}
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if generating an HTML
+
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
-
-d <- data_tested %>%
-   group_by(ID, sex,population, site, host_plant, latitude, longitude, total_eggs, 
-            beak, thorax, wing, body, w_morph, morph_notes, tested,
-            host_c, sex_c, w_morph_c, lat_c, sym_dist, sym_dist_s, total_eggs_c, 
-            beak_c, thorax_c, thorax_s, body_c, wing_c, wing2body, wing2body_c, wing2body_s) %>%
-   summarise_all(funs(list(na.omit(.))))
-
-d$num_flew <- 0
-d$num_notflew <- 0
-d$average_mass <- 0
-d$avg_days <- 0
-
-for(row in 1:length(d$flew_b)){
-  
-  n_flew <- sum(d$flew_b[[row]] == 1) # total number of times did fly among trails
-  d$num_flew[[row]] <- n_flew 
-  
-  n_notflew <- sum(d$flew_b[[row]] == 0) # total number of times did not fly among trails
-  d$num_notflew[[row]] <- n_notflew
-  
-  avg_mass <- mean(d$mass[[row]]) # average mass
-  d$average_mass[[row]] <- avg_mass
-  
-  avg_days <- mean(d$days_from_start[[row]]) # average days
-  d$avg_days[[row]] <- avg_days
-
-}
-
-d_all <- select(d, -filename, -channel_letter, -set_number) ##MC: changed the name here to avoid re-loading all data to generate male and female only centered datasets
-d_all <- center_data(d_all, is_not_binded = FALSE) # AB: need this here or else average_mass_c and some other columns do not get calculated
+d <- create_delta_data(data_tested, tested_more_than_once = FALSE)
 ```
 
 ```{r}
+d_all <- center_data(d, is_not_binded = FALSE) # AB: need this here or else average_mass_c and some other columns do not get calculated
 d_all
 ```
 
@@ -152,11 +130,9 @@ E = d$avg_days_c
 
 data<-data.frame(R1, R2, A, B, C, D, E)
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF + E.R"))
-#errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF + E + noE.R"))
-length(errors$warnings)
-#generic 4-fixed factor and 1 fixed covariate models - but why? you don't even have a null model anymore.
+model_script = paste0(source_path,"generic models-binomial glm 2R ~ 4-FF + E.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -195,10 +171,9 @@ E = data_fem$avg_days_c
 
 data<-data.frame(R1, R2, A, B, C, D, E)
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF + E.R"))
-#errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF + E + noE.R"))
-length(errors$warnings)
+model_script = paste0(source_path,"generic models-binomial glm 2R ~ 4-FF + E.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -242,11 +217,9 @@ E = data_male$avg_days_c
 
 data<-data.frame(R1, R2, A, B, C, D, E)
 
-source("src/compare_models.R")
-errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF + E.R"))
-#errors <- withWarnings(model_comparisonsAIC("src/generic models-binomial glm 2R ~ 4-FF + E + noE.R")) # AB: maybe better to use this for males since # does not matter?
-length(errors$warnings)
-
+model_script = paste0(source_path,"generic models-binomial glm 2R ~ 4-FF + E.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -361,6 +334,7 @@ p4 <- gf_point(num_notflew ~ average_mass, col=~host_plant, data=d[d$average_mas
   geom_smooth(method='lm')
 grid.arrange(p3,p4, nrow=2)
 ```
+
 ```{r}
 p5 <- gf_point(num_flew ~ average_mass, col=~sex, data=d[d$average_mass_c < 0,], title="(a)   avgmass_c <0") + 
   geom_smooth(method='lm')
@@ -402,20 +376,10 @@ noE vs. E source script? Why use the + E source script?
 ### The Data
 
 ```{r}
-rm(list=ls())
-
-output_col = FALSE 
-source("src/clean_flight_data.R") 
-source("src/regression_output.R") 
-source("src/center_flight_data.R")
-source("src/get_warnings.R")
-
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
-```
 
-```{r}
 ### Remove everyone who didn't fly (then remove distances = 0, if that didn't work fully)
 data_flew_all <- data_tested[data_tested$flew_b == 1, ] 
 
@@ -486,8 +450,9 @@ data<-data.frame(R=dC$speed_trans,
                  X=dC$chamber,
                  Y=dC$ID) 
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
@@ -639,15 +604,6 @@ Use max speed instead of average speed?
 ## Flight Distance {.tabset}
 
 ### The Data
-```{r}
-rm(list=ls())
-
-output_col = FALSE 
-source("src/clean_flight_data.R") 
-source("src/regression_output.R") 
-source("src/center_flight_data.R")
-source("src/get_warnings.R")
-```
 
 ```{r}
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
@@ -709,8 +665,9 @@ data<-data.frame(R=dC$distance_trans,
                  X=dC$chamber,
                  Y=dC$ID) 
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 2-RF + 4-FF REMLF.R")
+errors = withWarnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}

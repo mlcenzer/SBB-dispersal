@@ -36,18 +36,32 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 ## Loading, cleaning, and recoding the data
 
 ```{r}
-source("src/clean_flight_data.R")
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("center_flight_data.R", # Re-centers data 
+                 "clean_flight_data.R", # Loads and cleans data
+                 "unique_flight_data.R",
+                 "get_warnings.R", 
+                 "compare_models.R",
+                 "regression_output.R", # Cleans regression outputs; prints in color or B&W
+                 "AICprobabilities.R",
+                 "categorize_binomial_data.R",
+                 "categorize_binomial_data-MF.R",
+                 "categorize_binomial_data-MF2.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if generating an HTML
+
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
 ```
 
 ## Plotting and Categorizing Functions 
-
-```{r}
-source("src/categorize_binomial_data.R")
-source("src/categorize_binomial_data-MF.R")
-```
 
 categorize_data: It groups explanatory values into categories and calculates the sample of proportion of flight for each category
 
@@ -384,7 +398,8 @@ summary(lm(total_eggs ~ mass, data=data_fem_temp))
 ```
 
 ```{r}
-source("src/delta-females.R")
+path = paste0(source_path, "delta-females.R")
+source(path)
 ```
 Three things noticed:
 
@@ -395,8 +410,7 @@ Three things noticed:
 (iii) there were no cases in which the flight diff = 1, so no female bugs flew in T2 but not T1. But 10 cases of the 34 that flew in T1 but not T2.
 
 ```{r}
-source("src/categorize_binomial_data-MF2.R") 
-cat_data10 <- categorize_data_MF(egg_data_final, "mass_diff", "flew_count", "flew_delta", 0.005, 0.010, -0.040) 
+cat_data10 <- categorize_data_MF2(egg_data_final, "mass_diff", "flew_count", "flew_delta", 0.005, 0.010, -0.040) 
 ```
 
 ```{r}
@@ -449,7 +463,7 @@ egg_data_summary
 ```{r}
 plot(egg_diff ~ mass_diff, data=egg_data_summary)
 
-cat_data11 <- categorize_data_MF(egg_data_final, "mass_diff", "egg_diff", "flew_delta", 0.005, 0.010, -0.040) 
+cat_data11 <- categorize_data_MF2(egg_data_final, "mass_diff", "egg_diff", "flew_delta", 0.005, 0.010, -0.040) 
 ```
 ```{r}
 gf_point(sample_prop ~ mass_diff, data=cat_data11, col=~egg_diff,

@@ -1,4 +1,4 @@
-create_delta_data = function(data) {
+create_delta_data = function(data, tested_more_than_once=TRUE) {
   # INPUT     data as the tested_data with each row as a unique ID and trial.
   # OUTPUT    dataset with each row as a unique ID only.
   d <- data %>%
@@ -11,6 +11,7 @@ create_delta_data = function(data) {
   d$num_flew <- 0
   d$num_notflew <- 0
   d$average_mass <- 0
+  d$avg_days <- 0
   d$num_egg <- 0
   
   d$egg_diff <- 0
@@ -34,6 +35,9 @@ create_delta_data = function(data) {
     avg_mass <- mean(d$mass[[row]])
     d$average_mass[[row]] <- avg_mass
     
+    avg_days <- mean(d$days_from_start[[row]]) 
+    d$avg_days[[row]] <- avg_days
+    
     # mass, flight, distance, and speed changes between T1 and T2
     
     d$mass_diff[[row]] <- d$mass[[row]][2] - d$mass[[row]][1]  # T2 - T1
@@ -50,14 +54,16 @@ create_delta_data = function(data) {
   d <- select(d, -filename, -channel_letter, -set_number)
   
   # Filter out bugs that were not tested twice:
-  rows_remove <- c()
-  for (row in 1:nrow(d)){
-    if (length(d$trial_type[[row]]) < 2) {
-      rows_remove <- c(rows_remove, row)
+  if (tested_more_than_once) {
+    rows_remove <- c()
+    for (row in 1:nrow(d)){
+      if (length(d$trial_type[[row]]) < 2) {
+        rows_remove <- c(rows_remove, row)
+      }
     }
+    d <- d[-rows_remove, ]   
   }
-  d <- d[-rows_remove, ]
-  
+
   # for flight case building
   d$flight_case = NA
   d$flight_case = d$num_flew
