@@ -85,6 +85,14 @@ paper_table
 #save_kable(paper_table, "table2.pdf")
 ```
 
+```{r echo=FALSE}
+kable(table_season, caption=" ") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  column_spec(1, width="2cm", background="white") %>%
+  kable_classic(html_font = "Cambria") 
+  #row_spec(c(3,6,9,12,15), extra_css = "border-bottom: 1px solid") %>%
+```
+
 ## Winter
 
 ### Grouped by Sex
@@ -208,6 +216,70 @@ paper_table = kable(table2b) %>%
   add_header_above(c("Tested Bugs By Host Plant, Population, and Site" = 7 )) 
 paper_table
 #save_kable(paper_table,"test.pdf")
+```
+
+```{r echo=FALSE}
+colnames(table2b) = c("host plant", "population", "site", "latitude", "longitude", "$\ n_{site}$", "$\ n_{pop}$")
+kable(table2b, caption="Table 1. Field soapberry bugs collected and tested for flight trials.") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  add_header_above(c(" ", " ", " ", "Coordinates" = 2, "Sample Sizes" = 2 )) %>% 
+  add_header_above(c("Winter 2020" = 7 )) %>%
+  column_spec(1, width="3cm", background="white") %>%
+  kable_classic(html_font = "Cambria") 
+  #row_spec(c(3,6,9,12,15), extra_css = "border-bottom: 1px solid") %>%
+```
+
+```{r echo=FALSE}
+Fall_unique <- Fall %>%
+  group_by(ID, sex, population, site, host_plant, latitude, longitude) %>%
+    summarise_all(funs(list(na.omit(.))))
+```
+
+```{r echo=FALSE}
+pop_sample_sizes <- c()
+for (pop in pops) {
+  n <- nrow(Fall_unique[Fall_unique$population == pop,])
+  pop_sample_sizes <- c(pop_sample_sizes, n)
+}
+
+pop_df <- data.frame(pops, pop_sample_sizes)
+colnames(pop_df) <- c("population", "n_pop")
+
+site_sample_sizes <- c()
+sites <- unique(Fall_unique$site)
+for (site in sites) {
+  n <- nrow(Fall_unique[Fall_unique$site == site,])
+  site_sample_sizes <- c(site_sample_sizes, n)
+}
+
+site_df <- data.frame(sites, site_sample_sizes)
+colnames(site_df) <- c("site", "n_site")
+
+coor_df <- unique(Fall_unique[,3:7]) %>%
+  arrange(desc(latitude), population) 
+
+main <- merge(coor_df , site_df, by=c("site"))
+table2a <- merge(main , pop_df,by=c("population"))
+table2a <- table2a[, c(3,1,2,4,5,6,7)]
+table2a <- table2a[order(-table2a$latitude),] # 25.12846, -80.40809 need to rewrite for JP Grove
+```
+
+```{r echo=FALSE}
+write.table(table2a, "tables/table2.csv", sep=",", row.names=FALSE)
+
+rownames(table2a) <- NULL
+colnames(table2a) = c("host plant", "population", "site", "latitude", "longitude", "$\ n_{site}$", "$\ n_{pop}$")
+```
+
+```{r echo=FALSE}
+colnames(table2a) = c("host plant", "population", "site", "latitude", "longitude", "$\ n_{site}$", "$\ n_{pop}$")
+kable(table2a, caption="Table 1. Field soapberry bugs collected and tested for flight trials.") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  add_header_above(c(" ", " ", " ", "Coordinates" = 2, "Sample Sizes" = 2 )) %>% 
+  add_header_above(c("Fall 2019" = 7 )) %>%
+  column_spec(1, width="3cm", background="white") %>%
+  kable_classic(html_font = "Cambria") 
+  #row_spec(c(3,6,9,12,15), extra_css = "border-bottom: 1px solid") %>%
 ```
 
 ## Data Stats

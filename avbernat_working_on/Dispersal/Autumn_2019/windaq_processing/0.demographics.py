@@ -5,9 +5,11 @@ import csv
 # Updating the all_dispersal_data sheet with sex, site, and host plant.
 #***************************************************************************************
 
-demographics_data = r"/Users/anastasiabernat/Desktop/bug_demographics_data_coor.csv"
+git_path = r"/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/"
+data_path = "avbernat_working_on/Dispersal/Autumn_2019/windaq_processing/data/"
 
-all_dispersal_data = r"/Users/anastasiabernat/Desktop/all_dispersal_data3.csv"
+demographics_data = git_path + data_path + "1.bug_demographics_data_coor.csv"
+all_dispersal_data = git_path + data_path +"1.dispersal_data.csv"
 
 sex_dict = {} 
 site_dict = {}
@@ -55,7 +57,7 @@ with open(all_dispersal_data, "r") as all_data:
         row_data["box"] = r["box"]
         row_data["test_date"] = r["test_date"]
         row_data["time_start"] = r["time_start"]
-        row_data["set_number"] = r["set_number"]
+        row_data["set_number"] = r["set_number"].lstrip('0')
         row_data["chamber"] = r["chamber"]
         row_data["sex"] = sex
         row_data["population"] = population
@@ -75,12 +77,11 @@ with open(all_dispersal_data, "r") as all_data:
         row_data["longitutde"] = long
 
 
-        
         full_data.append(row_data)
 
 #print(full_data[0:5])
 
-outpath = r"/Users/anastasiabernat/Desktop/all_dispersal_data4.csv"
+outpath = git_path + data_path + "1.all_dispersal_data.csv"
 
 with open(outpath, "w") as output_file:
     writer = csv.DictWriter(output_file, fieldnames = row_data.keys())
@@ -88,8 +89,3 @@ with open(outpath, "w") as output_file:
     for r in full_data:
         writer.writerow(r)
 
-        
-        
-
-
-    

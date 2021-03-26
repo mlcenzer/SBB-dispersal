@@ -1,10 +1,7 @@
 #***************************************************************************************************************************
 # FLIGHT ANALYSES FOR MULTIPLE FILES
-# Version 7
-# Last updated: Jan 9, 2020
-# Authors: (Attisano, et al.), Anastasia Bernat, Meredith Cenzer
-#
-# Execution Time: 15 minutes
+# Version 8
+# Last updated: March 25, 2021
 #***************************************************************************************************************************
 
 import os
@@ -77,7 +74,6 @@ def speed_list(time, ch_number):
             # Change the threshold speed value accordingly
             # Delete the # at the beginning of line 50-52 to activate the command
             #*********************************************************************
-            #######mlc change: uncommented minimum speed threshhold below
 
             for x in range(0, len(speed_channel)):
                 if float(speed_channel[x]) < 0.1:
@@ -419,15 +415,13 @@ def filename_ends_with_digit(filename):
 # the .txt or .dat file to process when requested.
 #************************************************************************************************************
 
-def cls(): print ("\n" * 100)
+git_path = r"/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/"
+data_path = "avbernat_working_on/Dispersal/Autumn_2019/windaq_processing/data/"
 
-cls()
+path = r"/Volumes/Seagate/Documents-Post-Undergrad/Work/dispersal_old_organization/python_files/Standardized_Peaks/"
+features_path = git_path + data_path + "1.all_dispersal_data.csv"
 
-path = "/Users/anastasiabernat/Desktop/Standardized Peaks Test/"
-
-data_path = r"/Users/anastasiabernat/Desktop/all_dispersal_data_latest4.csv"
-
-row_IDs = get_IDs(data_path)
+row_IDs = get_IDs(features_path)
 
 big_list=[]
 
@@ -437,7 +431,6 @@ for file in dir_list:
     if file.startswith("."):
         continue
     filepath = path + str(file)
-#    filename = input('File path or file name -> ')
     tot_duration = find_time_duration(filepath)
     input_file = open(filepath, mode="r")
     
@@ -451,10 +444,6 @@ for file in dir_list:
     peaks2 = []
     peaks3 = []
     peaks4 = []
-    #peaks5 = []
-    #peaks6 = []
-    #peaks7 = []
-    #peaks8 = []
     
     for i in range(0, len(data_list)):
         if n_columns == 2:
@@ -470,10 +459,6 @@ for file in dir_list:
             peaks2.append(c)
             peaks3.append(d)
             peaks4.append(e)
-            #peaks5.append(f)
-            #peaks6.append(g)
-            #peaks7.append(h)
-            #peaks8.append(j)
             
     if n_columns == 2:
         list_dict[1]=peaks1
@@ -482,10 +467,6 @@ for file in dir_list:
         list_dict[2]=peaks2
         list_dict[3]=peaks3
         list_dict[4]=peaks4
-        #list_dict[5]=peaks5
-        #list_dict[6]=peaks6
-        #list_dict[7]=peaks7
-        #list_dict[8]=peaks8
 
     input_file.close()
 
@@ -568,16 +549,15 @@ for file in dir_list:
         time_graph, speed_graph = graph(time_n, speed_n)
 
         # Flight Stats:
-        
-        row_data["set_number"] = str(file).split("_")[2].split("-")[0].split("t0")[-1]
-        row_data['average_speed'] = av_speed
-        row_data['total_flight_time'] = fly_time 
-        row_data['distance'] = dist 
-        row_data['shortest_flying_bout'] = short_bout         
-        row_data['longest_flying_bout'] = long_bout         
-        row_data['portion_flying'] = flight
-        row_data['total_duration'] = tot_duration
-        row_data['max_speed'] = max(speed_graph)
+        row_data["set_number"] = str(file).split("_")[2].split("-")[0].split("t0")[-1].lstrip('0')
+        row_data['average_speed'] = round(av_speed,3)
+        row_data['total_flight_time'] = round(fly_time,2)
+        row_data['distance'] = round(dist,3) 
+        row_data['shortest_flying_bout'] = round(short_bout,2)         
+        row_data['longest_flying_bout'] = round(long_bout,2)         
+        row_data['portion_flying'] = round(flight,3)
+        row_data['total_duration'] = round(tot_duration,3)
+        row_data['max_speed'] = round(max(speed_graph),3)
 
         output_data.append(row_data) # created a list of dictionaries
 
@@ -592,106 +572,17 @@ for file in dir_list:
 ##            for index in range(0, len(time_graph)):
 ##                OutputFile.write('%.1f' % time_graph[index] + ',' + '%.2f' %speed_graph[index] + '\n')
 ##            OutputFile.close()
-        
-##        with open(r"/Users/anastasiabernat/Desktop/flight_stats4/flight_stats-" + str(file).split("_")[-1].replace(".txt", "") + ".csv", "w") as csv_file:
-##            writer = csv.DictWriter(csv_file, fieldnames = row_data.keys())
-##            writer.writeheader()
-##            for row in output_data:
-##                writer.writerow(row)
 
 #print(big_list)
 
 # All Flight Stats Summary File
 
-outpath = r"/Users/anastasiabernat/Desktop/"
-with open(outpath + "flight_summary_latest2.csv", "w") as csv_file:
+outpath = git_path + data_path + "2.flight_summary.csv"
+with open(outpath, "w") as csv_file:
     writer = csv.DictWriter(csv_file, fieldnames = big_list[1].keys())
     writer.writeheader()
     for row in big_list:
         writer.writerow(row)
-
-#************************************************************************************************************
-# Merging the flight analyses summary file with the experimental data by using ID as
-# the common merging attribute. Function below can also be called to check for any
-# rows that went unmerged.
-#************************************************************************************************************
-
-def check_dimensions(analyses_data, full_data):
-
-    print(analyses_data.shape)
-    print(full_data.shape)
-
-    filename_list = []
-    for index, row in analyses_data.iterrows():
-        filename = row["filename"]
-        filename_list.append(filename)
-
-    full_data = full_data.reset_index()
-
-    for index, row in full_data.iterrows():
-        file = row["filename"]
-        if file in filename_list:
-            filename_list.remove(file)
-
-    return filename_list
-
-def check_egg_layers(egg_data, data):
-    
-    data.drop('ID', inplace=True)
-    data.reset_index(inplace=True)
-
-    ID_dict = {}
-    ID_list = []
-    for index, row in egg_data.iterrows():
-        ID = int(row['ID'])
-        yes_egg = row['Eggs']
-        ID_dict[ID] = yes_egg
-        ID_list.append(ID)
-
-    for index, row in data.iterrows():
-        ID_num = int(row['ID'])
-        if ID_num in ID_list:
-            ID_list.remove(ID_num)
-            egg_status = ID_dict[ID_num]
-
-    return ID_list, ID_dict
-   
-data_cols = ['ID', 'box','test_date', 'time_start', 'set_number','chamber', 'sex',
-             'population', 'site', 'host_plant', 'flew', 'died?', 'flight_type',
-             'flight_details', 'NOTES','filename', 'mass', 'short-wing?', 'eggs',
-             'time_end', 'latitude', 'longitude']
-analyses_cols = ['filename', 'channel_num', 'channel_letter', 'chamber', 'ID',
-                 'set_number', 'average_speed', 'total_flight_time', 'distance',
-                 'shortest_flying_bout', 'longest_flying_bout', 'portion_flying',
-                 'total_duration', 'max_speed']
-
-analyses_path = r"/Users/anastasiabernat/Desktop/flight_summary_latest2.csv"
-egg_layer_path = r"/Users/anastasiabernat/Desktop/flight_female_egglayers.csv"
-
-df_data = pd.read_csv(data_path, header=None, names=data_cols, usecols=data_cols,
-                      index_col='ID')
-df_analyses = pd.read_csv(analyses_path, header=None, names=analyses_cols,
-                          usecols=analyses_cols, index_col='ID')
-df_eggs = pd.read_csv(egg_layer_path)
-
-merged_data = pd.merge(left=df_analyses, right=df_data,
-                       left_on=['ID', 'chamber', 'filename', 'set_number'],
-                       right_on=['ID', 'chamber', 'filename', 'set_number'], how='inner')
-
-# Checks
-
-##unmerged_rows = check_dimensions(df_analyses, merged_data)
-##print(unmerged_rows)
-##missing_egg_layers, ID_dict = check_egg_layers(df_eggs, df_data)
-##print("Missing females from dataset that laid eggs:", missing_egg_layers)
-##
-##print(ID_dict)
-##print(merged_data.head())
-##print(merged_data)
-
-full_data_outpath = r"/Users/anastasiabernat/Desktop/full_data_latest.csv"
-full_header = merged_data.columns.values
-merged_data.to_csv(full_data_outpath, header=None, index='ID', mode='w')
 
 #************************************************************************************************************
 # Time it takes to execute the code.
