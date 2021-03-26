@@ -62,7 +62,7 @@ with open(all_dispersal_data, "r") as all_data:
         row_data["sex"] = sex
         row_data["population"] = population
         row_data["site"] = site
-        row_data["host_plant"] = host_plant
+        row_data["host_plant"] = host_plant.rstrip()
         row_data["flew"] = r["flew"]
         row_data["died?"] = r["died?"]
         row_data["flight_type"] = r["flight_type"]

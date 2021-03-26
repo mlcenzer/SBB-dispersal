@@ -76,23 +76,39 @@ merged_data = pd.merge(left=df_stats, right=df_features,
                        right_on=['ID', 'chamber', 'filename', 'set_number'], how='inner')
 
 full_data = pd.merge(left=merged_data, right=df_morph,
-                       left_on=['ID', 'population', 'latitude'],
-                       right_on=['ID', 'population', 'lat'], how='inner')
-print(full_data)
+                       left_on=['ID', 'population', 'host_plant'],
+                       right_on=['ID', 'population', 'host_plant'], how='inner')
+
+# morphology sex identification is more accurate than visual sex id from demographics csv file
+del full_data['sex_x']
+full_data.rename(columns={"sex_y": "sex"}, inplace=True)
 
 print("\n-----------------------Merging and Data Acc Checks-----------------------")
 missing_egg_layers, female_ID_dict = check_egg_layers(df_eggs, df_features)
 print("\nMissing females from dataset that laid eggs:", missing_egg_layers) # should be empty
 print("Dataframe dimensions:")
-unmerged_rows1= check_dimensions(df_stats, merged_data)
+unmerged_rows1 = check_dimensions(df_stats, merged_data)
 
 merged_data = merged_data.iloc[1:]
 unmerged_rows2 = check_dimensions(merged_data, full_data)
 print("\tUnmerged rows for merged_data:", unmerged_rows1) # should be empty
 print("\tUnmerged rows for full_data:", unmerged_rows2) # should be empty
-print("\tRows are unmerged because the ID is not in the morph record.")
-print("\tCheck back to the original flight trial hand-written tables to check what ID was there.")
+print("\t**Rows are unmerged because the ID is not in the morph record.")
+print("\t**Check back to the original flight trial hand-written tables to check what ID was there.\n")
 
+# concatenate any unmerged rows 
+print("\tConcatenating unmerged rows...\n")
+index = [i + 1 for i in range(len(unmerged_rows2))]
+row2concat = merged_data.loc[merged_data['filename'].isin(unmerged_rows2)]
+row2concat.reset_index(inplace=True)
+print(row2concat)
+
+full_data = pd.concat([full_data, row2concat], axis=0, sort=False)
+print("\n\tFinished concatenating...\n")
+full_data.set_index('ID', inplace=True)
+print(full_data)
+
+# sort the data
 full_data.sort_values(by=['set_number', 'chamber'], ascending=True, inplace=True)
 
 #full_header = full_data.columns.values

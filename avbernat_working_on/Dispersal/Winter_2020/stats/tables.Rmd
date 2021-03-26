@@ -54,7 +54,7 @@ data_tested <- center_data(data_tested)
 ### Grouped by Season
 
 ```{r echo=FALSE}
-Fall = read.csv("/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Autumn_2019/stats/data/full_data3.csv")
+Fall = read.csv("/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Autumn_2019/stats/data/full_data-Fall2019.csv")
 mass = Fall %>% filter(mass != 0)
 #length(unique(mass$ID))
 min30 = Fall %>% filter(set_number <= 30) # where is set002?
