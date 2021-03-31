@@ -616,6 +616,24 @@ summary {
 </div>
 
 
+<pre class="r"><code>source_path = &quot;~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/&quot;
+
+script_names = c(&quot;center_flight_data.R&quot;, # Re-centers data 
+                 &quot;clean_flight_data.R&quot; # Loads and cleans data
+                 )
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}</code></pre>
+<pre><code>## 
+## Attaching package: &#39;lubridate&#39;</code></pre>
+<pre><code>## The following objects are masked from &#39;package:base&#39;:
+## 
+##     date, intersect, setdiff, union</code></pre>
+<pre class="r"><code>data &lt;- read_flight_data(&quot;data/all_flight_data-Winter2020.csv&quot;)
+data_all &lt;- data[[1]]
+data_tested &lt;- data[[2]]</code></pre>
 <div id="counts" class="section level2">
 <h2>Counts</h2>
 <div id="grouped-by-season" class="section level3">
@@ -746,6 +764,154 @@ long
 </tr>
 <tr>
 <td style="text-align:left;">
+Winter
+</td>
+<td style="text-align:left;">
+2020
+</td>
+<td style="text-align:left;">
+March 3 to March 10
+</td>
+<td style="text-align:left;">
+unlimited
+</td>
+<td style="text-align:left;">
+282
+</td>
+<td style="text-align:left;">
+long
+</td>
+</tr>
+</tbody>
+</table>
+<table class="table table-striped table-hover table-condensed lightable-classic" style="margin-left: auto; margin-right: auto; font-family: Cambria; margin-left: auto; margin-right: auto;">
+<caption>
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+Season
+</th>
+<th style="text-align:left;">
+Year
+</th>
+<th style="text-align:left;">
+Dates
+</th>
+<th style="text-align:left;">
+Experimental Setup
+</th>
+<th style="text-align:left;">
+N Tested
+</th>
+<th style="text-align:left;">
+Wing Morph
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;width: 2cm; background-color: white !important;">
+Fall
+</td>
+<td style="text-align:left;">
+2019
+</td>
+<td style="text-align:left;">
+October 15 to October 23
+</td>
+<td style="text-align:left;">
+30 min
+</td>
+<td style="text-align:left;">
+182
+</td>
+<td style="text-align:left;">
+short and long
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 2cm; background-color: white !important;">
+Fall
+</td>
+<td style="text-align:left;">
+2019
+</td>
+<td style="text-align:left;">
+October 23 to October 29
+</td>
+<td style="text-align:left;">
+60 min
+</td>
+<td style="text-align:left;">
+130
+</td>
+<td style="text-align:left;">
+short and long
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 2cm; background-color: white !important;">
+Fall
+</td>
+<td style="text-align:left;">
+2019
+</td>
+<td style="text-align:left;">
+October 30 to November 4
+</td>
+<td style="text-align:left;">
+90 min
+</td>
+<td style="text-align:left;">
+126
+</td>
+<td style="text-align:left;">
+short and long
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 2cm; background-color: white !important;">
+Fall
+</td>
+<td style="text-align:left;">
+2019
+</td>
+<td style="text-align:left;">
+November 5 to November 8
+</td>
+<td style="text-align:left;">
+unlimited
+</td>
+<td style="text-align:left;">
+66
+</td>
+<td style="text-align:left;">
+long
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 2cm; background-color: white !important;">
+Winter
+</td>
+<td style="text-align:left;">
+2020
+</td>
+<td style="text-align:left;">
+February 17 to February 28
+</td>
+<td style="text-align:left;">
+unlimited
+</td>
+<td style="text-align:left;">
+332
+</td>
+<td style="text-align:left;">
+long
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 2cm; background-color: white !important;">
 Winter
 </td>
 <td style="text-align:left;">
@@ -1838,6 +2004,869 @@ Founder’s
 </td>
 <td style="text-align:right;">
 53
+</td>
+</tr>
+</tbody>
+</table>
+<table class="table table-striped table-hover table-condensed lightable-classic" style="margin-left: auto; margin-right: auto; font-family: Cambria; margin-left: auto; margin-right: auto;">
+<caption>
+Table 1. Field soapberry bugs collected and tested for flight trials.
+</caption>
+<thead>
+<tr>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="7">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Winter 2020
+</div>
+</th>
+</tr>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Coordinates
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Sample Sizes
+</div>
+</th>
+</tr>
+<tr>
+<th style="text-align:left;">
+host plant
+</th>
+<th style="text-align:left;">
+population
+</th>
+<th style="text-align:left;">
+site
+</th>
+<th style="text-align:right;">
+latitude
+</th>
+<th style="text-align:right;">
+longitude
+</th>
+<th style="text-align:right;">
+$ n_{site}$
+</th>
+<th style="text-align:right;">
+$ n_{pop}$
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+K. elegans
+</td>
+<td style="text-align:left;">
+Gainesville
+</td>
+<td style="text-align:left;">
+23rd &amp; 8th
+</td>
+<td style="text-align:right;">
+29.66200
+</td>
+<td style="text-align:right;">
+-82.34731
+</td>
+<td style="text-align:right;">
+17
+</td>
+<td style="text-align:right;">
+17
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+K. elegans
+</td>
+<td style="text-align:left;">
+Leesburg
+</td>
+<td style="text-align:left;">
+Mount &amp; 8th
+</td>
+<td style="text-align:right;">
+28.79634
+</td>
+<td style="text-align:right;">
+-81.87788
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+12
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+K. elegans
+</td>
+<td style="text-align:left;">
+Lake Wales
+</td>
+<td style="text-align:left;">
+Polk Ave
+</td>
+<td style="text-align:right;">
+27.89674
+</td>
+<td style="text-align:right;">
+-81.58047
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+11
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+K. elegans
+</td>
+<td style="text-align:left;">
+Lake Placid
+</td>
+<td style="text-align:left;">
+110N Main
+</td>
+<td style="text-align:right;">
+27.29863
+</td>
+<td style="text-align:right;">
+-81.36615
+</td>
+<td style="text-align:right;">
+24
+</td>
+<td style="text-align:right;">
+24
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+K. elegans
+</td>
+<td style="text-align:left;">
+Homestead
+</td>
+<td style="text-align:left;">
+SW 296th St
+</td>
+<td style="text-align:right;">
+25.49136
+</td>
+<td style="text-align:right;">
+-80.48582
+</td>
+<td style="text-align:right;">
+27
+</td>
+<td style="text-align:right;">
+27
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+Dynamite Docks
+</td>
+<td style="text-align:right;">
+25.28675
+</td>
+<td style="text-align:right;">
+-80.29059
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+143
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+DD front
+</td>
+<td style="text-align:right;">
+25.27349
+</td>
+<td style="text-align:right;">
+-80.30410
+</td>
+<td style="text-align:right;">
+32
+</td>
+<td style="text-align:right;">
+143
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+Carysfort
+</td>
+<td style="text-align:right;">
+25.25656
+</td>
+<td style="text-align:right;">
+-80.31080
+</td>
+<td style="text-align:right;">
+18
+</td>
+<td style="text-align:right;">
+143
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+MM165
+</td>
+<td style="text-align:right;">
+25.22752
+</td>
+<td style="text-align:right;">
+-80.32838
+</td>
+<td style="text-align:right;">
+17
+</td>
+<td style="text-align:right;">
+143
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+Charlemagne
+</td>
+<td style="text-align:right;">
+25.19515
+</td>
+<td style="text-align:right;">
+-80.34592
+</td>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+143
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+N. Dagny
+</td>
+<td style="text-align:right;">
+25.18209
+</td>
+<td style="text-align:right;">
+-80.36319
+</td>
+<td style="text-align:right;">
+30
+</td>
+<td style="text-align:right;">
+143
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+Dagny Trellis
+</td>
+<td style="text-align:right;">
+25.17557
+</td>
+<td style="text-align:right;">
+-80.36780
+</td>
+<td style="text-align:right;">
+18
+</td>
+<td style="text-align:right;">
+143
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+Key Largo
+</td>
+<td style="text-align:left;">
+JP
+</td>
+<td style="text-align:right;">
+25.12846
+</td>
+<td style="text-align:right;">
+-80.40809
+</td>
+<td style="text-align:right;">
+22
+</td>
+<td style="text-align:right;">
+45
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+Key Largo
+</td>
+<td style="text-align:left;">
+KLMRL
+</td>
+<td style="text-align:right;">
+25.10002
+</td>
+<td style="text-align:right;">
+-80.43752
+</td>
+<td style="text-align:right;">
+23
+</td>
+<td style="text-align:right;">
+45
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+Plantation Key
+</td>
+<td style="text-align:left;">
+Aregood Ln
+</td>
+<td style="text-align:right;">
+24.97357
+</td>
+<td style="text-align:right;">
+-80.55392
+</td>
+<td style="text-align:right;">
+18
+</td>
+<td style="text-align:right;">
+53
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+Plantation Key
+</td>
+<td style="text-align:left;">
+Founder’s
+</td>
+<td style="text-align:right;">
+24.96424
+</td>
+<td style="text-align:right;">
+-80.56733
+</td>
+<td style="text-align:right;">
+35
+</td>
+<td style="text-align:right;">
+53
+</td>
+</tr>
+</tbody>
+</table>
+<pre><code>## Warning: `funs()` is deprecated as of dplyr 0.8.0.
+## Please use a list of either functions or lambdas: 
+## 
+##   # Simple named list: 
+##   list(mean = mean, median = median)
+## 
+##   # Auto named with `tibble::lst()`: 
+##   tibble::lst(mean, median)
+## 
+##   # Using lambdas
+##   list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
+## This warning is displayed once every 8 hours.
+## Call `lifecycle::last_warnings()` to see where this warning was generated.</code></pre>
+<table class="table table-striped table-hover table-condensed lightable-classic" style="margin-left: auto; margin-right: auto; font-family: Cambria; margin-left: auto; margin-right: auto;">
+<caption>
+Table 1. Field soapberry bugs collected and tested for flight trials.
+</caption>
+<thead>
+<tr>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="7">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Fall 2019
+</div>
+</th>
+</tr>
+<tr>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="empty-cells: hide;border-bottom:hidden;" colspan="1">
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Coordinates
+</div>
+</th>
+<th style="border-bottom:hidden;padding-bottom:0; padding-left:3px;padding-right:3px;text-align: center; " colspan="2">
+<div style="border-bottom: 1px solid #ddd; padding-bottom: 5px; ">
+Sample Sizes
+</div>
+</th>
+</tr>
+<tr>
+<th style="text-align:left;">
+host plant
+</th>
+<th style="text-align:left;">
+population
+</th>
+<th style="text-align:left;">
+site
+</th>
+<th style="text-align:right;">
+latitude
+</th>
+<th style="text-align:right;">
+longitude
+</th>
+<th style="text-align:right;">
+$ n_{site}$
+</th>
+<th style="text-align:right;">
+$ n_{pop}$
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+K. elegans
+</td>
+<td style="text-align:left;">
+Gainesville
+</td>
+<td style="text-align:left;">
+NW 10th Ave &amp; 18th St
+</td>
+<td style="text-align:right;">
+29.66182
+</td>
+<td style="text-align:right;">
+-82.34721
+</td>
+<td style="text-align:right;">
+14
+</td>
+<td style="text-align:right;">
+14
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+K. elegans
+</td>
+<td style="text-align:left;">
+Leesburg
+</td>
+<td style="text-align:left;">
+Veteran’s Memorial Park
+</td>
+<td style="text-align:right;">
+28.81298
+</td>
+<td style="text-align:right;">
+-81.87789
+</td>
+<td style="text-align:right;">
+13
+</td>
+<td style="text-align:right;">
+13
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+K. elegans
+</td>
+<td style="text-align:left;">
+Lake Wales
+</td>
+<td style="text-align:left;">
+Polk
+</td>
+<td style="text-align:right;">
+27.90335
+</td>
+<td style="text-align:right;">
+-81.58946
+</td>
+<td style="text-align:right;">
+11
+</td>
+<td style="text-align:right;">
+11
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+K. elegans
+</td>
+<td style="text-align:left;">
+Lake Placid
+</td>
+<td style="text-align:left;">
+Barber shop
+</td>
+<td style="text-align:right;">
+27.29866
+</td>
+<td style="text-align:right;">
+-81.36612
+</td>
+<td style="text-align:right;">
+43
+</td>
+<td style="text-align:right;">
+43
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+K. elegans
+</td>
+<td style="text-align:left;">
+Homestead
+</td>
+<td style="text-align:left;">
+SW 296th St &amp; 182nd Ave
+</td>
+<td style="text-align:right;">
+25.49197
+</td>
+<td style="text-align:right;">
+-80.48562
+</td>
+<td style="text-align:right;">
+34
+</td>
+<td style="text-align:right;">
+34
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+DD
+</td>
+<td style="text-align:right;">
+25.28637
+</td>
+<td style="text-align:right;">
+-80.29077
+</td>
+<td style="text-align:right;">
+26
+</td>
+<td style="text-align:right;">
+65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+DD front
+</td>
+<td style="text-align:right;">
+25.27352
+</td>
+<td style="text-align:right;">
+-80.30428
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+Carysfort Cr
+</td>
+<td style="text-align:right;">
+25.25648
+</td>
+<td style="text-align:right;">
+-80.31069
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+DD -inter
+</td>
+<td style="text-align:right;">
+25.25284
+</td>
+<td style="text-align:right;">
+-80.31183
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+Charlemagne
+</td>
+<td style="text-align:right;">
+25.19484
+</td>
+<td style="text-align:right;">
+-80.34590
+</td>
+<td style="text-align:right;">
+9
+</td>
+<td style="text-align:right;">
+65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+N. Dagny
+</td>
+<td style="text-align:right;">
+25.18229
+</td>
+<td style="text-align:right;">
+-80.36370
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+Dagny Trellis
+</td>
+<td style="text-align:right;">
+25.17550
+</td>
+<td style="text-align:right;">
+-80.36782
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+North Key Largo
+</td>
+<td style="text-align:left;">
+Dagny 1/2 Loop
+</td>
+<td style="text-align:right;">
+25.17369
+</td>
+<td style="text-align:right;">
+-80.37153
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+65
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+Key Largo
+</td>
+<td style="text-align:left;">
+JP Grove
+</td>
+<td style="text-align:right;">
+25.12846
+</td>
+<td style="text-align:right;">
+-80.40809
+</td>
+<td style="text-align:right;">
+14
+</td>
+<td style="text-align:right;">
+14
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+Plantation Key
+</td>
+<td style="text-align:left;">
+Founder’s #2
+</td>
+<td style="text-align:right;">
+24.98519
+</td>
+<td style="text-align:right;">
+-80.54710
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+13
+</td>
+</tr>
+<tr>
+<td style="text-align:left;width: 3cm; background-color: white !important;">
+C. corindum
+</td>
+<td style="text-align:left;">
+Plantation Key
+</td>
+<td style="text-align:left;">
+Founder’s #1
+</td>
+<td style="text-align:right;">
+24.96448
+</td>
+<td style="text-align:right;">
+-80.56739
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+13
 </td>
 </tr>
 </tbody>

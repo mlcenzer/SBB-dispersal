@@ -1,0 +1,232 @@
+---
+title: "Multipolygon State and Counties"
+author: "Anastasia Bernat"
+date: "3/30/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Autumn_2019/stats/"
+setwd(dir) 
+
+# Load some commonly used packages.
+library(MASS)
+library(gridExtra)
+library(tidyverse)
+library(mosaic)
+library(broom)
+library(dplyr)
+library(knitr)
+library(readr)
+library(chron)
+library(stringr)
+
+# Set numerical output display parameters
+options(width=70, digits=4, scipen=8)
+# Set R output size a bit smaller than default
+knitr::opts_chunk$set(size='small', prompt=FALSE, comment="")
+# set plot theme to black and white
+ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_update(panel.grid.major = ggplot2::element_line(colour = "grey75"))
+
+# Spatial Libraries
+library(sf)
+library(sp)
+library(lubridate)
+library(tmap)
+library(geojsonR)
+library(geojsonio)
+library(lwgeom) # lwgeom is known as the light-weight geometry library used by 'PostGIS' 
+library(cleangeo)
+library(maps)
+library(shinyjs)
+library(tmaptools)
+```
+
+## Read the data.
+
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("clean_flight_data-Fall2.R") # Loads and cleans data
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+data <- clean_flight_data.Fall("data/full_data-Fall2019.csv")
+```
+
+## Filter for only the columns you need.
+
+```{r}
+filtered_data <- select(data, ID, filename, chamber, set_number, average_speed, # recently added flew_b
+                        total_flight_time, distance, shortest_flying_bout, 
+                        longest_flying_bout, max_speed,
+                        sex, population, site, host_plant, flew, flew_b, flight_type, mass, eggs_b, 
+                        beak, thorax, wing, body, sym_dist, w_morph,
+                        lat = latitude, 
+                        lon = longitude)
+
+# Get rid of NA's in long and lat columns
+filtered_data <- filter(filtered_data, !is.na(lat), !is.na(lon))
+glimpse(filtered_data)
+```
+
+## Convert to a spatial point object and plot.
+
+```{r}
+dispersal_data <- st_as_sf(filtered_data,
+                           coords = c("lon", "lat"),
+                           crs = 4326,
+                           agr = "constant")
+
+dispersal_data <- st_transform(dispersal_data, 2236)
+plot(dispersal_data)
+```
+
+This shows us the data, but visually it's hard to read. Let's try mapping multipolygon and polygon shapes.
+
+## Create mappable multipolygon shapes for designated areas. Sites to use:
+
+(i) Go to OpenStreetMaps: https://nominatim.openstreetmap.org
+
+(ii) Type in the area you want your multipolygon for.
+
+(iii) Find the OSM ID and copy it.
+
+(iv) Go to Polygon Creation: http://polygons.openstreetmap.fr/index.py
+
+(v) Past the OSM ID into the 'Id of relation' box.
+
+(vi) Click on 'image' to confirm that is the shape you want on OpenStreetMaps or Google Maps.
+
+(vii) Click on GeoJSON and copy the url.
+
+(viii) Find a spatial reference number or (espg) for Florida. I went with 2236, East Florida as pictured here on OpenStreetMaps: https://maps.omniscale.com/en/openstreetmap/epsg-2236. 
+
+```{r}
+florida <- "http://polygons.openstreetmap.fr/get_geojson.py?id=162050&params=0"
+
+# Just For Florida
+
+# URL Florida
+florida_read <- st_read(florida)
+FL_url <- mutate(florida_read, population = "Florida")
+FL_url_transformed <- st_transform(FL_url, 2236)
+
+# State Maps Data
+states <- st_as_sf(map("state", plot = FALSE, fill = TRUE))
+florida_state <- states %>%
+  filter(ID == "florida")
+FL <- mutate(florida_state, State = "Florida")
+FL_transformed <- st_transform(FL, 2236)
+```
+
+(ix) Convert the GeoJSON dat into a nested list using geojson_read() or lapply() and st_read as the second argument. lapply() and st_read() are much more efficient. The map() function is also similar to lapply(), but for some reason it does not work here. Similar to pandas in Python, the map() function transforms its input by applying a function to each element and returning a vector (or whichever class you want) with the same length as the input.
+
+(x) If there is a gap in one or more of the polygons created, use st_make_valid() to bypass the error and make the polygon valid.
+
+(xi) Transform the GEOMETRY COLLECTIONS to MULTIPOLYGONS using st_cast().
+
+```{r}
+# For Other Populations and Their Respective Counties
+
+lake_wales <- "http://polygons.openstreetmap.fr/get_geojson.py?id=117732&params=0"
+polk <- "http://polygons.openstreetmap.fr/get_geojson.py?id=1214525&params=0"
+  
+lake_placid <- "http://polygons.openstreetmap.fr/get_geojson.py?id=117660&params=0"
+highlands <- "http://polygons.openstreetmap.fr/get_geojson.py?id=1210702&params=0"
+  
+homestead <-"http://polygons.openstreetmap.fr/get_geojson.py?id=1216731&params=0" 
+miami_dade <- "http://polygons.openstreetmap.fr/get_geojson.py?id=1210692&params=0"
+
+gainesville <- "http://polygons.openstreetmap.fr/get_geojson.py?id=118870&params=0"
+alachua <- "http://polygons.openstreetmap.fr/get_geojson.py?id=1210739&params=0"
+
+leesburg <- "http://polygons.openstreetmap.fr/get_geojson.py?id=117476&params=0"
+lake <- "http://polygons.openstreetmap.fr/get_geojson.py?id=389026&params=0"
+  
+# Have the same counties (Monroe), so kept on an island level. 
+north_key_largo <- "http://polygons.openstreetmap.fr/get_geojson.py?id=119071&params=0" 
+key_largo <- "http://polygons.openstreetmap.fr/get_geojson.py?id=119070&params=0"
+plantation_key <-  "http://polygons.openstreetmap.fr/get_geojson.py?id=117963&params=0"
+
+populations <- c("Lake Wales", "Lake Placid", "Homestead", "North Key Largo",
+           "Gainesville", "Leesburg", "Key Largo", "Plantation Key")
+
+counties <- c("Polk", "Highlands", "Miami-Dade", "Alachua", "Lake", "North Key Largo", "Key Largo", "Plantation Key")
+
+pop_urls <- c(lake_wales, lake_placid, homestead, north_key_largo, gainesville,
+          leesburg, key_largo, plantation_key)
+county_urls <- c(polk, highlands, miami_dade, alachua, lake, north_key_largo, key_largo, plantation_key)
+```
+
+```{r}
+# For Populations
+polylist <- lapply(pop_urls, st_read)
+sf_df <- do.call(rbind, polylist)
+pops <- cbind(sf_df, populations)
+df_transformed <- st_transform(pops, 2236)
+
+# For Counties
+countylist <- lapply(county_urls, st_read)
+sf_df_county <- do.call(rbind, countylist)
+counties_df <- cbind(sf_df_county, counties)
+counties_transformed <- st_transform(counties_df, 2236)
+
+# Geometry reports
+
+poly_valid_report <- st_is_valid(df_transformed)
+poly_valid_report # see that LW, LP, GV, LB, and PK are invalid
+
+county_valid_report <- st_is_valid(counties_transformed)
+county_valid_report
+
+# Make any invalid polygons valid
+df_final_counties <- st_make_valid(counties_transformed) %>%
+  st_cast("MULTIPOLYGON") 
+
+# Check the final report
+county_valid_report2 <- st_is_valid(df_final_counties)
+county_valid_report2
+```
+
+
+```{r}
+# this stopped working so don't run:
+
+# df_final_pop <- st_make_valid(df_transformed) %>% # stopped working but not necessary for map making
+#   st_cast("MULTIPOLYGON") 
+# 
+# poly_valid_report2 <- st_is_valid(df_final_pop)
+# poly_valid_report2
+# 
+# tm_shape(df_final_pop) +
+#   tm_polygons("populations") +
+#   tm_basemap("Hydda.Base")
+```
+
+```{r}
+tmap_mode("view")
+tmap_mode("plot")
+
+# test
+tm_shape(df_final_counties) +
+  tm_polygons("counties") +
+  tm_basemap("Hydda.Base")
+```
+
+(xii) Combine the comprehensive sf dataframe with the sf dataframe mapping the populations to the polygon shapes.
+
+(xiii) Write your data to a csv or gpkg file using write_sf(). (Still unsure what application opens gpkg files)
+
+```{r}
+# Add Counties to the Populations
+combined <- st_join(df_final_counties, dispersal_data) 
+
+#write_sf(combined, "flight_spatial_data.csv", layer_options="GEOMETRY=AS_WKT")
+#write_sf(combined_df, "combined2.gpkg")
+```

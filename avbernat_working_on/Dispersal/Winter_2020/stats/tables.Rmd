@@ -233,6 +233,7 @@ kable(table2b, caption="Table 1. Field soapberry bugs collected and tested for f
 Fall_unique <- Fall %>%
   group_by(ID, sex, population, site, host_plant, latitude, longitude) %>%
     summarise_all(funs(list(na.omit(.))))
+num_bugs_FAll = nrow(Fall_unique)
 ```
 
 ```{r echo=FALSE}

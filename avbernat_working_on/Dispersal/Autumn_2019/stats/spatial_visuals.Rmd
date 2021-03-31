@@ -1,0 +1,266 @@
+---
+title: "Soapberry Bug Flight Dispersal Spatial Data Visualization - Fall2019"
+author: "Anastasia Bernat"
+date: "3/30/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Autumn_2019/stats/"
+setwd(dir) 
+
+# Load some commonly used packages.
+library(MASS)
+library(gridExtra)
+library(tidyverse)
+library(mosaic)
+library(broom)
+library(dplyr)
+library(knitr)
+library(readr)
+library(chron)
+library(stringr)
+
+# Set numerical output display parameters
+options(width=70, digits=4, scipen=8)
+# Set R output size a bit smaller than default
+knitr::opts_chunk$set(size='small', prompt=FALSE, comment="")
+# set plot theme to black and white
+ggplot2::theme_set(ggplot2::theme_bw())
+ggplot2::theme_update(panel.grid.major = ggplot2::element_line(colour = "grey75"))
+
+# Spatial Libraries
+library(sf)
+library(sp)
+library(lubridate)
+library(tmap)
+library(geojsonR)
+library(geojsonio)
+library(lwgeom) # lwgeom is known as the light-weight geometry library used by 'PostGIS' 
+library(cleangeo)
+library(maps)
+library(shinyjs)
+library(tmaptools)
+```
+
+## Read the data.
+
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("clean_flight_data-Fall2.R", # Loads and cleans data (Fall)
+                 "center_flight_data.R", # Re-centers data (Winter)
+                 "clean_flight_data.R" # Loads and cleans data (Winter)
+                 ) 
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+fall_data <- clean_flight_data.Fall("data/full_data-Fall2019.csv")
+```
+
+```{r}
+winter_data <- read_flight_data("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/data/all_flight_data-Winter2020.csv")
+all_data <- winter_data[[1]]
+data_all <- winter_data[[2]] # bugs tested
+```
+
+
+## Filter for only the columns you need.
+
+```{r}
+# fall
+filtered_dataF <- select(fall_data, ID, filename, chamber, set_number, average_speed, 
+                        total_flight_time, distance, shortest_flying_bout, 
+                        longest_flying_bout, max_speed,
+                        sex, population, site, host_plant, flew, flew_b, flight_type, mass, eggs_b, 
+                        beak, thorax, wing, body, sym_dist, w_morph,
+                        lat = latitude, 
+                        lon = longitude)
+
+# Get rid of NA's in long and lat columns
+filtered_data <- filter(filtered_dataF, !is.na(lat), !is.na(lon))
+glimpse(filtered_dataF)
+```
+```{r}
+# winter
+filtered_dataW <- select(data_all, ID, filename, chamber, set_number, average_speed, 
+                        total_flight_time, distance, shortest_flying_bout, 
+                        longest_flying_bout, max_speed,
+                        sex, population, site, host_plant, host_temp, flew, flew_b, 
+                        flight_type, mass, eggs_b, 
+                        total_eggs, beak, thorax, wing, body, sym_dist, tested, w_morph,
+                        lat = latitude, 
+                        lon = longitude)
+
+# Get rid of NA's in long and lat columns
+filtered_data <- filter(filtered_dataW, !is.na(lat), !is.na(lon))
+glimpse(filtered_dataW)
+```
+## Convert to a spatial point object and plot.
+
+```{r}
+dispersal_dataF <- st_as_sf(filtered_dataF,
+                           coords = c("lon", "lat"),
+                           crs = 4326,
+                           agr = "constant")
+
+dispersal_dataF <- st_transform(dispersal_dataF, 2236)
+plot(dispersal_dataF)
+
+dispersal_dataW <- st_as_sf(filtered_dataW,
+                           coords = c("lon", "lat"),
+                           crs = 4326,
+                           agr = "constant")
+
+dispersal_dataW <- st_transform(dispersal_dataW, 2236)
+plot(dispersal_dataW)
+```
+
+This shows us the data, but visually it's hard to read. Let's try mapping multipolygon and polygon shapes.
+
+## Create mappable multipolygon shapes for designated areas. Sites to use:
+
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/"
+
+script_names = c("multipolygon_counties.R") # Loads and cleans data
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+```
+
+```{r}
+multipolyF = map_multipolygons(dispersal_dataF)
+multipolyW = map_multipolygons(dispersal_dataW)
+```
+
+```{r}
+FL_transformed = multipolyF[[1]]
+combinedF = multipolyF[[2]]
+combinedW = multipolyW[[2]]
+```
+
+```{r}
+tmap_mode("view")
+tmap_mode("plot")
+
+combined_counties <- combinedF %>%
+  group_by(counties) %>% # can also do population
+    summarise_all(funs(list(na.omit(.))))
+
+tm_shape(combined_counties) +
+  tm_polygons("counties") +
+  tm_basemap("Hydda.Base")
+```
+
+# Collection Sites: Mainland vs. Keys (for Fall and Winter)
+
+```{r}
+# FALL
+# MAINLAND PREP 
+## create proper bounding box 
+big_bb <- st_bbox(FL_transformed)
+big_bb[2] = big_bb[2]-100000
+
+## filter to speed up map making process
+collection_sitesF <- dispersal_dataF %>%
+  filter(host_plant=="K. elegans") %>%
+  group_by(site) %>% # can also do population
+    summarise_all(funs(list(na.omit(.))))
+
+county_hp <- combinedF %>%
+  group_by(counties, host_plant) %>% # can also do population
+    summarise_all(funs(list(na.omit(.))))
+
+## KEYS PREP
+keys_bb <- st_bbox(combinedF %>% filter(counties %in% c("North Key Largo", "Key Largo", "Plantation Key")) )
+
+collection_keysF <- dispersal_dataF %>%
+  filter(host_plant=="C. corindum") %>%
+  group_by(site) %>% # can also do population
+    summarise_all(funs(list(na.omit(.))))
+```
+
+
+```{r}
+# WINTER
+# MAINLAND PREP 
+## filter to speed up map making process
+collection_sitesW <- dispersal_dataW %>%
+  filter(host_plant=="K.elegans") %>%
+  group_by(site) %>% # can also do population
+    summarise_all(funs(list(na.omit(.))))
+
+## KEYS PREP
+collection_keysW <- dispersal_dataW %>%
+  filter(host_plant=="C. corindum") %>%
+  group_by(site) %>% # can also do population
+    summarise_all(funs(list(na.omit(.))))
+```
+
+```{r}
+collection_season = rbind(collection_keysF[,c(1,26)], collection_keysW[,c(1,29)])
+seasons = c("Fall", "Fall", "Fall", "Fall", "Fall", "Fall", "Fall", "Fall", "Fall", "Fall", "Fall",
+            "Winter", "Winter", "Winter", "Winter", "Winter", "Winter", "Winter", 
+            "Winter", "Winter", "Winter", "Winter")
+collect_by_season = cbind(collection_season, seasons)
+```
+
+```{r}
+symbol_size = 0.3
+Fall_square_symbol = 0
+Winter_star_symbol = 8
+colors = c("lightblue", "darkolivegreen3") # this one takes a few minutes (~4 min) to load
+
+## mainland
+pop = c("Gainesville", "\n\nLake Placid ", " ", "      Leesburg", "\nHomestead", " ", " ", "\n     Lake Wales")
+county_host_plant = cbind(county_hp, pop)
+
+tm_shape(FL_transformed, bbox=big_bb) +
+  tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey") +
+  tm_fill(col="white", alpha= 0.3) +
+  tm_polygons("State") +
+  tm_scale_bar(position = c("left", "bottom")) + 
+  tm_text("State", size = 0.8, xmod=-9, ymod=6.7, col="grey38") +
+tm_shape(county_host_plant) +
+  tm_polygons("host_plant", title="Host Plant", palette=colors) +
+  tm_basemap("Hydda.Base") +
+  tm_text("pop", size = 0.8, xmod = -2, ymod = 1.2) +
+tm_shape(collection_sitesF) +
+  tm_dots(alpha = 0.8, size=symbol_size, shape=Fall_square_symbol, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) +
+tm_shape(collection_sitesW) +
+  tm_dots(alpha = 0.8, size=symbol_size, shape=Winter_star_symbol, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) +
+  tm_shape(collect_by_season) +
+  tm_dots("seasons", size=0.001, alpha=0.001, legend.show=FALSE) +
+  tm_add_legend(type="symbol", labels=c("Fall", "Winter"), col="black", 
+                title="Season", shape=c(Fall_square_symbol,Winter_star_symbol)) +
+    tm_legend(position=c("left", "bottom")) 
+
+## keys
+pop = c(" ", " ", "Key Largo    ", " ", " ", "\n\n\n\nNorth Key \nLargo", "Plantation Key   ", " ")
+county_host_plant = cbind(county_hp, pop)
+
+tm_shape(county_host_plant, bbox=keys_bb) + 
+    tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey") +
+    tm_polygons("host_plant", labels = NULL, legend.show = FALSE, palette=colors) +
+    tm_scale_bar(position = c("right", "bottom")) +
+  tm_text("pop", size = 0.7, xmod = -1.9, ymod = 0.7) +
+tm_shape(collection_keysF) +
+  tm_dots(alpha = 0.9, size=symbol_size, shape=Fall_square_symbol, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) +
+tm_shape(collection_keysW) +
+  tm_dots(alpha = 0.8, size=symbol_size, shape=Winter_star_symbol, title = 'Collection Sites', labels = "geometry", legend.show=TRUE)
+```
+
+```{r}
+# Only those that flew (this also removes distance NA and speed NA values):
+combined_filtered <- combined %>%
+  filter(average_speed !=0)
+dispersal_filtered <- dispersal_data %>%
+  filter(average_speed !=0)
+```

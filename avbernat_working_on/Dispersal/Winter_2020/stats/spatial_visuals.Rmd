@@ -477,7 +477,7 @@ tm_shape(dispersal_filtered) +
 
 m21
 
-tmap_save(m21, zmap.filename )
+tmap_save(m21, zmap.filename)
 ```
 
 ```{r}

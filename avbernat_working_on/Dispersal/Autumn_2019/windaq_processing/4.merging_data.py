@@ -93,20 +93,23 @@ merged_data = merged_data.iloc[1:]
 unmerged_rows2 = check_dimensions(merged_data, full_data)
 print("\tUnmerged rows for merged_data:", unmerged_rows1) # should be empty
 print("\tUnmerged rows for full_data:", unmerged_rows2) # should be empty
-print("\t**Rows are unmerged because the ID is not in the morph record.")
-print("\t**Check back to the original flight trial hand-written tables to check what ID was there.\n")
 
-# concatenate any unmerged rows 
-print("\tConcatenating unmerged rows...\n")
-index = [i + 1 for i in range(len(unmerged_rows2))]
-row2concat = merged_data.loc[merged_data['filename'].isin(unmerged_rows2)]
-row2concat.reset_index(inplace=True)
-print(row2concat)
 
-full_data = pd.concat([full_data, row2concat], axis=0, sort=False)
-print("\n\tFinished concatenating...\n")
-full_data.set_index('ID', inplace=True)
-print(full_data)
+if unmerged_rows2 != []:
+	
+	print("\t**Rows are unmerged because the ID is not in the morph record.")
+	print("\t**Check back to the original flight trial hand-written tables to check what ID was there.\n")
+	
+	# concatenate any unmerged rows 
+	print("\tConcatenating unmerged rows...\n")
+	row2concat = merged_data.loc[merged_data['filename'].isin(unmerged_rows2)]
+	row2concat.reset_index(inplace=True)
+	print(row2concat)
+
+	full_data = pd.concat([full_data, row2concat], axis=0, sort=False)
+	print("\n\tFinished concatenating...\n")
+	full_data.set_index('ID', inplace=True)
+	print(full_data)
 
 # sort the data
 full_data.sort_values(by=['set_number', 'chamber'], ascending=True, inplace=True)
