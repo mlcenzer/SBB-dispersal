@@ -63,9 +63,24 @@ fall_data <- clean_flight_data.Fall("data/full_data-Fall2019.csv")
 ```
 
 ```{r}
+d = fall_data %>%
+  select(ID, mass) %>%
+  filter(!is.na(mass))
+
+unique(d$ID)
+```
+
+```{r}
 winter_data <- read_flight_data("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/data/all_flight_data-Winter2020.csv")
 all_data <- winter_data[[1]]
 data_all <- winter_data[[2]] # bugs tested
+```
+
+```{r}
+d = data_all %>%
+  select(ID, mass) %>%
+  filter(!is.na(mass))
+unique(d$ID)
 ```
 
 
@@ -269,16 +284,29 @@ fall_data$datetime <- as.factor(fall_data$datetime)
 
 winter_data[[2]]$datetime <- as.yearmon(winter_data[[2]]$date, "%B/%Y")
 winter_data[[2]]$datetime <- as.factor(winter_data[[2]]$datetime)
-
 ```
 
-```{r fig.width=1.5, fig.height=1.5}
-raw_data = rbind(fall_data[, c("host_plant", "datetime")], winter_data[[2]][, c("host_plant", "datetime")])
+```{r}
+fall <- fall_data %>%
+  group_by(ID, host_plant, datetime) %>% # can also do population
+    summarise_all(funs(list(na.omit(.))))
+fall # lost some bugs | should be 207
+winter <- winter_data[[2]] %>%
+  group_by(ID, host_plant, datetime) %>% # can also do population
+    summarise_all(funs(list(na.omit(.))))
+winter # lost some bugs | should be 334
+```
+
+```{r fig.width=1.6, fig.height=1.5}
+raw_data = rbind(fall[, c("host_plant", "datetime")], winter[, c("host_plant", "datetime")])
 
 colors = c("#999999", "#E69F00", "#56B4E9",
            "ivory2", "gold", "royalblue4", "coral1", 
            "orange4", "palegreen4")
-p2 = p + labs(title=" ", 
+p = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=host_plant)) + 
+    geom_bar(position='stack', color="black", width=0.7) +
+    theme_bw()
+p2 = p + labs(title=" ", fill="Host Plant",
          x=" ", y = " ")+
    scale_fill_manual(values=c("#56B4E9", "chartreuse4")) +
    theme_classic() + theme(

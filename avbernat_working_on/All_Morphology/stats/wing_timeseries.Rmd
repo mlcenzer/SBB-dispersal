@@ -1,0 +1,170 @@
+---
+title: "All Morphology: Wing Time Series"
+author: "Anastasia Bernat"
+date: "4/1/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+library(lme4)
+library(zoo)
+library(data.table)
+library(forecast)
+
+library(dplyr)
+library(ggplotify)
+library(gridExtra)
+library(ggplot2)
+library(ggformula)
+library(tidyselect)
+library(tidyverse)
+
+# time series libraries
+library(tseries)
+library(xts)
+
+library(fma)
+
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+setwd(dir)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Cleaning Data and Sourcing Scripts
+
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("compare_models.R","regression_output.R", "clean_morph_data.R",
+                 "AICprobabilities.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+```
+
+### Read the data
+
+```{r}
+data_list <- read_morph_data("data/allmorphology9.21.20.csv")
+raw_data = data_list[[1]]
+data_long = data_list[[2]]
+
+# Datetime
+raw_data$date <- paste(raw_data$month, raw_data$year, sep="/")
+raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
+raw_data$datetime <- as.factor(raw_data$datetime)
+n_missing_dates = nrow(raw_data[is.na(raw_data$datetime),])
+cat("number of missing dates:", n_missing_dates)
+
+# merge May 2015 with April 2015 because very few bugs were collected in May 2015.
+raw_data$date[raw_data$date == "May/2015"] = "April/2015"
+
+raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
+raw_data$datetime <- as.factor(raw_data$datetime)
+raw_data
+```
+
+## Manipulating Time Series Data 
+
+### Wing Length 
+
+Using xts & zoo R Libraries.
+
+https://rstudio-pubs-static.s3.amazonaws.com/288218_117e183e74964557a5da4fc5902fc671.html
+
+
+```{r}
+# remove NA dates
+d = raw_data %>%
+  filter(!is.na(wing), !is.na(datetime))
+
+# get wing length averages using vectorization
+wing_avg = tapply(X=d$wing, INDEX=d$datetime, FUN=mean, na.rm=T)
+monyear = unique(d$datetime)
+
+# generate datetime object | datetime object needs a date, which I initialized at 01 for each month
+monyeardate <- paste(monyear," 01",sep="")
+date = as.Date(monyeardate, "%b %Y %d")
+```
+
+```{r}
+wing_mm = xts(wing_avg, date)
+colnames(wing_mm) <- "wing"
+plot(wing_mm)
+adf.test(wing_mm$wing) # this is stationary 
+```
+
+```{r}
+wing_mm$logdiff <- diff(log(wing_mm$wing)) # <--- Make sure you understand what's happening here!
+wing_mm <- wing_mm[-1,]
+plot(wing_mm$logdiff)
+adf.test(wing_mm$logdiff) # this is stationary 
+```
+
+Stationarity can be defined in precise mathematical terms, but for our purpose we mean a flat looking series, without trend, constant variance over time, a constant autocorrelation structure over time and no periodic fluctuations (seasonality). So the low p value means we do have stationarity.
+
+lag order = shift every 2 years detected?
+
+Use an ACF and a PCF plot to identify temporal dependence in the wing_mm$logdiff data.
+
+```{r}
+# Make an ACF plot
+Acf(wing_mm$logdiff, main='')
+
+# Make a PACF plot
+Acf(wing_mm$logdif, type="partial", main='')
+```
+### Wing2body 
+
+```{r}
+data_long<-raw_data[raw_data$w_morph=="L",]
+
+###remove individuals with torn wings first.
+data_long$drop <- FALSE
+
+for(row in 1:nrow(data_long)){
+	if(length(unlist(strsplit(strsplit(paste("test ", data_long$notes[row], " test", sep=""), "torn")[[1]], "wing")))>2){
+		 #browser()	
+		 data_long$drop[row] <- TRUE
+		 }
+}
+
+data_long <- data_long[data_long$drop==FALSE,]
+
+data_long$wing2body <- data_long$wing/as.numeric(data_long$body)
+```
+
+```{r}
+# remove NA dates
+d = data_long %>%
+  filter(!is.na(wing2body), !is.na(datetime))
+
+# get wing length averages using vectorization
+ratio_avg = tapply(X=d$wing2body, INDEX=d$datetime, FUN=mean, na.rm=T)
+ratio_avg = ratio_avg[!is.na(ratio_avg)]
+monyear = unique(d$datetime)
+
+# generate datetime object | datetime object needs a date, which I initialized at 01 for each month
+monyeardate <- paste(monyear," 01",sep="")
+date = as.Date(monyeardate, "%b %Y %d")
+```
+
+```{r}
+ratio = xts(ratio_avg, date)
+colnames(ratio) <- "wing2body"
+
+plot(ratio)
+adf.test(ratio$wing2body) # this is not stationarity
+```
+
+```{r}
+ratio$logdiff <- diff(log(ratio$wing)) # <--- Make sure you understand what's happening here!
+ratio <- ratio[-1,]
+plot(ratio$logdiff)
+adf.test(ratio$logdiff) # this is stationary 
+```
+
