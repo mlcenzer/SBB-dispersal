@@ -193,7 +193,7 @@ collection_keysF <- dispersal_dataF %>%
 # MAINLAND PREP 
 ## filter to speed up map making process
 collection_sitesW <- dispersal_dataW %>%
-  filter(host_plant=="K.elegans") %>%
+  filter(host_plant=="K. elegans") %>%
   group_by(site) %>% # can also do population
     summarise_all(funs(list(na.omit(.))))
 
@@ -238,7 +238,7 @@ tm_shape(collection_sitesW) +
   tm_dots(alpha = 0.8, size=symbol_size, shape=Winter_star_symbol, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) +
   tm_shape(collect_by_season) +
   tm_dots("seasons", size=0.001, alpha=0.001, legend.show=FALSE) +
-  tm_add_legend(type="symbol", labels=c("Fall", "Winter"), col="black", 
+  tm_add_legend(type="symbol", labels=c("Fall 2019", "Winter 2020"), col="black", 
                 title="Season", shape=c(Fall_square_symbol,Winter_star_symbol)) +
     tm_legend(position=c("left", "bottom")) 
 
@@ -256,6 +256,41 @@ tm_shape(collection_keysF) +
 tm_shape(collection_keysW) +
   tm_dots(alpha = 0.8, size=symbol_size, shape=Winter_star_symbol, title = 'Collection Sites', labels = "geometry", legend.show=TRUE)
 ```
+
+```{r}
+fall_data$date = "Oct/2019"
+winter_data[[2]]$date = "Feb/2020" 
+```
+
+```{r}
+library(zoo)
+fall_data$datetime <- as.yearmon(fall_data$date, "%B/%Y")
+fall_data$datetime <- as.factor(fall_data$datetime)
+
+winter_data[[2]]$datetime <- as.yearmon(winter_data[[2]]$date, "%B/%Y")
+winter_data[[2]]$datetime <- as.factor(winter_data[[2]]$datetime)
+
+```
+
+```{r fig.width=1.5, fig.height=1.5}
+raw_data = rbind(fall_data[, c("host_plant", "datetime")], winter_data[[2]][, c("host_plant", "datetime")])
+
+colors = c("#999999", "#E69F00", "#56B4E9",
+           "ivory2", "gold", "royalblue4", "coral1", 
+           "orange4", "palegreen4")
+p2 = p + labs(title=" ", 
+         x=" ", y = " ")+
+   scale_fill_manual(values=c("#56B4E9", "chartreuse4")) +
+   theme_classic() + theme(
+        axis.text.y = element_text(size=11),
+        axis.text.x=element_text(size=11, angle = 45, hjust = 1.1), # 9
+        axis.title=element_text(size=17,face="bold"))  +
+theme(axis.title.x = element_text(vjust = -3)) +
+theme(axis.title.y = element_text(vjust = 4)) +
+  theme(plot.margin=unit(c(1,1,1.1,1.2),"cm"))
+p2
+```
+
 
 ```{r}
 # Only those that flew (this also removes distance NA and speed NA values):

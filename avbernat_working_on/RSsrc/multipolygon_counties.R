@@ -24,7 +24,7 @@ map_multipolygons = function(dispersal_data) {
 
   florida <- "http://polygons.openstreetmap.fr/get_geojson.py?id=162050&params=0"
 
-  # URL Florida
+  # URL Florida (not using this one)
   florida_read <- st_read(florida)
   FL_url <- mutate(florida_read, population = "Florida")
   FL_url_transformed <- st_transform(FL_url, 2236)
