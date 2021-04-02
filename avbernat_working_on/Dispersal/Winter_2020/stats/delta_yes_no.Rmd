@@ -69,7 +69,8 @@ Encoding = c(2, 1,0,-1)
 key = cbind(Event, Encoding)
 
 kable(key) %>%
-  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  kable_classic(html_font = "Cambria") %>%
   add_header_above(c("Delta Flight Response Key" = 2 )) 
 ```
 
@@ -987,8 +988,9 @@ Encoding = c(2, 1,0,-1)
 key = cbind(Event, Encoding)
 
 kable(key) %>%
-  kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
-  add_header_above(c("Delta Egg Response Key" = 2 )) 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  kable_classic(html_font = "Cambria") %>%
+  add_header_above(c("Delta Flight Response Key" = 2 )) 
 ```
 
 **Baseline**

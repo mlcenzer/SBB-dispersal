@@ -32,6 +32,36 @@ setwd(dir)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Introduction
+
+If you have continuous target variable, then it is a regression problem. For instance, in flight trials we have the flight distance to predict, which is continuous. Hence this becomes a regression problem. About time series, when the datapoints are time dependent, then it becomes a time series problem. Each data point has an order and is, typically, related to the data points before and after by some underlying process. 
+
+In turn, a times series regression is a statistical method for predicting a future response based on the response history (known as autoregressive dynamics) and the transfer of dynamics from relevant predictors. Time series regression is commonly used for modeling and forecasting of economic, financial, and biological systems.
+
+There are three concepts then to keep in mind:
+
+* **Stationary**: if any trends or patterns in the time series are independent with time. (A linear regression equivalent to a time series at stationarity). There is strong and weak stationary.
+
+* **Non-Stationary**: trends dependent in time in the mean or statistical deviation of the data points. 
+
+* **Autocorrelation**: "memory"; the degree to which time series values in period(t) are related to time series values in periods (t+1, t+2, t+3...). For this, we can test to see how long certain values last in a system.
+
+There are also three words and their definitions to remember:
+
+* **variance** = amplitude of the data points
+* **mean** = the central value of the data points
+* **covariance** = frequency of the data points
+
+Questions about time series often asked include,
+
+* Is there any trend, seasonality, or any outliers?
+* Is there a long-run cycle or period unrelated to seasonality factors?
+* Is there a constant variance over time?
+* Are there any abrupt changes to either the level of the series or the variance?
+
+So how can you answer these questions through a time series regression and code? And where do you begin to test stationarity or visualize autocorrelation? And finally, how do you handle non-stationarity?
+
+
 ## Cleaning Data and Sourcing Scripts
 
 ```{r}
@@ -69,6 +99,8 @@ raw_data
 ```
 
 ## Manipulating Time Series Data 
+
+Need to split by sex and host plant. 
 
 ### Wing Length 
 
@@ -167,4 +199,7 @@ ratio <- ratio[-1,]
 plot(ratio$logdiff)
 adf.test(ratio$logdiff) # this is stationary 
 ```
+
+## Wing Morph Frequency
+
 
