@@ -2,7 +2,10 @@
 title: "All Morphology: Wing Time Series"
 author: "Anastasia Bernat"
 date: "4/1/2021"
-output: html_document
+output:
+  html_document:
+    toc: true
+    theme: united
 ---
 
 ```{r setup, include=FALSE}
@@ -23,7 +26,6 @@ library(tidyverse)
 # time series libraries
 library(tseries)
 library(xts)
-
 library(fma)
 
 dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
@@ -33,6 +35,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Introduction
+
+When to use a time series vs. a linear regression? 
 
 If you have continuous target variable, then it is a regression problem. For instance, in flight trials we have the flight distance to predict, which is continuous. Hence this becomes a regression problem. About time series, when the datapoints are time dependent, then it becomes a time series problem. Each data point has an order and is, typically, related to the data points before and after by some underlying process. 
 
@@ -61,6 +65,7 @@ Questions about time series often asked include,
 
 So how can you answer these questions through a time series regression and code? And where do you begin to test stationarity or visualize autocorrelation? And finally, how do you handle non-stationarity?
 
+1) First, begin by cleaning the data.
 
 ## Cleaning Data and Sourcing Scripts
 
@@ -78,42 +83,87 @@ for (script in script_names) {
 
 ### Read the data
 
+2) Extract date information in order to prep it for converting it into a datetime object read by the xts() function. 
+
+3) Merge close dates together in order to have as equally spaced datapoints as possible. The acf() assumes that the data are regular spaced. The acf computes estimates of the autocovariance or autocorrelation function. We need this because it will tell us, if there are patterns, what the mathematical function of those patterns are.
+
 ```{r}
 data_list <- read_morph_data("data/allmorphology9.21.20.csv")
 raw_data = data_list[[1]]
-data_long = data_list[[2]]
+all_bugs = nrow(raw_data)
+# data_long = data_list[[2]] # need to fix this 
+
+# Remove individuals with torn wings first
+raw_data$drop <- FALSE
+for(row in 1:nrow(raw_data)){
+	if(length(unlist(strsplit(strsplit(paste("test ", raw_data$notes[row], " test", sep=""), "torn")[[1]], "wing")))>2){
+		 #browser()	
+		 raw_data$drop[row] <- TRUE
+		 }
+}
+raw_data <- raw_data[raw_data$drop==FALSE,]
+clean_bugs = nrow(raw_data)
+
+cat("number of bugs with torn wings:", all_bugs - clean_bugs, "\n\n")
 
 # Datetime
 raw_data$date <- paste(raw_data$month, raw_data$year, sep="/")
 raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
 raw_data$datetime <- as.factor(raw_data$datetime)
 n_missing_dates = nrow(raw_data[is.na(raw_data$datetime),])
-cat("number of missing dates:", n_missing_dates)
 
 # merge May 2015 with April 2015 because very few bugs were collected in May 2015.
+# then merge April 2013 with May 2013 to make the time datapoints more evenly distanced
 raw_data$date[raw_data$date == "May/2015"] = "April/2015"
+raw_data$date[raw_data$date == "May/2013"] = "April/2013"
 
+# convert to yearmon object and then factor
 raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
 raw_data$datetime <- as.factor(raw_data$datetime)
-raw_data
+
+cat("number of missing dates:", n_missing_dates, "\n\n")
+unique(raw_data$datetime)
 ```
 
-## Manipulating Time Series Data 
+Looks like we have a measurement at least once per year, which is good.
 
-Need to split by sex and host plant. 
+## Time Series: All Data
 
 ### Wing Length 
 
-Using xts & zoo R Libraries.
+4) Remove missing wing and datetime values.
 
-https://rstudio-pubs-static.s3.amazonaws.com/288218_117e183e74964557a5da4fc5902fc671.html
+5) Compute the wing length averages and generate datetime objects using as.Date(). In order to be processed by the as.Date() function, all time objects need a date, month, and year. 
 
+6) Use the xts & zoo R Libraries to read cleanly index the data by a formal time object (collection_time).
+
+7) Optional: include major events that occurred in the 2010's. This could be events that you find biologically significant to your questions. E.g. how did major hurricanes in Florida impact average soapberry bug wing length across Florida?
+
+Hurricane Source: https://en.wikipedia.org/wiki/List_of_Florida_hurricanes#2000–present
+
+```{r}
+clean_for_ts = function(contin_var, cat_var, func) {
+  # get wing length averages using vectorization
+  summary = tapply(X=d[,contin_var], INDEX=d[,cat_var], FUN=func, na.rm=T)
+  monyear = unique(d$datetime)
+
+  # generate datetime object | datetime object needs a date, 
+  # which I initialized at 01 for each month
+  monyeardate <- paste(monyear," 01",sep="")
+  dates = as.Date(monyeardate, "%b %Y %d")
+  
+  return(list(summary, dates))
+}
+```
 
 ```{r}
 # remove NA dates
 d = raw_data %>%
   filter(!is.na(wing), !is.na(datetime))
 
+ts_list = clean_for_ts(contin_var="wing", cat_var="datetime", func="mean")
+wing_avg = ts_list[[1]]
+date = ts_list[[2]]
 # get wing length averages using vectorization
 wing_avg = tapply(X=d$wing, INDEX=d$datetime, FUN=mean, na.rm=T)
 monyear = unique(d$datetime)
@@ -121,52 +171,124 @@ monyear = unique(d$datetime)
 # generate datetime object | datetime object needs a date, which I initialized at 01 for each month
 monyeardate <- paste(monyear," 01",sep="")
 date = as.Date(monyeardate, "%b %Y %d")
+
+# events
+FL_major_hurr = c("Sep 2017 10", "Oct 2018 10") # Irma (s), Michael (n)
+hurr_dates = as.Date(FL_major_hurr, "%b %Y %d")
+
+events <- xts(c("Irma (S. FL)", "Michael (N. Fl)"), 
+              hurr_dates)
 ```
 
+8) Create xts-zoo object and plot the time series data. Add any events to the plot with addEventLines(). 
+
+9) Calculate the Augmented Dickey-Fuller Test to test for stationarity where the null hypothesis is non-stationarity and the alternative hypothesis is stationarity.
+
+10) Finally, use an ACF (autocorrelation function) and PCF (partial-autocorrelation function) plot to identify temporal dependence in the data. Autocorrelation measures the linear relaionship between lagged values of a time series. 
+
+$R_s = Corr(x_t, x_{t+s})$ for lag $s$.
+
+There are two horizonal, blue, dashed lines as well. Those represent the significance threshold, where only the spikes that exceed this dashed line are considered significant. In other words, these plots describe how well the present value of the series is related with its past values. Since, none do significantly, then there is no AR (a present value of the time series cannot be obtained using previous values of the same time series).
+
 ```{r}
+check_stationarity = function(dx) {
+  #  dx is your xts zoo time series object
+  plot(dx)
+  #addEventLines(events, pos=2, srt=90, col="red")
+  
+  par(mfrow=c(1,2))
+  print(adf.test(dx[,1])) 
+  Acf(dx[,1], main='') # ACF
+  Acf(dx[,1], type="partial", main='') #PACF  
+  par(mfrow=c(1,1))
+}
+```
+
+```{r echo=FALSE}
 wing_mm = xts(wing_avg, date)
 colnames(wing_mm) <- "wing"
-plot(wing_mm)
-adf.test(wing_mm$wing) # this is stationary 
+check_stationarity(wing_mm)
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+**Interpretation:**
+
+Stationarity can be defined in precise mathematical terms, but for our purpose we mean a flat looking series, without trend, constant variance over time, a constant autocorrelation structure over time and no periodic fluctuations (seasonality). So the high p value means we do have non-stationarity. Similarly, the augmented Dickey–Fuller (ADF) statistic, used in the test, is a negative number. The more negative it is, the stronger the rejection of the null hypothesis. This is not negative enough.
+
+Finally, the lag length (lag order) is how many terms back down the AR process you want to test for serial correlation. **This is a non-stationary with AR(2).** 
+
+11) Detrending and Dedrifting Data. Detrending is removing a trend from a time series; a trend usually refers to a change in the mean over time, but the overall goal is to get to stationarity. When you detrend data, you remove an aspect from the data that you think is causing some kind of distortion. For example, you might detrend data that shows an overall increase, in order to see subtrends. Usually, these subtrends are seen as fluctuations on a time series graph. **To remove the linear trend, differencing is equivalent to applying a linear regression on time - "regress out" covariates**.
+
+Differencing is when a new series is constructed where the value at the current time step is calculated as the difference between the original observation and the observation at the previous time step.
+
+```{r}
+detrend = function(dx) {
+  dx$diff <- diff(dx[,1]) # "regressing out"
+  dx <- dx[-1,]
+  plot(dx$diff)
+  
+  par(mfrow=c(1,2))
+  print(adf.test(dx$diff)) 
+  Acf(dx$diff, main='') # ACF
+  Acf(dx$diff, type="partial", main='') #PACF 
+  par(mfrow=c(1,1))
+}
 ```
 
 ```{r}
-wing_mm$logdiff <- diff(log(wing_mm$wing)) # <--- Make sure you understand what's happening here!
-wing_mm <- wing_mm[-1,]
-plot(wing_mm$logdiff)
-adf.test(wing_mm$logdiff) # this is stationary 
+dedrift = function(dx) {
+  dx$logv <- log(dx[,1])
+  dx <- dx[-1,]
+  plot(dx$logv)
+  
+  par(mfrow=c(1,2))
+  print(adf.test(dx$logv))
+  Acf(dx$logv, main='') # ACT
+  Acf(dx$logv, type="partial", main='') #PACF 
+  par(mfrow=c(1,1))
+}
 ```
-
-Stationarity can be defined in precise mathematical terms, but for our purpose we mean a flat looking series, without trend, constant variance over time, a constant autocorrelation structure over time and no periodic fluctuations (seasonality). So the low p value means we do have stationarity.
-
-lag order = shift every 2 years detected?
-
-Use an ACF and a PCF plot to identify temporal dependence in the wing_mm$logdiff data.
 
 ```{r}
-# Make an ACF plot
-Acf(wing_mm$logdiff, main='')
-
-# Make a PACF plot
-Acf(wing_mm$logdif, type="partial", main='')
+dedriftrend = function(dx) {
+  dx$logdiff <- diff(log(dx[,1]))
+  dx <- dx[-1,]
+  plot(dx$logdiff)
+  
+  par(mfrow=c(1,2))
+  print(adf.test(dx$logdiff)) 
+  Acf(dx$logdiff, main='') # ACT
+  Acf(dx$logdiff, type="partial", main='') #PACF 
+  par(mfrow=c(1,1))
+}
 ```
+
+```{r}
+detrend(wing_mm) # this is stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+Interpretation: This time series is stationary! And as a reminder, a data that is just noise will be stationary.
+
+12) You can also take the log() of the time series in order to stable the variance of the time series if there is a trend in the variance. Stationarity was achieved without having to stablize the variance, but you can still check:
+
+```{r}
+dedrift(wing_mm) # this is stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+```{r}
+dedriftrend(wing_mm) # this is stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
 ### Wing2body 
 
 ```{r}
+# Get only bugs with long wings
 data_long<-raw_data[raw_data$w_morph=="L",]
 
-###remove individuals with torn wings first.
-data_long$drop <- FALSE
-
-for(row in 1:nrow(data_long)){
-	if(length(unlist(strsplit(strsplit(paste("test ", data_long$notes[row], " test", sep=""), "torn")[[1]], "wing")))>2){
-		 #browser()	
-		 data_long$drop[row] <- TRUE
-		 }
-}
-
-data_long <- data_long[data_long$drop==FALSE,]
-
+# Calculate wing2body ratio for bugs with long wings 
 data_long$wing2body <- data_long$wing/as.numeric(data_long$body)
 ```
 
@@ -175,7 +297,7 @@ data_long$wing2body <- data_long$wing/as.numeric(data_long$body)
 d = data_long %>%
   filter(!is.na(wing2body), !is.na(datetime))
 
-# get wing length averages using vectorization
+# get wing2body averages using vectorization
 ratio_avg = tapply(X=d$wing2body, INDEX=d$datetime, FUN=mean, na.rm=T)
 ratio_avg = ratio_avg[!is.na(ratio_avg)]
 monyear = unique(d$datetime)
@@ -189,17 +311,366 @@ date = as.Date(monyeardate, "%b %Y %d")
 ratio = xts(ratio_avg, date)
 colnames(ratio) <- "wing2body"
 
-plot(ratio)
-adf.test(ratio$wing2body) # this is not stationarity
+function() {plot(ratio)}
+addEventLines(events, pos=2, srt=90, col="red")
+
+adf.test(ratio$wing2body) # this is not stationary
+par(mfrow=c(1,2))
+Acf(ratio$wing2body, main='') # ACT
+Acf(ratio$wing2body, type="partial", main='') #PACF
 ```
 
 ```{r}
-ratio$logdiff <- diff(log(ratio$wing)) # <--- Make sure you understand what's happening here!
-ratio <- ratio[-1,]
-plot(ratio$logdiff)
-adf.test(ratio$logdiff) # this is stationary 
+detrend(ratio) # this is stationary
+addEventLines(events, pos=2, srt=90, col="red")
 ```
 
-## Wing Morph Frequency
+```{r}
+dedrift(ratio) # this is not stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+```{r}
+dedriftrend(ratio)
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+
+### Wing Morph Frequency
+
+```{r}
+raw_data$w_morph_binom <- NA
+raw_data$wing_morph_binom[raw_data$w_morph=="S"]<-0
+raw_data$wing_morph_binom[raw_data$w_morph=="L"]<-1
+```
+
+```{r}
+# remove NA dates and wing morph (S=0, L=1)
+d = raw_data %>%
+  filter(!is.na(wing_morph_binom), !is.na(datetime))
+
+# get wing frequency averages using vectorization
+freq_avg = tapply(X=d$wing_morph_binom, INDEX=d$datetime, FUN=mean, na.rm=T)
+freq_avg = freq_avg[!is.na(freq_avg)]
+monyear = unique(d$datetime)
+
+# generate datetime object | datetime object needs a date, which I initialized at 01 for each month
+monyeardate <- paste(monyear," 01",sep="")
+date = as.Date(monyeardate, "%b %Y %d")
+```
+
+
+```{r}
+morph = xts(freq_avg, date)
+colnames(morph) <- "wing_morph_freq"
+
+function() {plot(morph)}
+addEventLines(events, pos=2, srt=90, col="red")
+
+adf.test(morph$wing_morph_freq) # this is not stationarity
+
+par(mfrow=c(1,2))
+Acf(morph$wing_morph_freq, main='') # ACT
+Acf(morph$wing_morph_freq, type="partial", main='') #PACF
+```
+
+```{r}
+detrend(morph) # this is not stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+```{r}
+dedrift(morph) # this is stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+```{r}
+dedriftrend(morph) # this is not stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+## Time Series: Grouped by Sex or Host Plant
+
+```{r}
+females = raw_data[raw_data$sex=="F",]
+males = raw_data[raw_data$sex=="M",]
+```
+
+### Females
+
+#### Wing Length
+
+```{r}
+# remove NA dates
+d = females %>%
+  filter(!is.na(wing), !is.na(datetime))
+
+# get wing length averages using vectorization
+wing_avg = tapply(X=d$wing, INDEX=d$datetime, FUN=mean, na.rm=T)
+monyear = unique(d$datetime)
+
+# generate datetime object | datetime object needs a date, which I initialized at 01 for each month
+monyeardate <- paste(monyear," 01",sep="")
+date = as.Date(monyeardate, "%b %Y %d")
+```
+
+```{r echo=FALSE}
+wing_mmf = xts(wing_avg, date)
+colnames(wing_mmf) <- "wing"
+
+function() {plot(wing_mmf)}
+addEventLines(events, pos=2, srt=90, col="red")
+
+par(mfrow=c(1,2))
+adf.test(wing_mmf$wing) # this is not stationary 
+Acf(wing_mmf$wing, main='') # ACT
+Acf(wing_mmf$wing, type="partial", main='') #PACF
+```
+
+Looks like there's not a linear trend, but changes in variation over time.
+
+```{r}
+dedrift(wing_mmf)
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+
+#### Wing2body
+
+```{r}
+# remove NA dates
+d = data_long %>%
+  filter(!is.na(wing2body), !is.na(datetime))
+
+d = d[d$sex=="F",]
+
+# get wing2body averages using vectorization
+ratio_avg = tapply(X=d$wing2body, INDEX=d$datetime, FUN=mean, na.rm=T)
+ratio_avg = ratio_avg[!is.na(ratio_avg)]
+monyear = unique(d$datetime)
+
+# generate datetime object | datetime object needs a date, which I initialized at 01 for each month
+monyeardate <- paste(monyear," 01",sep="")
+date = as.Date(monyeardate, "%b %Y %d")
+```
+
+```{r}
+ratiof = xts(ratio_avg, date)
+colnames(ratiof) <- "wing2body"
+
+function() {plot(ratiof)}
+addEventLines(events, pos=2, srt=90, col="red")
+
+adf.test(ratiof$wing2body) # this is not stationarity
+par(mfrow=c(1,2))
+Acf(ratiof$wing2body, main='') # ACT
+Acf(ratiof$wing2body, type="partial", main='') #PACF
+```
+
+```{r}
+dedrift(ratiof) # still not stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+```{r}
+dedriftrend(ratiof)
+addEventLines(events, pos=2, srt=90, col="red") # *still* not stationary
+```
+
+#### Wing Morph Frequency
+
+```{r}
+raw_data$w_morph_binom <- NA
+raw_data$wing_morph_binom[raw_data$w_morph=="S"]<-0
+raw_data$wing_morph_binom[raw_data$w_morph=="L"]<-1
+```
+
+```{r}
+# remove NA dates and wing morph (S=0, L=1)
+d = raw_data %>%
+  filter(!is.na(wing_morph_binom), !is.na(datetime))
+
+d = d[d$sex=="F",]
+# get wing frequency averages using vectorization
+freq_avg = tapply(X=d$wing_morph_binom, INDEX=d$datetime, FUN=mean, na.rm=T)
+freq_avg = freq_avg[!is.na(freq_avg)]
+monyear = unique(d$datetime)
+
+# generate datetime object | datetime object needs a date, which I initialized at 01 for each month
+monyeardate <- paste(monyear," 01",sep="")
+date = as.Date(monyeardate, "%b %Y %d")
+```
+
+
+```{r}
+morphf = xts(freq_avg, date)
+colnames(morphf) <- "wing_morph_freq"
+
+function() {plot(morphf)}
+addEventLines(events, pos=2, srt=90, col="red")
+
+adf.test(morphf$wing_morph_freq) # this is not stationary
+
+par(mfrow=c(1,2))
+Acf(morphf$wing_morph_freq, main='') # ACT
+Acf(morphf$wing_morph_freq, type="partial", main='') #PACF
+```
+
+```{r}
+detrend(morphf) # still not stationary
+dedriftrend(morphf) # still not stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+### Males
+
+#### Wing Length
+
+```{r}
+# remove NA dates
+d = males %>%
+  filter(!is.na(wing), !is.na(datetime))
+
+# get wing length averages using vectorization
+wing_avg = tapply(X=d$wing, INDEX=d$datetime, FUN=mean, na.rm=T)
+monyear = unique(d$datetime)
+
+# generate datetime object | datetime object needs a date, which I initialized at 01 for each month
+monyeardate <- paste(monyear," 01",sep="")
+date = as.Date(monyeardate, "%b %Y %d")
+```
+
+```{r echo=FALSE}
+wing_mmm = xts(wing_avg, date)
+colnames(wing_mmm) <- "wing"
+
+function() {plot(wing_mmm)}
+addEventLines(events, pos=2, srt=90, col="red")
+
+par(mfrow=c(1,2))
+adf.test(wing_mmm$wing) # this is not stationary 
+Acf(wing_mmm$wing, main='') # ACT
+Acf(wing_mmm$wing, type="partial", main='') #PACF
+```
+
+```{r}
+dedrift(wing_mmm) # not stationary
+dedriftrend(wing_mm) # now stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+#### Wing2body
+
+```{r}
+# remove NA dates
+d = data_long %>%
+  filter(!is.na(wing2body), !is.na(datetime))
+
+d = d[d$sex=="M",]
+
+# get wing2body averages using vectorization
+ratio_avg = tapply(X=d$wing2body, INDEX=d$datetime, FUN=mean, na.rm=T)
+ratio_avg = ratio_avg[!is.na(ratio_avg)]
+monyear = unique(d$datetime)
+
+# generate datetime object | datetime object needs a date, which I initialized at 01 for each month
+monyeardate <- paste(monyear," 01",sep="")
+date = as.Date(monyeardate, "%b %Y %d")
+```
+
+```{r}
+ratiom = xts(ratio_avg, date)
+colnames(ratiom) <- "wing2body"
+
+function() {plot(ratiom)}
+addEventLines(events, pos=2, srt=90, col="red")
+
+adf.test(ratiom$wing2body) # this is not stationarity
+par(mfrow=c(1,2))
+Acf(ratiom$wing2body, main='') # ACT
+Acf(ratiom$wing2body, type="partial", main='') #PACF
+```
+
+```{r}
+detrend(ratiom) # this is stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+#### Wing Morph Frequency
+
+```{r}
+raw_data$w_morph_binom <- NA
+raw_data$wing_morph_binom[raw_data$w_morph=="S"]<-0
+raw_data$wing_morph_binom[raw_data$w_morph=="L"]<-1
+```
+
+```{r}
+# remove NA dates and wing morph (S=0, L=1)
+d = raw_data %>%
+  filter(!is.na(wing_morph_binom), !is.na(datetime))
+
+d = d[d$sex=="M",]
+# get wing frequency averages using vectorization
+freq_avg = tapply(X=d$wing_morph_binom, INDEX=d$datetime, FUN=mean, na.rm=T)
+freq_avg = freq_avg[!is.na(freq_avg)]
+monyear = unique(d$datetime)
+
+# generate datetime object | datetime object needs a date, which I initialized at 01 for each month
+monyeardate <- paste(monyear," 01",sep="")
+date = as.Date(monyeardate, "%b %Y %d")
+```
+
+
+```{r}
+morphm = xts(freq_avg, date)
+colnames(morphm) <- "wing_morph_freq"
+
+function() {plot(morphm)}
+addEventLines(events, pos=2, srt=90, col="red")
+
+adf.test(morphm$wing_morph_freq) # this is not stationary
+
+par(mfrow=c(1,2))
+Acf(morphm$wing_morph_freq, main='') # ACT
+Acf(morphm$wing_morph_freq, type="partial", main='') #PACF
+```
+
+```{r}
+dedrift(morphm) # close! But marginally stationary
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+### Balloon Vine
+
+#### Wing Length
+
+```{r}
+# remove NA dates
+d = males %>%
+  filter(!is.na(wing), !is.na(datetime))
+
+ts_list = clean_for_ts(contin_var="wing", cat_var="datetime", func="mean")
+wing_avg = ts_list[[1]]
+date = ts_list[[2]]
+```
+
+```{r echo=FALSE}
+wing_mmm = xts(wing_avg, date)
+colnames(wing_mmm) <- "wing"
+
+function() {plot(wing_mmm)}
+addEventLines(events, pos=2, srt=90, col="red")
+
+par(mfrow=c(1,2))
+adf.test(wing_mmm$wing) # this is not stationary 
+Acf(wing_mmm$wing, main='') # ACT
+Acf(wing_mmm$wing, type="partial", main='') #PACF
+```
+
+
+
+
+
+
 
 
