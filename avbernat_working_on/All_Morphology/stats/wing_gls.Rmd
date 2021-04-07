@@ -1,0 +1,145 @@
+---
+title: "All Morphology: Linear Model Using GLS"
+author: "Anastasia Bernat"
+date: "4/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+setwd(dir)
+
+library(dplyr)
+library(nlme)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## GLS
+
+The gls() function fits a linear model using generalized least squares. The errors are allowed to be correlated and/or have unequal variances. This function is used in time series analyses.
+
+## Cleaning Data and Sourcing Scripts
+
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("compare_models.R",
+                 "regression_output.R",
+                 "clean_morph_data.R",
+                 "AICprobabilities.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_auxiliary_funs.R")
+```
+
+### Read the data
+
+```{r}
+data_list <- read_morph_data("data/allmorphology9.21.20.csv")
+raw_data = data_list[[1]]
+all_bugs = nrow(raw_data)
+# data_long = data_list[[2]] # need to fix this 
+
+# Remove individuals with torn wings first
+raw_data$drop <- FALSE
+for(row in 1:nrow(raw_data)){
+	if(length(unlist(strsplit(strsplit(paste("test ", raw_data$notes[row], " test", sep=""), "torn")[[1]], "wing")))>2){
+		 #browser()	
+		 raw_data$drop[row] <- TRUE
+		 }
+}
+raw_data <- raw_data[raw_data$drop==FALSE,]
+clean_bugs = nrow(raw_data)
+
+cat("number of bugs with torn wings:", all_bugs - clean_bugs, "\n\n")
+
+# Datetime
+raw_data$date <- paste(raw_data$month, raw_data$year, sep="/")
+raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
+raw_data$datetime <- as.factor(raw_data$datetime)
+n_missing_dates = nrow(raw_data[is.na(raw_data$datetime),])
+
+# merge May 2015 with April 2015 because very few bugs were collected in May 2015.
+# then merge April 2013 with May 2013 to make the time datapoints more evenly distanced
+raw_data$date[raw_data$date == "May/2015"] = "April/2015"
+raw_data$date[raw_data$date == "May/2013"] = "April/2013"
+
+# convert to yearmon object and then factor
+raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
+raw_data$datetime <- as.factor(raw_data$datetime)
+
+cat("number of missing dates:", n_missing_dates, "\n\n")
+unique(raw_data$datetime)
+```
+
+```{r}
+# remove NA dates
+d = raw_data %>%
+  filter(!is.na(wing), !is.na(datetime))
+
+# prep dataset for xts()
+ts_cols = clean_for_ts(d, contin_var="wing", cat_var="datetime", func="mean")
+wing_avg = ts_cols[[1]]
+date = ts_cols[[2]]
+
+beak_avg = tapply(X=raw_data[,"beak"], INDEX=raw_data[,"datetime"], FUN=mean, na.rm=T)
+
+df = as.data.frame(cbind(wing_avg, beak_avg, date))
+```
+
+```{r}
+m <- gls(wing_avg ~ beak_avg, 
+          data = df,
+          na.action = na.omit,
+          method = "REML") 
+summary(m)  
+```
+
+1) Check for temporal dependency. See wing_timseries.Rmd script. Conclusion: there is no temporal dependency.
+
+2) If there is temporal dependency, then define the correlation structure in the gls() function. correlation is an optional corStruct object describing the within-group correlation structure. 
+
+Lets then incorporate this first order autoregressive structure into the model. To do so, we have to switch to gls() and use the correlation= argument. In addition to the model incorporating a first-order auto-regressive structure, we will refit the model with no correlation structure with the gls() function so that we can directly compare the fits of the two models.
+
+```{r}
+# Model with an AR1 correlation
+# Figure 3.7
+m2 <- gls(wing_avg ~ beak_avg, 
+          correlation = corAR1(form=~date),
+          data = df,
+          na.action = na.omit)
+summary(m2)
+```
+
+## Fiting an ARMA model and making ACF plots of residuals
+
+The forecasts from a model with autocorrelated errors are still unbiased, and so are not “wrong,” but they will usually have larger prediction intervals than they need to. Therefore we should always look at an ACF plot of the residuals.
+
+We can to fit a series of AR(p) models and check whether the model captures the dependence structure of the noise terms. **Our aim is that the residuals of a fitted model exhibit white noise.** I will not do any formal hypothesis testing to determine if one model is more appropriate compared to another here. For now, use the data and identify a model that appears to be most appropriate. Then, we can justify our findings.
+
+When we use the `arima` function to fit the model, there are two key parameters we need: `x`, which is our dataset, and `order` which tells us how many lags to use. For now, only toggle the first parameter to choose an appropriate AR(p) model (i.e., you will have `order=c(x,0,0)`, where `x` is replaced by an appropriate number of lags for your model).
+
+```{r}
+# (AR order, differencing, MA order)
+# Example AR(1) model
+# x has to be a "ts" object
+mod.ar1 <- arima(x=df, order=c(1,0,0)) # change the 1 to other numbers to get it to be white noise 
+Acf(residuals(mod.ar1), main='')
+```
+
+## Citation
+
+https://www.flutterbys.com.au/stats/tut/tut8.3a.html
+
+
+
+
+
+
+

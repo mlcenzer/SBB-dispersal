@@ -1,9 +1,9 @@
 # Time Series Auxiliary Functions
 
-clean_for_ts = function(contin_var, cat_var, func) {
+clean_for_ts = function(df, contin_var, cat_var, func) {
   # get wing length averages using vectorization
-  summary = tapply(X=d[,contin_var], INDEX=d[,cat_var], FUN=func, na.rm=T)
-  monyear = unique(d$datetime)
+  summary = tapply(X=df[,contin_var], INDEX=df[,cat_var], FUN=func, na.rm=T)
+  monyear = unique(df$datetime)
   
   # generate datetime object | datetime object needs a date, 
   # which I initialized at 01 for each month

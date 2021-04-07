@@ -12,7 +12,6 @@ rm(list=ls())
 library(lme4)
 library(zoo)
 library(data.table)
-library(forecast)
 
 library(dplyr)
 library(ggplotify)
@@ -23,6 +22,7 @@ library(tidyselect)
 library(tidyverse)
 
 # time series libraries
+library(forecast)
 library(tseries)
 library(xts)
 library(fma)
@@ -152,7 +152,7 @@ d = raw_data %>%
   filter(!is.na(wing), !is.na(datetime))
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing", cat_var="datetime", func="mean")
 wing_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 
@@ -232,7 +232,7 @@ d = data_long %>%
   filter(!is.na(wing2body), !is.na(datetime))
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing2body", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing2body", cat_var="datetime", func="mean")
 ratio_avg = ts_cols[[1]]
 ratio_avg = ratio_avg[!is.na(ratio_avg)]
 date = ts_cols[[2]]
@@ -279,7 +279,7 @@ d = raw_data %>%
   filter(!is.na(wing_morph_binom), !is.na(datetime))
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing_morph_binom", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing_morph_binom", cat_var="datetime", func="mean")
 freq_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 ```
@@ -327,7 +327,7 @@ d = females %>%
   filter(!is.na(wing), !is.na(datetime))
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing", cat_var="datetime", func="mean")
 wing_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 ```
@@ -357,7 +357,7 @@ d = data_long %>%
 d = d[d$sex=="F",]
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing2body", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing2body", cat_var="datetime", func="mean")
 ratio_avg = ts_cols[[1]]
 ratio_avg = ratio_avg[!is.na(ratio_avg)]
 date = ts_cols[[2]]
@@ -390,7 +390,7 @@ d = raw_data %>%
 d = d[d$sex=="F",]
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing_morph_binom", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing_morph_binom", cat_var="datetime", func="mean")
 freq_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 ```
@@ -419,7 +419,7 @@ d = males %>%
   filter(!is.na(wing), !is.na(datetime))
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing", cat_var="datetime", func="mean")
 wing_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 ```
@@ -447,7 +447,7 @@ d = data_long %>%
 d = d[d$sex=="M",]
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing2body", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing2body", cat_var="datetime", func="mean")
 ratio_avg = ts_cols[[1]]
 ratio_avg = ratio_avg[!is.na(ratio_avg)]
 date = ts_cols[[2]]
@@ -475,7 +475,7 @@ d = raw_data %>%
 d = d[d$sex=="M",]
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing_morph_binom", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing_morph_binom", cat_var="datetime", func="mean")
 freq_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 ```
@@ -505,7 +505,7 @@ BV = raw_data[raw_data$pophost == "C.corindum",]
 d = BV %>%
   filter(!is.na(wing), !is.na(datetime))
 
-ts_cols = clean_for_ts(contin_var="wing", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing", cat_var="datetime", func="mean")
 wing_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 ```
@@ -533,7 +533,7 @@ d = data_long %>%
 d = d[d$pophost=="C.corindum",]
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing2body", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing2body", cat_var="datetime", func="mean")
 ratio_avg = ts_cols[[1]]
 ratio_avg = ratio_avg[!is.na(ratio_avg)]
 date = ts_cols[[2]]
@@ -562,7 +562,7 @@ d = raw_data %>%
 d = d[d$pophost=="C.corindum",]
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing_morph_binom", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing_morph_binom", cat_var="datetime", func="mean")
 freq_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 ```
@@ -591,7 +591,7 @@ GRT = raw_data[raw_data$pophost == "K.elegans",]
 d = GRT %>%
   filter(!is.na(wing), !is.na(datetime))
 
-ts_cols = clean_for_ts(contin_var="wing", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing", cat_var="datetime", func="mean")
 wing_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 ```
@@ -618,7 +618,7 @@ d = data_long %>%
 d = d[d$pophost=="K.elegans",]
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing2body", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing2body", cat_var="datetime", func="mean")
 ratio_avg = ts_cols[[1]]
 ratio_avg = ratio_avg[!is.na(ratio_avg)]
 date = ts_cols[[2]]
@@ -647,7 +647,7 @@ d = raw_data %>%
 d = d[d$pophost=="K.elegans",]
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(contin_var="wing_morph_binom", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing_morph_binom", cat_var="datetime", func="mean")
 freq_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 ```
@@ -673,3 +673,12 @@ Rob J Hyndman and George Athanasopoulos. Forecasting: Principles and Practice. h
 ## Considerations
 
 We have very few points (9). Ideal would be 15-25 observations.
+
+## White Noise
+
+In our limited datasets, there is no evidence of non-randomness because our autocorrelations were NOT statistically significant. There were instances where autocorrelations were close to being statistically significant, but it would be ideal to have at least 15 observations in order to test that. Why? Because at 15 observations the significance threshold would lower from 0.67 to 0.52, which could lead to more significant spikes. 
+
+In turn, our datasets have white noise. White noise are variations in your data that cannot be explained by any regression model.
+
+
+https://towardsdatascience.com/the-white-noise-model-1388dbd0a7d
