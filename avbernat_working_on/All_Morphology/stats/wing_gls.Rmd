@@ -12,6 +12,7 @@ setwd(dir)
 
 library(dplyr)
 library(nlme)
+library(zoo)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -19,6 +20,12 @@ knitr::opts_chunk$set(echo = TRUE)
 ## GLS
 
 The gls() function fits a linear model using generalized least squares. The errors are allowed to be correlated and/or have unequal variances. This function is used in time series analyses.
+
+## AR Conclusion
+
+From the wing_timeseries.Rmd script, the following was concluded:
+
+We have very few points (10). Ideal would be 15-25 observations. Because of the few points, none of the spikes in the ACF or PACF are significant even though the Augmented Dickey-Fuller Test keeps testing for non-stationarity. In turn, this is a short time series that can only be evaluated for temporal dependencies in another modeling framework (e.g. GLMM, GAMM, or LOESS). Otherwise, in AR, these time series would all fall under white noise.
 
 ## Cleaning Data and Sourcing Scripts
 
@@ -129,8 +136,8 @@ When we use the `arima` function to fit the model, there are two key parameters 
 # (AR order, differencing, MA order)
 # Example AR(1) model
 # x has to be a "ts" object
-mod.ar1 <- arima(x=df, order=c(1,0,0)) # change the 1 to other numbers to get it to be white noise 
-Acf(residuals(mod.ar1), main='')
+#mod.ar1 <- arima(x=df, order=c(1,0,0)) # change the 1 to other numbers to get it to be white noise 
+#Acf(residuals(mod.ar1), main='')
 ```
 
 ## Citation

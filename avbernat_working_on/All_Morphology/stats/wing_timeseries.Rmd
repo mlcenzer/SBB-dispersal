@@ -130,7 +130,18 @@ cat("number of missing dates:", n_missing_dates, "\n\n")
 unique(raw_data$datetime)
 ```
 
-Looks like we have a measurement at least once per year, which is good.
+Looks like we have a measurement at least once per year, which is good. However, we only have 10 time points. 
+
+```{r}
+na.omit(unique(raw_data$datetime))
+# equation: +-2/sqrt(T) where T is the number of obs
+n=length(na.omit(unique(raw_data$datetime)))
+2/sqrt(n)
+```
+
+This would make our time series a borderline-short time series rather than a long time series. It may make more sense to do a GLMM that accounts for temporal dependencies rather than try to have an autoregressive model conform to this data. However, doing a GLMM assumes that temporal dependencies are the same between any two time observations, whereas an autoregressive model will try to account for and define any decay.
+
+I continued applying autoregressive models on the data to see how it would span out. Long story short, we need more time points.
 
 ## ts All Data
 
@@ -142,7 +153,7 @@ Looks like we have a measurement at least once per year, which is good.
 
 6) Use the xts & zoo R Libraries to read cleanly index the data by a formal time object (collection_time).
 
-7) Optional: include major events that occurred in the 2010's. This could be events that you find biologically significant to your questions. E.g. how did major hurricanes in Florida impact average soapberry bug wing length across Florida?
+7) Optional: include major events that occurred in the 2010's. This could be events that you find biologically significant to your questions. E.g. how did major hurricanes in Florida impact average soapberry bug wing length, wing2body ratios, and/or wing-morph frequencies across Florida?
 
 Hurricane Source: https://en.wikipedia.org/wiki/List_of_Florida_hurricanes#2000–present
 
@@ -163,20 +174,21 @@ hurr_dates = as.Date(FL_major_hurr, "%b %Y %d")
 events <- xts(c("Irma (S. FL)", "Michael (N. Fl)"), 
               hurr_dates)
 ```
+8) Look for temporal dependencies between consecutive years. This helps you get a quick idea of how strong time effects are.
 
 ```{r}
-plot_consecutive_yrs(wing_avg, "wing length (mm)")
+plot_consecutive_yrs(wing_avg, "wing length (mm)") # not strong; the points are very dispersed
 ```
 
-8) Create xts-zoo object and plot the time series data. Add any events to the plot with addEventLines(). 
+9) Create xts-zoo object and plot the time series data. Add any events to the plot with addEventLines(). 
 
-9) Calculate the Augmented Dickey-Fuller Test to test for stationarity where the null hypothesis is non-stationarity and the alternative hypothesis is stationarity.
+10) Run the Augmented Dickey-Fuller Test to test for stationarity where the null hypothesis is non-stationarity and the alternative hypothesis is stationarity.
 
-10) Finally, use an ACF (autocorrelation function) and PCF (partial-autocorrelation function) plot to identify temporal dependence in the data. Autocorrelation measures the linear relaionship between lagged values of a time series.
+11) Finally, use an ACF (autocorrelation function) and PCF (partial-autocorrelation function) plot to identify temporal dependence in the data. Autocorrelation measures the linear relationship between lagged values of a time series.
 
 $R_s = Corr(x_t, x_{t+s})$ for lag $s$.
 
-There are two horizonal, blue, dashed lines as well. Those represent the significance threshold, where only the spikes that exceed this dashed line are considered significant. For a white noise series, we expect 95% of the spikes in the ACF to lie within +- 2/sqrt(T) where T is the length of the time series. In most acf plots below the thresholds will be equal to +- 2/sqrt(9) = -+ 0.67. If one or more large spikes are outside these bounds, or if substantially more than 5% of spikes are outside these bounds, then the series is probably not white noise.
+There are two horizontal, blue, dashed lines as well. Those represent the significance threshold, where only the spikes that exceed this dashed line are considered significant. For a white noise series, we expect 95% of the spikes in the ACF to lie within +- 2/sqrt(T) where T is the length of the time series. In most acf plots below the thresholds will be equal to +- 2/sqrt(10) = -+ 0.63. If one or more large spikes are outside these bounds, or if substantially more than 5% of spikes are outside these bounds, then the series is probably not white noise.
 
 In other words, these plots describe how well the present value of the series is related with its past values. Since, none do significantly, then there is no AR (a present value of the time series cannot be obtained using previous values of the same time series).
 
@@ -193,7 +205,7 @@ Stationarity can be defined in precise mathematical terms, but for our purpose w
 
 Finally, the lag length (lag order) is how many terms back down the AR process you want to test for serial correlation. **This is a non-stationary with AR(2).** 
 
-11) Detrending and Dedrifting Data. Detrending is removing a trend from a time series; a trend usually refers to a change in the mean over time, but the overall goal is to get to stationarity. When you detrend data, you remove an aspect from the data that you think is causing some kind of distortion. For example, you might detrend data that shows an overall increase, in order to see subtrends. Usually, these subtrends are seen as fluctuations on a time series graph. **To remove the linear trend, differencing is equivalent to applying a linear regression on time - "regress out" covariates**.
+12) Detrending and Dedrifting Data. Detrending is removing a trend from a time series; a trend usually refers to a change in the mean over time, but the overall goal is to get to stationarity. When you detrend data, you remove an aspect from the data that you think is causing some kind of distortion. For example, you might detrend data that shows an overall increase, in order to see subtrends. Usually, these subtrends are seen as fluctuations on a time series graph. **To remove the linear trend, differencing is equivalent to applying a linear regression on time - "regress out" covariates**.
 
 Differencing is when a new series is constructed where the value at the current time step is calculated as the difference between the original observation and the observation at the previous time step.
 
@@ -204,7 +216,7 @@ addEventLines(events, pos=2, srt=90, col="red")
 
 Interpretation: This time series is stationary! And as a reminder, a data that is just noise will be stationary.
 
-12) You can also take the log() of the time series in order to stable the variance of the time series if there is a trend in the variance. Stationarity was achieved without having to stablize the variance, but you can still check:
+13) You can also take the log() of the time series in order to stable the variance of the time series if there is a trend in the variance. Stationarity was achieved without having to stablize the variance, but you can still check:
 
 ```{r}
 dedrift(wing_mm) # this is stationary
@@ -245,22 +257,18 @@ plot_consecutive_yrs(ratio_avg, "wing2body")
 ```{r}
 ratio = xts(ratio_avg, date)
 colnames(ratio) <- "wing2body"
-check_stationarity(ratio)
+check_stationarity(ratio) # this is not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
+#dedrift(ratio) # this is not stationary
 detrend(ratio) # this is stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-dedrift(ratio) # this is not stationary
-addEventLines(events, pos=2, srt=90, col="red")
-```
-
-```{r}
-dedriftrend(ratio)
+dedriftrend(ratio) # this is stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -285,28 +293,20 @@ date = ts_cols[[2]]
 ```
 
 ```{r}
-plot_consecutive_yrs(freq_avg, "morph freq")
+plot_consecutive_yrs(freq_avg, "morph freq") # essentially no temporal corr
 ```
 
 ```{r}
 morph = xts(freq_avg, date)
 colnames(morph) <- "wing_morph_freq"
-check_stationarity(morph)
+check_stationarity(morph) # this is non-stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-detrend(morph) # this is not stationary
-addEventLines(events, pos=2, srt=90, col="red")
-```
-
-```{r}
-dedrift(morph) # this is stationary
-addEventLines(events, pos=2, srt=90, col="red")
-```
-
-```{r}
+#detrend(morph) # this is not stationary
 dedriftrend(morph) # this is not stationary
+dedrift(morph) # this is stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -335,14 +335,15 @@ date = ts_cols[[2]]
 ```{r echo=FALSE}
 wing_mmf = xts(wing_avg, date)
 colnames(wing_mmf) <- "wing"
-check_stationarity(wing_mmf)
+check_stationarity(wing_mmf) # not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 Looks like there's not a linear trend, but changes in variation over time.
 
 ```{r}
-dedrift(wing_mmf)
+#detrend(wing_mmf) # this is not stationary
+dedrift(wing_mmf) # this is stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -366,19 +367,19 @@ date = ts_cols[[2]]
 ```{r}
 ratiof = xts(ratio_avg, date)
 colnames(ratiof) <- "wing2body"
-check_stationarity(ratiof)
+check_stationarity(ratiof) # this is not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-dedrift(ratiof) # still not stationary
-addEventLines(events, pos=2, srt=90, col="red")
+#detrend(ratiof) # not stationary
+#dedrift(ratiof) # not stationary
+#dedriftrend(ratiof) # still not stationary
+#addEventLines(events, pos=2, srt=90, col="red") # *still* not stationary
 ```
 
-```{r}
-dedriftrend(ratiof)
-addEventLines(events, pos=2, srt=90, col="red") # *still* not stationary
-```
+Will need to use another function - many like a polynomial to detrend.
+
 
 #### Wing Morph Frequency
 
@@ -399,15 +400,19 @@ date = ts_cols[[2]]
 ```{r}
 morphf = xts(freq_avg, date)
 colnames(morphf) <- "wing_morph_freq"
-check_stationarity(morphf)
+check_stationarity(morphf) # not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-detrend(morphf) # still not stationary
-dedriftrend(morphf) # still not stationary
-addEventLines(events, pos=2, srt=90, col="red")
+#detrend(morphf) # not stationary
+#dedrift(morphf) # not stationary
+#dedriftrend(morphf) # still not stationary
+#addEventLines(events, pos=2, srt=90, col="red")
 ```
+
+Will need to use another function here too.
+
 
 ### Males
 
@@ -427,13 +432,15 @@ date = ts_cols[[2]]
 ```{r echo=FALSE}
 wing_mmm = xts(wing_avg, date)
 colnames(wing_mmm) <- "wing"
-check_stationarity(wing_mmm)
+check_stationarity(wing_mmm) # not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-dedrift(wing_mmm) # not stationary
-dedriftrend(wing_mm) # now stationary
+#dedrift(wing_mmm) # not stationary
+detrend(wing_mmm) # stationary
+addEventLines(events, pos=2, srt=90, col="red")
+dedriftrend(wing_mm) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -456,11 +463,14 @@ date = ts_cols[[2]]
 ```{r}
 ratiom = xts(ratio_avg, date)
 colnames(ratiom) <- "wing2body"
-check_stationarity(ratiom)
+check_stationarity(ratiom) # not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
+#dedrift(ratiom) not stationary
+#dedriftrend(ratiom) # this is stationary
+#addEventLines(events, pos=2, srt=90, col="red") # the same  as detrend
 detrend(ratiom) # this is stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
@@ -484,23 +494,30 @@ date = ts_cols[[2]]
 ```{r}
 morphm = xts(freq_avg, date)
 colnames(morphm) <- "wing_morph_freq"
-check_stationarity(morphm)
+check_stationarity(morphm) # not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-dedrift(morphm) # close! But marginally stationary
+#detrend(morphm) # not stationary
+#dedriftrend(morphm) # not stationary
+dedrift(morphm) # close! But marginally not stationary still
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ## ts Grouped by Host Plant
+
+```{r}
+BV = raw_data[raw_data$pophost == "C.corindum",]
+GRT = raw_data[raw_data$pophost == "K.elegans",]
+```
+
 
 ### Balloon Vine
 
 #### Wing Length
 
 ```{r}
-BV = raw_data[raw_data$pophost == "C.corindum",]
 # remove NA dates
 d = BV %>%
   filter(!is.na(wing), !is.na(datetime))
@@ -513,12 +530,13 @@ date = ts_cols[[2]]
 ```{r echo=FALSE}
 wing_BV = xts(wing_avg, date)
 colnames(wing_BV) <- "wing"
-check_stationarity(wing_BV)
+check_stationarity(wing_BV) # not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-detrend(wing_BV) # not stationary
+# detrend(wing_BV) # not stationary
+#dedriftrend(wing_BV) # not stationary
 dedrift(wing_BV) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
@@ -547,10 +565,15 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-dedrift(ratioBV) # not stationary
-dedriftrend(ratioBV) # stationary
+#dedrift(ratioBV) # not stationary
+detrend(ratioBV) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
+#dedriftrend(ratioBV) # stationary
+#addEventLines(events, pos=2, srt=90, col="red") # same as detrend
 ```
+
+Over time, the wing2body ratio of the balloon vine bugs is decreasing. However, ACF and PACF not significant.
+
 
 #### Wing Morph Frequency
 
@@ -576,17 +599,18 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-detrend(morphBV) # not stationary
-dedrift(morphBV) # not stationary
-dedriftrend(morphBV) # not stationary
+#detrend(morphBV) # not stationary
+#dedrift(morphBV) # not stationary
+#dedriftrend(morphBV) # not stationary
 ```
+
+Will need to apply another function.
 
 ### Golden Rain Tree
 
 #### Wing Length
 
 ```{r}
-GRT = raw_data[raw_data$pophost == "K.elegans",]
 # remove NA dates
 d = GRT %>%
   filter(!is.na(wing), !is.na(datetime))
@@ -604,7 +628,9 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-detrend(wing_GRT)
+detrend(wing_GRT) # stationary
+addEventLines(events, pos=2, srt=90, col="red")
+dedrift(wing_GRT) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -632,6 +658,8 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
+detrend(ratioGRT) # stationary
+addEventLines(events, pos=2, srt=90, col="red")
 dedrift(ratioGRT) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
@@ -661,6 +689,7 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
+#detrend(morphGRT) # not stationary
 dedrift(morphGRT) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
@@ -670,13 +699,13 @@ addEventLines(events, pos=2, srt=90, col="red")
 
 Rob J Hyndman and George Athanasopoulos. Forecasting: Principles and Practice. https://otexts.com/fpp3/.
 
-## Considerations
+## Conclusion
 
-We have very few points (9). Ideal would be 15-25 observations.
+We have very few points (10). Ideal would be 15-25 observations. Because of the few points, none of the spikes in the ACF or PACF are significant even though the Augmented Dickey-Fuller Test keeps testing for non-stationarity. In turn, this is a short time series that can only be evaluated for temporal dependencies in another modeling framework (e.g. GLMM, GAMM, or LOESS). Otherwise, in AR, these time series would all fall under white noise.
 
 ## White Noise
 
-In our limited datasets, there is no evidence of non-randomness because our autocorrelations were NOT statistically significant. There were instances where autocorrelations were close to being statistically significant, but it would be ideal to have at least 15 observations in order to test that. Why? Because at 15 observations the significance threshold would lower from 0.67 to 0.52, which could lead to more significant spikes. 
+In our limited datasets, there is no evidence of non-randomness because our autocorrelations were NOT statistically significant. There were instances where autocorrelations were close to being statistically significant, but it would be ideal to have at least 15 observations in order to test that. Why? Because at 15 observations the significance threshold would lower from 0.63 to 0.52, which could lead to more significant spikes. 
 
 In turn, our datasets have white noise. White noise are variations in your data that cannot be explained by any regression model.
 
