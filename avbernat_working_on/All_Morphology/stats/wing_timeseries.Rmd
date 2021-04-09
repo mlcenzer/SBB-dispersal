@@ -709,5 +709,42 @@ In our limited datasets, there is no evidence of non-randomness because our auto
 
 In turn, our datasets have white noise. White noise are variations in your data that cannot be explained by any regression model.
 
-
 https://towardsdatascience.com/the-white-noise-model-1388dbd0a7d
+
+## Simulation
+
+So how many data points would we need?
+
+```{r}
+# remove NA dates
+d = raw_data %>%
+  filter(!is.na(wing), !is.na(datetime))
+
+# prep dataset for xts()
+ts_cols = clean_for_ts(d, contin_var="wing", cat_var="datetime", func="mean")
+wing_avg = ts_cols[[1]]
+date = ts_cols[[2]]
+
+# determine your dates
+newdates = c("Dec 2020 01", "April 2021 01", "June 2021 01", "Oct 2021 01", "Jan 2022 01")
+dates = as.Date(newdates, "%b %Y %d")
+sim_dates = c(date, dates)
+
+# simulate randomly your new winglengths
+set.seed(005) # e.g. set.seed = 005, 012
+wl_sim = runif(length(newdates), min(wing_avg), max(wing_avg))
+wings = c(wing_avg, wl_sim)
+
+# create xts time series object
+wing_sim = xts(wings, sim_dates)
+colnames(wing_sim) <- "wing"
+wing_sim
+
+check_stationarity(wing_sim)
+addEventLines(events, pos=2, srt=90, col="red")
+```
+
+Hard to tell what works on a small scale like this. Would be interesting to make +1000 simulations testing out time series scenarios. Clearly, it's not just a number of observations issue. How soapberry bug morphology changes at particular time points will matter a lot in defining stationarity first and then its AR model. Also, this was a poor simulation and just a quick test for myself. There are much more intricate ones that would help test different scenarios.
+
+
+
