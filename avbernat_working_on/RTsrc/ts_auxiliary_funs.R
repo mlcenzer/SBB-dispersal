@@ -30,7 +30,8 @@ check_stationarity = function(dx) {
   #addEventLines(events, pos=2, srt=90, col="red")
   
   par(mfrow=c(1,2))
-  print(adf.test(dx[,1])) 
+  print(adf.test(dx[,1]))
+  print(auto.arima(dx[,1]))
   Acf(dx[,1], main='') # ACF
   Acf(dx[,1], type="partial", main='') #PACF  
   par(mfrow=c(1,1))
@@ -43,6 +44,7 @@ detrend = function(dx) {
   
   par(mfrow=c(1,2))
   print(adf.test(dx$diff)) 
+  print(auto.arima(dx[,1]))
   Acf(dx$diff, main='') # ACF
   Acf(dx$diff, type="partial", main='') #PACF 
   par(mfrow=c(1,1))
@@ -55,6 +57,7 @@ dedrift = function(dx) {
   
   par(mfrow=c(1,2))
   print(adf.test(dx$logv))
+  print(auto.arima(dx[,1]))
   Acf(dx$logv, main='') # ACT
   Acf(dx$logv, type="partial", main='') #PACF 
   par(mfrow=c(1,1))
@@ -66,7 +69,8 @@ dedriftrend = function(dx) {
   plot(dx$logdiff)
   
   par(mfrow=c(1,2))
-  print(adf.test(dx$logdiff)) 
+  print(adf.test(dx$logdiff))
+  print(auto.arima(dx[,1]))
   Acf(dx$logdiff, main='') # ACT
   Acf(dx$logdiff, type="partial", main='') #PACF 
   par(mfrow=c(1,1))

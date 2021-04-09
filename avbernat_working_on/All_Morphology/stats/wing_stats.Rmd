@@ -1,7 +1,10 @@
 ---
 title: "All Morphology: Wing Statistics"
 date: "2/18/2021"
-output: html_document
+output:
+  html_document:
+    toc: True
+    theme: united
 ---
 
 ```{r setup, include=FALSE}
@@ -24,12 +27,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Base statistics of all morphology for wing morph and wing2body ratio (in long-winged bugs).
 
-## Cleaning Data and Sourcing Scripts
+## Sourcing Scripts and Cleaning the Data
 
 ```{r}
 source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
 
-script_names = c("compare_models.R","regression_output.R", "clean_morph_data.R",
+script_names = c("compare_models.R",
+                 "regression_output.R", 
+                 "clean_morph_data.R", # two functions: read_morph_data and remove_torn_wings
                  "AICprobabilities.R")
 
 for (script in script_names) { 
@@ -38,10 +43,8 @@ for (script in script_names) {
 }
 ```
 
-### Read the data
-
 ```{r}
-data_list <- read_morph_data("data/allmorphology9.21.20.csv")
+data_list <- read_morph_data("data/allmorphology9.21.20.csv") 
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
 ###remind yourself how the months are laid out
@@ -73,25 +76,7 @@ hist(raw_data$wing[raw_data$w_morph=="S"]/raw_data$thorax[raw_data$w_morph=="S"]
       breaks=seq(0.5,3.8,by=0.05))
 ```
 
-### Plotting Data Points Across Time
-
-```{r}
-# Datetime
-raw_data$date <- paste(raw_data$month, raw_data$year, sep="/")
-raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
-raw_data$datetime <- as.factor(raw_data$datetime)
-n_missing_dates = nrow(raw_data[is.na(raw_data$datetime),])
-cat("number of missing dates:", n_missing_dates)
-```
-
-```{r}
-# merge May 2015 with April 2015 because very few bugs were collected in May 2015.
-raw_data$date[raw_data$date == "May/2015"] = "April/2015"
-
-raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
-raw_data$datetime <- as.factor(raw_data$datetime)
-raw_data
-```
+### Plotting Data Points Across Time and Group
 
 ```{r}
 raw_data %>% group_by(sex, 
@@ -100,7 +85,7 @@ raw_data %>% group_by(sex,
 ```
 
 
-```{r echo=FALSE fig.width=4, fig.height=6}
+```{r echo=FALSE, fig.width=4, fig.height=6}
 
 #hist(raw_data$year, main="Numbers Collected", xlab="Year")
 
@@ -155,24 +140,7 @@ p2
 p3
 ```
 
-### Binomial Regression: wing morph
-
-```{r}
-raw_data$wing2thorax <- raw_data$wing/raw_data$thorax
-
-raw_data$w_morph[raw_data$w_morph=="" & raw_data$wing2thorax<=2.2]<-"S"
-raw_data$w_morph[raw_data$w_morph=="" & raw_data$wing2thorax>=2.35]<-"L"
-
-raw_data$w_morph_binom <- NA
-raw_data$wing_morph_binom[raw_data$w_morph=="S"]<-0
-raw_data$wing_morph_binom[raw_data$w_morph=="L"]<-1
-raw_data$sex_binom <- -1
-raw_data$sex_binom[raw_data$sex=="F"] <- 1
-raw_data$pophost_binom <- -1
-raw_data$pophost_binom[raw_data$pophost=="K.elegans"] <- 1
-
-raw_data$month_of_year <- (raw_data$months_since_start+7)%%12+1
-```
+### Binomial Regressions
 
 What determines wing morph using all the data? Does sex? host plant? month of the year?
 
@@ -198,26 +166,11 @@ tidy_regression(m7, is_color=FALSE)
 
 ## Wing2Body
 
-### Cleaning data
+### Removing Torn Wings
 
 ```{r}
-data_long<-raw_data[raw_data$w_morph=="L",]
-
-###remove individuals with torn wings first.
-data_long$drop <- FALSE
-
-for(row in 1:nrow(data_long)){
-	if(length(unlist(strsplit(strsplit(paste("test ", data_long$notes[row], " test", sep=""), "torn")[[1]], "wing")))>2){
-		 #browser()	
-		 data_long$drop[row] <- TRUE
-		 }
-}
-
-data_long <- data_long[data_long$drop==FALSE,]
-
-data_long$wing2body <- data_long$wing/as.numeric(data_long$body)
+data_long = remove_torn_wings(data_long)
 ```
-
 
 ### Winter 2020 vs. other dates 
 
@@ -249,6 +202,8 @@ means <- tapply(data_long$wing2body,data_long$compare_dates, mean, na.rm=TRUE)
 points(means,pch=18, cex=2, col="white")
 #title("(a)", adj = 0.05, line = 0, cex.main=1.8)
 ```
+
+### Binomial Regressions
 
 What effects wing2body ratio? sex? host plant? month of the year? months since start?
 
@@ -299,8 +254,8 @@ source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc
 
 script_names = c("center_flight_data.R", # Needs to load first
                  "clean_flight_data.R",  # Script that loads and cleans up the data
-                 "regression_output.R",
-                 "clean_morph_data.R")  # Cleans up regression outputs, prints in color or B&W
+                 "regression_output.R", # Cleans up regression outputs, prints in color or B&W
+                 "clean_morph_data.R")  
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -316,7 +271,9 @@ data_winter_tested <- data_winter_full[[2]]
 
 ###for these analyses, morphology only
 data_winter <- data_winter_tested[,c('beak','thorax', 'wing', 'body', 'w_morph', 'morph_notes')]
+```
 
+```{r}
 ##load full dataset & pare to long-winged bugs only
 data_list <- read_morph_data("data/allmorphology9.21.20.csv")
 raw_data = data_list[[1]]

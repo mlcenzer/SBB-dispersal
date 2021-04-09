@@ -10,6 +10,7 @@ output:
 ```{r setup, include=FALSE}
 rm(list=ls())
 library(ggformula)
+library(splines)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -19,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
 
-script_names = c("compare_models.R","regression_output.R", "clean_morph_data.R")
+script_names = c("compare_models.R","regression_output.R", "clean_morph_data.R", "AICprobabilities.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -29,12 +30,11 @@ for (script in script_names) {
 
 ### Read the data
 
-```{r}
+```{r warning=FALSE}
 data_list <- read_morph_data("data/allmorphology9.21.20.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
-###remind yourself how the months are laid out
-#cbind(data_long$month_of_year, data_long$month)
+#cbind(data_long$month_of_year, data_long$month) # see how months are laid out
 ```
 
 ```{r}
@@ -90,7 +90,7 @@ plot(wing2body_summary$wing2body, x=wing2body_summary$months_since_start, type="
 #lines(smoothed40, x=wing2body_summary$months_since_start, col="green")
 lines(smoothed60, x=wing2body_summary$months_since_start, col="blue")
 #lines(smoothed80, x=wing2body_summary$months_since_start, col="orange")
-?lowess
+#?lowess
 ```
 
 
@@ -122,7 +122,7 @@ ggplot() +
 
 ##Results to visualize: sex, host, months_since_start.
 
-w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=mean)
+w_morph_summary<-aggregate(w_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=mean)
 
 ```
 
@@ -146,14 +146,90 @@ ggplot() +
   # geom_smooth(data=dfM, color="blue", 
   #             mapping = aes(x = month_of_year, y = wing_morph_binom, linetype = pophost))
     geom_smooth(data=df, color="blue", 
-            mapping = aes(x = month_of_year, y = wing_morph_binom, linetype = sex))
+            mapping = aes(x = month_of_year, y = w_morph_binom, linetype = sex))
 ```
+
+```{r}
+plot_splines = function(x,y) {
+  fit0 <- lm(y~1)
+  fit1 <- lm(y~x)
+  fit2 <- lm(y~bs(x,5))
+  
+  print(anova(fit1,fit2))
+  print(anova(fit0,fit2))
+  print(anova(fit0,fit1))
+  
+  plot(x,y, pch=16)
+  abline(fit1, col='red')
+  xx <- seq(min(x),max(x), length.out=250)
+  yy <- predict(fit2, data.frame(x=xx))
+  lines(xx,yy, col='blue')
+}
+
+```
+
+```{r}
+dfF = df %>%
+  filter(sex=="M" & pophost=="C.corindum")
+
+x = dfF$month_of_year
+y = dfF$w_morph_binom
+
+plot_splines(x,y)
+
+
+
+dfF = df %>%
+  filter(sex=="F" & pophost=="C.corindum")
+
+x = dfF$month_of_year
+y = dfF$w_morph_binom
+
+plot_splines(x,y)
+
+```
+
+```{r}
+w_morph_summary<-aggregate(w_morph_binom~sex_binom*pophost_binom*month_of_year, data=raw_data, FUN=mean)
+df = w_morph_summary
+data<-data.frame(R=df$w_morph_binom, 
+                 A=df$sex_binom, 
+                 B=df$pophost_binom, 
+                 C=(df$month_of_year))
+
+model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
+model_comparisonsAIC(model_script)
+```
+```{r}
+anova(m0, m2, test="Chisq") # sex is marginally significant 
+summary(m2)  # sex is marginally significant 
+```
+
+```{r}
+data<-data.frame(R=df$w_morph_binom, 
+                 A=df$sex_binom, 
+                 B=df$pophost_binom, 
+                 C=(df$month_of_year))
+A = data$A
+B = data$B
+C = data$C
+R = data$R
+
+fit0 <- glm(R~1, family="binomial")
+fit1 <- glm(R~B, family="binomial")
+fit2 <- glm(R~bs(C,5), family="binomial") # b-splin basis for polynomial splines
+fit3 <- glm(R~B + bs(C,5), family="binomial")
+
+anova(fit0,fit1, test="Chisq")
+anova(fit0,fit2, test="Chisq")
+
+?bs
+```
+
 
 ```{r}
 x <- rnorm(1000)
 y <- sin(x) + rnorm(1000, 0, 0.5)
-
-library(splines)
 
 fit1 <- lm(y~x)
 fit0 <- lm(y~1)

@@ -75,7 +75,7 @@ source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc
 
 script_names = c("compare_models.R",
                  "regression_output.R",
-                 "clean_morph_data.R",
+                 "clean_morph_data.R", # two functions: read_morph_data and remove_torn_wings
                  "AICprobabilities.R")
 
 for (script in script_names) { 
@@ -96,38 +96,14 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_au
 data_list <- read_morph_data("data/allmorphology9.21.20.csv")
 raw_data = data_list[[1]]
 all_bugs = nrow(raw_data)
-# data_long = data_list[[2]] # need to fix this 
+data_long = data_list[[2]] 
 
 # Remove individuals with torn wings first
-raw_data$drop <- FALSE
-for(row in 1:nrow(raw_data)){
-	if(length(unlist(strsplit(strsplit(paste("test ", raw_data$notes[row], " test", sep=""), "torn")[[1]], "wing")))>2){
-		 #browser()	
-		 raw_data$drop[row] <- TRUE
-		 }
-}
-raw_data <- raw_data[raw_data$drop==FALSE,]
+raw_data = remove_torn_wings(raw_data) # **don't need to remove torn wings for wing morph analysis
+data_long = remove_torn_wings(data_long) # **don't need to remove torn wings for wing morph analysis
 clean_bugs = nrow(raw_data)
 
 cat("number of bugs with torn wings:", all_bugs - clean_bugs, "\n\n")
-
-# Datetime
-raw_data$date <- paste(raw_data$month, raw_data$year, sep="/")
-raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
-raw_data$datetime <- as.factor(raw_data$datetime)
-n_missing_dates = nrow(raw_data[is.na(raw_data$datetime),])
-
-# merge May 2015 with April 2015 because very few bugs were collected in May 2015.
-# then merge April 2013 with May 2013 to make the time datapoints more evenly distanced
-raw_data$date[raw_data$date == "May/2015"] = "April/2015"
-raw_data$date[raw_data$date == "May/2013"] = "April/2013"
-
-# convert to yearmon object and then factor
-raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
-raw_data$datetime <- as.factor(raw_data$datetime)
-
-cat("number of missing dates:", n_missing_dates, "\n\n")
-unique(raw_data$datetime)
 ```
 
 Looks like we have a measurement at least once per year, which is good. However, we only have 10 time points. 
@@ -174,6 +150,7 @@ hurr_dates = as.Date(FL_major_hurr, "%b %Y %d")
 events <- xts(c("Irma (S. FL)", "Michael (N. Fl)"), 
               hurr_dates)
 ```
+
 8) Look for temporal dependencies between consecutive years. This helps you get a quick idea of how strong time effects are.
 
 ```{r}
@@ -231,14 +208,6 @@ addEventLines(events, pos=2, srt=90, col="red")
 ### Wing2body 
 
 ```{r}
-# Get only bugs with long wings
-data_long<-raw_data[raw_data$w_morph=="L",]
-
-# Calculate wing2body ratio for bugs with long wings 
-data_long$wing2body <- data_long$wing/as.numeric(data_long$body)
-```
-
-```{r}
 # remove NA dates
 d = data_long %>%
   filter(!is.na(wing2body), !is.na(datetime))
@@ -274,12 +243,6 @@ addEventLines(events, pos=2, srt=90, col="red")
 
 
 ### Wing Morph Frequency
-
-```{r}
-raw_data$w_morph_binom <- NA
-raw_data$wing_morph_binom[raw_data$w_morph=="S"]<-0
-raw_data$wing_morph_binom[raw_data$w_morph=="L"]<-1
-```
 
 ```{r}
 # remove NA dates and wing morph (S=0, L=1)
@@ -699,15 +662,32 @@ addEventLines(events, pos=2, srt=90, col="red")
 
 Rob J Hyndman and George Athanasopoulos. Forecasting: Principles and Practice. https://otexts.com/fpp3/.
 
+https://rstudio-pubs-static.s3.amazonaws.com/363796_2c2581467b02403bbdcc77c6b5660ec7.html
+
 ## Conclusion
 
-We have very few points (10). Ideal would be 15-25 observations. Because of the few points, none of the spikes in the ACF or PACF are significant even though the Augmented Dickey-Fuller Test keeps testing for non-stationarity. In turn, this is a short time series that can only be evaluated for temporal dependencies in another modeling framework (e.g. GLMM, GAMM, or LOESS). Otherwise, in AR, these time series would all fall under white noise.
+We have very few points (10). Ideal would be 15-25 observations. Because of the few points, none of the spikes in the ACF or PACF are significant even though the Augmented Dickey-Fuller Test keeps testing for non-stationarity. In turn, this is a short time series that can be best evaluated for temporal dependencies in another modeling framework (e.g. GLMM, GAMM, or LOESS). 
+
+Otherwise, in AR, these time series seem to fall under white noise with drift/intercept. In probability theory, stochastic drift is the change of the average value of a stochastic (random) process. A related concept is the drift rate, which is the rate at which the average changes. Here is a simulation to visualize this. Often times, white noise with drift always tests for nonstationarity but then may or may not have significant acf spikes
+
+```{r}
+a = 2 # drift / intercept - shifted
+m = 100 # length of time series
+x.wn.drift = a + rnorm(m, 0, 1) 
+plot(x.wn.drift, type='l', col='steelblue2', lwd=2) 
+abline(h=a, lty=2)
+
+adf.test(x.wn.drift) 
+Acf(x.wn.drift, main='')
+auto.arima(x.wn.drift)
+```
+
 
 ## White Noise
 
-In our limited datasets, there is no evidence of non-randomness because our autocorrelations were NOT statistically significant. There were instances where autocorrelations were close to being statistically significant, but it would be ideal to have at least 15 observations in order to test that. Why? Because at 15 observations the significance threshold would lower from 0.63 to 0.52, which could lead to more significant spikes. 
+In our limited datasets, there isn't any strong evidence of non-randomness because our autocorrelations were NOT statistically significant. However, there was still nonstationarity - most likely due to drift (moving/changing average). There were instances where autocorrelations were close to being statistically significant, but it would be ideal to have at least 15 observations in order to test that. Why? Because at 15 observations the significance threshold would lower from 0.63 to 0.52, which could lead to more significant spikes. 
 
-In turn, our datasets have white noise. White noise are variations in your data that cannot be explained by any regression model.
+In turn, our datasets have white noise and a weak drift or even trend at times. However, white noise are variations in your data that cannot be explained by any regression model.
 
 https://towardsdatascience.com/the-white-noise-model-1388dbd0a7d
 

@@ -41,7 +41,7 @@ source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc
 
 script_names = c("compare_models.R",
                  "regression_output.R",
-                 "clean_morph_data.R",
+                 "clean_morph_data.R", # two functions: read_morph_data and remove_torn_wings
                  "AICprobabilities.R")
 
 for (script in script_names) { 
@@ -58,38 +58,14 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_au
 data_list <- read_morph_data("data/allmorphology9.21.20.csv")
 raw_data = data_list[[1]]
 all_bugs = nrow(raw_data)
-# data_long = data_list[[2]] # need to fix this 
+data_long = data_list[[2]] 
 
 # Remove individuals with torn wings first
-raw_data$drop <- FALSE
-for(row in 1:nrow(raw_data)){
-	if(length(unlist(strsplit(strsplit(paste("test ", raw_data$notes[row], " test", sep=""), "torn")[[1]], "wing")))>2){
-		 #browser()	
-		 raw_data$drop[row] <- TRUE
-		 }
-}
-raw_data <- raw_data[raw_data$drop==FALSE,]
+raw_data = remove_torn_wings(raw_data) # **don't need to remove torn wings for wing morph analysis
+data_long = remove_torn_wings(data_long) # **don't need to remove torn wings for wing morph analysis
 clean_bugs = nrow(raw_data)
 
 cat("number of bugs with torn wings:", all_bugs - clean_bugs, "\n\n")
-
-# Datetime
-raw_data$date <- paste(raw_data$month, raw_data$year, sep="/")
-raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
-raw_data$datetime <- as.factor(raw_data$datetime)
-n_missing_dates = nrow(raw_data[is.na(raw_data$datetime),])
-
-# merge May 2015 with April 2015 because very few bugs were collected in May 2015.
-# then merge April 2013 with May 2013 to make the time datapoints more evenly distanced
-raw_data$date[raw_data$date == "May/2015"] = "April/2015"
-raw_data$date[raw_data$date == "May/2013"] = "April/2013"
-
-# convert to yearmon object and then factor
-raw_data$datetime <- as.yearmon(raw_data$date, "%B/%Y")
-raw_data$datetime <- as.factor(raw_data$datetime)
-
-cat("number of missing dates:", n_missing_dates, "\n\n")
-unique(raw_data$datetime)
 ```
 
 ```{r}
@@ -217,15 +193,10 @@ m4 <- gls(ratio_avg ~ beak_avg,
 
 summary(m4)
 ```
+
 Same thing. Exactly the same.
 
 ### Wing Morph Frequency
-
-```{r}
-raw_data$w_morph_binom <- NA
-raw_data$wing_morph_binom[raw_data$w_morph=="S"]<-0
-raw_data$wing_morph_binom[raw_data$w_morph=="L"]<-1
-```
 
 ```{r}
 # remove NA dates and wing morph (S=0, L=1)
@@ -298,6 +269,15 @@ Summary: **order=c(AR order, differencing, MA order)**
 mod.ar1 <- arima(x=wing_mm, order=c(1,0,0)) # change the 1 to other numbers to get it to be white noise 
 Acf(residuals(mod.ar1), main='')
 ```
+
+You can also use auto.arima() to choose an ARMIA model automatically.It uses a variation of the Hyndman and Khandakar algorithm which combines unit root tests, minimization of the AICc, and MLE to obtain an ARIMA model. The function takes some short-cuts in order to speed up the computation and will not always yield the best model. Setting stepwise and approximation to FALSE prevents the function from taking short-cuts.
+
+```{r}
+#auto.arima(wing_mm)
+auto.arima(wing_mm, stepwise=FALSE, approximation=FALSE) # ours yield the same result
+```
+
+An ARIMA(0,0,0) model with zero mean is white noise, so it means that the errors are uncorrelated across time.
 
 Since we have no temporal dependencies to begin with, the ACF of the `mod.ar1` residuals are already showing up as noise (no spikes above the dotted blue significance lines). As you increase your `x` value you will see that those spikes will get smaller and smaller too. That is how you would eyeball your arma model without formal hypothesis testing comparing models. 
 
