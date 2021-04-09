@@ -1,0 +1,134 @@
+---
+title: "All Morphology: Wing LOESS"
+author: "Anastasia Bernat"
+date: "4/8/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Cleaning Data and Sourcing Scripts
+
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("compare_models.R","regression_output.R", "clean_morph_data.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+```
+
+### Read the data
+
+```{r}
+data_list <- read_morph_data("data/allmorphology9.21.20.csv")
+raw_data = data_list[[1]]
+data_long = data_list[[2]]
+###remind yourself how the months are laid out
+#cbind(data_long$month_of_year, data_long$month)
+```
+
+```{r}
+##################wing2body ratio plots
+
+##Results to visualize: sex, pophost, year
+
+wing2body_summary<-aggregate(wing2body~sex*pophost*months_since_start, data=data_long, FUN=mean)
+wing2body_summary$se<-aggregate(wing2body~sex*pophost*months_since_start, data=data_long, FUN=function(x){sd(x)/sqrt(length(x))})$wing2body
+wing2body_summary$color <- rgb(1,0.3,0,0.7)
+wing2body_summary$color[wing2body_summary$pophost=="K.elegans"] <- rgb(0,0.8,1,0.7)
+#jitter slightly
+wing2body_summary$months_since_start <- wing2body_summary$months_since_start+runif(n=nrow(wing2body_summary), min=-0.5, max=0.5)
+```
+
+
+Loess Regression: (base R) http://r-statistics.co/Loess-Regression-With-R.html
+
+```{r}
+# define function that returns the SSE
+calcSSE <- function(x){
+  loessMod <- try(loess(wing2body ~ index, data=wing2body_summary, span=x), silent=T)
+  res <- try(loessMod$residuals, silent=T)
+  if(class(res)!="try-error"){
+    if((sum(res, na.rm=T) > 0)){
+      sse <- sum(res^2)  
+    }
+  }else{
+    sse <- 99999
+  }
+  return(sse)
+}
+
+# Run optim to find span that gives min SSE, starting at 0.5
+#optim(par=c(0.25), calcSSE, method="SANN")
+#optim(par=c(1), calcSSE, method="SANN")
+```
+
+```{r}
+wing2body_summary$index = 1:nrow(wing2body_summary)
+loessMod20 <- loess(wing2body ~ index, data=wing2body_summary, span=0.20) # 20% smoothing span
+loessMod40 <- loess(wing2body ~ index, data=wing2body_summary, span=0.40) # 40% smoothing span
+loessMod60 <- loess(wing2body ~ index, data=wing2body_summary, span=0.60) # 60% smoothing span
+loessMod80 <- loess(wing2body ~ index, data=wing2body_summary, span=0.80) # 80% smoothing span
+
+smoothed20 <- predict(loessMod20) 
+smoothed40 <- predict(loessMod40) 
+smoothed60 <- predict(loessMod60)
+smoothed80 <- predict(loessMod80) 
+# Plot it
+plot(wing2body_summary$wing2body, x=wing2body_summary$months_since_start, type="b", main="Loess Smoothing and Prediction", xlab="months since start", ylab="wing:body")
+lines(smoothed20, x=wing2body_summary$months_since_start, col="red")
+lines(smoothed40, x=wing2body_summary$months_since_start, col="green")
+lines(smoothed60, x=wing2body_summary$months_since_start, col="blue")
+lines(smoothed80, x=wing2body_summary$months_since_start, col="orange")
+```
+
+
+
+```{r}
+# create multiple linear model
+df = wing2body_summary
+dfF = df[df$sex=="F",]
+dfFC = df[df$sex=="F" & df$pophost =="C.corindum",]
+dfFK = df[df$sex=="F" & df$pophost =="K.elegans",]
+
+dfM = df[df$sex=="M",]
+#lmFC <- lm(wing2body ~ months_since_start, data=dfFC)
+#predFC <- data.frame(wing2body = predict(lmFC, dfFC), months_since_start=dfFC$months_since_start)
+
+ggplot() + 
+  geom_point(data=dfF, mapping = aes(x = months_since_start, y = wing2body, color="blue")) +
+  geom_point(data=dfM, mapping = aes(x = months_since_start, y = wing2body, color="red")) +
+  #geom_line(color='red',data = predF, aes(x=months_since_start, y=wing2body)) +
+  geom_smooth(data=dfF, color="red",
+              mapping = aes(x = months_since_start, y = wing2body, linetype = pophost)) +
+  geom_smooth(data=dfM, color="blue", 
+              mapping = aes(x = months_since_start, y = wing2body, linetype = pophost))
+```
+
+```{r}
+# create multiple linear model
+df = w_morph_summary
+dfF = df[df$sex=="F",]
+dfFC = df[df$sex=="F" & df$pophost =="C.corindum",]
+dfFK = df[df$sex=="F" & df$pophost =="K.elegans",]
+
+dfM = df[df$sex=="M",]
+#lmFC <- lm(wing2body ~ months_since_start, data=dfFC)
+#predFC <- data.frame(wing2body = predict(lmFC, dfFC), months_since_start=dfFC$months_since_start)
+
+ggplot() + 
+  #geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing_morph_binom, color="blue")) +
+  #geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing_morph_binom, color="red")) +
+  #geom_line(color='red',data = predF, aes(x=months_since_start, y=wing2body)) +
+  # geom_smooth(data=dfF, color="red",
+  #             mapping = aes(x = month_of_year, y = wing_morph_binom, linetype = pophost)) +
+  # geom_smooth(data=dfM, color="blue", 
+  #             mapping = aes(x = month_of_year, y = wing_morph_binom, linetype = pophost))
+    geom_smooth(data=df, color="blue", 
+            mapping = aes(x = month_of_year, y = wing_morph_binom, linetype = sex))
+```
