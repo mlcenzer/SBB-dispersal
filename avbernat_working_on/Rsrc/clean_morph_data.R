@@ -48,9 +48,7 @@ read_morph_data = function(path) {
   data$wing_morph_binom<-NA
   data$wing_morph_binom[data$w_morph=="S"]<-0
   data$wing_morph_binom[data$w_morph=="L"]<-1
-  
-  data$month_of_year <- (data$months_since_start+7)%%12+1
-  
+
   # Datetime
   data$date <- paste(data$month, data$year, sep="/")
   data$datetime <- as.yearmon(data$date, "%B/%Y")
@@ -65,6 +63,22 @@ read_morph_data = function(path) {
   # convert to yearmon object and then factor
   data$datetime <- as.yearmon(data$date, "%B/%Y")
   data$datetime <- as.factor(data$datetime)
+  
+  # conver to datetime object and then extract month number (month_of_year)
+  monyeardate <- paste(data$datetime," 01",sep="")
+  dates = as.Date(monyeardate, "%b %Y %d")
+  data$month_of_year = month(dates)
+  
+  # get consistent 
+  
+  # d = raw_data[is.na(raw_data$month_n),]
+  # 
+  # if (length(d) > 0) {
+  #   indices = as.numeric(rownames(raw_data[is.na(raw_data$month_n),]))
+  #   values = month.abb[as.integer(d$month)]
+  #   raw_data$month = replace(raw_data$month, indices, values)
+  # }
+  # 
   
   cat("number of missing dates:", n_missing_dates, "\n\n")
   unique(data$datetime)

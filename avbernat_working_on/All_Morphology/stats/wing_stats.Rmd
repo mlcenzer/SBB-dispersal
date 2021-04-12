@@ -13,6 +13,8 @@ library(lme4)
 library(zoo)
 library(rethinking)
 
+library(lubridate)
+
 library(dplyr)
 library(ggplotify)
 library(gridExtra)
@@ -44,7 +46,7 @@ for (script in script_names) {
 ```
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology9.21.20.csv") 
+data_list <- read_morph_data("data/allmorphology9.21.20-clean.csv") 
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
 ###remind yourself how the months are laid out
@@ -85,7 +87,7 @@ raw_data %>% group_by(sex,
 ```
 
 
-```{r echo=FALSE, fig.width=4, fig.height=6}
+```{r echo=FALSE, fig.width=3.5, fig.height=2.5}
 
 #hist(raw_data$year, main="Numbers Collected", xlab="Year")
 
@@ -140,6 +142,8 @@ p2
 p3
 ```
 
+I have not removed the bugs with torn wings yet. 
+
 ### Binomial Regressions
 
 What determines wing morph using all the data? Does sex? host plant? month of the year?
@@ -153,6 +157,7 @@ data<-data.frame(R=raw_data$wing_morph_binom,
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
 model_comparisonsAIC(model_script)
 ```
+Top model is m7
 * Males are more likely to be long-winged.
 * K.elegans more likely to be long-winged.
 * No effect of months_since_start.

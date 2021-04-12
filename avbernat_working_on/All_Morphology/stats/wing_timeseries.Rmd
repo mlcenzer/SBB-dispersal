@@ -93,7 +93,7 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_au
 3) Merge close dates together in order to have as equally spaced datapoints as possible. The acf() assumes that the data are regular spaced. The acf computes estimates of the autocovariance or autocorrelation function. We need this because it will tell us, if there are patterns, what the mathematical function of those patterns are.
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology9.21.20.csv")
+data_list <- read_morph_data("data/allmorphology9.21.20-clean.csv")
 raw_data = data_list[[1]]
 all_bugs = nrow(raw_data)
 data_long = data_list[[2]] 
@@ -172,7 +172,7 @@ In other words, these plots describe how well the present value of the series is
 ```{r echo=FALSE}
 wing_mm = xts(wing_avg, date)
 colnames(wing_mm) <- "wing"
-check_stationarity(wing_mm)
+check_stationarity(wing_mm) # this is not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -196,7 +196,7 @@ Interpretation: This time series is stationary! And as a reminder, a data that i
 13) You can also take the log() of the time series in order to stable the variance of the time series if there is a trend in the variance. Stationarity was achieved without having to stablize the variance, but you can still check:
 
 ```{r}
-dedrift(wing_mm) # this is stationary
+dedrift(wing_mm) # this is not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -220,7 +220,7 @@ date = ts_cols[[2]]
 ```
 
 ```{r}
-plot_consecutive_yrs(ratio_avg, "wing2body")
+plot_consecutive_yrs(ratio_avg, "wing2body") # weak 
 ```
 
 ```{r}
@@ -256,7 +256,7 @@ date = ts_cols[[2]]
 ```
 
 ```{r}
-plot_consecutive_yrs(freq_avg, "morph freq") # essentially no temporal corr
+plot_consecutive_yrs(freq_avg, "morph freq") # weak
 ```
 
 ```{r}
@@ -268,8 +268,8 @@ addEventLines(events, pos=2, srt=90, col="red")
 
 ```{r}
 #detrend(morph) # this is not stationary
-dedriftrend(morph) # this is not stationary
-dedrift(morph) # this is stationary
+#dedrift(morph) # this is not stationary
+dedriftrend(morph) # this is stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -298,14 +298,13 @@ date = ts_cols[[2]]
 ```{r echo=FALSE}
 wing_mmf = xts(wing_avg, date)
 colnames(wing_mmf) <- "wing"
-check_stationarity(wing_mmf) # not stationary
+check_stationarity(wing_mmf) # barely not stationary | ACF and PACF significant here
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
-Looks like there's not a linear trend, but changes in variation over time.
-
 ```{r}
-#detrend(wing_mmf) # this is not stationary
+detrend(wing_mmf) # this is stationary
+addEventLines(events, pos=2, srt=90, col="red")
 dedrift(wing_mmf) # this is stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
@@ -335,13 +334,14 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-#detrend(ratiof) # not stationary
 #dedrift(ratiof) # not stationary
-#dedriftrend(ratiof) # still not stationary
-#addEventLines(events, pos=2, srt=90, col="red") # *still* not stationary
+detrend(ratiof) # **barely** not stationary
+addEventLines(events, pos=2, srt=90, col="red") 
+dedriftrend(ratiof) # **barely** not not stationary
+addEventLines(events, pos=2, srt=90, col="red") 
 ```
 
-Will need to use another function - many like a polynomial to detrend.
+Will need to use another function - many like a polynomial to detrend would be better.
 
 
 #### Wing Morph Frequency
@@ -369,9 +369,9 @@ addEventLines(events, pos=2, srt=90, col="red")
 
 ```{r}
 #detrend(morphf) # not stationary
-#dedrift(morphf) # not stationary
-#dedriftrend(morphf) # still not stationary
-#addEventLines(events, pos=2, srt=90, col="red")
+dedriftrend(morphf) # still not stationary
+dedrift(morphf) # stationary
+addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 Will need to use another function here too.
@@ -431,7 +431,7 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-#dedrift(ratiom) not stationary
+#dedrift(ratiom) #not stationary
 #dedriftrend(ratiom) # this is stationary
 #addEventLines(events, pos=2, srt=90, col="red") # the same  as detrend
 detrend(ratiom) # this is stationary
@@ -462,9 +462,10 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-#detrend(morphm) # not stationary
-#dedriftrend(morphm) # not stationary
-dedrift(morphm) # close! But marginally not stationary still
+#dedrift(morphm) # not stationary
+detrend(morphm) # stationary
+addEventLines(events, pos=2, srt=90, col="red")
+dedriftrend(morphm) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -498,7 +499,7 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-# detrend(wing_BV) # not stationary
+#detrend(wing_BV) # not stationary
 #dedriftrend(wing_BV) # not stationary
 dedrift(wing_BV) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
@@ -563,7 +564,8 @@ addEventLines(events, pos=2, srt=90, col="red")
 
 ```{r}
 #detrend(morphBV) # not stationary
-#dedrift(morphBV) # not stationary
+dedrift(morphBV) # stationary
+addEventLines(events, pos=2, srt=90, col="red")
 #dedriftrend(morphBV) # not stationary
 ```
 
@@ -586,7 +588,7 @@ date = ts_cols[[2]]
 ```{r echo=FALSE}
 wing_GRT = xts(wing_avg, date)
 colnames(wing_GRT) <- "wing"
-check_stationarity(wing_GRT) # non-stationary
+check_stationarity(wing_GRT) # not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -652,7 +654,8 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-#detrend(morphGRT) # not stationary
+detrend(morphGRT) # stationary
+addEventLines(events, pos=2, srt=90, col="red")
 dedrift(morphGRT) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
@@ -711,7 +714,7 @@ dates = as.Date(newdates, "%b %Y %d")
 sim_dates = c(date, dates)
 
 # simulate randomly your new winglengths
-set.seed(005) # e.g. set.seed = 005, 012
+set.seed(100) # e.g. set.seed = 100, 
 wl_sim = runif(length(newdates), min(wing_avg), max(wing_avg))
 wings = c(wing_avg, wl_sim)
 

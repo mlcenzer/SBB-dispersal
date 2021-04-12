@@ -17,6 +17,7 @@ plot_consecutive_yrs = function(v, var){
   d = cbind(v[1:length(v)-1],
             v[2:length(v)])
   colnames(d) = c("t", "t1")
+  print(cor(d))
   plot(d, ylab="t+1", 
        main="Relationship Between Consecutive Years")
   m = lm(t1 ~ t, data=as.data.frame(d)) # not sig
