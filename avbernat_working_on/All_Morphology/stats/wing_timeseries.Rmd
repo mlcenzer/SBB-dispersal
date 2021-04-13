@@ -295,11 +295,17 @@ wing_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 ```
 
+```{r}
+plot_consecutive_yrs(wing_avg, "wing length (mm)") 
+```
+
 ```{r echo=FALSE}
 wing_mmf = xts(wing_avg, date)
 colnames(wing_mmf) <- "wing"
+
 check_stationarity(wing_mmf) # barely not stationary | ACF and PACF significant here
 addEventLines(events, pos=2, srt=90, col="red")
+auto.arima(wing_mmf, stepwise=FALSE, approximation=FALSE)
 ```
 
 ```{r}
@@ -308,7 +314,6 @@ addEventLines(events, pos=2, srt=90, col="red")
 dedrift(wing_mmf) # this is stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
-
 
 #### Wing2body
 
@@ -329,8 +334,10 @@ date = ts_cols[[2]]
 ```{r}
 ratiof = xts(ratio_avg, date)
 colnames(ratiof) <- "wing2body"
+
 check_stationarity(ratiof) # this is not stationary
 addEventLines(events, pos=2, srt=90, col="red")
+auto.arima(ratiof, stepwise=FALSE, approximation=FALSE)
 ```
 
 ```{r}
@@ -363,8 +370,10 @@ date = ts_cols[[2]]
 ```{r}
 morphf = xts(freq_avg, date)
 colnames(morphf) <- "wing_morph_freq"
+
 check_stationarity(morphf) # not stationary
 addEventLines(events, pos=2, srt=90, col="red")
+auto.arima(morphf, stepwise=FALSE, approximation=FALSE)
 ```
 
 ```{r}
@@ -661,11 +670,13 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 
-## Citation
+## Citations
 
 Rob J Hyndman and George Athanasopoulos. Forecasting: Principles and Practice. https://otexts.com/fpp3/.
 
 https://rstudio-pubs-static.s3.amazonaws.com/363796_2c2581467b02403bbdcc77c6b5660ec7.html
+
+For ACF vs. PACF explanation: https://stats.stackexchange.com/questions/134487/analyse-acf-and-pacf-plots.
 
 ## Conclusion
 

@@ -9,6 +9,9 @@ rm(list=ls())
 library(lme4)
 library(zoo)
 library(rethinking)
+library(lubridate)
+
+library(xts)
 
 library(dplyr)
 library(ggplotify)
@@ -22,6 +25,8 @@ setwd(dir)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# {.tabset}
+
 ## Cleaning Data and Sourcing Scripts
 
 ```{r}
@@ -33,6 +38,8 @@ for (script in script_names) {
   path = paste0(source_path, script)
   source(path) 
 }
+
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_auxiliary_funs.R")
 ```
 
 ### Read the data
@@ -46,18 +53,41 @@ data_long = data_list[[2]]
 ```
 
 ```{r}
-##################wing2body ratio plots
-
-##Results to visualize: sex, pophost, year
-
-wing2body_summary<-aggregate(wing2body~sex*pophost*months_since_start, data=data_long, FUN=mean)
-wing2body_summary$se<-aggregate(wing2body~sex*pophost*months_since_start, data=data_long, FUN=function(x){sd(x)/sqrt(length(x))})$wing2body
-wing2body_summary$color <- rgb(1,0.3,0,0.7)
-wing2body_summary$color[wing2body_summary$pophost=="K.elegans"] <- rgb(0,0.8,1,0.7)
-#jitter slightly
-wing2body_summary$months_since_start <- wing2body_summary$months_since_start+runif(n=nrow(wing2body_summary), min=-0.5, max=0.5)
+# remove torn wings and NA dates
+data_long = remove_torn_wings(data_long)
+data_long = data_long %>%
+  filter(!is.na(dates))
 ```
 
+## Wing2body (w2b) Plots
+
+There are only 9 time points for w2b. The month of "2013-12-01" does not have any.
+
+Something else to keep in mind: aggregate.ts(). 
+http://search.r-project.org/R/library/stats/html/aggregate.html
+
+```{r}
+# Factors and tables using w2b ~ sex, pophost, year
+
+COL1 = rgb(1,0.3,0,0.7)
+COL2 = rgb(0,0.8,1,0.7)
+
+SE = function(x){sd(x)/sqrt(length(x))}
+  
+w2bsummary<-aggregate(wing2body~sex*pophost*months_since_start, 
+                             data=data_long, 
+                             FUN=mean)
+w2bsummary$se<-aggregate(wing2body~sex*pophost*months_since_start,
+                                data=data_long,
+                                FUN=SE)$wing2body
+
+w2bsummary$color <- COL1
+w2bsummary$color[w2bsummary$pophost=="K.elegans"] <- rgb(0,0.8,1,0.7)
+
+# jitter to reduce point overlap
+jitter = runif(n=nrow(w2bsummary), min=-0.5, max=0.5)
+w2bsummary$months_since_start <- w2bsummary$months_since_start + jitter 
+```
 
 ### Plot 1: Males as open circles 
 
@@ -66,22 +96,31 @@ wing2body_summary$months_since_start <- wing2body_summary$months_since_start+run
 
 par(ps=18)
 par(mai=c(1,1,0.5,0.2))
-plot(wing2body~months_since_start, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost)], pch=c(19,21)[as.factor(wing2body_summary$sex)], data=wing2body_summary, ylab="Wing-to-body ratio", xlab="Year", ylim=c(0.7,0.75), cex=2, xaxt='n')
+plot(wing2body~months_since_start,
+     col=c(COL1,COL2)[as.factor(w2bsummary$pophost)],
+     pch=c(19,21)[as.factor(w2bsummary$sex)], 
+     data=w2bsummary, 
+     ylab="Wing-to-body ratio", xlab="Year", ylim=c(0.7,0.75), cex=2, xaxt='n')
 
-#add standard error
-for(row in 1:nrow(wing2body_summary)){
-
-	lines(x=rep(wing2body_summary$months_since_start[row],2), y=c((wing2body_summary$wing2body[row]+wing2body_summary$se[row]), (wing2body_summary$wing2body[row]-wing2body_summary$se[row])), col=wing2body_summary$color[row], lwd=1)
-	
+# add standard error
+for(row in 1:nrow(w2bsummary)){
+  
+	lines(x=rep(w2bsummary$months_since_start[row],2),
+	      y=c((w2bsummary$wing2body[row]+w2bsummary$se[row]),
+	          (w2bsummary$wing2body[row]-w2bsummary$se[row])), 
+	      col=w2bsummary$color[row], lwd=1)
 }
 
 axis(side=1, labels=c("2013", "2015", "2017", "2019"), at=c(3,27,51,75))
 
 mtext("Wing-to-body ratio by year", side=3, adj=0.01)
 
-legend(-2, 0.709, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
+legend(-2, 0.709, 
+       legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), 
+       pch=19, col=c(COL2, COL1), 
+       pt.cex=1.4, y.intersp = 1.3)
 
-#dev.off()
+#dev.off() 
 ```
 
 ### Plot  
@@ -95,18 +134,21 @@ split.screen(rbind(c(0,0.54,0,1), c(0.54,1,0,1)))
 screen(1)
 par(mai=c(1,1,0.5,0.2))
 plot(wing2body~months_since_start,
-     col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="F"])], 
+     col=c(COL1,COL2)[as.factor(w2bsummary$pophost[w2bsummary$sex=="F"])], 
      pch=19, 
-     data=wing2body_summary[wing2body_summary$sex=="F",], 
+     data=w2bsummary[w2bsummary$sex=="F",], 
      ylab="Wing-to-body ratio", xlab="Year", 
      ylim=c(0.7,0.75), cex=2, xaxt='n')
 
-#add standard error
-wing2body_summary_F<-wing2body_summary[wing2body_summary$sex=="F",]
+# add standard error
+w2bsummary_F<-w2bsummary[w2bsummary$sex=="F",]
 
-for(row in 1:nrow(wing2body_summary_F)){
+for(row in 1:nrow(w2bsummary_F)){
 
-	lines(x=rep(wing2body_summary_F$months_since_start[row],2), y=c((wing2body_summary_F$wing2body[row]+wing2body_summary_F$se[row]), (wing2body_summary_F$wing2body[row]-wing2body_summary_F$se[row])), col=wing2body_summary_F$color[row], lwd=1)
+	lines(x=rep(w2bsummary_F$months_since_start[row],2),
+	      y=c((w2bsummary_F$wing2body[row]+w2bsummary_F$se[row]),
+	          (w2bsummary_F$wing2body[row]-w2bsummary_F$se[row])),
+	      col=w2bsummary_F$color[row], lwd=1)
 	
 }
 
@@ -115,22 +157,26 @@ axis(side=1, labels=c("2013", "2015", "2017", "2019"), at=c(3,27,51,75))
 mtext(expression(italic("Females")), side=3, adj=0.05, line=-2, cex=1.15, font=2)
 mtext("A", side=3, adj=0.01, cex=1.5, line=0.5)
 
-legend(54, 0.709, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
+legend(54, 0.709, 
+       legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), 
+       pch=19, col=c(COL2, COL1), pt.cex=1.4, y.intersp = 1.3)
 
 screen(2)
 par(mai=c(1,0.1,0.5,0.2))
 plot(wing2body~months_since_start,
-     col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="M"])], 
-     pch=19, data=wing2body_summary[wing2body_summary$sex=="M",], 
+     col=c(COL1,COL2)[as.factor(w2bsummary$pophost[w2bsummary$sex=="M"])], 
+     pch=19, data=w2bsummary[w2bsummary$sex=="M",], 
      ylab="Wing-to-body ratio", xlab="Year", ylim=c(0.7,0.75), cex=2, xaxt='n', yaxt='n')
 
-#add standard error
-wing2body_summary_M<-wing2body_summary[wing2body_summary$sex=="M",]
+# add standard error
+w2bsummary_M<-w2bsummary[w2bsummary$sex=="M",]
 
-for(row in 1:nrow(wing2body_summary_F)){
+for(row in 1:nrow(w2bsummary_F)){
 
-	lines(x=rep(wing2body_summary_M$months_since_start[row],2), y=c((wing2body_summary_M$wing2body[row]+wing2body_summary_M$se[row]), (wing2body_summary_M$wing2body[row]-wing2body_summary_M$se[row])), col=wing2body_summary_M$color[row], lwd=1)
-	
+	lines(x=rep(w2bsummary_M$months_since_start[row],2),
+	      y=c((w2bsummary_M$wing2body[row]+w2bsummary_M$se[row]),
+	          (w2bsummary_M$wing2body[row]-w2bsummary_M$se[row])), 
+	      col=w2bsummary_M$color[row], lwd=1)
 }
 
 axis(side=1, labels=c("2013", "2015", "2017", "2019"), at=c(3,27,51,75))
@@ -144,53 +190,66 @@ close.screen(all.screens=TRUE)
 
 
 ```{r}
-#Two panels: a for females, b for males; both with host*month_of_year
+# Two panels: a for females, b for males; both with host*month_of_year
 
-wing2body_summary<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=mean)
-wing2body_summary$se<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=function(x){sd(x)/sqrt(length(x))})$wing2body
-wing2body_summary$color <- rgb(1,0.3,0,0.7)
-wing2body_summary$color[wing2body_summary$pophost=="K.elegans"] <- rgb(0,0.8,1,0.7)
-#jitter slightly
-wing2body_summary$month_of_year <- wing2body_summary$month_of_year+runif(n=nrow(wing2body_summary), min=-0.1, max=0.1)
+w2bsummary<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=mean)
+w2bsummary$se<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=SE)$wing2body
+w2bsummary$color <- COL1
+w2bsummary$color[w2bsummary$pophost=="K.elegans"] <- COL2
 
+# jitter slightly
+jitter = runif(n=nrow(w2bsummary), min=-0.1, max=0.1)
+w2bsummary$month_of_year <- w2bsummary$month_of_year + jitter
 ```
 
 
 ```{r}
-pdf(file="wing2body_2_panel-month_of_year.pdf", width=12, height=5.8)
+#pdf(file="wing2body_2_panel-month_of_year.pdf", width=12, height=5.8)
 
 par(ps=18)
 split.screen(rbind(c(0,0.54,0,1), c(0.54,1,0,1)))
 
 screen(1)
 par(mai=c(1,1,0.5,0.2))
-plot(wing2body~month_of_year, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="F"])], pch=19, data=wing2body_summary[wing2body_summary$sex=="F",], ylab="Wing-to-body ratio", xlab="Month", ylim=c(0.7,0.75), cex=2, xaxt='n')
+plot(wing2body~month_of_year,
+     col=c(COL1,COL2)[as.factor(w2bsummary$pophost[w2bsummary$sex=="F"])], 
+     pch=19, data=w2bsummary[w2bsummary$sex=="F",], 
+     ylab="Wing-to-body ratio", xlab="Month", ylim=c(0.7,0.75), cex=2, xaxt='n')
 
-#add standard error
-wing2body_summary_F<-wing2body_summary[wing2body_summary$sex=="F",]
+# add standard error
+w2bsummary_F<-w2bsummary[w2bsummary$sex=="F",]
 
-for(row in 1:nrow(wing2body_summary_F)){
+for(row in 1:nrow(w2bsummary_F)){
 
-	lines(x=rep(wing2body_summary_F$month_of_year[row],2), y=c((wing2body_summary_F$wing2body[row]+wing2body_summary_F$se[row]), (wing2body_summary_F$wing2body[row]-wing2body_summary_F$se[row])), col=wing2body_summary_F$color[row], lwd=1)
-	
+	lines(x=rep(w2bsummary_F$month_of_year[row],2),
+	      y=c((w2bsummary_F$wing2body[row]+w2bsummary_F$se[row]),
+	          (w2bsummary_F$wing2body[row]-w2bsummary_F$se[row])), 
+	      col=w2bsummary_F$color[row], lwd=1)
 }
 
 axis(side=1, labels=c("Feb", "May", "Aug", "Nov"), at=c(2,5,8,11))
 
 mtext("A. Females", side=3, adj=0.01)
 
-legend(1.9, 0.709, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
+legend(1.9, 0.709, 
+       legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), 
+       pch=19, col=c(COL2, COL1), pt.cex=1.4, y.intersp = 1.3)
 
 screen(2)
 par(mai=c(1,0.1,0.5,0.2))
-plot(wing2body~month_of_year, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(wing2body_summary$pophost[wing2body_summary$sex=="M"])], pch=19, data=wing2body_summary[wing2body_summary$sex=="M",], ylab="Wing-to-body ratio", xlab="Month", ylim=c(0.7,0.75), cex=2, xaxt='n', yaxt='n')
+plot(wing2body~month_of_year, col=c(COL1,COL2)[as.factor(w2bsummary$pophost[w2bsummary$sex=="M"])], 
+     pch=19, data=w2bsummary[w2bsummary$sex=="M",], 
+     ylab="Wing-to-body ratio", xlab="Month", ylim=c(0.7,0.75), cex=2, xaxt='n', yaxt='n')
 
-#add standard error
-wing2body_summary_M<-wing2body_summary[wing2body_summary$sex=="M",]
+# add standard error
+w2bsummary_M<-w2bsummary[w2bsummary$sex=="M",]
 
-for(row in 1:nrow(wing2body_summary_F)){
+for(row in 1:nrow(w2bsummary_F)){
 
-	lines(x=rep(wing2body_summary_M$month_of_year[row],2), y=c((wing2body_summary_M$wing2body[row]+wing2body_summary_M$se[row]), (wing2body_summary_M$wing2body[row]-wing2body_summary_M$se[row])), col=wing2body_summary_M$color[row], lwd=1)
+	lines(x=rep(w2bsummary_M$month_of_year[row],2),
+	      y=c((w2bsummary_M$wing2body[row]+w2bsummary_M$se[row]),
+	          (w2bsummary_M$wing2body[row]-w2bsummary_M$se[row])), 
+	      col=w2bsummary_M$color[row], lwd=1)
 	
 }
 
@@ -199,16 +258,16 @@ axis(side=1, labels=c("Feb", "May", "Aug", "Nov"), at=c(2,5,8,11))
 mtext("B. Males", side=3, adj=0.01)
 
 close.screen(all.screens=TRUE)
-dev.off()
+#dev.off()
 ```
 
+## Wing Morph Freq Plots 
+
+### Paper Figure 4
+
 ```{r}
-#############wing morph plots
-
-##Results to visualize: sex, host, months_since_start.
-
+# Visualize wing morph ~ sex, host, months_since_start.
 w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=mean)
-
 ```
 
 ```{r}
@@ -217,7 +276,7 @@ w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_
 par(ps=18)
 par(mai=c(1,1,0.5,0.2))
 plot(wing_morph_binom~month_of_year, 
-     col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(w_morph_summary$pophost)],
+     col=c(COL1,COL2)[as.factor(w_morph_summary$pophost)],
      pch=c(19,21)[as.factor(w_morph_summary$sex)], 
      data=w_morph_summary, ylab="Frequency of long-winged morph", 
      xlab="Month", ylim=c(0,1), cex=2, xaxt='n')
@@ -226,159 +285,76 @@ axis(side=1, labels=c("Feb", "May", "Aug", "Nov"), at=c(2,5,8,11))
 
 mtext("Wing morph over the season", side=3, adj=0.01, line=0.5)
 
-legend(1.9, 0.2, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
+legend(1.9, 0.2, 
+       legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))),
+       pch=19, col=c(COL2, COL1), pt.cex=1.4, y.intersp = 1.3)
 
 #dev.off()
 ```
 
 ```{r}
-#Two panels: a for females, b for males; both with host*month_of_year
-pdf(file="wing_morph_2_panel.pdf", width=10, height=5.8)
+# Visualize wing morph ~ sex, host, months_since_start.
+w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*months_since_start, data=raw_data, FUN=mean)
+```
+
+```{r}
+pdf(file="wing_morph_year_panel.pdf", width=8, height=5.8)
+
+par(ps=18)
+par(mai=c(1,1,0.5,0.2))
+plot(wing_morph_binom~months_since_start, 
+     col=c(COL1,COL2)[as.factor(w_morph_summary$pophost)],
+     pch=c(19,21)[as.factor(w_morph_summary$sex)], 
+     data=w_morph_summary, ylab="Frequency of long-winged morph", 
+     xlab="Month", ylim=c(0,1), cex=2, xaxt='n')
+
+axis(side=1, labels=c("2013", "2015", "2017", "2019"), at=c(3,27,51,75))
+
+mtext("Wing morph by year", side=3, adj=0.01, line=0.5)
+
+legend(0, 0.2, 
+       legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))),
+       pch=19, col=c(COL2, COL1), pt.cex=1.4, y.intersp = 1.3)
+
+dev.off()
+```
+
+
+```{r}
+# Two panels: a for females, b for males; both with host*month_of_year
+#pdf(file="wing_morph_2_panel.pdf", width=10, height=5.8)
 
 par(ps=18)
 split.screen(rbind(c(0,0.54,0,1), c(0.54,1,0,1)))
 
 screen(1)
 par(mai=c(1,1,0.5,0.2))
-plot(wing_morph_binom~month_of_year, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(w_morph_summary$pophost[w_morph_summary$sex=="F"])], pch=19, data=w_morph_summary[w_morph_summary$sex=="F",], ylab="Frequency of long-winged morph", xlab="Month", ylim=c(0,1), cex=2, xaxt='n')
+plot(wing_morph_binom~month_of_year,
+     col=c(COL1,COL2)[as.factor(w_morph_summary$pophost[w_morph_summary$sex=="F"])], 
+     pch=19, data=w_morph_summary[w_morph_summary$sex=="F",],
+     ylab="Frequency of long-winged morph", xlab="Month", ylim=c(0,1), cex=2, xaxt='n')
 
 axis(side=1, labels=c("Feb", "May", "Aug", "Nov"), at=c(2,5,8,11))
 
 mtext("A. Females", side=3, adj=0.01)
 
-legend(1.9, 0.2, legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), pch=19, col=c(rgb(0,0.8,1,0.7), rgb(1,0.3,0,0.7)), pt.cex=1.4, y.intersp = 1.3)
+legend(1.9, 0.2, 
+       legend=c(expression(italic("K. elegans")), expression(italic("C. corindum"))), 
+       pch=19, col=c(COL2, COL1), pt.cex=1.4, y.intersp = 1.3)
 
 screen(2)
 par(mai=c(1,0.1,0.5,0.2))
-plot(wing_morph_binom~month_of_year, col=c(rgb(1,0.3,0,0.7),rgb(0,0.8,1,0.7))[as.factor(w_morph_summary$pophost[w_morph_summary$sex=="M"])], pch=19, data=w_morph_summary[w_morph_summary$sex=="M",], xlab="Month", ylab="", ylim=c(0,1), yaxt="n", xaxt="n", cex=2)
+plot(wing_morph_binom~month_of_year,
+     col=c(COL1,COL2)[as.factor(w_morph_summary$pophost[w_morph_summary$sex=="M"])], 
+     pch=19, data=w_morph_summary[w_morph_summary$sex=="M",], 
+     xlab="Month", ylab="", ylim=c(0,1), yaxt="n", xaxt="n", cex=2)
 
 axis(side=1, labels=c("Feb", "May", "Aug", "Nov"), at=c(2,5,8,11))
 
 mtext("B. Males", side=3, adj=0.01)
 
 close.screen(all.screens=TRUE)
-dev.off()
-```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-```{r}
-#####Old plots, probably delete-able
-###################plot of wing2body ratio by year and site; one sex at a time
-
-#jitter years to keep reduce overlap
-wing2body_summary$jyear<-wing2body_summary$year+rnorm(length(wing2body_summary$year), 0, .04)
-
-#print to file
-
-#functionalize
-wing2body_by_year<-function(sex){
-setwd("~/Dropbox/SBB datasheets 2019/Dispersal Project/all_morphology wing analyses")
-pdf(file="wing2bodybyyear_males.pdf", width=10, height=7)
-
-par(ps=18)
-par(bty='l') #drop box on top and right
-plot(wing2body_summary$jyear[wing2body_summary$pophost=="C.corindum"], wing2body_summary$wing2body[wing2body_summary$pophost=="C.corindum"], pch=21, bg=rgb(1,0,0,.6),  ylim=c(0,0.2), xlim=c(2013,2020), xlab='', ylab='', cex=1.4)
-
-points(wing2body_summary$jyear[wing2body_summary$pophost=="K.elegans"], wing2body_summary$wing2body[wing2body_summary$pophost=="K.elegans"], pch=21, bg=rgb(0,0,1,.6), cex=1.4)
-
-#95% confidence intervals
-for(n in 1:length(wing2body_summary$year)){
-	lines(x=xy.coords(x=c(wing2body_summary$jyear[n],wing2body_summary$jyear[n]),y=c(wing2body_summary$max[n],wing2body_summary$min[n])))
-}
-
-title(xlab="Year", line=2.4)
-title(ylab="wing2body length (mm)", line=2.4)
-
-abline(lm(wing2body_summary$wing2body[wing2body_summary$population=="Plantation_Key"]~wing2body_summary$year[wing2body_summary$population=="Plantation_Key"]), col=rgb(1,0,0,.6))
-
-abline(lm(wing2body_summary$wing2body[wing2body_summary$population=="Key_Largo" | wing2body_summary$population=="North_Key_Largo"]~wing2body_summary$year[wing2body_summary$population=="Key_Largo" | wing2body_summary$population=="North_Key_Largo"]), col=rgb(1,0,0,.6))
-
-abline(lm(wing2body_summary$wing2body[wing2body_summary$population=="Ft.Myers"]~wing2body_summary$year[wing2body_summary$population=="Ft.Myers"]), lty=3, col=rgb(0,0,1,.6))
-
-abline(lm(wing2body_summary$wing2body[wing2body_summary$population=="Lake_Wales"]~wing2body_summary$year[wing2body_summary$population=="Lake_Wales"]), lty=3, col=rgb(0,0,1,.6))
-
-abline(lm(wing2body_summary$wing2body[wing2body_summary$population=="Leesburg"]~wing2body_summary$year[wing2body_summary$population=="Leesburg"]), lty=3, col=rgb(0,0,1,.6))
-
-dev.off()
-
-}
-
-
-
-
-
-
-#############plot wing length
-#input allmorphology here
-raw_data_1<-read.csv("~/Dropbox/SBB datasheets 2019/Morphology/allmorphology data/allmorphology6.04.20.csv")
-
-#long wing only
-raw_data<-raw_data_1[raw_data_1$w_morph=="L",]
-
-####standardize population names!
-raw_data$population[raw_data$population=="Key Largo"]<-"Key_Largo"
-raw_data$population[raw_data$population=="North Key Largo"]<-"North_Key_Largo"
-raw_data$population[raw_data$population=="Plantation Key"]<-"Plantation_Key"
-raw_data$population[raw_data$population=="Lake Wales"]<-"Lake_Wales"
-raw_data$pophost[raw_data$pophost=="C. corindum"]<-"C.corindum"
-
-
-#generate summary stats
-wing_means<-aggregate(wing~year*population*pophost, data=raw_data[raw_data$sex=="M",], FUN=mean)
-wing_means$se<-aggregate(wing~year*population*pophost, data=raw_data[raw_data$sex=="M",], FUN=function(x){sd(x)/sqrt(length(x))})$beak
-
-#only previously measured populations
-wing_summary<-wing_means[wing_means$population=="Key_Largo" | wing_means$population=="Plantation_Key" | wing_means$population=="North_Key_Largo" | wing_means$population=="Lake_Wales" | wing_means$population=="Leesburg" | wing_means$population=="Ft.Myers",]
-
-
-##################without axis gap
-#jitter years to keep se bars from overlapping so much
-wing_summary$jyear<-wing_summary$year+rnorm(length(wing_summary$year), 0, .04)
-
-#print to file
-
-setwd("~/Documents/R/soapberry bugs/allmorph plots")
-
-pdf(file="wingsbyyear_males.pdf", width=10, height=7)
-
-par(ps=18)
-par(bty='l') #drop box on top and right
-plot(wing_summary$jyear[wing_summary$pophost=="C.corindum"], wing_summary$wing[wing_summary$pophost=="C.corindum"], pch=21, bg=rgb(1,0,0,.6),  ylim=c(6,10.5), xlim=c(2013,2020), xlab='', ylab='', cex=1.4)
-
-points(wing_summary$jyear[wing_summary$pophost=="K.elegans"], wing_summary$wing[wing_summary$pophost=="K.elegans"], pch=21, bg=rgb(0,0,1,.6), cex=1.4)
-
-#95% confidence intervals
-for(n in 1:length(wing_summary$year)){
-	lines(x=xy.coords(x=c(wing_summary$jyear[n],wing_summary$jyear[n]),y=c(wing_summary$max[n],wing_summary$min[n])))
-}
-
-title(xlab="Year", line=2.4)
-title(ylab="wing length (mm)", line=2.4)
-
-abline(lm(wing_summary$wing[wing_summary$population=="Plantation_Key"]~wing_summary$year[wing_summary$population=="Plantation_Key"]), col=rgb(1,0,0,.6))
-
-abline(lm(wing_summary$wing[wing_summary$population=="Key_Largo" | wing_summary$population=="North_Key_Largo"]~wing_summary$year[wing_summary$population=="Key_Largo" | wing_summary$population=="North_Key_Largo"]), col=rgb(1,0,0,.6))
-
-abline(lm(wing_summary$wing[wing_summary$population=="Ft.Myers"]~wing_summary$year[wing_summary$population=="Ft.Myers"]), lty=3, col=rgb(0,0,1,.6))
-
-abline(lm(wing_summary$wing[wing_summary$population=="Lake_Wales"]~wing_summary$year[wing_summary$population=="Lake_Wales"]), lty=3, col=rgb(0,0,1,.6))
-
-abline(lm(wing_summary$wing[wing_summary$population=="Leesburg"]~wing_summary$year[wing_summary$population=="Leesburg"]), lty=3, col=rgb(0,0,1,.6))
-
-dev.off()
-
+#dev.off()
 ```
 
 ## Questions

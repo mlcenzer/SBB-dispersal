@@ -58,7 +58,9 @@ data_long = data_list[[2]]
 ### Infer missing wing morph values
 
 ```{r}
-raw_data_missing<-raw_data[raw_data$w_morph=="",]
+raw_data_missing = raw_data %>%
+  filter(w_morph=="" | is.na(w_morph)) # had 28 that are hard to identify as either S or L based on the wing2thorax thresholds.
+raw_data_missing # need to determine the morph of these bugs manually. In the long term...need to do this manually because the boundaries of what is defined as a morph can change over time.
 ```
 
 ```{r}
@@ -80,14 +82,24 @@ hist(raw_data$wing[raw_data$w_morph=="S"]/raw_data$thorax[raw_data$w_morph=="S"]
 
 ### Plotting Data Points Across Time and Group
 
+Grouping the data for group counts.
+
 ```{r}
 raw_data %>% group_by(sex, 
                   datetime) %>% 
   summarize(count = n())
 ```
 
+Checking over bug numbers per season.
 
-```{r echo=FALSE, fig.width=3.5, fig.height=2.5}
+```{r}
+raw_data[raw_data$year =="2020",]  #476 survived shipment, so I"m guessing that about 103 bugs did not survive shipment but were still measured for morphology?
+raw_data[raw_data$year =="2019" & raw_data$month=="October",] #similar here. 260 bugs measured but 207 survived. So that means that 53 bugs did not survive and were still measured for morph. 
+```
+
+Plotting the histograms.
+
+```{r echo=FALSE, fig.width=3.5, fig.height=2.3}
 
 #hist(raw_data$year, main="Numbers Collected", xlab="Year")
 
@@ -298,6 +310,9 @@ plot(wing2body~month_of_year, data=wing2body_summary, pch=c(19,21)[as.factor(sex
 # female open cirlces, males closed circles
 # green K. elegans and red C. corindum
 ```
+
+These plots are plotted cleanly in the wing_plots.Rmd script.
+
 
 ## Winter 2020
 
