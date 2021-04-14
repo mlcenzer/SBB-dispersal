@@ -1,3 +1,5 @@
+library(zoo)
+library(lubridate)
 
 remove_torn_wings = function(d){
   
