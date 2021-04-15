@@ -17,6 +17,8 @@ library(ggpmisc) #stat_fit_glance
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# {.tabset}
+
 ## Cleaning Data and Sourcing Scripts
 
 ```{r}
@@ -310,8 +312,8 @@ Loess: a nonparametric, graphical tool for depicting relationships between varia
 
 ```{r}
 # extract the LOESS
-ggplot_build(p5)$data[[2]] # alpha = 0.4 (smoothing parameter)
-ggplot_build(p6)$data[[2]] # alpha = 0.4 (smoothing parameter); lambda = degree of the local polynomial 
+head(ggplot_build(p5)$data[[2]]) # alpha = 0.4 (smoothing parameter)
+head(ggplot_build(p6)$data[[2]]) # alpha = 0.4 (smoothing parameter); lambda = degree of the local polynomial 
 # degree is 0 (estimated below)
 # Using a zero degree polynomial turns LOESS into a weighted moving average. 
 # degrees: https://www.itl.nist.gov/div898/handbook/pmd/section1/pmd144.htm
@@ -377,8 +379,8 @@ grid.arrange(p3, p4, ncol=2)
 
 ```{r}
 # extract the LOESS
-ggplot_build(p3)$data[[2]]
-ggplot_build(p4)$data[[2]]
+head(ggplot_build(p3)$data[[2]])
+head(ggplot_build(p4)$data[[2]])
 
 # these calculations give you similar tables. Here is an example:
 mloess <- loess(wing2body ~ month_of_year, data=dfF, degree=0)
@@ -391,7 +393,7 @@ ci <- pred$se.fit * qt(0.95 / 2 + .5, pred$df)
 ymin = y - ci
 ymax = y + ci
 loess.DF <- data.frame(x = xseq, y, ymin, ymax, se = pred$se.fit)
-loess.DF
+head(loess.DF)
 summary(loess.DF)
 summary(mloess)
 ```
@@ -409,9 +411,7 @@ summary(mlinearM)$coeff # significant for males (for K.elegans, not for C.corind
 
 scale_colour_discrete(name ="Host Plant", labels=c("C. corindum", "K. elegans")) +
 
-```{r}
-dfF
-```
+## Wing Morph Freq
 
 ```{r}
 #############wing morph plots
@@ -481,62 +481,81 @@ p8 = p8 + guides(fill = guide_legend(reverse = TRUE)) + theme_classic() +
   labs(fill = "Host Plant") + theme(legend.title = element_text(size = 14),
                                     legend.text = element_text(size = 13, face="italic")) +
   scale_color_manual(values=host_colors_pts) + theme(legend.position = c(0.2, 0.95)) + theme(legend.title = element_blank()) +
-  scale_x_continuous(breaks=xlab_months, labels= month_labs)
+  scale_x_continuous(breaks=xlab_months, labels= month_labs) 
 
 grid.arrange(p7,p8, ncol=2)
 ```
 
-```{r fig.width=4.7, fig.height=2.3}
+```{r fig.width=4.7, fig.height=2.15}
 p9 = ggplot() + 
-  ggtitle("Host Plant") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
+  ggtitle("A") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
   geom_smooth(data=df, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
               mapping = aes(x = month_of_year, y = wing_morph_binom), colour="black") +
   geom_smooth(data=df, method="loess", 
               mapping = aes(x = month_of_year, y = wing_morph_binom, colour=pophost, fill=pophost)) + 
-  geom_point(data=df, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=pophost))
+  geom_point(data=df, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=pophost)) + ylim(0.3,1.2)
 
 p9 = p9 + guides(fill = guide_legend(reverse = TRUE)) + theme_classic() +
   theme(axis.text=element_text(size=13),
         axis.title=element_text(size=16), 
-        plot.title=element_text(size=18, face="italic")) + guides(color = FALSE)  + scale_linetype(guide = FALSE) +
+        plot.title=element_text(size=20)) + guides(color = FALSE)  + scale_linetype(guide = FALSE) +
   theme(legend.key = element_rect(fill = "white", color = NA), 
         legend.key.size = unit(0.5, "cm"),
         legend.key.width = unit(0.5,"cm")) + 
   scale_fill_manual(values = host_colors_shade, labels=c("C. corindum", "K. elegans")) + 
   labs(fill = "Host Plant") + theme(legend.title = element_text(size = 14),
                                     legend.text = element_text(size = 13, face="italic")) +
-  scale_color_manual(values=host_colors_pts) + theme(legend.position = c(0.2, 0.95)) + theme(legend.title = element_blank()) +
-  scale_x_continuous(breaks=xlab_months, labels= month_labs)
+  scale_color_manual(values=host_colors_pts) + theme(legend.position = c(0.23, 0.93)) + 
+  scale_x_continuous(breaks=xlab_months, labels= month_labs)  + 
+  theme(legend.title = element_text(face = "italic"))
 
 p10 = ggplot() + 
-  ggtitle("Sex") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
+  ggtitle("B") + xlab("Month") + ylab(" ") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
   geom_smooth(data=df, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
               mapping = aes(x = month_of_year, y = wing_morph_binom), colour="black") +
   geom_smooth(data=df, method="loess", 
               mapping = aes(x = month_of_year, y = wing_morph_binom, colour=sex, fill=sex)) + 
-  geom_point(data=df, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=sex)) 
+  geom_point(data=df, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=sex)) + ylim(0.3,1.2)
 
 p10 = p10 + guides(fill = guide_legend(reverse = TRUE)) + theme_classic() +
   theme(axis.text=element_text(size=13),
         axis.title=element_text(size=16), 
-        plot.title=element_text(size=18, face="italic")) + guides(color = FALSE)  + scale_linetype(guide = FALSE) +
+        plot.title=element_text(size=20)) + guides(color = FALSE)  + scale_linetype(guide = FALSE) +
   theme(legend.key = element_rect(fill = "white", color = NA), 
         legend.key.size = unit(0.5, "cm"),
         legend.key.width = unit(0.5,"cm")) + 
   scale_fill_manual(values = sex_colors_shade, labels=c("Females", "Males")) + 
-  labs(fill = "Host Plant") + theme(legend.title = element_text(size = 14),
+  labs(fill = "Sex") + theme(legend.title = element_text(size = 14),
                                     legend.text = element_text(size = 13, face="italic")) +
-  scale_color_manual(values=sex_colors_pts) + theme(legend.position = c(0.2, 0.95)) + theme(legend.title = element_blank()) +
-  scale_x_continuous(breaks=xlab_months, labels= month_labs)
+  scale_color_manual(values=sex_colors_pts) + theme(legend.position = c(0.23, 0.95)) + 
+  scale_x_continuous(breaks=xlab_months, labels= month_labs)  + 
+  theme(legend.title = element_text(face = "italic"))
+
+
+# extract the LOESS
+alpha = paste("alpha[loess]==", ggplot_build(p9)$data[[2]]$alpha[1])
+degree="lambda[loess]==0"
+
+mlinear = glm(wing_morph_binom ~ month_of_year, data=df, family=gaussian)
+round(summary(mlinear)$coeff[[8]],3) # significant for all (but only with K.elegans)
+pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],2))
+
+p9 = p9 + annotate(geom="text", x=7.4, y=1.0, label=alpha, color="black", parse=TRUE) +
+          annotate(geom="text", x=7.4, y=1.04, label=degree, color="black", parse=TRUE) +
+          annotate(geom="text", x=5, y=0.718, label=pvalue, color="black", parse=TRUE)
+
+p10 = p10 + annotate(geom="text", x=7.4, y=1.1, label=alpha, color="black", parse=TRUE) +
+          annotate(geom="text", x=7.4, y=1.15, label=degree, color="black",parse=TRUE) +
+          annotate(geom="text", x=5, y=1, label=pvalue, color="black", parse=TRUE)
 
 grid.arrange(p9,p10, ncol=2)
 ```
 
 
 ```{r}
-threshold = unique(df$dates)[15]
+threshold = sort(unique(raw_data$dates))[5]
 df$date_b = "2013-2015"
 df$date_b[df$dates >= threshold] = "2016-2020"
 
@@ -550,20 +569,24 @@ wm_table$date_b[wm_table$dates >= threshold] = "2016-2020"
 wm_table$date_b = as.factor(wm_table$date_b)
 
 last_4_years = wm_table[wm_table$date_b=="2016-2020",]
+first_3_years = wm_table[wm_table$date_b=="2013-2015",]
+
+xlab_years = sort(unique(raw_data$dates))
 ```
 
 ```{r fig.width=4.7, fig.height=2.15}
+
 p11 = ggplot() + 
-  ggtitle("C") + xlab("Year") + ylab("Wing-to-Body Ratio") +
-  #geom_vline(xintercept = xlab_dates, color="gainsboro") + 
+  ggtitle("C") + xlab("Year") + ylab("Long-Wing Morph Frequency") +
+  geom_vline(xintercept = xlab_years, color="gainsboro") + 
    geom_smooth(data=wm_table, method="lm", se=FALSE, linetype = "dashed",
               mapping = aes(x = dates, y = wing_morph_binom), colour="black", lwd=0.5) +
   geom_smooth(data=wm_table, method="loess", 
               mapping = aes(x = dates, y = wing_morph_binom), colour="black") + 
-  geom_point(data=wm_table, mapping = aes(x = dates, y = wing_morph_binom)) +
+  geom_point(data=wm_table, mapping = aes(x = dates, y = wing_morph_binom))
   #ylim(0.71, 0.75) +
-  stat_smooth(data=last_4_years, mapping = aes(x = dates, y = wing_morph_binom), method = "lm", formula = y ~ x, se = FALSE,
-               colour="blue") # linetype = "longdash",
+ #+ stat_smooth(data=first_3_years, mapping = aes(x = dates, y = wing_morph_binom), method = "lm", formula = y ~ x, se = FALSE,
+ #              colour="blue") # linetype = "longdash",
 
 p11 = p11 + guides(fill = guide_legend(reverse = TRUE)) + theme_classic() +
   theme(axis.text=element_text(size=13),
@@ -583,22 +606,19 @@ mlinear = glm(wing_morph_binom ~ dates, data=df, family=gaussian)
 pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],2))
 
 
-# p11 = p11 + annotate(geom="text", x=unique(df$dates)[10], y=0.74, 
-#                    label=alpha, color="black", parse=TRUE, size=6) +
-#           annotate(geom="text", x=unique(df$dates)[10], y=0.748, 
-#                    label=degree, color="black",parse=TRUE, size=6) +
-#           annotate(geom="text", x=unique(df$dates)[15], y=0.718, 
-#                    label=pvalue, color="black", parse=TRUE, size=6)
-# # last 4 years
-# mlinear = glm(wing_morph_binom ~ dates, data=wm_table[wm_table$date_b=="2016-2020",], family=gaussian)
-# pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],2))
-# 
-# p11 = p11 + annotate(geom="text", x=unique(df$dates)[24], y=0.743, label=pvalue, color="blue", parse=TRUE, size=6)
+p11 = p11 + annotate(geom="text", x=unique(raw_data$dates)[7], y=1, label=alpha, color="black", parse=TRUE, size=6) +
+          annotate(geom="text", x=unique(raw_data$dates)[7], y=1.05, label=degree, color="black",parse=TRUE, size=6) +
+          annotate(geom="text", x=unique(raw_data$dates)[6], y=0.55, label=pvalue, color="black", parse=TRUE, size=6)
+# first 3 years
+#mlinear = glm(wing_morph_binom ~ dates, data=first_3_years, family=gaussian)
+#pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],2))
+
+#p11 = p11 + annotate(geom="text", x=unique(raw_data$dates)[3], y=1, label=pvalue, color="blue", parse=TRUE, size=6)
 
 p11
 ```
 
-
+## Modeling Tests 
 
 ```{r}
 plot_splines = function(x,y) {
@@ -620,8 +640,7 @@ plot_splines = function(x,y) {
 ```
 
 ```{r}
-dfF = df %>%
-  filter(sex=="M" & pophost=="C.corindum")
+dfF = df[df$sex == "F" & df$pophost=="C.corindum",]
 
 x = dfF$month_of_year
 y = dfF$wing_morph_binom
@@ -629,11 +648,10 @@ y = dfF$wing_morph_binom
 plot_splines(x,y)
 
 
-dfF = df %>%
-  filter(sex=="F" & pophost=="C.corindum")
+dfM = df[df$sex == "M" & df$pophost=="C.corindum",]
 
-x = dfF$month_of_year
-y = dfF$wing_morph_binom
+x = dfM$month_of_year
+y = dfM$wing_morph_binom
 
 plot_splines(x,y)
 
@@ -698,9 +716,6 @@ yy <- predict(fit2, data.frame(x=xx))
 lines(xx,yy, col='blue')
 ```
 
-
-## work on...
-
 ```{r}
 ggplot() + 
   ggtitle("Host Plant") + xlab("Month") + ylab("Wing-to-Body Ratio") +                              # title and labels
@@ -728,13 +743,13 @@ ggplot() +
 
 
 
-+ guides(fill = guide_legend(reverse = TRUE)) + theme_classic() +
-  scale_linetype(guide = FALSE) +
-  theme(legend.key = element_rect(fill = "white", color = NA), 
-        legend.key.size = unit(0.5, "cm"),
-        legend.key.width = unit(0.5,"cm")) + 
-  scale_fill_manual(values = host_colors_shade, labels=c("C. corindum", "K. elegans")) + 
-  labs(fill = " ") + theme(legend.title = element_text(size = 14),
-                                    legend.text = element_text(size = 13, face="italic")) +
-  scale_color_manual(values=host_colors_pts) 
+# + guides(fill = guide_legend(reverse = TRUE)) + theme_classic() +
+#   scale_linetype(guide = FALSE) +
+#   theme(legend.key = element_rect(fill = "white", color = NA), 
+#         legend.key.size = unit(0.5, "cm"),
+#         legend.key.width = unit(0.5,"cm")) + 
+#   scale_fill_manual(values = host_colors_shade, labels=c("C. corindum", "K. elegans")) + 
+#   labs(fill = " ") + theme(legend.title = element_text(size = 14),
+#                                     legend.text = element_text(size = 13, face="italic")) +
+#   scale_color_manual(values=host_colors_pts) 
 ```
