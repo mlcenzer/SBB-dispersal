@@ -93,7 +93,7 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_au
 3) Merge close dates together in order to have as equally spaced datapoints as possible. The acf() assumes that the data are regular spaced. The acf computes estimates of the autocovariance or autocorrelation function. We need this because it will tell us, if there are patterns, what the mathematical function of those patterns are.
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology9.21.20-clean.csv")
+data_list <- read_morph_data("data/allmorphology04.23.21-clean.csv")
 raw_data = data_list[[1]]
 all_bugs = nrow(raw_data)
 data_long = data_list[[2]] 
@@ -187,7 +187,7 @@ Finally, the lag length (lag order) is how many terms back down the AR process y
 Differencing is when a new series is constructed where the value at the current time step is calculated as the difference between the original observation and the observation at the previous time step.
 
 ```{r}
-detrend(wing_mm) # this is stationary
+detrend(wing_mm) # this is not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -201,9 +201,11 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-dedriftrend(wing_mm) # this is stationary
+dedriftrend(wing_mm) # this is not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
+
+Another function would need to be applied to make this data stationary.
 
 ### Wing2body 
 
@@ -262,7 +264,7 @@ plot_consecutive_yrs(freq_avg, "morph freq") # weak
 ```{r}
 morph = xts(freq_avg, date)
 colnames(morph) <- "wing_morph_freq"
-check_stationarity(morph) # this is non-stationary
+check_stationarity(morph) # this is not stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -303,16 +305,13 @@ plot_consecutive_yrs(wing_avg, "wing length (mm)")
 wing_mmf = xts(wing_avg, date)
 colnames(wing_mmf) <- "wing"
 
-check_stationarity(wing_mmf) # barely not stationary | ACF and PACF significant here
+check_stationarity(wing_mmf) # this is stationary
 addEventLines(events, pos=2, srt=90, col="red")
-auto.arima(wing_mmf, stepwise=FALSE, approximation=FALSE)
 ```
 
 ```{r}
-detrend(wing_mmf) # this is stationary
-addEventLines(events, pos=2, srt=90, col="red")
-dedrift(wing_mmf) # this is stationary
-addEventLines(events, pos=2, srt=90, col="red")
+#detrend(wing_mmf) # this is not stationary
+#dedrift(wing_mmf) # this is not stationary
 ```
 
 #### Wing2body
@@ -342,9 +341,9 @@ auto.arima(ratiof, stepwise=FALSE, approximation=FALSE)
 
 ```{r}
 #dedrift(ratiof) # not stationary
-detrend(ratiof) # **barely** not stationary
+detrend(ratiof) # not stationary
 addEventLines(events, pos=2, srt=90, col="red") 
-dedriftrend(ratiof) # **barely** not not stationary
+dedriftrend(ratiof) # not stationary
 addEventLines(events, pos=2, srt=90, col="red") 
 ```
 
@@ -373,18 +372,16 @@ colnames(morphf) <- "wing_morph_freq"
 
 check_stationarity(morphf) # not stationary
 addEventLines(events, pos=2, srt=90, col="red")
-auto.arima(morphf, stepwise=FALSE, approximation=FALSE)
 ```
 
 ```{r}
-#detrend(morphf) # not stationary
-dedriftrend(morphf) # still not stationary
+detrend(morphf) # stationary
+addEventLines(events, pos=2, srt=90, col="red")
+dedriftrend(morphf) # stationary
+addEventLines(events, pos=2, srt=90, col="red")
 dedrift(morphf) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
-
-Will need to use another function here too.
-
 
 ### Males
 
@@ -409,7 +406,8 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-#dedrift(wing_mmm) # not stationary
+dedrift(wing_mmm) # stationary
+addEventLines(events, pos=2, srt=90, col="red")
 detrend(wing_mmm) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
 dedriftrend(wing_mm) # stationary
@@ -443,8 +441,8 @@ addEventLines(events, pos=2, srt=90, col="red")
 #dedrift(ratiom) #not stationary
 #dedriftrend(ratiom) # this is stationary
 #addEventLines(events, pos=2, srt=90, col="red") # the same  as detrend
-detrend(ratiom) # this is stationary
-addEventLines(events, pos=2, srt=90, col="red")
+#detrend(ratiom) # this is not stationary
+#addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 #### Wing Morph Frequency
@@ -472,10 +470,9 @@ addEventLines(events, pos=2, srt=90, col="red")
 
 ```{r}
 #dedrift(morphm) # not stationary
-detrend(morphm) # stationary
-addEventLines(events, pos=2, srt=90, col="red")
-dedriftrend(morphm) # stationary
-addEventLines(events, pos=2, srt=90, col="red")
+#detrend(morphm) # not stationary
+#dedriftrend(morphm) # not stationary
+#addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ## ts Grouped by Host Plant
@@ -503,15 +500,15 @@ date = ts_cols[[2]]
 ```{r echo=FALSE}
 wing_BV = xts(wing_avg, date)
 colnames(wing_BV) <- "wing"
-check_stationarity(wing_BV) # not stationary
+check_stationarity(wing_BV) # stationary | looks like the ACF and PACF are significant?
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-#detrend(wing_BV) # not stationary
-#dedriftrend(wing_BV) # not stationary
-dedrift(wing_BV) # stationary
-addEventLines(events, pos=2, srt=90, col="red")
+#detrend(wing_BV) # stationary
+#dedriftrend(wing_BV) # stationary
+#dedrift(wing_BV) # stationary
+#addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 #### Wing2body
@@ -567,18 +564,16 @@ date = ts_cols[[2]]
 ```{r}
 morphBV = xts(freq_avg, date)
 colnames(morphBV) <- "wing_morph_freq"
-check_stationarity(morphBV) # not stationary
+check_stationarity(morphBV) # stationary | ACF and PACF are significant
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
 #detrend(morphBV) # not stationary
-dedrift(morphBV) # stationary
-addEventLines(events, pos=2, srt=90, col="red")
+#dedrift(morphBV) # stationary
+#addEventLines(events, pos=2, srt=90, col="red")
 #dedriftrend(morphBV) # not stationary
 ```
-
-Will need to apply another function.
 
 ### Golden Rain Tree
 
@@ -602,10 +597,10 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-detrend(wing_GRT) # stationary
-addEventLines(events, pos=2, srt=90, col="red")
-dedrift(wing_GRT) # stationary
-addEventLines(events, pos=2, srt=90, col="red")
+#detrend(wing_GRT) # not stationary
+#dedrift(wing_GRT) # not stationary
+#dedriftrend(wing_GRT) # not stationary
+#addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 #### Wing2body
@@ -663,10 +658,10 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-detrend(morphGRT) # stationary
-addEventLines(events, pos=2, srt=90, col="red")
-dedrift(morphGRT) # stationary
-addEventLines(events, pos=2, srt=90, col="red")
+#detrend(morphGRT) # not stationary
+#dedriftrend(morphGRT) # not stationary
+#dedrift(morphGRT) # not stationary
+#addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 
@@ -725,7 +720,7 @@ dates = as.Date(newdates, "%b %Y %d")
 sim_dates = c(date, dates)
 
 # simulate randomly your new winglengths
-set.seed(100) # e.g. set.seed = 100, 
+set.seed(120) # e.g. set.seed = 100, 
 wl_sim = runif(length(newdates), min(wing_avg), max(wing_avg))
 wings = c(wing_avg, wl_sim)
 

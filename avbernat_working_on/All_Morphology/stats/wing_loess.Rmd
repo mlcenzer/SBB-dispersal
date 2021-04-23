@@ -19,6 +19,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # {.tabset}
 
+AB: does it make sense to split it by each group by each graph? Probably not.
+
 ## Cleaning Data and Sourcing Scripts
 
 ```{r}
@@ -35,7 +37,7 @@ for (script in script_names) {
 ### Read the data
 
 ```{r warning=FALSE}
-data_list <- read_morph_data("data/allmorphology9.21.20-clean.csv")
+data_list <- read_morph_data("data/allmorphology04.23.21-clean.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
 ```
@@ -77,22 +79,29 @@ calcSSE <- function(x){
 ```
 
 ```{r}
-w2b_summary$index = 1:nrow(w2b_summary)
-loessMod20 <- loess(wing2body ~ index, data=w2b_summary, span=0.20, degree=2) # 20% smoothing span
-loessMod40 <- loess(wing2body ~ index, data=w2b_summary, span=0.40, degree=2) # 40% smoothing span
-loessMod60 <- loess(wing2body ~ index, data=w2b_summary, span=0.60, degree=2) # 60% smoothing span
-loessMod80 <- loess(wing2body ~ index, data=w2b_summary, span=0.80, degree=2) # 80% smoothing span
+d = w2b_summary[w2b_summary$sex=="F" & w2b_summary$pophost=="C.corindum",]
+d = w2b_summary[w2b_summary$sex=="M" & w2b_summary$pophost=="C.corindum",]
+d = w2b_summary[w2b_summary$sex=="M",]
+d = w2b_summary[w2b_summary$sex=="F",]
+```
+
+```{r}
+d$index = 1:nrow(d)
+loessMod20 <- loess(wing2body ~ index, data=d, span=0.20, degree=2) # 20% smoothing span
+loessMod40 <- loess(wing2body ~ index, data=d, span=0.40, degree=2) # 40% smoothing span
+loessMod60 <- loess(wing2body ~ index, data=d, span=0.60, degree=2) # 60% smoothing span
+loessMod80 <- loess(wing2body ~ index, data=d, span=0.80, degree=2) # 80% smoothing span
 
 smoothed20 <- predict(loessMod20) 
 smoothed40 <- predict(loessMod40) 
 smoothed60 <- predict(loessMod60)
 smoothed80 <- predict(loessMod80) 
 # Plot it
-plot(w2b_summary$wing2body, x=w2b_summary$dates, type="p", main="Loess Smoothing and Prediction", xlab="months since start", ylab="wing:body")
-#lines(smoothed20, x=w2b_summary$dates, col="red")
-#lines(smoothed40, x=w2b_summary$dates, col="green")
-lines(smoothed60, x=w2b_summary$dates, col="blue")
-#lines(smoothed80, x=w2b_summary$dates, col="orange")
+plot(d$wing2body, x=d$dates, type="p", main="Loess Smoothing and Prediction", xlab="months since start", ylab="wing:body")
+#lines(smoothed20, x=d$dates, col="red")
+#lines(smoothed40, x=d$dates, col="green")
+lines(smoothed60, x=d$dates, col="blue")
+#lines(smoothed80, x=d$dates, col="orange")
 #?lowess
 ```
 
@@ -296,17 +305,19 @@ mlinear = glm(wing2body ~ month_of_year, data=df, family=gaussian)
 round(summary(mlinear)$coeff[[8]],3) # significant for all (but only with K.elegans)
 pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],3))
 
-p5 = p5 + annotate(geom="text", x=10, y=0.74, label=alpha, color="black", parse=TRUE) +
-          annotate(geom="text", x=10, y=0.743, label=degree, color="black", parse=TRUE) +
-          annotate(geom="text", x=6.2, y=0.718, label=pvalue, color="black", parse=TRUE)
+p5 = p5 + annotate(geom="text", x=10, y=0.744, label=alpha, color="black", parse=TRUE) +
+          annotate(geom="text", x=10, y=0.747, label=degree, color="black", parse=TRUE) +
+          annotate(geom="text", x=6.3, y=0.715, label=pvalue, color="black", parse=TRUE)
 
-p6 = p6 + annotate(geom="text", x=10, y=0.74, label=alpha, color="black", parse=TRUE) +
-          annotate(geom="text", x=10, y=0.743, label=degree, color="black",parse=TRUE) +
-          annotate(geom="text", x=6, y=0.718, label=pvalue, color="black", parse=TRUE)
+p6 = p6 + annotate(geom="text", x=10, y=0.744, label=alpha, color="black", parse=TRUE) +
+          annotate(geom="text", x=10, y=0.747, label=degree, color="black",parse=TRUE) +
+          annotate(geom="text", x=6.3, y=0.715, label=pvalue, color="black", parse=TRUE)
 
 grid.arrange(p5, p6,ncol=2)
 
 ```
+
+
 
 Loess: a nonparametric, graphical tool for depicting relationships between variables. http://www.jtrive.com/docs/Jacoby_LOESS.pdf
 

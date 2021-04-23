@@ -46,7 +46,7 @@ for (script in script_names) {
 ```
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology9.21.20-clean.csv") 
+data_list <- read_morph_data("data/allmorphology04.23.21-clean.csv") 
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
 ###remind yourself how the months are laid out
@@ -65,11 +65,10 @@ raw_data_missing # need to determine the morph of these bugs manually. In the lo
 
 ```{r}
 par(mfrow=c(3,1))
-
 hist(raw_data$wing[raw_data$w_morph=="L"]/raw_data$thorax[raw_data$w_morph=="L"],
      main="Histogram of wing length/thorax length for long winged SBB",
      xlab="wing length/thorax length",
-     breaks=seq(0.5,3.8,by=0.05))
+      breaks=seq(0.5, 3.8, by=0.05))
 hist(raw_data_missing$wing/raw_data_missing$thorax, 
       main="Histogram of wing length/thorax length for SBB w/o recorded wing morph",
       xlab="wing length/thorax length",
@@ -94,12 +93,13 @@ Checking over bug numbers per season.
 
 ```{r}
 raw_data[raw_data$year =="2020",]  #476 survived shipment, so I"m guessing that about 103 bugs did not survive shipment but were still measured for morphology?
-raw_data[raw_data$year =="2019" & raw_data$month=="October",] #similar here. 260 bugs measured but 207 survived. So that means that 53 bugs did not survive and were still measured for morph. 
+raw_data[raw_data$year =="2019" & raw_data$month=="October",] #similar here. 372 bugs measured but 207 survived. So that means that 165 bugs did not survive and were still measured for morph. 
 ```
 
 Plotting the histograms.
 
 ```{r echo=FALSE, fig.width=3.5, fig.height=2.3}
+# order the histogram by latitude and change some colors 
 
 #hist(raw_data$year, main="Numbers Collected", xlab="Year")
 
@@ -170,10 +170,14 @@ data<-data.frame(R=raw_data$wing_morph_binom,
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
 model_comparisonsAIC(model_script)
 ```
-Top model is m7
-* Males are more likely to be long-winged.
-* K.elegans more likely to be long-winged.
-* (+) effect of getting later in the season (month_of_year), such that long wing morphs become increasingly likely later in the year. 
+
+```{r}
+anova(m13, m15, test="Chisq") # Adding A*B does not improve fit
+anova(m7, m13, test="Chisq") # Adding B*C marginally improves fit
+anova(m5, m7, test="Chisq")
+anova(m6, m7, test="Chisq")
+anova(m4, m7, test="Chisq")
+```
 
 ```{r}
 m = glm(wing_morph_binom ~ sex_binom + pophost_binom + months_since_start, data=raw_data, family="binomial")
@@ -183,29 +187,39 @@ m = glm(wing_morph_binom ~ sex_binom + pophost_binom + months_since_start, data=
 tidy_regression(m, is_color=FALSE) # m7
 ```
 
+Top model is m7
+* Males are more likely to be long-winged.
+* K.elegans more likely to be long-winged.
+* No more an effect of months_since_start effect. Before had a (+) effect of getting later in the season (month_of_year), such that long wing morphs become increasingly likely later in the year. 
+
 ```{r}
 model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
 model_comparisonsAIC(model_script)
 ```
 
 ```{r}
-anova(m63, m84, test="Chisq") # Adding C*D does not improve fit
+anova(m98, m110, test="Chisq") # adding B*D does not improve fit
+anova(m84, m98, test="Chisq") # adding A*B marginally improves fit
+
+anova(m63, m84, test="Chisq") # Adding C*D improves fit
 anova(m51, m63, test="Chisq") # Adding B improves fit
 ```
 
 ```{r}
-m = glm(wing_morph_binom ~ sex_binom*months_since_start + month_of_year*months_since_start + pophost_binom, data=raw_data, family="binomial")
+m = glm(wing_morph_binom ~ sex_binom*months_since_start + month_of_year*months_since_start + pophost_binom*month_of_year, data=raw_data, family="binomial") # m84 top model
 ```
 
 ```{r}
-tidy_regression(m, is_color=FALSE) # m63
+tidy_regression(m, is_color=FALSE)
 ```
+
 * Males are more likely to be long-winged.
 * K.elegans more likely to be long-winged.
 * (+) effect of getting later in the season (month_of_year), such that long wing morphs become increasingly likely later in the year. 
 * (+) effect of months_since_start, such that long wing morphs become increasingly likely across the decade.
-* maringal (+) effect of sex*months_since_start where if female and later in the decade then more likely to be long-winged
+* (+) effect of sex*months_since_start where if female and later in the decade then more likely to be long-winged
 * weak (-) effect of month_of_year and months_since_start where the later in the year and later in the decade, the more likely short wing morphs will be present.
+* (-) effect of month of year and pophost where if from C.corindum and later in the season, then more likely long wing morphs will be present
 
 
 ## Wing2Body
@@ -343,7 +357,7 @@ data_winter <- data_winter_tested[,c('beak','thorax', 'wing', 'body', 'w_morph',
 
 ```{r}
 ##load full dataset & pare to long-winged bugs only
-data_list <- read_morph_data("data/allmorphology9.21.20-clean.csv")
+data_list <- read_morph_data("data/allmorphology04.23.21-clean.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
 ```

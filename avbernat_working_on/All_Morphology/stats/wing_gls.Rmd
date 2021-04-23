@@ -55,7 +55,7 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_au
 ### Clean the Data
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology9.21.20-clean.csv")
+data_list <- read_morph_data("data/allmorphology04.23.21-clean.csv")
 raw_data = data_list[[1]]
 all_bugs = nrow(raw_data)
 data_long = data_list[[2]] 

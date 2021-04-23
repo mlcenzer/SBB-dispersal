@@ -1,0 +1,97 @@
+---
+title: "All Morphology: Testing for Spatial Dependencies"
+author: "Anastasia Bernat"
+date: "4/23/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+setwd(dir)
+
+library(dplyr)
+library(zoo)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Barrier Model
+
+```{r}
+library(vegan)
+library(lattice)
+library(MASS)
+library(sp)
+library(raster)
+library(dismo)
+library(splancs)
+library(INLA)
+library(reshape)
+library(gstat)
+library(ggplot2)
+library(ggmap)
+library(rworldmap)
+library(rgdal)
+library(fields)
+library(rgeos)
+```
+
+## Sourcing Scripts and Reading the Data
+
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("compare_models.R",
+                 "regression_output.R",
+                 "clean_morph_data.R", # two functions: read_morph_data and remove_torn_wings
+                 "AICprobabilities.R",
+                 "HighstatLibV13.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_auxiliary_funs.R")
+```
+
+### Clean the Data
+
+```{r}
+data_list <- read_morph_data("data/allmorphology04.23.21-clean.csv")
+raw_data = data_list[[1]]
+all_bugs = nrow(raw_data)
+data_long = data_list[[2]] 
+
+# Remove individuals with torn wings first
+raw_data = remove_torn_wings(raw_data) # **don't need to remove torn wings for wing morph analysis
+data_long = remove_torn_wings(data_long) # **don't need to remove torn wings for wing morph analysis
+clean_bugs = nrow(raw_data)
+
+cat("number of bugs with torn wings:", all_bugs - clean_bugs, "\n\n")
+```
+
+```{r}
+# remove NA dates
+d = data_long %>%
+  filter(!is.na(wing2body), !is.na(datetime))
+
+range(d$wing2body)
+```
+
+```{r}
+MyVar = names(data_long)
+```
+
+
+```{r}
+MyVar <- c("wing2body", "body", "wing") 
+
+Mydotplot(d[,MyVar])
+test = d %>% 
+  filter(is.na(lat))
+
+unique(test$population)
+```
+
