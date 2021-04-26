@@ -3,12 +3,12 @@ import csv
 
 from datetime import datetime, date
 
-# allmorphology04.23.21-clean.csv has "clean" at the end because there was one datapoint probably
+# allmorphology04.26.21-clean.csv has "clean" at the end because there was one datapoint probably
 # inputed wrong by Ana. It was this row 3606    K.elegans   Lake_Wales  F   7.61    3.63    968 13.46   May 2019    
 # I changed the 968 to 9.68
 
 dir_path = r"/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/"
-morph_path = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.23.21-clean.csv"
+morph_path = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.26.21-clean.csv"
 
 print(morph_path)
 
@@ -49,7 +49,7 @@ with open(morph_path, "r") as morph_data:
             pop = pop.replace(" ", "_")
             r["population"] = pop
 
-        if ('' in lat) == True:
+        if lat == '':
             fill_lat = coors_dict[pop][0]
             fill_lon = coors_dict[pop][1]
 
