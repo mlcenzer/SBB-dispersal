@@ -29,6 +29,7 @@ library(rworldmap)
 library(rgdal)
 library(fields)
 library(rgeos)
+
 library(sf)
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -53,7 +54,8 @@ for (script in script_names) {
   source(path) 
 }
 
-source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_auxiliary_funs.R")
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_auxiliary_funs.R") # time
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spatial_dependencies.R") # space
 ```
 
 ### Clean the Data
@@ -113,8 +115,27 @@ for (v in MyVar) {
 ```
 
 ```{r}
-unique(d2[,c("population", "lat","long")])
+coors = unique(d2[,c("population", "lat","long")])
+coors[order(-coors$lat),]
 ```
+August	2017...is it Key Largo or is it North Key Largo? Or are the coordinates seem a little off?
+
+K.elegans	Homestead	M	5.59	2.84	7.5	10.55	February	2020	81	winter	L	25.1755702	-80.36780089	non-diapausing	2.5.2020 - Either this is Homestead or North Key Largo.
+
+
+Here is the block
+
+K.elegans	Gainesville	M	5.51	3.08	8.28	11.13	February	2020	81	winter	L	29.6620224	-82.347313
+K.elegans	Homestead	M	5.59	2.84	7.5	10.55	February	2020	81	winter	L	25.1755702	-80.36780089 ***
+K.elegans	Homestead	F	7.47	3.82	9.66	13.31	February	2020	81	winter	L	25.491362	-80.485821
+
+Data cleaning is not linear, it's incrementally non-linear. 
+
+We need to start adding site to the allmorph datasheet
+
+This one too...lat is a little too hight to make sense: 	Key_Largo	25.17563	-80.36775	(search for the lon and you'll find it in the dataset)
+
+August 2017, May 2019
 
 ```{r}
 spatial_data <- st_as_sf(d2,
@@ -193,7 +214,7 @@ LongLatToUTM <- function(x,y,zone){
   return(as.data.frame(res))
 }
 
-LL <- LongLatToUTM(x = d2$long, y = d2$lat, zone = 31)
+LL <- LongLatToUTM(x = d2$long, y = d2$lat, zone = 16)
 d2$X.utm <- LL$X
 d2$Y.utm <- LL$Y
 ```
@@ -384,7 +405,7 @@ MyMultipanel.ggp2(Z = d3,
 ```
 
 ```{r}
-LL <- LongLatToUTM(x = d3$long, y = d3$lat, zone = 31)
+LL <- LongLatToUTM(x = d3$long, y = d3$lat, zone = 16)
 d3$X.utm <- LL$X
 d3$Y.utm <- LL$Y
 
@@ -521,7 +542,7 @@ abline(h = 0, lty = 2)
 ```
 
 ```{r}
-LL <- LongLatToUTM(x = d4$long, y = d4$lat, zone = 31)
+LL <- LongLatToUTM(x = d4$long, y = d4$lat, zone = 16)
 d4$X.utm <- LL$X
 d4$Y.utm <- LL$Y
 
@@ -561,4 +582,4 @@ xyplot(Ykm ~ Xkm,
 # of red dots close to each other. And also groups of black dots.
 ```
 
-
+Will probably need to take means because the layering is obscuring what is happening per site...

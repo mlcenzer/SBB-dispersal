@@ -26,7 +26,7 @@ AB: does it make sense to split it by each group by each graph? Probably not.
 ```{r}
 source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
 
-script_names = c("compare_models.R","regression_output.R", "clean_morph_data.R", "AICprobabilities.R")
+script_names = c("compare_models.R","regression_output.R", "clean_morph_data2.R", "AICprobabilities.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -37,7 +37,7 @@ for (script in script_names) {
 ### Read the data
 
 ```{r warning=FALSE}
-data_list <- read_morph_data("data/allmorphology04.23.21-clean.csv")
+data_list <- read_morph_data("data/allmorphology04.26.21-coors2.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
 ```

@@ -19,6 +19,11 @@ read_morph_data = function(path) {
   
   data = read.csv(path, header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
   
+  # Standardize population and host plant names of the all-morphology data
+  data$population[data$population=="GainesvilleGRT"]<-"Gainesville"
+  data$population[data$population=="HomesteadBV"]<-"Homestead"
+  data$population[data$population=="HomesteadGRT"]<-"Homestead"
+  
   # Only grab C.corindum and K.elegans host plants
   data<-data[data$pophost=="C.corindum" | data$pophost=="K.elegans",]
   data<-data[data$sex=="F" | data$sex=="M",]

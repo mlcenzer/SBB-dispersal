@@ -75,7 +75,7 @@ source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc
 
 script_names = c("compare_models.R",
                  "regression_output.R",
-                 "clean_morph_data.R", # two functions: read_morph_data and remove_torn_wings
+                 "clean_morph_data2.R", # two functions: read_morph_data and remove_torn_wings
                  "AICprobabilities.R")
 
 for (script in script_names) { 
@@ -93,7 +93,7 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_au
 3) Merge close dates together in order to have as equally spaced datapoints as possible. The acf() assumes that the data are regular spaced. The acf computes estimates of the autocovariance or autocorrelation function. We need this because it will tell us, if there are patterns, what the mathematical function of those patterns are.
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology04.23.21-clean.csv")
+data_list <- read_morph_data("data/allmorphology04.26.21-coors2.csv")
 raw_data = data_list[[1]]
 all_bugs = nrow(raw_data)
 data_long = data_list[[2]] 
@@ -172,7 +172,7 @@ In other words, these plots describe how well the present value of the series is
 ```{r echo=FALSE}
 wing_mm = xts(wing_avg, date)
 colnames(wing_mm) <- "wing"
-check_stationarity(wing_mm) # this is not stationary
+check_stationarity(wing_mm) # this is stationary
 addEventLines(events, pos=2, srt=90, col="red")
 ```
 
@@ -341,9 +341,9 @@ auto.arima(ratiof, stepwise=FALSE, approximation=FALSE)
 
 ```{r}
 #dedrift(ratiof) # not stationary
-detrend(ratiof) # not stationary
+detrend(ratiof) # stationary
 addEventLines(events, pos=2, srt=90, col="red") 
-dedriftrend(ratiof) # not stationary
+dedriftrend(ratiof) # stationary
 addEventLines(events, pos=2, srt=90, col="red") 
 ```
 
@@ -408,10 +408,10 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```{r}
 dedrift(wing_mmm) # stationary
 addEventLines(events, pos=2, srt=90, col="red")
-detrend(wing_mmm) # stationary
-addEventLines(events, pos=2, srt=90, col="red")
-dedriftrend(wing_mm) # stationary
-addEventLines(events, pos=2, srt=90, col="red")
+#detrend(wing_mmm) # not stationary
+#addEventLines(events, pos=2, srt=90, col="red")
+#dedriftrend(wing_mm) # not stationary
+#addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 #### Wing2body
@@ -438,11 +438,11 @@ addEventLines(events, pos=2, srt=90, col="red")
 ```
 
 ```{r}
-#dedrift(ratiom) #not stationary
-#dedriftrend(ratiom) # this is stationary
+dedrift(ratiom) # stationary 
+addEventLines(events, pos=2, srt=90, col="red")
+#dedriftrend(ratiom) # not stationary
 #addEventLines(events, pos=2, srt=90, col="red") # the same  as detrend
-#detrend(ratiom) # this is not stationary
-#addEventLines(events, pos=2, srt=90, col="red")
+#detrend(ratiom) # not stationary
 ```
 
 #### Wing Morph Frequency
@@ -720,7 +720,7 @@ dates = as.Date(newdates, "%b %Y %d")
 sim_dates = c(date, dates)
 
 # simulate randomly your new winglengths
-set.seed(120) # e.g. set.seed = 100, 
+set.seed(120) # e.g. set.seed = 120, 
 wl_sim = runif(length(newdates), min(wing_avg), max(wing_avg))
 wings = c(wing_avg, wl_sim)
 

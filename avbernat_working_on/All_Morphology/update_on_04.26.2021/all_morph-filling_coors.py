@@ -22,7 +22,7 @@ coors_dict = {"Ft.Myers": [26.634014, -81.879868],
 				"Homestead": [25.4917222, -80.4858611],
                 "HomesteadBV": [25.4917222, -80.4858611],
                 "HomesteadGRT": [25.4917222, -80.4858611],
-				"Lake_Wales": [28.8053019,-81.88184229],
+				"Lake_Wales": [27.90335, -81.58946], 
 				"Plantation_Key": [24.96448253, -80.56738908],
 				"Lake_Placid": [27.29866003, -81.36611608],
 				"North_Key_Largo": [25.25647566, -80.31068981],
@@ -37,9 +37,13 @@ with open(morph_path, "r") as morph_data:
         pop = r["population"]
         lat = r["lat"]
         lon = r["long"]
+        body = r["body"]
 
         host = host.replace(" ", "")
         r["pophost"] = host
+
+        if body == "S":
+            body = None
 
         if pop == "Ft. Lauderdale":
             pop = "Ft.Lauderdale"
@@ -61,7 +65,7 @@ with open(morph_path, "r") as morph_data:
 
 #print(full_data[0:1])
 
-outpath = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.26.21-coors.csv"
+outpath = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.27.21-coors.csv"
 
 with open(outpath, "w") as output_file:
     writer = csv.DictWriter(output_file, fieldnames = full_data[0].keys())

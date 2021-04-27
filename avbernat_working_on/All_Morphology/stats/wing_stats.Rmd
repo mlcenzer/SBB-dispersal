@@ -36,17 +36,20 @@ source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc
 
 script_names = c("compare_models.R",
                  "regression_output.R", 
-                 "clean_morph_data.R", # two functions: read_morph_data and remove_torn_wings
+                 "clean_morph_data2.R", # two functions: read_morph_data and remove_torn_wings
                  "AICprobabilities.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
   source(path) 
 }
+
+spatial_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spatial_dependencies.R"
+source(spatial_path)
 ```
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology04.23.21-clean.csv") 
+data_list <- read_morph_data("data/allmorphology04.26.21-coors2.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
 ###remind yourself how the months are laid out
@@ -97,17 +100,37 @@ raw_data[raw_data$year =="2019" & raw_data$month=="October",] #similar here. 372
 ```
 
 Plotting the histograms.
+```{r}
+data = raw_data
+data$population[data$population=="Ft.Myers"]<-"Ft. Myers"
+data$population[data$population=="Key_Largo"]<-"Key Largo"
+data$population[data$population=="Lake_Placid"]<-"Lake Placid"
+data$population[data$population=="Lake_Wales"]<-"Lake Wales"
+data$population[data$population=="North_Key_Largo"]<-"North Key Largo"
+data$population[data$population=="Plantation_Key"]<-"Plantation Key"
+
+data$pophost[data$pophost=="C.corindum"]<-"C. corindum"
+data$pophost[data$pophost=="K.elegans"]<-"K. elegans"
+
+data = data[order(-data$lat),] 
+#lat_order = unique(data$population) # should work but lat and long not right so need to do it manually:
+lat_order = c("Gainesville", "Leesburg", "Lake Wales", "Lake Placid", "Ft. Myers",  "Homestead",  "North Key Largo", "Key Largo", "Plantation Key")
+data$population = as.factor(data$population)
+data$population = factor(data$population,levels=lat_order)
+```
+
+
 
 ```{r echo=FALSE, fig.width=3.5, fig.height=2.3}
 # order the histogram by latitude and change some colors 
 
-#hist(raw_data$year, main="Numbers Collected", xlab="Year")
+#hist(data$year, main="Numbers Collected", xlab="Year")
 
-colors = c("#999999", "#E69F00", "#56B4E9",
-           "ivory2", "gold", "royalblue4", "coral1", 
-           "orange4", "palegreen4")
+colors = c("#787a87", "#E69F00", "#56B4E9",
+           "royalblue", "grey", "gold", 
+           "#409973", "#9bc969", "ivory2") # the keys
 
-p = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=population)) + 
+p = ggplot(data=subset(data, !is.na(datetime)), aes(x=datetime, fill=population)) + 
     geom_bar(position='stack', color="black", width=0.7) +
     theme_bw()
 p1 = p + labs(title=" ", fill="Population",
@@ -121,7 +144,7 @@ theme(axis.title.x = element_text(vjust = -3)) +
 theme(axis.title.y = element_text(vjust = 4)) +
   theme(plot.margin=unit(c(1,1,1.1,1.2),"cm"))
 
-p = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
+p = ggplot(data=subset(data, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
     geom_bar(position='stack', color="black", width=0.7) +
     theme_bw()
 p2 = p + labs(title=" ", fill="Host Plant",
@@ -135,7 +158,7 @@ theme(axis.title.x = element_text(vjust = -3)) +
 theme(axis.title.y = element_text(vjust = 4)) +
   theme(plot.margin=unit(c(1,1,1.1,1.2),"cm"))
 
-p = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=sex)) + 
+p = ggplot(data=subset(data, !is.na(datetime)), aes(x=datetime, fill=sex)) + 
     geom_bar(position='stack', color="black", width=0.7) +
     theme_bw()
 p3 = p + labs(title=" ", fill="Sex",
@@ -193,6 +216,16 @@ Top model is m7
 * No more an effect of months_since_start effect. Before had a (+) effect of getting later in the season (month_of_year), such that long wing morphs become increasingly likely later in the year. 
 
 ```{r}
+temp = raw_data %>% 
+  filter(!is.na(wing_morph_binom))
+```
+
+```{r}
+check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=10000)
+```
+No spatial dependencies for wing morph.
+
+```{r}
 model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
 model_comparisonsAIC(model_script)
 ```
@@ -220,6 +253,20 @@ tidy_regression(m, is_color=FALSE)
 * (+) effect of sex*months_since_start where if female and later in the decade then more likely to be long-winged
 * weak (-) effect of month_of_year and months_since_start where the later in the year and later in the decade, the more likely short wing morphs will be present.
 * (-) effect of month of year and pophost where if from C.corindum and later in the season, then more likely long wing morphs will be present
+
+### Model Validation 
+
+```{r}
+temp = raw_data %>%
+  filter(!is.na(wing_morph_binom)) # filter out NA's that glm did automatically
+```
+
+
+```{r}
+check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=10000)
+```
+
+Don't see any spatial dependencies. 
 
 
 ## Wing2Body
@@ -299,6 +346,17 @@ tidy_regression(m, is_color=FALSE) # m11
 * wing2body ratios are increasing moderately towards the present 
 
 ```{r}
+temp = data_long %>% 
+  filter(!is.na(wing2body_c))
+```
+
+```{r}
+check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=10000)
+```
+
+There might be some spatial dependencies because seeing clusters of red and clusters of black.
+
+```{r}
 model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")
 model_comparisonsAIC(model_script)
 ```
@@ -326,44 +384,4 @@ plot(wing2body~month_of_year, data=wing2body_summary, pch=c(19,21)[as.factor(sex
 ```
 
 These plots are plotted cleanly in the wing_plots.Rmd script.
-
-
-## Winter 2020
-
-```{r}
-rm(list=ls())
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
-
-script_names = c("center_flight_data.R", # Needs to load first
-                 "clean_flight_data.R",  # Script that loads and cleans up the data
-                 "regression_output.R", # Cleans up regression outputs, prints in color or B&W
-                 "clean_morph_data.R")  
-
-for (script in script_names) { 
-  path = paste0(source_path, script)
-  source(path) 
-  }
-```
-
-```{r}
-##read in and clean up data
-data_winter_full <- read_flight_data("data/all_flight_data-Winter2020.csv")
-data_winter_all <- data_winter_full[[1]]
-data_winter_tested <- data_winter_full[[2]]
-
-###for these analyses, morphology only
-data_winter <- data_winter_tested[,c('beak','thorax', 'wing', 'body', 'w_morph', 'morph_notes')]
-```
-
-```{r}
-##load full dataset & pare to long-winged bugs only
-data_list <- read_morph_data("data/allmorphology04.23.21-clean.csv")
-raw_data = data_list[[1]]
-data_long = data_list[[2]]
-```
-
-```{r}
-data_all_dates<-raw_data[raw_data$w_morph=="L",c('beak','thorax', 'wing', 'body', 'w_morph', 'notes')]
-```
-
 
