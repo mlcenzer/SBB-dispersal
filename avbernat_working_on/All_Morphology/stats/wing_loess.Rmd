@@ -55,7 +55,6 @@ jitter = runif(n=nrow(w2b_summary), min=-0.5, max=0.5)
 w2b_summary$dates <- w2b_summary$dates + jitter
 ```
 
-
 Loess Regression: (base R) http://r-statistics.co/Loess-Regression-With-R.html
 
 ```{r}

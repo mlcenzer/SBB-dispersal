@@ -1,4 +1,8 @@
-check_spatial_dependencies = function(m, d, xlong, ylat, zone = 16, cutoff_m) {
+library(sp)
+library(gstat)
+library(lattice)
+
+check_spatial_dependencies = function(m, d, xlong, ylat, zone = 16, cutoff_m, is_glm=FALSE, is_inla=FALSE) {
   
   # lat long to utm
   xy <- data.frame(ID = 1:length(xlong), X = xlong, Y = ylat)
@@ -9,9 +13,17 @@ check_spatial_dependencies = function(m, d, xlong, ylat, zone = 16, cutoff_m) {
   d$X.utm <- res$X
   d$Y.utm <- res$Y
   
+  # Get Pearson and fitted values
+  if (is_glm) {
+    E = m$residuals
+    mu = m$fitted.values
+  }
+  
+  if (is_inla) {
+    mu <- m$summary.fitted.values[,"mean"]
+    E  <- (d$wing2body - mu) / sqrt(mu)
+  }
   # Plot the Pearson vs. fitted
-  E = m$residuals
-  mu = m$fitted.values
   plot(mu, E,
        xlab = "Fitted values",
        ylab = "Pearson residuals")
@@ -20,7 +32,7 @@ check_spatial_dependencies = function(m, d, xlong, ylat, zone = 16, cutoff_m) {
   # What are the distances between the points? Plot it.
   Loc <- cbind(d$X.utm, d$Y.utm)
   D <- dist(Loc)
-  par(mfrow = c(1,1), mar = c(5,5,2,2), cex.lab = 1.5)
+  #par(mfrow = c(1,1), mar = c(5,5,2,2), cex.lab = 1.5)
   hist(D, 
        freq = TRUE,
        main = "", 

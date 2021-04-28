@@ -3,12 +3,8 @@ import csv
 
 from datetime import datetime, date
 
-# allmorphology04.26.21-clean.csv has "clean" at the end because there was one datapoint probably
-# inputed wrong by Ana. It was this row 3606    K.elegans   Lake_Wales  F   7.61    3.63    968 13.46   May 2019    
-# I changed the 968 to 9.68
-
 dir_path = r"/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/"
-morph_path = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.26.21-clean.csv"
+morph_path = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.28.21.csv"
 
 print(morph_path)
 
@@ -66,7 +62,7 @@ with open(morph_path, "r") as morph_data:
 
 #print(full_data[0:1])
 
-outpath = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.27.21-coors.csv"
+outpath = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.28.21-coors.csv"
 
 with open(outpath, "w") as output_file:
     writer = csv.DictWriter(output_file, fieldnames = full_data[0].keys())

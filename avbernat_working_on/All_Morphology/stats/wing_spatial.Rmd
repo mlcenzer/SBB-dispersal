@@ -61,7 +61,7 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spati
 ### Clean the Data
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology04.26.21-coors2.csv")
+data_list <- read_morph_data("data/allmorphology04.28.21-coors.csv")
 raw_data = data_list[[1]]
 all_bugs = nrow(raw_data)
 data_long = data_list[[2]] 
@@ -178,177 +178,10 @@ dic
 ```
 
 ```{r}
-# Pearson residuals vs. fitted values
-mu2 <- M2$summary.fitted.values[,"mean"]
-E2  <- (d2$wing2body - mu2) / sqrt(mu2)
+temp = d2 %>% 
+  filter(!is.na(wing2body))
 
-par(mfrow = c(1,1), mar = c(5,5,2,2), cex.lab = 1.5)
-plot(x = mu2, 
-     y = E2,
-     xlab = "Fitted values",
-    ylab = "Pearson residuals")
-abline(h = 0, lty = 2)  
-```
-
-```{r}
-# Plot residuals vs each covariate in the model
-# And vs each covariate not in the model.
-d2$E2 <- E2
-MyVar <- c("sex", "pophost", "month_of_year", 
-            "months_since_start")
-MyMultipanel.ggp2(Z = d2, 
-                  varx = MyVar, 
-                  vary = "E2", 
-                  ylab = "Pearson residuals gaussian GLMM",
-                  addSmoother = FALSE,
-                  addRegressionLine = FALSE,
-                  addHorizontalLine = TRUE)
-```
-
-```{r}
-LongLatToUTM <- function(x,y,zone){
-  xy <- data.frame(ID = 1:length(x), X = x, Y = y)
-  coordinates(xy) <- c("X", "Y")
-  proj4string(xy) <- CRS("+proj=longlat +datum=WGS84")  
-  res <- spTransform(xy, CRS(paste("+proj=utm +zone=",zone," ellps=WGS84",sep='')))
-  return(as.data.frame(res))
-}
-
-LL <- LongLatToUTM(x = d2$long, y = d2$lat, zone = 16)
-d2$X.utm <- LL$X
-d2$Y.utm <- LL$Y
-```
-
-```{r}
-xyplot(Y.utm / 1000 ~ X.utm / 1000,
-       data = d2,
-       aspect = "iso",
-       pch = 16)
-
-# What are the distances between the points?
-Loc <- cbind(d2$X.utm, d2$Y.utm)
-D <- dist(Loc)
-par(mfrow = c(1,1), mar = c(5,5,2,2), cex.lab = 1.5)
-hist(D, 
-     freq = TRUE,
-     main = "", 
-     xlab = "Distance between sites (m)",
-     ylab = "Frequency")
-```
-
-```{r}
-# 1. Plot the Pearson versus their spatial coordinates.
-MyData <- data.frame(E1  = E2,
-                     Xkm = d2$X.utm,
-                     Ykm = d2$Y.utm)
-
-MyData$MySize <- 3 * abs(MyData$E1) / max( MyData$E1)
-MyData$MyCol <- ifelse(MyData$E1> 0, 1, 2)
-xyplot(Ykm ~ Xkm,
-       data = MyData,
-       cex = MyData$MySize,
-       col = MyData$MyCol,
-       pch = 1)
-
-# We seem to have some spatial correlation in the Pearson residuals! We have groups 
-# of red dots close to each other. And also groups of black dots.
-```
-
-
-```{r}
-# Sample-variogram with distances up to 1200000 m
-MyData  <- data.frame(E2 = E2, 
-                      X  = d2$X.utm, 
-                      Y  = d2$Y.utm)
-coordinates(MyData)    <- c("X", "Y")
-V12 <- variogram(E2 ~ 1, MyData, cressie = TRUE, cutoff = (1200000))
-plot(V12, 
-     main = "", 
-     xlab = list(label = "Distance (m)", cex = 1.5), 
-     ylab = list(label = "Semi-variogram", cex = 1.5),
-       pch = 16,
-       col = 1,
-       cex = 1.5
-       )
-
-# Sample-variogram with distances up to 400000 m
-MyData  <- data.frame(E2 = E2, 
-                      X  = d2$X.utm, 
-                      Y  = d2$Y.utm)
-coordinates(MyData)    <- c("X", "Y")
-V12 <- variogram(E2 ~ 1, MyData, cressie = TRUE, cutoff = (400000))
-plot(V12, 
-     main = "", 
-     xlab = list(label = "Distance (m)", cex = 1.5), 
-     ylab = list(label = "Semi-variogram", cex = 1.5),
-       pch = 16,
-       col = 1,
-       cex = 1.5
-       )
-
-# Sample-variogram with distances up to 100000 m
-MyData  <- data.frame(E2 = E2, 
-                      X  = d2$X.utm, 
-                      Y  = d2$Y.utm)
-coordinates(MyData)    <- c("X", "Y")
-V12 <- variogram(E2 ~ 1, MyData, cressie = TRUE, cutoff = (100000))
-plot(V12, 
-     main = "", 
-     xlab = list(label = "Distance (m)", cex = 1.5), 
-     ylab = list(label = "Semi-variogram", cex = 1.5),
-       pch = 16,
-       col = 1,
-       cex = 1.5
-       )
-
-# Sample-variogram with distances up to 10000 m
-MyData  <- data.frame(E2 = E2, 
-                      X  = d2$X.utm, 
-                      Y  = d2$Y.utm)
-coordinates(MyData)    <- c("X", "Y")
-V12 <- variogram(E2 ~ 1, MyData, cressie = TRUE, cutoff = (10000))
-plot(V12, 
-     main = "", 
-     xlab = list(label = "Distance (m)", cex = 1.5), 
-     ylab = list(label = "Semi-variogram", cex = 1.5),
-       pch = 16,
-       col = 1,
-       cex = 1.5
-       )
-
-# Sample-variogram with distances up to 500 m
-MyData  <- data.frame(E2 = E2, 
-                      X  = d2$X.utm, 
-                      Y  = d2$Y.utm)
-coordinates(MyData)    <- c("X", "Y")
-V12 <- variogram(E2 ~ 1, MyData, cressie = TRUE, cutoff = (500))
-plot(V12, 
-     main = "", 
-     xlab = list(label = "Distance (m)", cex = 1.5), 
-     ylab = list(label = "Semi-variogram", cex = 1.5),
-       pch = 16,
-       col = 1,
-       cex = 1.5
-       )
-```
-```{r}
-# What is the distance for which we would expect dependency? (Since a bug can fly up to 14 km...that would be the max and then it would tapper off)
-# Sample-variogram with distances up to 14000 m
-MyData  <- data.frame(E2 = E2, 
-                      X  = d2$X.utm, 
-                      Y  = d2$Y.utm)
-coordinates(MyData)    <- c("X", "Y")
-V12 <- variogram(E2 ~ 1, MyData, cressie = TRUE, cutoff = (14000))
-plot(V12, 
-     main = "", 
-     xlab = list(label = "Distance (m)", cex = 1.5), 
-     ylab = list(label = "Semi-variogram", cex = 1.5),
-       pch = 16,
-       col = 1,
-       cex = 1.5
-       ) # or more realistically 7 km because it tappers around that
-
-# But maybe only the keys and homestead, let's model only the keys
+check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
 ```
 
 ```{r}
@@ -377,130 +210,10 @@ M1 <- inla(wing2body ~ sex_binom + pophost + month_of_year + months_since_start 
 ```
 
 ```{r}
-# Pearson residuals vs. fitted values
-mu1 <- M1$summary.fitted.values[,"mean"]
-E1  <- (d3$wing2body - mu1) / sqrt(mu1)
+temp = d3 %>% 
+  filter(!is.na(wing2body))
 
-par(mfrow = c(1,1), mar = c(5,5,2,2), cex.lab = 1.5)
-plot(x = mu1, 
-     y = E1,
-     xlab = "Fitted values",
-    ylab = "Pearson residuals")
-abline(h = 0, lty = 2)  
-```
-
-```{r}
-# Plot residuals vs each covariate in the model
-# And vs each covariate not in the model.
-d3$E1 <- E1
-MyVar <- c("sex", "month_of_year", "pophost",
-            "months_since_start")
-MyMultipanel.ggp2(Z = d3, 
-                  varx = MyVar, 
-                  vary = "E1", 
-                  ylab = "Pearson residuals gaussian GLMM",
-                  addSmoother = FALSE,
-                  addRegressionLine = FALSE,
-                  addHorizontalLine = TRUE)
-```
-
-```{r}
-LL <- LongLatToUTM(x = d3$long, y = d3$lat, zone = 16)
-d3$X.utm <- LL$X
-d3$Y.utm <- LL$Y
-
-xyplot(Y.utm / 1000 ~ X.utm / 1000,
-       data = d3,
-       aspect = "iso",
-       pch = 16)
-
-# What are the distances between the points?
-Loc <- cbind(d3$X.utm, d3$Y.utm)
-D <- dist(Loc)
-par(mfrow = c(1,1), mar = c(5,5,2,2), cex.lab = 1.5)
-hist(D, 
-     freq = TRUE,
-     main = "", 
-     xlab = "Distance between sites (m)",
-     ylab = "Frequency")
-```
-
-```{r}
-# Sample-variogram with distances up to 250000 m
-MyData  <- data.frame(E1 = E1, 
-                      X  = d3$X.utm, 
-                      Y  = d3$Y.utm)
-coordinates(MyData)    <- c("X", "Y")
-V12 <- variogram(E1 ~ 1, MyData, cressie = TRUE, cutoff = (250000))
-plot(V12, 
-     main = "", 
-     xlab = list(label = "Distance (m)", cex = 1.5), 
-     ylab = list(label = "Semi-variogram", cex = 1.5),
-       pch = 16,
-       col = 1,
-       cex = 1.5
-       )
-with(V12, scatter.smooth(x = dist, 
-                        y = gamma,
-                        xlab = "Distance",
-                        ylab = "Sample variogram"))
-
-# Sample-variogram with distances up to 14000 m
-MyData  <- data.frame(E1 = E1, 
-                      X  = d3$X.utm, 
-                      Y  = d3$Y.utm)
-coordinates(MyData)    <- c("X", "Y")
-V12 <- variogram(E1 ~ 1, MyData, cressie = TRUE, cutoff = (14000))
-plot(V12, 
-     main = "", 
-     xlab = list(label = "Distance (m)", cex = 1.5), 
-     ylab = list(label = "Semi-variogram", cex = 1.5),
-       pch = 16,
-       col = 1,
-       cex = 1.5
-       )
-with(V12, scatter.smooth(x = dist, 
-                        y = gamma,
-                        xlab = "Distance",
-                        ylab = "Sample variogram"))
-
-# Sample-variogram with distances up to 1000 m
-MyData  <- data.frame(E1 = E1, 
-                      X  = d3$X.utm, 
-                      Y  = d3$Y.utm)
-coordinates(MyData)    <- c("X", "Y")
-V12 <- variogram(E1 ~ 1, MyData, cressie = TRUE, cutoff = (1000))
-plot(V12, 
-     main = "", 
-     xlab = list(label = "Distance (m)", cex = 1.5), 
-     ylab = list(label = "Semi-variogram", cex = 1.5),
-       pch = 16,
-       col = 1,
-       cex = 1.5
-       )
-with(V12, scatter.smooth(x = dist, 
-                        y = gamma,
-                        xlab = "Distance",
-                        ylab = "Sample variogram"))
-```
-
-
-```{r}
-# 1. Plot the Pearson versus their spatial coordinates.
-MyData <- data.frame(E1  = E1,
-                     Xkm = d3$X.utm,
-                     Ykm = d3$Y.utm)
-
-MyData$MySize <- 3 * abs(MyData$E1) / max( MyData$E1)
-MyData$MyCol <- ifelse(MyData$E1> 0, 1, 2)
-xyplot(Ykm ~ Xkm,
-       data = MyData,
-       cex = MyData$MySize,
-       col = MyData$MyCol,
-       pch = 1)
-
-# We seem to have some spatial correlation in the Pearson residuals! We have groups 
-# of red dots close to each other. And also groups of black dots.
+check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
 ```
 
 
@@ -510,6 +223,7 @@ Remove homestead
 d4 = d2 %>%
   filter(population == "North_Key_Largo" | population =="Key_Largo" | population == "Plantation_Key")
 ```
+
 ```{r}
 spatial_data <- st_as_sf(d4,
                          coords = c("long", "lat"),
@@ -529,57 +243,10 @@ M1 <- inla(wing2body ~ sex_binom + month_of_year + months_since_start +
 ```
 
 ```{r}
-# Pearson residuals vs. fitted values
-mu1 <- M1$summary.fitted.values[,"mean"]
-E1  <- (d4$wing2body - mu1) / sqrt(mu1)
+temp = d4 %>% 
+  filter(!is.na(wing2body))
 
-par(mfrow = c(1,1), mar = c(5,5,2,2), cex.lab = 1.5)
-plot(x = mu1, 
-     y = E1,
-     xlab = "Fitted values",
-    ylab = "Pearson residuals")
-abline(h = 0, lty = 2)  
-```
-
-```{r}
-LL <- LongLatToUTM(x = d4$long, y = d4$lat, zone = 16)
-d4$X.utm <- LL$X
-d4$Y.utm <- LL$Y
-
-xyplot(Y.utm / 1000 ~ X.utm / 1000,
-       data = d4,
-       aspect = "iso",
-       pch = 16)
-
-# What are the distances between the points?
-Loc <- cbind(d4$X.utm, d4$Y.utm)
-D <- dist(Loc)
-par(mfrow = c(1,1), mar = c(5,5,2,2), cex.lab = 1.5)
-hist(D, 
-     freq = TRUE,
-     main = "", 
-     xlab = "Distance between sites (m)",
-     ylab = "Frequency")
-```
-
-
-
-```{r}
-# 1. Plot the Pearson versus their spatial coordinates.
-MyData <- data.frame(E1  = E1,
-                     Xkm = d4$X.utm,
-                     Ykm = d4$Y.utm)
-
-MyData$MySize <- 3 * abs(MyData$E1) / max( MyData$E1)
-MyData$MyCol <- ifelse(MyData$E1> 0, 1, 2)
-xyplot(Ykm ~ Xkm,
-       data = MyData,
-       cex = MyData$MySize,
-       col = MyData$MyCol,
-       pch = 1)
-
-# We seem to have some spatial correlation in the Pearson residuals! We have groups 
-# of red dots close to each other. And also groups of black dots.
+check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
 ```
 
 Will probably need to take means because the layering is obscuring what is happening per site...
