@@ -1,7 +1,7 @@
 ---
 title: "Principal component analysis (PCA)"
 author: "Anastasia Bernat"
-date: "8/12/2020 - 12/16/2020"
+date: "4/27/2021"
 output: html_document
 ---
 
@@ -89,7 +89,7 @@ for (script in script_names) {
 ```
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology04.26.21-coors2.csv")
+data_list <- read_morph_data("data/allmorphology04.27.21-coors.csv")
 raw_data = data_list[[1]]
 all_bugs = nrow(raw_data)
 data_long = data_list[[2]] 
@@ -113,7 +113,6 @@ d <- raw_data %>%
   filter(!is.na(body))
 colnames(d) <- c("thorax", "body", "wing", "beak")
 
-d$body
 MorphPCA = PCA_graphs(d, "(a) ")
 ```
 
@@ -153,21 +152,23 @@ text(-0.5,3, cor_val)
 abline(m, lty=2)
 ```
 
-
 ```{r}
 #Plot by host
-host <- data_tested %>%
-  select(host_plant)
+host <- raw_data %>%
+  filter(!is.na(body)) %>%
+  select(pophost)
+  
 
-d$host_plant <- host$host_plant
+d$pophost <- host$pophost
 fviz_pca_ind(MorphPCA,
              geom.ind = "point",
-             col.ind = d$host_plant,
+             col.ind = d$pophost,
              legend.title = "Host Plant",
              addEllipses=TRUE)
 
 # Plot by sex
-sex <- data_tested %>%
+sex <- raw_data %>%
+  filter(!is.na(body)) %>%
   select(sex) 
 
 d$sex <- sex$sex
@@ -178,17 +179,19 @@ fviz_pca_ind(MorphPCA,
              addEllipses=TRUE)
 
 # Plot by distance from the sympatric zone
-sym_dist <- data_tested %>%
-  select(sym_dist)
-
-d$sym_dist <- sym_dist$sym_dist
-fviz_pca_ind(MorphPCA,
-             geom.ind = "point",
-             col.ind = d$sym_dist,
-             legend.title = "Sympatric Zone Distance")
+# sym_dist <- raw_data %>%
+#   filter(!is.na(body)) %>%
+#   select(sym_dist)
+# 
+# d$sym_dist <- sym_dist$sym_dist
+# fviz_pca_ind(MorphPCA,
+#              geom.ind = "point",
+#              col.ind = d$sym_dist,
+#              legend.title = "Sympatric Zone Distance")
 
 # Plot by population
-pop <- data_tested %>%
+pop <- raw_data %>%
+  filter(!is.na(body)) %>%
   select(population)
 
 d$population <- pop$pop
@@ -199,33 +202,30 @@ fviz_pca_ind(MorphPCA,
              addEllipses=TRUE)
 ```
 
-### Morphology w/ Mass
-
-```{r}
-d <- data_tested %>%
-  select(thorax_s, body_s, wing_s, beak_s, mass_s) %>%
-  filter(!is.na(mass_s))
-colnames(d) <- c("thorax", "body", "wing", "beak", "mass")
-
-MorphPCA = PCA_graphs(d, "(b) ")
-```
-
 ### Morphology w/ Wing2Body
 
 ```{r}
+
+raw_data$wing2body = raw_data$wing / raw_data$body 
 # No mass
-d <- data_tested %>%
-  select(thorax_s, wing2body_s, beak_s) %>%
-  filter(!is.na(beak_s))
+d <- raw_data %>%
+  select(thorax, wing2body, beak) %>%
+  filter(!is.na(beak)) %>%
+  filter(!is.na(wing2body))
 colnames(d) <- c("thorax", "wing2body", "beak")
 
 MorphPCA = PCA_graphs(d, "(c) ")
 
-# Mass
-d <- data_tested %>%
-  select(thorax_s, wing2body_s, beak_s, mass_s) %>%
-  filter(!is.na(mass_s))
-colnames(d) <- c("thorax", "wing2body", "beak", "mass")
+# long wing only
+
+data_long$wing2body = data_long$wing / data_long$body 
+# No mass
+d <- data_long %>%
+  select(thorax, wing2body, beak) %>%
+  filter(!is.na(beak)) %>%
+  filter(!is.na(wing2body))
+colnames(d) <- c("thorax", "wing2body", "beak")
 
 MorphPCA = PCA_graphs(d, "(d) ")
+
 ```

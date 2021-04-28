@@ -354,7 +354,7 @@ temp = data_long %>%
 check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=10000)
 ```
 
-There might be some spatial dependencies because seeing clusters of red and clusters of black.
+There might be some spatial dependencies for long wing freq because seeing clusters of red and clusters of black.
 
 ```{r}
 model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")

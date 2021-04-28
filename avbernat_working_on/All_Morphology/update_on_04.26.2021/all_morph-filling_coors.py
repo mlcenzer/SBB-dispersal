@@ -44,6 +44,7 @@ with open(morph_path, "r") as morph_data:
 
         if body == "S":
             body = None
+            r["body"] = body
 
         if pop == "Ft. Lauderdale":
             pop = "Ft.Lauderdale"
