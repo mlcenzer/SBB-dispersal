@@ -29,6 +29,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Base statistics of all morphology for wing morph and wing2body ratio (in long-winged bugs).
 
+Conclusion from the wing_timeseries.Rmd: Found no significant temporal dependencies. Determined that most time series were nonstationary and all ts were an AR(0) process [white noise with moving average]. Concluded that the time values were independent of each other.
+
 ## Sourcing Scripts and Cleaning the Data
 
 ```{r}
@@ -44,8 +46,7 @@ for (script in script_names) {
   source(path) 
 }
 
-spatial_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spatial_dependencies.R"
-source(spatial_path)
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spatial_dependencies.R") # space
 ```
 
 ```{r}
@@ -56,13 +57,53 @@ data_long = data_list[[2]]
 #cbind(data_long$month_of_year, data_long$month)
 ```
 
+## Checking for Outliers 
+
+```{r}
+dotplot = function(var, data) {
+  plot(data[,var], seq(1:nrow(data)),
+       col=data$color, ylab="Order of the data from text file", xlab=paste0("Value of ", var))
+}
+```
+
+```{r}
+# remove NA dates
+d = data_long %>%
+  filter(!is.na(wing2body))
+
+range(d$wing2body) 
+```
+
+```{r}
+MyVar <- c("wing2body", "wing2thorax", "body", "wing", "beak", "thorax", "lat", "long") 
+d$color = "black"
+d$color[d$year == "2019" & d$month =="May"] = "red"
+
+par(mfrow=c(3,3))
+for (v in MyVar) {
+  dotplot(v, d)
+}
+
+# remove outliers?
+d2 = d %>% 
+  filter(!beak<4.5) %>%
+  filter(!wing2body <0.62) # 
+
+par(mfrow=c(3,3))
+for (v in MyVar) {
+  dotplot(v, d2)
+}
+```
+
+Wing overmeasured? Body measured too small? Probably the body measured off? wing seems off.
+
 ## Wing Morph
 
 ### Infer missing wing morph values
 
 ```{r}
 raw_data_missing = raw_data %>%
-  filter(w_morph=="" | is.na(w_morph)) # had 28 that are hard to identify as either S or L based on the wing2thorax thresholds.
+  filter(w_morph=="" | is.na(w_morph)) # had 30 that are hard to identify as either S or L based on the wing2thorax thresholds.
 raw_data_missing # need to determine the morph of these bugs manually. In the long term...need to do this manually because the boundaries of what is defined as a morph can change over time.
 ```
 
@@ -218,8 +259,10 @@ Top model is m7
 temp = raw_data %>% 
   filter(!is.na(wing_morph_binom))
 
-check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=10000)
+check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_glm=TRUE)
 ```
+
+A **variogram** is used to display the variability between data points as a function of distance. Here, from distances 0 to 4000 m, the variability between points starts high and then decreases (the points become more similar) until it levels out because at some point the distance between data points will be great enough that the points are no longer considered to be related to each other. The variability will flatten out into a "sill".
 
 No spatial dependencies for wing morph.
 
@@ -234,11 +277,20 @@ wmorph_summary
 ```
 
 ```{r}
-data = wmorph_summary
+SE = function(x){sd(x)/sqrt(length(x))}
+wmorph_summaryt<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, data=raw_data, FUN=mean)
+wmorph_summaryt$se<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, data=raw_data,
+                          FUN=SE)$wing_morph_binom
+wmorph_summaryt
+```
+
+```{r}
+data = wmorph_summaryt
 data<-data.frame(R=data$se, 
                  A=data$sex_binom, 
                  B=data$pophost_binom, 
-                 C=(data$month_of_year))
+                 C=(data$month_of_year),
+                 D=data$months_since_start)
 
 model_script = paste0(source_path,"generic models-gaussian glm 3-FF.R")
 model_comparisonsAIC(model_script)
@@ -257,7 +309,7 @@ tidy_regression(m, is_color=FALSE) # -1 = C.corindum
 only an (-) effect of pophost, where if from GRT then have more variation vs. if from BV have less variation.
 
 ```{r}
-model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")
 model_comparisonsAIC(model_script)
 ```
 
@@ -440,9 +492,21 @@ time_var_tests = function(d, print_test=FALSE) {
   colnames(table) = c("month","sex", "Tukey-diff", "p-val", "sex", "ttest", "p-val", "F-test", "p-val")
   return(table)
 } 
+```
 
+```{r}
+summary_table = time_var_tests(data_long)
+summary_table
+```
 
-time_var_tests(data_long)
+```{r}
+y = summary_table[,"F-test"]
+xlab = summary_table[, "month"]
+x = sort(unique(d$month_of_year))
+
+plot(x,y, ylab="F-test value", xlab="Month of Year", xaxt = "n", main="wing-to-body ~ sex")
+axis(1, at=seq(min(x),max(x),2), labels=xlab[-5])
+abline(h=1, col=2) # non-linear relationship where at the beginning of the year the variance between sexes is similar bu then in spring it deviates a lot. In the summer the variance is similar and then towards the winter the variance deviates.
 ```
 
 ```{r}
@@ -484,10 +548,10 @@ time_var_tests = function(d, print_test=FALSE) {
     
     # populate matrix
     table[i,1] = month_labs[i]
-    table[i,2] = "M-F"
+    table[i,2] = "GRT-BV"
     table[i,3] = round(diff,4)
     table[i,4] = round(p,5)
-    table[i,5] = "M=-1 | F=1"
+    table[i,5] = "GRT=1 | BV=-1"
     table[i,6] = round(TTEST$statistic,4)
     table[i,7] = round(TTEST$p.value,5)
     table[i,8] = round(VAR$statistic,2)
@@ -497,8 +561,23 @@ time_var_tests = function(d, print_test=FALSE) {
   
   return(table)
 } 
-time_var_tests(data_long)
 ```
+
+```{r}
+summary_table = time_var_tests(data_long)
+summary_table
+```
+
+```{r}
+y = summary_table[,"F-test"]
+xlab = summary_table[, "month"]
+x = sort(unique(d$month_of_year))
+
+plot(x,y, ylab="F-test value", xlab="Month of Year", xaxt = "n", main="wing-to-body ~ pophost")
+axis(1, at=seq(min(x),max(x),2), labels=xlab[-5])
+abline(h=1, col=2) # non-linear relationship where at the beginning of the year the variance between hostplants is similar but then in spring it deviates a lot. In the summer and winter the variance is similar. (GRT/BV var = F-test value where in Sept and Feb only months where GRT is higher and the rest is BV)
+```
+
 
 ```{r}
 SE = function(x){sd(x)/sqrt(length(x))}
@@ -509,11 +588,20 @@ w2b_summary
 ```
 
 ```{r}
-data = w2b_summary
+SE = function(x){sd(x)/sqrt(length(x))}
+w2b_summaryt<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long, FUN=mean)
+w2b_summaryt$se<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long,
+                          FUN=SE)$wing2body
+w2b_summaryt
+```
+
+```{r}
+data = w2b_summaryt
 data<-data.frame(R=data$se, 
                  A=data$sex_binom, 
                  B=data$pophost_binom, 
-                 C=(data$month_of_year))
+                 C=(data$month_of_year),
+                 D=data$months_since_start)
 
 model_script = paste0(source_path,"generic models-gaussian glm 3-FF.R")
 model_comparisonsAIC(model_script)

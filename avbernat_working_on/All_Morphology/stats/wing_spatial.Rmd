@@ -37,8 +37,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Barrier Model
 
-
-## Sourcing Scripts and Reading the Data
+## Sourcing Scripts and Cleaning the Data
 
 ```{r}
 source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
@@ -58,8 +57,6 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_au
 source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spatial_dependencies.R") # space
 ```
 
-### Clean the Data
-
 ```{r}
 data_list <- read_morph_data("data/allmorphology04.28.21-coors.csv")
 raw_data = data_list[[1]]
@@ -74,54 +71,15 @@ clean_bugs = nrow(raw_data)
 cat("number of bugs with torn wings:", all_bugs - clean_bugs, "\n\n")
 ```
 
-```{r}
-# remove NA dates
-d = data_long %>%
-  filter(!is.na(wing2body), !is.na(datetime))
-
-range(d$wing2body) 
-```
+## Checking coordinates 
 
 ```{r}
-names(data_long)
-```
-
-```{r}
-dotplot = function(var, data) {
-  plot(data[,var], seq(1:nrow(data)),
-       col=data$color, ylab="Order of the data from text file", xlab=paste0("Value of ", var))
-}
-```
-
-
-```{r}
-MyVar <- c("wing2body", "body", "wing", "beak", "thorax", "lat", "long") 
-d$color = "black"
-d$color[d$year == "2019" & d$month =="May"] = "red"
-
-par(mfrow=c(3,3))
-for (v in MyVar) {
-  dotplot(v, d)
-}
-
-# remove outliers?
-d2 = d %>% 
-  filter(!beak<4.5)
-
-par(mfrow=c(3,3))
-for (v in MyVar) {
-  dotplot(v, d2)
-}
-```
-
-```{r}
-coors = unique(d2[,c("population", "lat","long")])
+coors = unique(data_long[,c("population", "lat","long")])
 coors[order(-coors$lat),]
 ```
 August	2017...is it Key Largo or is it North Key Largo? Or are the coordinates seem a little off?
 
 K.elegans	Homestead	M	5.59	2.84	7.5	10.55	February	2020	81	winter	L	25.1755702	-80.36780089	non-diapausing	2.5.2020 - Either this is Homestead or North Key Largo.
-
 
 Here is the block
 
@@ -135,7 +93,14 @@ We need to start adding site to the allmorph datasheet
 
 This one too...lat is a little too hight to make sense: 	Key_Largo	25.17563	-80.36775	(search for the lon and you'll find it in the dataset)
 
-August 2017, May 2019
+August 2017 is the year where there are some lat long typos
+
+## Plotting 
+
+```{r}
+d2 = data_long %>%
+  filter(!is.na(lat), !is.na(wing2body))
+```
 
 ```{r}
 spatial_data <- st_as_sf(d2,
@@ -147,17 +112,11 @@ spatial_data <- st_transform(spatial_data, 2236)
 plot(spatial_data) 
 ```
 
+## Modeling 
+
 Make a model and then create a variogram for it to check for spatial dependencies.
 
 What effects wing2body?
-
-```{r}
-d2
-```
-
-```{r}
-d2$wing2body_s = (d2$wing2body - mean(d2$wing2body)) / sd(d2$wing2body)
-```
 
 ```{r}
 # And this is the Poisson GLMM
@@ -177,12 +136,16 @@ dic  <- c(M1$dic$dic, M2$dic$dic) # M2 better
 dic
 ```
 
-```{r}
-temp = d2 %>% 
-  filter(!is.na(wing2body))
+## Model Validation, Variograms, and Spatial Plots
 
-check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
+A **variogram** is used to display the variability between data points as a function of distance. Here, from distances 0 to 4000 m, the variability between points starts high and then decreases (the points become more similar) until it levels out because at some point the distance between data points will be great enough that the points are no longer considered to be related to each other. The variability will flatten out into a "sill".
+
+```{r}
+temp = d2 
+check_spatial_dependencies(M2, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
 ```
+
+## Model Ony the Keys and Homestead
 
 ```{r}
 keys = c("North_Key_Largo", "Key_Largo", "Plantation_Key", "Homestead", "HomesteadBV", "HomesteadGRT")
@@ -210,14 +173,10 @@ M1 <- inla(wing2body ~ sex_binom + pophost + month_of_year + months_since_start 
 ```
 
 ```{r}
-temp = d3 %>% 
-  filter(!is.na(wing2body))
-
+temp = d3 
 check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
 ```
-
-
-Remove homestead
+## Model Only Keys
 
 ```{r}
 d4 = d2 %>%
@@ -243,10 +202,9 @@ M1 <- inla(wing2body ~ sex_binom + month_of_year + months_since_start +
 ```
 
 ```{r}
-temp = d4 %>% 
-  filter(!is.na(wing2body))
+temp = d4
 
 check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
 ```
 
-Will probably need to take means because the layering is obscuring what is happening per site...
+Probably best to take some means because the layering is obscuring what is happening per site, but can see clustering regardless.

@@ -55,6 +55,56 @@ jitter = runif(n=nrow(w2b_summary), min=-0.5, max=0.5)
 w2b_summary$dates <- w2b_summary$dates + jitter
 ```
 
+```{r}
+l1 = lowess(w2b_summary$dates, w2b_summary$wing2body, f=0.4)
+plot(w2b_summary$dates, w2b_summary$wing2body)
+lines(l1, type = "l")
+
+plot_lowess_residuals = function(lfit, x, y) {
+  lfun <- approxfun(lfit)
+  fitted <- lfun(x)
+  resid <- y-fitted
+  plot(fitted,resid)
+  abline(h=0,col=8)
+}
+plot_lowess_residuals(l1, w2b_summary$dates, w2b_summary$wing2body)
+```
+
+```{r}
+loess.as()
+```
+
+```{r}
+# splines 
+df<-w2b_summary
+
+data<-data.frame(R=df$wing2body, 
+                 A=df$sex, 
+                 B=df$pophost, 
+                 C=(df$dates))
+A = data$A
+B = data$B
+C = data$C
+R = data$R
+
+fit0 <- glm(R~1, family="gaussian")
+fit1 <- glm(R~A, family="gaussian")
+fit2 <- glm(R~bs(C,5), family="gaussian") # b-splin basis for polynomial splines
+fit3 <- glm(R~B + bs(C,5), family="gaussian")
+
+anova(fit0,fit1, test="Chisq") 
+anova(fit0,fit2, test="Chisq")
+
+x = df$dates
+y = df$wing2body
+plot(x,y)
+abline(fit1, col='red')
+xx <- seq(min(x),max(x), length.out=36)
+yy <- predict(fit2, data.frame(x=xx))
+lines(xx,yy, col='blue')
+```
+
+
 Loess Regression: (base R) http://r-statistics.co/Loess-Regression-With-R.html
 
 ```{r}
@@ -86,10 +136,10 @@ d = w2b_summary[w2b_summary$sex=="F",]
 
 ```{r}
 d$index = 1:nrow(d)
-loessMod20 <- loess(wing2body ~ index, data=d, span=0.20, degree=2) # 20% smoothing span
-loessMod40 <- loess(wing2body ~ index, data=d, span=0.40, degree=2) # 40% smoothing span
-loessMod60 <- loess(wing2body ~ index, data=d, span=0.60, degree=2) # 60% smoothing span
-loessMod80 <- loess(wing2body ~ index, data=d, span=0.80, degree=2) # 80% smoothing span
+loessMod20 <- loess(wing2body ~ index, data=d, span=0.20, degree=0) # 20% smoothing span
+loessMod40 <- loess(wing2body ~ index, data=d, span=0.40, degree=0) # 40% smoothing span
+loessMod60 <- loess(wing2body ~ index, data=d, span=0.60, degree=0) # 60% smoothing span
+loessMod80 <- loess(wing2body ~ index, data=d, span=0.80, degree=0) # 80% smoothing span
 
 smoothed20 <- predict(loessMod20) 
 smoothed40 <- predict(loessMod40) 
@@ -98,11 +148,13 @@ smoothed80 <- predict(loessMod80)
 # Plot it
 plot(d$wing2body, x=d$dates, type="p", main="Loess Smoothing and Prediction", xlab="months since start", ylab="wing:body")
 #lines(smoothed20, x=d$dates, col="red")
-#lines(smoothed40, x=d$dates, col="green")
-lines(smoothed60, x=d$dates, col="blue")
+lines(smoothed40, x=d$dates, col="green")
+#lines(smoothed60, x=d$dates, col="blue")
 #lines(smoothed80, x=d$dates, col="orange")
 #?lowess
+loessMod40$aic
 ```
+
 
 lmFC <- lm(wing2body ~ months_since_start, data=dfFC)
 predFC <- data.frame(wing2body = predict(lmFC, dfFC), months_since_start=dfFC$months_since_start)
@@ -137,6 +189,22 @@ w2b_table$date_b = as.factor(w2b_table$date_b)
 
 last_4_years = w2b_table[w2b_table$date_b=="2016-2020",]
 ```
+
+```{r}
+l1 = lowess(w2b_summary$dates, w2b_summary$wing2body, f=0.4)
+plot(w2b_summary$dates, w2b_summary$wing2body)
+lines(l1, type = "l")
+
+plot_lowess_residuals = function(lfit, x, y) {
+  lfun <- approxfun(lfit)
+  fitted <- lfun(x)
+  resid <- y-fitted
+  plot(fitted,resid)
+  abline(h=0,col=8)
+}
+plot_lowess_residuals(l1, w2b_summary$dates, w2b_summary$wing2body)
+```
+
 
 ```{r fig.width=4.7, fig.height=2.15}
 p0 = ggplot() + 
