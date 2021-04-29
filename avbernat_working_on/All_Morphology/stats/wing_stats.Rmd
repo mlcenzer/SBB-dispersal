@@ -50,11 +50,9 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spati
 ```
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology04.26.21-coors2.csv")
+data_list <- read_morph_data("data/allmorphology04.28.21-coors.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
-###remind yourself how the months are laid out
-#cbind(data_long$month_of_year, data_long$month)
 ```
 
 ## Checking for Outliers 

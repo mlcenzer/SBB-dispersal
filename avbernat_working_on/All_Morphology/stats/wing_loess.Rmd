@@ -19,8 +19,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # {.tabset}
 
-AB: does it make sense to split it by each group by each graph? Probably not.
-
 ## Cleaning Data and Sourcing Scripts
 
 ```{r}
@@ -37,9 +35,14 @@ for (script in script_names) {
 ### Read the data
 
 ```{r warning=FALSE}
-data_list <- read_morph_data("data/allmorphology04.26.21-coors2.csv")
+data_list <- read_morph_data("data/allmorphology04.28.21-coors.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
+all_bugs = nrow(data_long)
+
+data_long = remove_torn_wings(data_long)
+clean_bugs = nrow(data_long)
+cat("number of bugs with torn wings:", all_bugs - clean_bugs, "\n\n")
 ```
 
 ## Wing2Body 
@@ -54,110 +57,6 @@ w2b_summary$se<-aggregate(wing2body~sex*pophost*dates, data=data_long,
 jitter = runif(n=nrow(w2b_summary), min=-0.5, max=0.5)
 w2b_summary$dates <- w2b_summary$dates + jitter
 ```
-
-```{r}
-l1 = lowess(w2b_summary$dates, w2b_summary$wing2body, f=0.4)
-plot(w2b_summary$dates, w2b_summary$wing2body)
-lines(l1, type = "l")
-
-plot_lowess_residuals = function(lfit, x, y) {
-  lfun <- approxfun(lfit)
-  fitted <- lfun(x)
-  resid <- y-fitted
-  plot(fitted,resid)
-  abline(h=0,col=8)
-}
-plot_lowess_residuals(l1, w2b_summary$dates, w2b_summary$wing2body)
-```
-
-```{r}
-loess.as()
-```
-
-```{r}
-# splines 
-df<-w2b_summary
-
-data<-data.frame(R=df$wing2body, 
-                 A=df$sex, 
-                 B=df$pophost, 
-                 C=(df$dates))
-A = data$A
-B = data$B
-C = data$C
-R = data$R
-
-fit0 <- glm(R~1, family="gaussian")
-fit1 <- glm(R~A, family="gaussian")
-fit2 <- glm(R~bs(C,5), family="gaussian") # b-splin basis for polynomial splines
-fit3 <- glm(R~B + bs(C,5), family="gaussian")
-
-anova(fit0,fit1, test="Chisq") 
-anova(fit0,fit2, test="Chisq")
-
-x = df$dates
-y = df$wing2body
-plot(x,y)
-abline(fit1, col='red')
-xx <- seq(min(x),max(x), length.out=36)
-yy <- predict(fit2, data.frame(x=xx))
-lines(xx,yy, col='blue')
-```
-
-
-Loess Regression: (base R) http://r-statistics.co/Loess-Regression-With-R.html
-
-```{r}
-# define function that returns the SSE
-calcSSE <- function(x){
-  loessMod <- try(loess(wing2body ~ index, data=w2b_summary, span=x), silent=T)
-  res <- try(loessMod$residuals, silent=T)
-  if(class(res)!="try-error"){
-    if((sum(res, na.rm=T) > 0)){
-      sse <- sum(res^2)  
-    }
-  }else{
-    sse <- 99999
-  }
-  return(sse)
-}
-
-# Run optim to find span that gives min SSE, starting at 0.5
-#optim(par=c(0.25), calcSSE, method="SANN")
-#optim(par=c(1), calcSSE, method="SANN")
-```
-
-```{r}
-d = w2b_summary[w2b_summary$sex=="F" & w2b_summary$pophost=="C.corindum",]
-d = w2b_summary[w2b_summary$sex=="M" & w2b_summary$pophost=="C.corindum",]
-d = w2b_summary[w2b_summary$sex=="M",]
-d = w2b_summary[w2b_summary$sex=="F",]
-```
-
-```{r}
-d$index = 1:nrow(d)
-loessMod20 <- loess(wing2body ~ index, data=d, span=0.20, degree=0) # 20% smoothing span
-loessMod40 <- loess(wing2body ~ index, data=d, span=0.40, degree=0) # 40% smoothing span
-loessMod60 <- loess(wing2body ~ index, data=d, span=0.60, degree=0) # 60% smoothing span
-loessMod80 <- loess(wing2body ~ index, data=d, span=0.80, degree=0) # 80% smoothing span
-
-smoothed20 <- predict(loessMod20) 
-smoothed40 <- predict(loessMod40) 
-smoothed60 <- predict(loessMod60)
-smoothed80 <- predict(loessMod80) 
-# Plot it
-plot(d$wing2body, x=d$dates, type="p", main="Loess Smoothing and Prediction", xlab="months since start", ylab="wing:body")
-#lines(smoothed20, x=d$dates, col="red")
-lines(smoothed40, x=d$dates, col="green")
-#lines(smoothed60, x=d$dates, col="blue")
-#lines(smoothed80, x=d$dates, col="orange")
-#?lowess
-loessMod40$aic
-```
-
-
-lmFC <- lm(wing2body ~ months_since_start, data=dfFC)
-predFC <- data.frame(wing2body = predict(lmFC, dfFC), months_since_start=dfFC$months_since_start)
 
 ```{r}
 df = w2b_summary
@@ -297,9 +196,8 @@ p2 = p2 + guides(fill = guide_legend(reverse = TRUE)) + theme_classic() +
 
 grid.arrange(p1, p2, ncol=2)
 ```
+
 Now do it by season because that's more interesting...
-
-
 
 ```{r}
 w2b_summary<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=mean)
@@ -383,8 +281,6 @@ p6 = p6 + annotate(geom="text", x=10, y=0.744, label=alpha, color="black", parse
 grid.arrange(p5, p6,ncol=2)
 
 ```
-
-
 
 Loess: a nonparametric, graphical tool for depicting relationships between variables. http://www.jtrive.com/docs/Jacoby_LOESS.pdf
 
@@ -696,103 +592,7 @@ p11 = p11 + annotate(geom="text", x=unique(raw_data$dates)[7], y=1, label=alpha,
 p11
 ```
 
-## Modeling Tests 
-
-```{r}
-plot_splines = function(x,y) {
-  fit0 <- lm(y~1)
-  fit1 <- lm(y~x)
-  fit2 <- lm(y~bs(x,5))
-  
-  print(anova(fit1,fit2))
-  print(anova(fit0,fit2))
-  print(anova(fit0,fit1))
-  
-  plot(x,y, pch=16)
-  abline(fit1, col='red')
-  xx <- seq(min(x),max(x), length.out=250)
-  yy <- predict(fit2, data.frame(x=xx))
-  lines(xx,yy, col='blue')
-}
-
-```
-
-```{r}
-dfF = df[df$sex == "F" & df$pophost=="C.corindum",]
-
-x = dfF$month_of_year
-y = dfF$wing_morph_binom
-
-plot_splines(x,y)
-
-
-dfM = df[df$sex == "M" & df$pophost=="C.corindum",]
-
-x = dfM$month_of_year
-y = dfM$wing_morph_binom
-
-plot_splines(x,y)
-
-```
-
-
-```{r}
-w_morph_summary<-aggregate(wing_morph_binom~sex_binom*pophost_binom*months_since_start, data=raw_data, FUN=mean)
-
-df = w_morph_summary
-data<-data.frame(R=df$wing_morph_binom, 
-                 A=df$sex_binom, 
-                 B=df$pophost_binom, 
-                 C=(df$months_since_start))
-
-model_script = paste0(source_path,"generic models-gaussian glm 3-FF.R")
-model_comparisonsAIC(model_script)
-```
-```{r}
-anova(m0, m2, test="Chisq") # host plant is important
-anova(m2, m4, test="Chisq") # sex not important 
-anova(m2, m6, test="Chisq") # month not important and neither is year
-```
-
-```{r}
-df<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year, data=raw_data, FUN=mean)
-
-data<-data.frame(R=df$wing_morph_binom, 
-                 A=df$sex_binom, 
-                 B=df$pophost_binom, 
-                 C=(df$month_of_year))
-A = data$A
-B = data$B
-C = data$C
-R = data$R
-
-fit0 <- glm(R~1, family="binomial")
-fit1 <- glm(R~B, family="binomial")
-fit2 <- glm(R~bs(C,5), family="binomial") # b-splin basis for polynomial splines
-fit3 <- glm(R~B + bs(C,5), family="binomial")
-
-anova(fit0,fit1, test="Chisq") 
-anova(fit0,fit2, test="Chisq")
-```
-
-
-```{r}
-x <- rnorm(1000)
-y <- sin(x) + rnorm(1000, 0, 0.5)
-
-fit1 <- lm(y~x)
-fit0 <- lm(y~1)
-fit2 <- lm(y~bs(x,5))
-
-anova(fit1,fit2)
-anova(fit0,fit2)
-
-plot(x,y, pch='.')
-abline(fit1, col='red')
-xx <- seq(min(x),max(x), length.out=250)
-yy <- predict(fit2, data.frame(x=xx))
-lines(xx,yy, col='blue')
-```
+## Plotting Tests 
 
 ```{r}
 ggplot() + 

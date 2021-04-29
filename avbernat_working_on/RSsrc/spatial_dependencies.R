@@ -20,7 +20,8 @@ check_spatial_dependencies = function(m, d, xlong, ylat, zone = 16, cutoff_m, is
   }
   
   if (is_inla) {
-    mu <- m$summary.fitted.values[,"mean"]
+    N <- nrow(d)
+    mu <- m$summary.fitted.values[1:N,"mean"]
     E  <- (d$wing2body - mu) / sqrt(mu)
   }
   # Plot the Pearson vs. fitted
@@ -66,12 +67,14 @@ check_spatial_dependencies = function(m, d, xlong, ylat, zone = 16, cutoff_m, is
   
   MyData$MySize <- 3 * abs(MyData$E) / max( MyData$E)
   MyData$MyCol <- ifelse(MyData$E> 0, 1, 2) 
-  xyplot(Ykm ~ Xkm,
+  plot(Ykm ~ Xkm,
          data = MyData,
          cex = MyData$MySize,
          col = MyData$MyCol,
          pch = 1) 
   # black is positive residual; red negative.
   # larger it is the more positive or negative
+  
+  return(d)
 
 }
