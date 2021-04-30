@@ -59,7 +59,7 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spati
 ```
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology04.28.21-coors.csv")
+data_list <- read_morph_data("data/allmorphology04.30.21-coors.csv")
 raw_data = data_list[[1]]
 all_bugs = nrow(raw_data)
 data_long = data_list[[2]] 
@@ -72,29 +72,16 @@ clean_bugs = nrow(raw_data)
 cat("number of bugs with torn wings:", all_bugs - clean_bugs, "\n\n")
 ```
 
+# should be 147
+
+
 ## Checking coordinates 
 
 ```{r}
 coors = unique(data_long[,c("population", "lat","long")])
 coors[order(-coors$lat),]
 ```
-August	2017...is it Key Largo or is it North Key Largo? Or are the coordinates seem a little off?
-
-K.elegans	Homestead	M	5.59	2.84	7.5	10.55	February	2020	81	winter	L	25.1755702	-80.36780089	non-diapausing	2.5.2020 - Either this is Homestead or North Key Largo.
-
-Here is the block
-
-K.elegans	Gainesville	M	5.51	3.08	8.28	11.13	February	2020	81	winter	L	29.6620224	-82.347313
-K.elegans	Homestead	M	5.59	2.84	7.5	10.55	February	2020	81	winter	L	25.1755702	-80.36780089 ***
-K.elegans	Homestead	F	7.47	3.82	9.66	13.31	February	2020	81	winter	L	25.491362	-80.485821
-
-Data cleaning is not linear, it's incrementally non-linear. 
-
-We need to start adding site to the allmorph datasheet
-
-This one too...lat is a little too hight to make sense: 	Key_Largo	25.17563	-80.36775	(search for the lon and you'll find it in the dataset)
-
-August 2017 is the year where there are some lat long typos
+Off marks are written at the top of the Python script
 
 ## Plotting 
 
@@ -133,7 +120,7 @@ M2 <- inla(wing2body ~ sex + pophost + month_of_year + months_since_start +
                     family = "gaussian", 
                     data = d2)
 # Compare them
-dic  <- c(M1$dic$dic, M2$dic$dic) # M2 better
+dic  <- c(M1$dic$dic, M2$dic$dic) # M1 better
 dic
 ```
 
@@ -143,7 +130,7 @@ A **variogram** is used to display the variability between data points as a func
 
 ```{r}
 temp = d2 
-dt = check_spatial_dependencies(M2, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
+d2 = check_spatial_dependencies(M2, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
 ```
 
 ## Model Ony the Keys and Homestead
@@ -175,7 +162,7 @@ M1 <- inla(wing2body ~ sex_binom + pophost + month_of_year + months_since_start 
 
 ```{r}
 temp = d3 
-dt = check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
+d3 = check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
 ```
 ## Model Only Keys
 
@@ -212,7 +199,7 @@ d4 = check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff
 Probably best to take some means because the layering is obscuring what is happening per site, but can see clustering regardless.
 
 
-## Barrier Model
+## Mesh + Stack Models
 
 We will run all models via the stack, and we therefore implement the following 
 8 steps.
@@ -414,7 +401,7 @@ Florida_ShapeFile <- readOGR(dsn = data_source_name, layer = "Detailed_Florida_S
 
 ```{r}
 plot(Florida_ShapeFile.UTM)
-points(Loc, col=2, cex=1) # not working utm vs. lat and long 
+points(Loc[,1], Loc[,2] + 10000000, col=2, cex=1) # not working utm vs. lat and long 
 ```
 
 
@@ -537,6 +524,263 @@ plot(x = d.vec / 1000,
      xlab = "Distance (km)", 
      ylab = "Correlation",
      xlim = c(0, 15))
-# This indicates how far the correlation goes...can see that the correlation is still high but gets weaker when go from islands to the mainland.
+# This indicates how far the correlation goes...can see that the correlation becomes weak around 8 km
+```
+
+```{r}
+###############################################
+# Let us pick a specific point and visualize how far the correlation goes 
+# from this point.
+plot(Keys.UTM, axes=TRUE)
+# These are all sampled sites
+points(x = Loc[,1],
+       y = Loc[,2] + 10000000, 
+       cex = 0.5, 
+       col = "blue", 
+       pch = 17)
+# Random point that we picked:
+points(x = Loc[158,1], 
+       y = Loc[158,2] + 10000000, 
+       col = 2, pch = 16, cex = 1)
+```
+```{r}
+# How far does the correlation from the red point reach? How many of the 
+# sampling locations are affected? We will visualize the correlation on the mesh
+# and plot this up to correlation = 0.1
+
+# loc = c(485000, 5971248) is the target point
+# Get the inverse of the covariance matrix of the w
+Q <- inla.spde2.precision(spde, 
+                          theta = c(log(Range ),log(Sigma.u)))
+
+# Get the correlation values
+Corr <- local.find.correlation(Q, 
+                               loc = c(Loc[158,1], Loc[158,2] + 10000000), 
+                               mesh)
+```
+
+
+```{r}
+
+#It will find the closest point on the mesh:
+plot(Keys.UTM, axes=TRUE)
+# These are all sampled sites
+points(x = Loc[,1],
+       y = Loc[,2] + 10000000, 
+       cex = 0.5, 
+       col = "blue", 
+       pch = 17)
+# Random point that we picked:
+points(x = Loc[158,1], 
+       y = Loc[158,2] + 10000000, 
+       col = 2, pch = 16, cex = 1)
+points(x = 1174631.144 , y = 12810321.7113 , col = 2, pch = 16, cex = 2)
+
+# And the rest is a matter of plotting the correlation values, contour of the 
+# coast and the sampling locations.
+PlotField2(Corr, 
+           mesh, 
+           ContourMap = Keys.UTM,  
+           zlim = c(0.2, 1),
+           Add = FALSE)
+plot(Keys.UTM, 
+     axes = TRUE,
+     add = TRUE)
+points(x = Loc[,1],
+       y = Loc[,2] + 10000000,
+       cex = 0.5, 
+       col = "black", 
+       pch = 17)
+# Yikes...not sure why this is happening
+```
+
+## Mesh + Stack + Barrier Models
+
+Need to add the barrier on the right of the keys. Could make that shapefile in QGIS. Need Straits_of_Florida.UTM
+
+```{r}
+data_source_name = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/data/shapefiles/Water.shp"
+Strait_of_Florida_ShapeFile <- readOGR(dsn = data_source_name, layer = "Water")
+```
+
+```{r}
+# Convert the shapefile to UTM
+Water.UTM <- spTransform(Strait_of_Florida_ShapeFile, 
+                           CRS("+proj=utm +zone=16 +south +ellps=WGS84 +datum=WGS84"))
+```
+
+```{r}
+plot(Keys.UTM)
+points(Loc[,1], Loc[,2] + 10000000, col="red")
+plot(Water.UTM,
+     add=TRUE,
+     col="blue")
+```
+
+```{r}
+###################################################
+# Barrier model applied on benthic coverage data
+# I4: A beta model in which the mesh contains two barriers.
+
+# Create a mesh for the barrier model
+NonConvHull <- inla.nonconvex.hull(Loc)
+mesh.barrier <- inla.mesh.2d(boundary = NonConvHull,
+                             interior = Water.UTM, 
+                             max.edge = c(1) * MaxEdge, 
+                             cutoff = MaxEdge / 5)
+
+mesh.barrier$loc[,2] = mesh.barrier$loc[,2] + 10000000 # 10,000,000 off for some reason.........
+Loc[,2] = Loc[,2] + 10000000
+```
+
+```{r}
+# Plot the mesh
+par(mfrow = c(1,1), mar = c(0,0,2,0))
+plot(mesh.barrier)
+points(Loc, col = 1, pch = 16, cex = 1)
+mesh.barrier$n 
+```
+```{r}
+# Projector matrix for model I4
+A4 <- inla.spde.make.A(mesh.barrier, loc = Loc)
+```
+
+```{r}
+##########################
+# Define the SPDE with the same PC priors as above. Recall from the theory 
+# presentation that the barrier model uses two SPDE equations; one for the 
+# triangles outside the barrier and one for the triangles inside the barrier. 
+# We therefore first need to figure out which triangles are inside the 
+# barrier(s).
+
+# Get the spatial location of the center of each triangle.
+NumTri <- length(mesh.barrier$graph$tv[,1])
+PosTri <- matrix(0, NumTri, 2)
+for (t in 1:NumTri){
+  Temp       <- mesh.barrier$loc[mesh.barrier$graph$tv[t, ], ]
+  PosTri[t,] <- colMeans(Temp)[c(1,2)] 
+}
+
+# Add the CRS to this object so that we can use the 'over' function
+PosTri <- SpatialPoints(PosTri, 
+                        CRS("+proj=utm +zone=16 +south +ellps=WGS84 +datum=WGS84"))
+plot(PosTri)
+plot(Water.UTM, 
+     add=T)
+
+# Geometry reports
+temp <- st_as_sf(Water.UTM, 4326)
+poly_valid_report <- st_is_valid(temp)
+
+# make sure CRS identical
+identicalCRS(Water.UTM, PosTri)
+# Determine which triangles are inside the barrier(s).
+TriangleInBarrier <- over(Water.UTM, PosTri, returnList=T) # none are inside the barrier...
+TriangleInBarrier <- unlist(TriangleInBarrier)
+BarrierPoly       <- inla.barrier.polygon(mesh.barrier, TriangleInBarrier)
+# Now INLA will know which triangles are inside the barrier(s).
+# Not sure where the warning messages all of a sudden come from. But they do not
+# seem to affect the results.
+```
+
+```{r}
+spde.barrier <- inla.spde2.pcmatern(mesh.barrier, 
+                            prior.range = c(4 * 1000, 0.05), 
+                            prior.sigma = c(1, 0.05)) # can make this 1
+
+# The size of the mesh is: 
+mesh.barrier$n
+
+# This number is also in
+spde.barrier$n.spde
+
+# It is also the number of w_k values that we will get.
+w.index <- inla.spde.make.index('w', n.spde = spde$n.spde)
+```
+
+
+```{r}
+#####################################
+# Step 5.	Make a stack. 
+
+# Make the X matrix
+Xm <- model.matrix(~ sex_binom + pophost_binom + month_of_year, data = d4)
+Xm <- as.data.frame(Xm)
+colnames(Xm)
+
+
+# And here is the stack. 
+N <- nrow(d4)
+StackFit.Barrier <- inla.stack(
+  tag = "Fit",
+  data = list(wing2body = d4$wing2body), 
+  A = list(1, 1, A),                  
+  effects = list(   
+    Intercept = rep(1, N),
+    Xm        = Xm[,-1],    #Covariates without the intercept
+    w         = w.index))
+```
+
+```{r}
+#####################################################
+# First we run the model without spatial dependency.
+I3 <- inla(wing2body ~ -1 + sex_binom + pophost_binom + month_of_year, 
+           family = "gaussian", 
+           data = inla.stack.data(StackFit.Barrier),
+           control.compute = list(dic = TRUE, waic = TRUE),
+           control.predictor = list(A = inla.stack.A(StackFit.Barrier)))
+
+# And this is the model with the spatial random field:
+I4 <- inla(wing2body ~ -1 + sex_binom + pophost_binom + month_of_year + 
+                         f(w, model = spde.barrier), 
+           family = "gaussian", 
+           data = inla.stack.data(StackFit.Barrier),
+           control.compute = list(dic = TRUE, waic = TRUE),
+           control.predictor = list(A = inla.stack.A(StackFit.Barrier)))
+
+
+# And compare I1 and I2 with DICs and WAICs
+dic   <- c(I1$dic$dic, I2$dic$dic)   
+waic  <- c(I1$waic$waic, I2$waic$waic)
+Z.out <- cbind(dic, waic)
+rownames(Z.out) <- c("I1: Gaussian GLM",  
+                     "I2: Gaussian GLM + SRF")
+Z.out
+# Adding spatial correlation doesn't improve the model...
+```
+
+```{r}
+# Plot spatial random fields obtained with the ordinary mesh 
+wpm.I4 <- I4$summary.random$w$mean
+wsd.I4 <- I4$summary.random$w$sd
+
+rx = range(mesh.barrier$loc[,1])
+ry = c(range(mesh.barrier$loc[,2])[1] - 2000, range(mesh.barrier$loc[,2])[2] + 7000)
+
+colnames(Loc) = c("lon", "lat")
+```
+
+```{r fig.width=4.5, fig.height=4.5}
+PlotField2(field = wpm.I4, 
+           mesh = mesh.barrier, 
+           xlim = rx, 
+           ylim = range(mesh.barrier$loc[,2]),
+           MyTitle = "Posterior mean SRF") # sample regression function (SRF)
+
+points(Loc[,1], Loc[,2], pch=17)
+plot(Keys.UTM, 
+     axes = TRUE,
+     add = TRUE) # border = "white")
+
+PlotField2(field = wsd.I4, 
+           mesh = mesh.barrier, 
+           xlim = rx, 
+           ylim = range(mesh.barrier$loc[,2]),
+           MyTitle = "Posterior mean SD")
+
+points(Loc[,1], Loc[,2], pch=17)
+plot(Keys.UTM, 
+     axes = TRUE,
+     add = TRUE) # border = "white")
 ```
 

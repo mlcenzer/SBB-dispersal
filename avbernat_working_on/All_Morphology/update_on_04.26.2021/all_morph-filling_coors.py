@@ -3,8 +3,25 @@ import csv
 
 from datetime import datetime, date
 
+'''
+Off marks: 
+
+October 2019
+Key_Largo   25.187398   -80.358596 (16 - Places these points as high as north key largo and onto the mainland)
+
+August 2017
+Key_Largo   25.17562933 -80.36775226 (37 - Places these points as high as north key largo and onto the mainland)
+
+February 2020
+Homestead   25.1755702  -80.36780089 (1 lone homestead matches north key largo lat and lon) - just manually edited 
+this: K.elegans  Homestead   M   5.59    2.84    7.5 10.55   February    2020    81  winter  L   25.1755702  -80.36780089 ***
+
+February 2020
+North Key Largo 25.2866074  -80.5539224 (7 - Long was too negative and placing it in the mainland)
+'''
+
 dir_path = r"/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/"
-morph_path = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.28.21.csv"
+morph_path = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.30.21.csv"
 
 print(morph_path)
 
@@ -56,13 +73,28 @@ with open(morph_path, "r") as morph_data:
 
             r["lat"] = fill_lat
             r["long"] = fill_lon
-     
+
+        if (pop == "Key_Largo" and lat == "25.187398"):
+            lat = 25.12858 # made this up based on a random KL coor
+            lon = -80.40809 # made this up based on a random KL coor
+            r["lat"] = lat
+            r["long"] = lon
+
+        if (pop == "Key_Largo" and lat == "25.17562933"):
+            lat = 25.12858 # made this up based on a random KL coor
+            lon = -80.40809 # made this up based on a random KL coor
+            r["lat"] = lat
+            r["long"] = lon   
+
+        if (pop == "North_Key_Largo" and lon == "-80.5539224"):
+            lon = -80.29081 # matched this long with the long other North Key Largo's with the same lat
+            r["long"] = lon 
 
         full_data.append(r)
 
 #print(full_data[0:1])
 
-outpath = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.28.21-coors.csv"
+outpath = dir_path + r"avbernat_working_on/All_Morphology/update_on_04.26.2021/allmorphology04.30.21-coors.csv"
 
 with open(outpath, "w") as output_file:
     writer = csv.DictWriter(output_file, fieldnames = full_data[0].keys())
