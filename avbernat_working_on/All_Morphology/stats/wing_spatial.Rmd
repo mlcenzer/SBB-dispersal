@@ -205,6 +205,7 @@ M1 <- inla(wing2body ~ sex_binom + month_of_year + months_since_start +
 ```{r}
 temp = d4
 
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spatial_dependencies.R") # space
 d4 = check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
 ```
 
@@ -394,7 +395,7 @@ Z.out
 ```{r}
 # Model validation of I2 (spatial gaussian GLM):
 temp = d4
-d4 = check_spatial_dependencies(I2, temp, temp$long, temp$lat, zone = 16, cutoff=5000, is_inla=TRUE)
+d4 = check_spatial_dependencies(I2, temp, temp$long, temp$lat, zone = 16, cutoff=5000, is_inla=TRUE) 
 ```
 
 ```{r}
@@ -413,7 +414,7 @@ Florida_ShapeFile <- readOGR(dsn = data_source_name, layer = "Detailed_Florida_S
 
 ```{r}
 plot(Florida_ShapeFile.UTM)
-points(Loc, col=2, cex=15)
+points(Loc, col=2, cex=1) # not working utm vs. lat and long 
 ```
 
 
@@ -422,64 +423,83 @@ points(Loc, col=2, cex=15)
 Florida_ShapeFile.UTM <- spTransform(Florida_ShapeFile, 
                            CRS("+proj=utm +zone=16 +south +ellps=WGS84 +datum=WGS84"))
 Keys.UTM = crop(Florida_ShapeFile.UTM, extent(439300.8+500000, 1194383, 12721244-1200000, 13431336-600000))
-Keys.UTM = crop(Florida_ShapeFile.UTM, extent(439300.8+700000, 1194383, 12721244-1200000, 13431336-600000))
+Keys.UTM = crop(Florida_ShapeFile.UTM, extent(439300.8+700000, 1194383, 12721244-1200000, 13431336-600000)) # need to figure out why I can't overlap anything on these utm objects
 ```
 
 ```{r}
+coors = as.data.frame(cbind(d4$lat, d4$long))
+colnames(coors) = c("lat", "lon")
+collection_sites <- st_as_sf(coors,
+                             coords = c("lon", "lat"),
+                             crs = 4326,
+                             agr = "constant")
+
 tm_shape(Keys.UTM) + 
-  tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey79") + tm_polygons() 
+  tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey79") + tm_polygons() +
+tm_shape(collection_sites) +
+  tm_dots(alpha = 0.9, size= 0.2, shape=2, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) 
 ```
 
 ```{r}
+cat("Keys\n\n")
 extent(Keys.UTM)
-```
-
-
-
-```{r}
-
-data(World)
-Florida_ShapeFile.UTM <- spTransform(World, 
-                           CRS("+proj=utm +zone=16 +south +ellps=WGS84 +datum=WGS84"))
-World.ae <- st_transform(World, "+proj=merc +lon_0=-69 +k=1 +x_0=0 +y_0=0 +ellps=WGS84 +datum=WGS84 +units=m +no_defs")
-
-```
-
-```{r}
-extent(Keys.UTM)[1] - extent(Keys.UTM)[2]
-extent(Keys.UTM)[3] - extent(Keys.UTM)[4]
-```
-
-```{r}
-extent(Loc)[1] - extent(Loc)[2]
-extent(Loc)[3] - extent(Loc)[4]
-```
-
-
-```{r}
+cat("\nPoints\n\n")
 extent(Loc)
+
+# do they fit?
+eKx = extent(Keys.UTM)[2] - extent(Keys.UTM)[1]
+eKy = extent(Keys.UTM)[4] - extent(Keys.UTM)[3]
+eLx = extent(Loc)[2] - extent(Loc)[1]
+eLy = extent(Loc)[4] - extent(Loc)[3]
+eKx - eLx # if positive then yes.
+eKy - eLy
 ```
 
 ```{r}
+coors = as.data.frame(Loc)
+colnames(coors) = c("lon", "lat")
+coors$lat = coors$lat + 10000000 # 10,000,000 off for some reason.........
+collection_sites <- st_as_sf(coors,
+                             coords = c("lon", "lat"),
+                             crs = 4326,
+                             agr = "constant")
+
+tm_shape(Keys.UTM) + 
+  tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey79") + tm_polygons() +
+tm_shape(collection_sites) +
+  tm_dots(alpha = 0.9, size= 0.2, shape=2, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) # still doesn't show up...must be somewhere else in the world...
+
 plot(Keys.UTM)
-points(Loc, col=2, cex=115)
+points(Loc[,1], Loc[,2] + 10000000, col="red")
 ```
 
-```{r}
+```{r fig.width=4.5, fig.height=4.5}
+mesh <- inla.mesh.2d(boundary = Hull,
+                     max.edge = c(1, 5) * MaxEdge,
+                     cutoff =  MaxEdge / 5)
+mesh$loc[,2] = mesh$loc[,2] + 10000000 # 10,000,000 off for some reason.........
+
 # Plot spatial random fields obtained with the ordinary mesh 
 wpm.I2 <- I2$summary.random$w$mean
 wsd.I2 <- I2$summary.random$w$sd
 
+rx = range(mesh$loc[,1])
+ry = c(range(mesh$loc[,2])[1] - 2000, range(mesh$loc[,2])[2] + 7000)
+
+colnames(Loc) = c("lon", "lat")
+```
+
+```{r fig.width=4.5, fig.height=4.5}
 PlotField2(field = wpm.I2, 
            mesh = mesh, 
-           xlim = range(mesh$loc[,1]), 
-           ylim = range(mesh$loc[,2]),
+           xlim = rx, 
+           ylim = ry,
            MyTitle = "Posterior mean SRF")
-points(Loc)
+
+points(Loc[,1], Loc[,2] + 10000000, pch=17)
 plot(Keys.UTM, 
      axes = TRUE,
-     add = TRUE,
-     border = "white")
+     add = TRUE) # border = "white")
 ```
 
 ```{r}

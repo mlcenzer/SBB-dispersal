@@ -7,8 +7,10 @@ check_spatial_dependencies = function(m, d, xlong, ylat, zone = 16, cutoff_m, is
   # lat long to utm
   xy <- data.frame(ID = 1:length(xlong), X = xlong, Y = ylat)
   coordinates(xy) <- c("X", "Y")
-  proj4string(xy) <- CRS("+proj=longlat +datum=WGS84")  
-  res <- spTransform(xy, CRS(paste("+proj=utm +zone=",zone," ellps=WGS84",sep='')))
+  proj4string(xy) <- CRS("+proj=longlat +datum=WGS84 +init=epsg:4326")  
+  res <- spTransform(xy, CRS(paste("+proj=utm +zone=",zone," ellps=WGS84", sep='')))
+  
+  print(gsub(".*\\+units=(.*) .*","\\1",proj4string(res)))
   
   d$X.utm <- res$X
   d$Y.utm <- res$Y
