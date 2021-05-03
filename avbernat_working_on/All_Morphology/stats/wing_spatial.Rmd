@@ -400,17 +400,16 @@ Florida_ShapeFile <- readOGR(dsn = data_source_name, layer = "Detailed_Florida_S
 ```
 
 ```{r}
-plot(Florida_ShapeFile.UTM)
-points(Loc[,1], Loc[,2] + 10000000, col=2, cex=1) # not working utm vs. lat and long 
-```
-
-
-```{r}
 # Convert the shapefile to UTM
 Florida_ShapeFile.UTM <- spTransform(Florida_ShapeFile, 
                            CRS("+proj=utm +zone=16 +south +ellps=WGS84 +datum=WGS84"))
 Keys.UTM = crop(Florida_ShapeFile.UTM, extent(439300.8+500000, 1194383, 12721244-1200000, 13431336-600000))
 Keys.UTM = crop(Florida_ShapeFile.UTM, extent(439300.8+700000, 1194383, 12721244-1200000, 13431336-600000)) # need to figure out why I can't overlap anything on these utm objects
+```
+
+```{r}
+plot(Florida_ShapeFile.UTM)
+points(Loc[,1], Loc[,2] + 10000000, col=2, cex=1) 
 ```
 
 ```{r}
@@ -599,8 +598,9 @@ points(x = Loc[,1],
 Need to add the barrier on the right of the keys. Could make that shapefile in QGIS. Need Straits_of_Florida.UTM
 
 ```{r}
-data_source_name = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/data/shapefiles/Water.shp"
-Strait_of_Florida_ShapeFile <- readOGR(dsn = data_source_name, layer = "Water")
+data_source_name = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/data/shapefiles/Strait.shp"
+#Strait_of_Florida_ShapeFile <- readOGR(dsn = data_source_name, layer = "Water")
+Strait_of_Florida_ShapeFile <- readOGR(dsn = data_source_name, layer = "Strait")
 ```
 
 ```{r}
@@ -610,8 +610,13 @@ Water.UTM <- spTransform(Strait_of_Florida_ShapeFile,
 ```
 
 ```{r}
+Loc[,2] = Loc[,2] + 10000000 # 10,000,000 off for some reason.........
+
+```
+
+```{r}
 plot(Keys.UTM)
-points(Loc[,1], Loc[,2] + 10000000, col="red")
+points(Loc[,1], Loc[,2], col="red")
 plot(Water.UTM,
      add=TRUE,
      col="blue")
@@ -629,8 +634,7 @@ mesh.barrier <- inla.mesh.2d(boundary = NonConvHull,
                              max.edge = c(1) * MaxEdge, 
                              cutoff = MaxEdge / 5)
 
-mesh.barrier$loc[,2] = mesh.barrier$loc[,2] + 10000000 # 10,000,000 off for some reason.........
-Loc[,2] = Loc[,2] + 10000000
+mesh.barrier$loc[,2] = mesh.barrier$loc[,2] 
 ```
 
 ```{r}
@@ -664,24 +668,182 @@ for (t in 1:NumTri){
 # Add the CRS to this object so that we can use the 'over' function
 PosTri <- SpatialPoints(PosTri, 
                         CRS("+proj=utm +zone=16 +south +ellps=WGS84 +datum=WGS84"))
-plot(PosTri)
+plot(PosTri, col="darkgreen")
 plot(Water.UTM, 
      add=T)
+points(Loc[,1], Loc[,2], col="white")
+```
 
+```{r}
 # Geometry reports
 temp <- st_as_sf(Water.UTM, 4326)
+#temp <- st_as_sf(PosTri, 4326)
 poly_valid_report <- st_is_valid(temp)
+poly_valid_report
+which(poly_valid_report == FALSE)
 
 # make sure CRS identical
 identicalCRS(Water.UTM, PosTri)
 # Determine which triangles are inside the barrier(s).
 TriangleInBarrier <- over(Water.UTM, PosTri, returnList=T) # none are inside the barrier...
 TriangleInBarrier <- unlist(TriangleInBarrier)
-BarrierPoly       <- inla.barrier.polygon(mesh.barrier, TriangleInBarrier)
+mesh.barrier$n - length(TriangleInBarrier)
+rgeos::set_RGEOS_CheckValidity(2L)
+```
+
+```{r}
+BarrierPoly <- inla.barrier.polygon(mesh.barrier, TriangleInBarrier)
 # Now INLA will know which triangles are inside the barrier(s).
 # Not sure where the warning messages all of a sudden come from. But they do not
 # seem to affect the results.
 ```
+
+
+```{r}
+Range <- 4 * 1000
+Sigma <- 0.5
+spde.barrier <- inla.barrier.pcmatern(mesh.barrier, 
+                                       barrier.triangles = TriangleInBarrier, 
+                                       prior.range = c(Range, 0.05), 
+                                       prior.sigma = c(Sigma, 0.05))
+
+
+```
+
+```{r}
+##########################
+# Spatial random field for model I4
+w4.index <- inla.spde.make.index(
+  name    = 'w', 
+  n.spde  = spde.barrier$f$n)
+```
+
+```{r}
+##########################
+# And here is the stack. 
+N <- nrow(d4)
+StackFit.Barrier <- inla.stack(
+  tag = "Fit",
+  data = list(wing2body = d4$wing2body), 
+  A = list(1, 1, A),                  
+  effects = list(   
+    Intercept = rep(1, N),
+    Xm        = Xm[,-1],    #Covariates without the intercept
+    w         = w.index))
+```
+
+```{r}
+# And this is the model with the spatial random field:
+I4 <- inla(wing2body ~ -1 + sex_binom + pophost_binom + month_of_year + 
+                         f(w, model = spde.barrier), 
+           family = "gaussian", 
+           data = inla.stack.data(StackFit.Barrier),
+           control.compute = list(dic = TRUE, waic = TRUE),
+           control.predictor = list(A = inla.stack.A(StackFit.Barrier)))
+
+```
+
+```{r}
+# Covariate effects and spatial random field
+Beta4 <- I4$summary.fixed[, c("mean", "0.025quant", "0.975quant")]
+print(Beta4, digits = 3)
+
+theta <- I4$summary.hyper[1, "mean"]
+theta # 4344.969? What does that mean?
+
+```
+
+```{r}
+# Plot the SRF obtained by I4
+wpm.4 <- I4$summary.random$w$mean
+wsd.4 <- I4$summary.random$w$sd
+```
+
+```{r fig.width=4.5, fig.height=4.5}
+PlotField2(field = wpm.4, 
+           mesh = mesh.barrier, 
+           xlim = range(mesh.barrier$loc[,1]), 
+           ylim = range(mesh.barrier$loc[,2]),
+           MyTitle = "Posterior mean SRF")
+plot(Water.UTM, 
+     axes = TRUE, 
+     add = TRUE,
+     border = "white")
+points(Loc[,1], Loc[,2], pch=17)
+plot(Keys.UTM, 
+     axes = TRUE,
+     add = TRUE) # border = "white")
+# Note that the correlation does not cross into the strait.
+
+# This is the SD:
+PlotField2(field = wsd.4, 
+           mesh = mesh.barrier, 
+           xlim = range(mesh.barrier$loc[,1]), 
+           ylim = range(mesh.barrier$loc[,2]),
+           MyTitle = "Posterior mean SD")
+plot(Water.UTM, 
+     axes = TRUE, 
+     add = TRUE,
+     border = "white")
+
+plot(Keys.UTM, 
+     axes = TRUE,
+     add = TRUE) # border = "white")
+points(Loc[,1], Loc[,2], pch=17)
+```
+
+```{r}
+# This is how you get them for a barrier model:
+# It is a little bit of fancy code.
+HP <- I4$marginals.hyperpar
+
+TakeExp <- function(x){exp(x)}
+Sigma4.u <- inla.emarginal(TakeExp, HP$`Theta1 for w`) 
+Range4   <- inla.emarginal(TakeExp, HP$`Theta2 for w`) 
+
+paste('Sigma.u = ', round(Sigma4.u, digits = 3))
+paste('Range = ', round(Range4 / 1000, digits = 3), "km")
+
+```
+
+```{r}
+# Show the extend of the spatial correlation
+# Get the inverse of the covariance matrix of the w.
+# Note that we are using a different function as before.
+Q <- inla.rgeneric.q(spde.barrier, 
+                     "Q", 
+                     theta = c(log(Sigma4.u ), log(Range4)))
+
+Corr <- local.find.correlation(Q, 
+                               loc = c(Loc[157,1], Loc[157,2]), 
+                               mesh.barrier)
+```
+
+```{r fig.width=4.5, fig.height=4.5}
+# And the rest is a matter of plotting the
+# correlation values, contour of the coast and the
+# sampling locations.
+PlotField2(Corr, 
+           mesh.barrier, 
+           ContourMap = Keys.UTM,  
+           zlim = c(0.2, 1),
+           Add = FALSE)
+#It will find the closest point on the mesh:
+points(x = 1174723.0528, y = 12810472.1565, col = 2, pch = 16, cex = 2)
+
+plot(Keys.UTM, 
+     axes = TRUE, 
+     add = TRUE)
+points(x = Loc[,1],
+       y = Loc[,2],
+       cex = 0.5, 
+       col = "black", 
+       pch = 16)
+# This is not working...
+##########################################
+```
+
+Is a barrier really needed? Even without:
 
 ```{r}
 spde.barrier <- inla.spde2.pcmatern(mesh.barrier, 

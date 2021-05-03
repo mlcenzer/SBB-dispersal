@@ -59,7 +59,7 @@ check_spatial_dependencies = function(m, d, xlong, ylat, zone = 16, cutoff_m, is
   )
   with(V, scatter.smooth(x = dist, 
                          y = gamma,
-                         xlab = "Distance",
+                         xlab = "Distance (m)",
                          ylab = "Sample variogram"))
   
   # Plot the Pearson vs. their spatial coordinates.

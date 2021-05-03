@@ -50,7 +50,7 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spati
 ```
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology04.28.21-coors.csv")
+data_list <- read_morph_data("data/allmorphology04.30.21-coors.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
 ```
@@ -134,8 +134,8 @@ raw_data %>% group_by(sex,
 Checking over bug numbers per season.
 
 ```{r}
-raw_data[raw_data$year =="2020",]  #476 survived shipment, so I"m guessing that about 103 bugs did not survive shipment but were still measured for morphology?
-raw_data[raw_data$year =="2019" & raw_data$month=="October",] #similar here. 372 bugs measured but 207 survived. So that means that 165 bugs did not survive and were still measured for morph. 
+#raw_data[raw_data$year =="2020",]  #476 survived shipment, so I"m guessing that about 103 bugs did not survive shipment but were still measured for morphology?
+#raw_data[raw_data$year =="2019" & raw_data$month=="October",] #similar here. 372 bugs measured but 207 survived. So that means that 165 bugs did not survive and were still measured for morph. 
 ```
 
 Plotting the histograms.
@@ -221,6 +221,15 @@ I have not removed the bugs with torn wings yet.
 
 What determines wing morph using all the data? Does sex? host plant? month of the year?
 
+#### Testing time covariates
+
+```{r}
+m = glm(wing_morph_binom ~ months_since_start, data=raw_data, family="binomial")
+tidy_regression(m, is_color=FALSE)
+m = glm(wing_morph_binom ~ month_of_year, data=raw_data, family="binomial")
+tidy_regression(m, is_color=FALSE)
+```
+
 ```{r}
 data<-data.frame(R=raw_data$wing_morph_binom, 
                  A=raw_data$sex_binom, 
@@ -232,7 +241,7 @@ model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
 model_comparisonsAIC(model_script)
 ```
 
-```{r}
+```{r  results = "hold"}
 anova(m13, m15, test="Chisq") # Adding A*B does not improve fit
 anova(m7, m13, test="Chisq") # Adding B*C marginally improves fit
 anova(m5, m7, test="Chisq")
@@ -241,7 +250,7 @@ anova(m4, m7, test="Chisq")
 ```
 
 ```{r}
-m = glm(wing_morph_binom ~ sex_binom + pophost_binom + months_since_start, data=raw_data, family="binomial")
+m = glm(wing_morph_binom ~ sex_binom + pophost_binom + month_of_year, data=raw_data, family="binomial")
 ```
 
 ```{r}
@@ -251,7 +260,7 @@ tidy_regression(m, is_color=FALSE) # m7
 Top model is m7
 * Males are more likely to be long-winged.
 * K.elegans more likely to be long-winged.
-* No more an effect of month_of_year effect. Before had a (+) effect of getting later in the season (month_of_year), such that long wing morphs become increasingly likely later in the year. 
+* (+) effect later in the season such that long wing morphs become increasingly likely later in the year. 
 
 ```{r}
 temp = raw_data %>% 
@@ -264,27 +273,66 @@ A **variogram** is used to display the variability between data points as a func
 
 No spatial dependencies for wing morph.
 
-Let's see what impacts the long-wing morph variance:
+#### Best fit: Modeling all important covariates
 
 ```{r}
-SE = function(x){sd(x)/sqrt(length(x))}
-wmorph_summary<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year, data=raw_data, FUN=mean)
-wmorph_summary$se<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year, data=raw_data,
-                          FUN=SE)$wing_morph_binom
-wmorph_summary
+model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")
+model_comparisonsAIC(model_script)
 ```
+
+```{r results="hold"}
+anova(m98, m110, test="Chisq") # adding B*D does not improve fit
+anova(m84, m98, test="Chisq") # adding A*B improves fit
+
+anova(m63, m84, test="Chisq") # Adding C*D improves fit
+anova(m51, m63, test="Chisq") # Adding B improves fit
+```
+
+```{r}
+m = glm(wing_morph_binom ~ sex_binom * pophost_binom + sex_binom * months_since_start + pophost_binom * month_of_year + month_of_year * months_since_start, data=raw_data, family="binomial") # m98 top model
+tidy_regression(m, is_color=FALSE)
+```
+
+* Males are more likely to be long-winged.
+* K.elegans more likely to be long-winged.
+* (+) effect of getting later in the season (month_of_year), such that long wing morphs become increasingly likely later in the year. 
+* (+) effect of months_since_start, such that long wing morphs become increasingly likely across the decade.
+
+* (+) effect of sex*host where if F and from K.elegans then more likely to be long-winged
+
+* (+) effect of sex*months_since_start where if female and later in the decade then more likely to be long-winged
+* (-) effect of pophost*month_of_year where if from C.corindum and later in the season, then more likely long wing morphs will be present
+
+* weak (-) effect of month_of_year*months_since_start where the later in the year and later in the decade, the more likely short wing morphs will be present.
+
+```{r}
+# m = glm(wing_morph_binom ~ sex_binom*months_since_start + month_of_year*months_since_start + pophost_binom*month_of_year, data=raw_data, family="binomial") # m84 was the top model
+```
+
+```{r}
+temp = raw_data %>%
+  filter(!is.na(wing_morph_binom)) # filter out NA's that glm did automatically
+
+check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_glm=TRUE)
+```
+
+Model validation looks fine. Nothing to worry about.
+
+
+#### Let's see what impacts the long-wing morph variance:
 
 ```{r}
 SE = function(x){sd(x)/sqrt(length(x))}
 wmorph_summaryt<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, data=raw_data, FUN=mean)
+wmorph_summaryt$sd<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, data=raw_data,
+                          FUN=sd)$wing_morph_binom
 wmorph_summaryt$se<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, data=raw_data,
                           FUN=SE)$wing_morph_binom
-wmorph_summaryt
 ```
 
 ```{r}
 data = wmorph_summaryt
-data<-data.frame(R=data$se, 
+data<-data.frame(R=data$sd, 
                  A=data$sex_binom, 
                  B=data$pophost_binom, 
                  C=(data$month_of_year),
@@ -297,58 +345,19 @@ model_comparisonsAIC(model_script)
 ```{r}
 anova(m2, m6, test="Chisq") # Adding C does not improve fit
 anova(m2, m4, test="Chisq") # Adding B does not improve fit
+anova(m0, m2, test="Chisq")
 ```
 
 ```{r}
-m = glm(se ~ pophost_binom, data=wmorph_summary, family="gaussian")
+m = glm(sd ~ pophost_binom, data=wmorph_summaryt, family="gaussian")
 tidy_regression(m, is_color=FALSE) # -1 = C.corindum
 ```
 
-only an (-) effect of pophost, where if from GRT then have more variation vs. if from BV have less variation.
+only a (-) effect of pophost, where if from K.elegans then have less variation vs. if from C.cordinum have more variation.
 
 ```{r}
-model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")
-model_comparisonsAIC(model_script)
+plot(m$fitted.values, m$residuals)
 ```
-
-```{r}
-anova(m98, m110, test="Chisq") # adding B*D does not improve fit
-anova(m84, m98, test="Chisq") # adding A*B marginally improves fit
-
-anova(m63, m84, test="Chisq") # Adding C*D improves fit
-anova(m51, m63, test="Chisq") # Adding B improves fit
-```
-
-```{r}
-m = glm(wing_morph_binom ~ sex_binom*months_since_start + month_of_year*months_since_start + pophost_binom*month_of_year, data=raw_data, family="binomial") # m84 top model
-```
-
-```{r}
-tidy_regression(m, is_color=FALSE)
-```
-
-* Males are more likely to be long-winged.
-* K.elegans more likely to be long-winged.
-* (+) effect of getting later in the season (month_of_year), such that long wing morphs become increasingly likely later in the year. 
-* (+) effect of months_since_start, such that long wing morphs become increasingly likely across the decade.
-* (+) effect of sex*months_since_start where if female and later in the decade then more likely to be long-winged
-* weak (-) effect of month_of_year and months_since_start where the later in the year and later in the decade, the more likely short wing morphs will be present.
-* (-) effect of month of year and pophost where if from C.corindum and later in the season, then more likely long wing morphs will be present
-
-### Model Validation 
-
-```{r}
-temp = raw_data %>%
-  filter(!is.na(wing_morph_binom)) # filter out NA's that glm did automatically
-```
-
-
-```{r}
-check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_glm=TRUE)
-```
-
-Don't see any spatial dependencies. 
-
 
 ## Wing2Body
 
@@ -368,6 +377,7 @@ compare_dates_model <- glm(wing2body~compare_dates + pophost_binom*sex_binom, da
 
 tidy_regression(compare_dates_model, is_color=FALSE)
 ```
+
 Yes, bugs from this collection date have detectably smaller wing2body ratios on average than other collection dates, even when controlling for sex and host plant.
 
 ```{r echo=FALSE}
@@ -410,9 +420,10 @@ model_script = paste0(source_path,"generic models-gaussian glm 3-FF.R")
 model_comparisonsAIC(model_script)
 ```
 
-```{r}
+```{r results="hold"}
 anova(m15, m17, test="Chisq") # Adding A*C does not improve fit
 anova(m11, m15, test="Chisq") # Adding B*C does not improve fit
+anova(m11, m14, test="Chisq") # Adding A*C does not improve fit
 anova(m8, m11, test="Chisq") # Adding C does improve fit
 ```
 
@@ -424,7 +435,7 @@ tidy_regression(m, is_color=FALSE) # m11
 * Males have larger wing2body ratios.
 * K.elegans bugs have larger wing2body ratios.
 * Females on K.elegans have longer wings than C.corindum females.
-* wing2body ratios are increasing moderately towards the present 
+* wing2body ratios are increasing moderately towards the end of the year 
 
 ```{r}
 temp = data_long %>% 
@@ -432,12 +443,72 @@ temp = data_long %>%
 ```
 
 ```{r}
-check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_glm=TRUE)
+check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=20000, is_glm=TRUE)
 ```
 There might be some spatial dependencies for long wing freq because seeing clusters of red and clusters of black.
 
+Also the variogram shows distances 0 to 10,000 m where the variability between points starts high and then decreases (the points become more similar) until it levels out because at some point the distance between data points will be great enough that the points are no longer considered to be related to each other. The variability will flatten out into a "sill".
 
-Let's plot histograms and analyze the variance. Then model the variance.
+Strange that it's decreases over distance. But if you do 20,000 m then see it begins to increase again.
+
+```{r}
+model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")
+model_comparisonsAIC(model_script)
+```
+
+```{r}
+anova(m22, m42, test="Chisq") # adding B*C does not improve fit
+anova(m16, m22, test="Chisq") # adding C does improve fit # same top model as before
+```
+
+Same best fit model (no months_since_start effect). But can plot the positive effect of month of year on wing2body ratio. It looks cyclical by pophost and more linear by sex: 
+                 
+```{r}
+wing2body_summary<-aggregate(wing2body~pophost*month_of_year, data=data_long, FUN=mean)
+plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.factor(pophost)])
+
+wing2body_summary<-aggregate(wing2body~sex_binom*month_of_year, data=data_long, FUN=mean) # black is M; Red is F
+plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.factor(sex_binom)]) # black is C. ; Red is K.
+```
+These plots are plotted cleanly in the wing_plots.Rmd script.
+
+#### Let's plot histograms and analyze the variance. Then model the variance.
+
+```{r}
+SE = function(x){sd(x)/sqrt(length(x))}
+w2b_summaryt<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long, FUN=mean)
+w2b_summaryt$sd<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long,
+                          FUN=sd)$wing2body
+w2b_summaryt$se<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long,
+                          FUN=SE)$wing2body
+```
+
+```{r}
+data = w2b_summaryt
+data<-data.frame(R=data$sd, 
+                 A=data$sex_binom, 
+                 B=data$pophost_binom, 
+                 C=(data$month_of_year),
+                 D=data$months_since_start)
+
+model_script = paste0(source_path,"generic models-gaussian glm 3-FF.R")
+model_comparisonsAIC(model_script)
+```
+
+```{r}
+anova(m2, m6, test="Chisq")
+anova(m0, m2, test="Chisq")
+```
+
+
+```{r}
+m = glm(sd ~ pophost_binom, data=w2b_summaryt, family=gaussian) 
+tidy_regression(m, is_color=FALSE)
+```
+
+Nothing seems to effect the w2b variance.
+
+Plot the histograms between the sexes and conduct var tests.
 
 ```{r}
 time_var_tests = function(d, print_test=FALSE) {
@@ -504,7 +575,7 @@ x = sort(unique(d$month_of_year))
 
 plot(x,y, ylab="F-test value", xlab="Month of Year", xaxt = "n", main="wing-to-body ~ sex")
 axis(1, at=seq(min(x),max(x),2), labels=xlab[-5])
-abline(h=1, col=2) # non-linear relationship where at the beginning of the year the variance between sexes is similar bu then in spring it deviates a lot. In the summer the variance is similar and then towards the winter the variance deviates.
+abline(h=1, col=2) # non-linear relationship where at the beginning of the year the variance between sexes is similar but then in spring it deviates a lot. In the summer the variance is similar and then towards the winter the variance deviates.
 ```
 
 ```{r}
@@ -577,62 +648,6 @@ abline(h=1, col=2) # non-linear relationship where at the beginning of the year 
 ```
 
 
-```{r}
-SE = function(x){sd(x)/sqrt(length(x))}
-w2b_summary<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year, data=data_long, FUN=mean)
-w2b_summary$se<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year, data=data_long,
-                          FUN=SE)$wing2body
-w2b_summary
-```
 
-```{r}
-SE = function(x){sd(x)/sqrt(length(x))}
-w2b_summaryt<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long, FUN=mean)
-w2b_summaryt$se<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long,
-                          FUN=SE)$wing2body
-w2b_summaryt
-```
 
-```{r}
-data = w2b_summaryt
-data<-data.frame(R=data$se, 
-                 A=data$sex_binom, 
-                 B=data$pophost_binom, 
-                 C=(data$month_of_year),
-                 D=data$months_since_start)
-
-model_script = paste0(source_path,"generic models-gaussian glm 3-FF.R")
-model_comparisonsAIC(model_script)
-```
-
-Nothing seems to effect the variance.
-
-```{r}
-model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")
-model_comparisonsAIC(model_script)
-```
-
-```{r}
-anova(m22, m42, test="Chisq") # adding B*C does not improve fit
-anova(m16, m22, test="Chisq") # adding C does improve fit # same top model as before
-```
-
-No months_since_start effect. But can plot the positive effect of month of year on wing2body ratio. It looks cyclical by pophost and more linear by sex: 
-
-```{r}
-wing2body_summary<-aggregate(wing2body~pophost*month_of_year, data=data_long, FUN=mean)
-plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.factor(pophost)])
-
-wing2body_summary<-aggregate(wing2body~sex_binom*month_of_year, data=data_long, FUN=mean) # black is M; Red is F
-plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.factor(sex_binom)]) # black is C. ; Red is K.
-```
-
-```{r}
-wing2body_summary<-aggregate(wing2body~sex_binom*pophost*month_of_year, data=data_long, FUN=mean)
-plot(wing2body~month_of_year, data=wing2body_summary, pch=c(19,21)[as.factor(sex_binom)], col=c(2,3)[as.factor(pophost)]) 
-# female open cirlces, males closed circles
-# green K. elegans and red C. corindum
-```
-
-These plots are plotted cleanly in the wing_plots.Rmd script.
 
