@@ -35,14 +35,12 @@ for (script in script_names) {
 ### Read the data
 
 ```{r warning=FALSE}
-data_list <- read_morph_data("data/allmorphology04.28.21-coors.csv")
+data_list <- read_morph_data("data/allmorphology04.30.21-coors.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
 all_bugs = nrow(data_long)
 
 data_long = remove_torn_wings(data_long)
-clean_bugs = nrow(data_long)
-cat("number of bugs with torn wings:", all_bugs - clean_bugs, "\n\n")
 ```
 
 ## Wing2Body 

@@ -15,6 +15,18 @@ remove_torn_wings = function(d){
   return(df)
 }
 
+remove_torn_wings = function(d) {
+  rows2remove = c()
+  for (i in 1:nrow(d)) {
+    if (grepl("torn", d$notes[i]) & grepl("wing", d$notes[i])) {
+      rows2remove = c(rows2remove, i)
+    }
+  }
+  d2 = d[-rows2remove,]
+  cat("\nnumber of bugs with torn wings:", length(rows2remove), "\n")
+  return(d2)
+}
+
 read_morph_data = function(path) {
   
   data = read.csv(path, header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
