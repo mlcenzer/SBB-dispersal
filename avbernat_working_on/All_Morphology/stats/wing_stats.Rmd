@@ -50,7 +50,7 @@ source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spati
 ```
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology04.30.21-coors.csv")
+data_list <- read_morph_data("data/allmorphology05.10.21-coors.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
 ```
@@ -69,13 +69,13 @@ dotplot = function(var, data) {
 d = data_long %>%
   filter(!is.na(wing2body))
 
-range(d$wing2body) 
+range(d$wing2body) # 0.5773723 0.8472103
 ```
 
 ```{r}
 MyVar <- c("wing2body", "wing2thorax", "body", "wing", "beak", "thorax", "lat", "long") 
-d$color = "black"
-d$color[d$year == "2019" & d$month =="May"] = "red"
+d$color = "red"
+d$color[d$year == "2019" & d$month =="May"] = "black"
 
 par(mfrow=c(3,3))
 for (v in MyVar) {
@@ -85,11 +85,15 @@ for (v in MyVar) {
 # remove outliers?
 d2 = d %>% 
   filter(!beak<4.5) %>%
-  filter(!wing2body <0.62) # 
+  filter(!wing2body <0.62) #%>%
+  #filter(!body < 8) %>%
+  #filter(!wing2body > 0.79)
+
+d3 = remove_torn_wings(d2)
 
 par(mfrow=c(3,3))
 for (v in MyVar) {
-  dotplot(v, d2)
+  dotplot(v, d3)
 }
 ```
 
@@ -126,7 +130,7 @@ hist(raw_data$wing[raw_data$w_morph=="S"]/raw_data$thorax[raw_data$w_morph=="S"]
 Grouping the data for group counts.
 
 ```{r}
-raw_data %>% group_by(sex, 
+group = raw_data %>% group_by(sex, 
                   datetime) %>% 
   summarize(count = n())
 ```
@@ -170,7 +174,7 @@ colors = c("#787a87", "#E69F00", "#56B4E9",
 
 p = ggplot(data=subset(data, !is.na(datetime)), aes(x=datetime, fill=population)) + 
     geom_bar(position='stack', color="black", width=0.7) +
-    theme_bw()
+    theme_bw() #+ geom_text(aes(label=), position=position_dodge(width=0.9), vjust=-0.25)
 p1 = p + labs(title=" ", fill="Population",
          x="Field Collection Month", y = "Number of Bugs Collected")+
    scale_fill_manual(values=colors) +
@@ -209,8 +213,33 @@ p3 = p + labs(title=" ", fill="Sex",
 theme(axis.title.x = element_text(vjust = -3)) +
 theme(axis.title.y = element_text(vjust = 4)) +
   theme(plot.margin=unit(c(1,1,1.1,1.2),"cm"))
+```
 
-p1
+```{r echo=FALSE, fig.width=3.5, fig.height=2.3}
+numF = paste0("F(", as.character(unlist(group[1:10,3])), ")")
+numM = paste0("M(", as.character(unlist(group[11:20,3])), ")")
+text = paste0(numF, "\n", numM)
+p1 + annotate(geom="text", x=1, y=400, label=text[1],
+              color="black", size=3) +
+  annotate(geom="text", x=2, y=470, label=text[2],
+              color="black", size=3) +
+  annotate(geom="text", x=3, y=270, label=text[3],
+              color="black", size=3) +
+  annotate(geom="text", x=4, y=220, label=text[4],
+              color="black", size=3) +
+  annotate(geom="text", x=5, y=320, label=text[5],
+              color="black", size=3) +
+  annotate(geom="text", x=6, y=500, label=text[6],
+              color="black", size=3) +
+  annotate(geom="text", x=7, y=240, label=text[7],
+              color="black", size=3) +
+  annotate(geom="text", x=8, y=730, label=paste0("\n", text[8]),
+              color="black", size=3) +
+  annotate(geom="text", x=9, y=440, label=text[9],
+              color="black", size=3) +
+  annotate(geom="text", x=10, y=650, label=text[10],
+              color="black", size=3)
+
 p2
 p3
 ```
@@ -231,6 +260,10 @@ tidy_regression(m, is_color=FALSE)
 ```
 
 ```{r}
+nrow(data)
+```
+
+```{r}
 data<-data.frame(R=raw_data$wing_morph_binom, 
                  A=raw_data$sex_binom, 
                  B=raw_data$pophost_binom, 
@@ -242,7 +275,7 @@ model_comparisonsAIC(model_script)
 ```
 
 ```{r  results = "hold"}
-anova(m13, m15, test="Chisq") # Adding A*B does not improve fit
+anova(m13, m15, test="Chisq") # Adding A*B marginally improves fit
 anova(m7, m13, test="Chisq") # Adding B*C marginally improves fit
 anova(m5, m7, test="Chisq")
 anova(m6, m7, test="Chisq")
@@ -255,6 +288,7 @@ m = glm(wing_morph_binom ~ sex_binom + pophost_binom + month_of_year, data=raw_d
 
 ```{r}
 tidy_regression(m, is_color=FALSE) # m7
+summary(m)
 ```
 
 Top model is m7
@@ -266,7 +300,7 @@ Top model is m7
 temp = raw_data %>% 
   filter(!is.na(wing_morph_binom))
 
-check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_glm=TRUE)
+check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=14000, is_glm=TRUE)
 ```
 
 A **variogram** is used to display the variability between data points as a function of distance. Here, from distances 0 to 4000 m, the variability between points starts high and then decreases (the points become more similar) until it levels out because at some point the distance between data points will be great enough that the points are no longer considered to be related to each other. The variability will flatten out into a "sill".
@@ -300,7 +334,7 @@ tidy_regression(m, is_color=FALSE)
 
 * (+) effect of sex*host where if F and from K.elegans then more likely to be long-winged
 
-* (+) effect of sex*months_since_start where if female and later in the decade then more likely to be long-winged
+* (+) effect of sex*months_since_start where if F and later in the decade then more likely to be long-winged
 * (-) effect of pophost*month_of_year where if from C.corindum and later in the season, then more likely long wing morphs will be present
 
 * weak (-) effect of month_of_year*months_since_start where the later in the year and later in the decade, the more likely short wing morphs will be present.
@@ -313,7 +347,7 @@ tidy_regression(m, is_color=FALSE)
 temp = raw_data %>%
   filter(!is.na(wing_morph_binom)) # filter out NA's that glm did automatically
 
-check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_glm=TRUE)
+check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=14000, is_glm=TRUE)
 ```
 
 Model validation looks fine. Nothing to worry about.
@@ -430,6 +464,8 @@ anova(m8, m11, test="Chisq") # Adding C does improve fit
 ```{r}
 m = glm(wing2body_c ~ sex_binom*pophost_binom + month_of_year_c, data=data_long, family=gaussian) 
 tidy_regression(m, is_color=FALSE) # m11
+summary(m)
+nrow(data_long)
 ```
 
 * Males have larger wing2body ratios.
@@ -443,7 +479,7 @@ temp = data_long %>%
 ```
 
 ```{r}
-check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=20000, is_glm=TRUE)
+check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=14000, is_glm=TRUE)
 ```
 There might be some spatial dependencies for long wing freq because seeing clusters of red and clusters of black.
 
@@ -497,7 +533,7 @@ model_comparisonsAIC(model_script)
 
 ```{r}
 anova(m2, m6, test="Chisq")
-anova(m0, m2, test="Chisq")
+anova(m0, m2, test="Chisq") # Adding B marginally improves fit
 ```
 
 

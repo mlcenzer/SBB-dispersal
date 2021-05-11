@@ -18,7 +18,8 @@ remove_torn_wings = function(d){
 remove_torn_wings = function(d) {
   rows2remove = c()
   for (i in 1:nrow(d)) {
-    if (grepl("torn", d$notes[i]) & grepl("wing", d$notes[i])) {
+    note_str = d$notes[i]
+    if (grepl("torn", note_str) & grepl("wing", note_str)) {
       rows2remove = c(rows2remove, i)
     }
   }
