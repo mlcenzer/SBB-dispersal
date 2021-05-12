@@ -19,6 +19,10 @@ library(dplyr)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+knitr::purl("morph_PCA.Rmd", output = "morph_PCA.R") # convert Rmd to R script
+```
+
 ### PCA Functions 
 
 ```{r}

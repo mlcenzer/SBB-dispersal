@@ -22,6 +22,10 @@ library(forecast)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+knitr::purl("wing_gls.Rmd", output = "wing_gls.R") # convert Rmd to R script
+```
+
 ## GLS 
 
 The gls() function fits a linear model using generalized least squares. The errors are allowed to be correlated and/or have unequal variances. This function is used in time series analyses.

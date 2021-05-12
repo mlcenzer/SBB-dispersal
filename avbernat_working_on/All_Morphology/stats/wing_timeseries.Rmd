@@ -33,6 +33,10 @@ setwd(dir)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+knitr::purl("wing_timeseries.Rmd", output = "wing_timeseries.R") # convert Rmd to R script
+```
+
 # {.tabset}
 
 ## Introduction 

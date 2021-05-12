@@ -1,0 +1,213 @@
+## ----setup, include=FALSE-------------------------------------------------------------------------------------------------
+rm(list=ls())
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+setwd(dir)
+
+library(FactoMineR)
+library(factoextra)
+library(corrplot)
+library(readr)
+library(dplyr)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+
+## -------------------------------------------------------------------------------------------------------------------------
+Round <- function(number){
+  # for plotting
+  x <- round(number, 1)
+  if(x%%1 == 0){
+    return(paste(as.character(x), ".0", sep = ""))
+  }
+  else{
+    return(x)
+  }
+}
+
+
+## -------------------------------------------------------------------------------------------------------------------------
+PCA_graphs <- function(dataset, PCA_title){
+    # cos2 and the alpha.var: alpha.var colours variables by cos2 
+    # (importance of most important PC to variable), 
+    # see https://personal.utdallas.edu/~herve/abdi-awPCA2010.pdf
+  
+    GFpca <- PCA(dataset, scale.unit = TRUE, graph = TRUE, ncp = 10)
+    
+    eig.val <- get_eigenvalue(GFpca)
+    var.val <- GFpca$var
+    print(eig.val) #will only show in in console
+    print(var.val)
+    
+    scree <- fviz_eig(GFpca, addlabels = TRUE, ylim = c(0, 100))
+    print(scree)
+    
+    labX <- paste("PC1 (", Round(eig.val[1, 2]), "%)", sep = "")
+    labY <- paste("PC1 (", Round(eig.val[2, 2]), "%)", sep = "")
+    leplot <- fviz_pca_biplot(GFpca, geom.id = c("point"), 
+                              geom.var = c("arrow", "text"), 
+                              alpha.var = "cos2",
+                              label = "var", repel = T, 
+                              col.ind = "gray", col.var = "black")
+    print(leplot)
+    
+    ggpubr::ggpar(leplot, title = PCA_title, xlab = labX, ylab = labY, 
+                  ggtheme = theme_classic(), font.main = c(20, "bold"), 
+                  font.x = 14, font.y = 14, font.tickslab = 12
+                  )
+    
+    D = cor(dataset)
+    test <- cor.mtest(dataset)$p
+    par(mfrow=c(1,2))
+    corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
+    corrplot.mixed(D,lower.col = "black", number.cex = .7)
+    
+    return(GFpca)
+}
+
+
+## -------------------------------------------------------------------------------------------------------------------------
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("clean_morph_data2.R" # two functions: read_morph_data and remove_torn_wings
+                  )
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+
+## -------------------------------------------------------------------------------------------------------------------------
+data_list <- read_morph_data("data/allmorphology04.27.21-coors.csv")
+raw_data = data_list[[1]]
+all_bugs = nrow(raw_data)
+data_long = data_list[[2]] 
+
+# Remove individuals with torn wings first
+raw_data = remove_torn_wings(raw_data) # **don't need to remove torn wings for wing morph analysis
+data_long = remove_torn_wings(data_long) # **don't need to remove torn wings for wing morph analysis
+clean_bugs = nrow(raw_data)
+
+cat("number of bugs with torn wings:", all_bugs - clean_bugs, "\n\n")
+
+
+## -------------------------------------------------------------------------------------------------------------------------
+d <- raw_data %>%
+  select(thorax, body, wing, beak) %>%
+  filter(!is.na(body))
+colnames(d) <- c("thorax", "body", "wing", "beak")
+
+MorphPCA = PCA_graphs(d, "(a) ")
+
+
+## -------------------------------------------------------------------------------------------------------------------------
+vars <- MorphPCA$ind
+par(mfrow=c(2,3))
+
+#Correlations
+m <- lm(d$thorax ~ vars$coord[,1])
+plot(vars$coord[,1], d$thorax, xlab="PC1", ylab="thorax (mm)")
+cor_val <- paste("R = ", round(cor(vars$coord[,1], d$thorax), 2))
+text(-2,2, cor_val)
+abline(m, lty=2)
+
+m <- lm(d$body ~ vars$coord[,1])
+plot(vars$coord[,1], d$body, xlab="PC1", ylab="body (mm)")
+cor_val <- paste("R = ", round(cor(vars$coord[,1], d$body), 2))
+text(-2,2, cor_val)
+abline(m, lty=2)
+
+m <- lm(d$wing ~ vars$coord[,1])
+plot(vars$coord[,1], d$wing, xlab="PC1", ylab="wing (mm)")
+cor_val <- paste("R = ", round(cor(vars$coord[,1], d$wing), 2))
+text(-2,2, cor_val)
+abline(m, lty=2)
+
+m <- lm(d$beak ~ vars$coord[,1])
+plot(vars$coord[,1], d$beak, xlab="PC1", ylab="beak (mm)")
+cor_val <- paste("R = ", round(cor(vars$coord[,1], d$beak), 2))
+text(-2,2, cor_val)
+abline(m, lty=2)
+
+m <- lm(d$beak ~ vars$coord[,2])
+plot(vars$coord[,2], d$beak, xlab="PC2", ylab="beak (mm)")
+cor_val <- paste("R = ", round(cor(vars$coord[,2], d$beak), 2))
+text(-0.5,3, cor_val)
+abline(m, lty=2)
+
+
+## -------------------------------------------------------------------------------------------------------------------------
+#Plot by host
+host <- raw_data %>%
+  filter(!is.na(body)) %>%
+  select(pophost)
+  
+
+d$pophost <- host$pophost
+fviz_pca_ind(MorphPCA,
+             geom.ind = "point",
+             col.ind = d$pophost,
+             legend.title = "Host Plant",
+             addEllipses=TRUE)
+
+# Plot by sex
+sex <- raw_data %>%
+  filter(!is.na(body)) %>%
+  select(sex) 
+
+d$sex <- sex$sex
+fviz_pca_ind(MorphPCA,
+             geom.ind = "point",
+             col.ind = d$sex,
+             legend.title = "Sex",
+             addEllipses=TRUE)
+
+# Plot by distance from the sympatric zone
+# sym_dist <- raw_data %>%
+#   filter(!is.na(body)) %>%
+#   select(sym_dist)
+# 
+# d$sym_dist <- sym_dist$sym_dist
+# fviz_pca_ind(MorphPCA,
+#              geom.ind = "point",
+#              col.ind = d$sym_dist,
+#              legend.title = "Sympatric Zone Distance")
+
+# Plot by population
+pop <- raw_data %>%
+  filter(!is.na(body)) %>%
+  select(population)
+
+d$population <- pop$pop
+fviz_pca_ind(MorphPCA,
+             geom.ind = "point",
+             col.ind = d$population,
+             legend.title = "Population",
+             addEllipses=TRUE)
+
+
+## -------------------------------------------------------------------------------------------------------------------------
+
+raw_data$wing2body = raw_data$wing / raw_data$body 
+# No mass
+d <- raw_data %>%
+  select(thorax, wing2body, beak) %>%
+  filter(!is.na(beak)) %>%
+  filter(!is.na(wing2body))
+colnames(d) <- c("thorax", "wing2body", "beak")
+
+MorphPCA = PCA_graphs(d, "(c) ")
+
+# long wing only
+
+data_long$wing2body = data_long$wing / data_long$body 
+# No mass
+d <- data_long %>%
+  select(thorax, wing2body, beak) %>%
+  filter(!is.na(beak)) %>%
+  filter(!is.na(wing2body))
+colnames(d) <- c("thorax", "wing2body", "beak")
+
+MorphPCA = PCA_graphs(d, "(d) ")
+
+

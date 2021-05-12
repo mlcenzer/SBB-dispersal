@@ -25,6 +25,10 @@ setwd(dir)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+knitr::purl("wing_plots.Rmd", output = "wing_plots.R") # convert Rmd to R script
+```
+
 # {.tabset}
 
 ## Cleaning Data and Sourcing Scripts

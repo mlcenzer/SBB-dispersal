@@ -27,6 +27,10 @@ setwd(dir)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+knitr::purl("wing_stats.Rmd", output = "wing_stats.R") # convert Rmd to R script
+```
+
 Base statistics of all morphology for wing morph and wing2body ratio (in long-winged bugs).
 
 Conclusion from the wing_timeseries.Rmd: Found no significant temporal dependencies. Determined that most time series were nonstationary and all ts were an AR(0) process [white noise with moving average]. Concluded that the time values were independent of each other.

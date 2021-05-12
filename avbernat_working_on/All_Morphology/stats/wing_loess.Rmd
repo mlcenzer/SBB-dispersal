@@ -18,6 +18,10 @@ library(cowplot)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r}
+knitr::purl("wing_loess.Rmd", output = "wing_loess.R") # convert Rmd to R script
+```
+
 # {.tabset}
 
 ## Cleaning Data and Sourcing Scripts
