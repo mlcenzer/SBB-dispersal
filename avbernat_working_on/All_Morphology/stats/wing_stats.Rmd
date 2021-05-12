@@ -28,7 +28,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-knitr::purl("wing_stats.Rmd", output = "wing_stats.R") # convert Rmd to R script
+#knitr::purl("wing_stats.Rmd", output = "wing_stats.R") # convert Rmd to R script
 ```
 
 Base statistics of all morphology for wing morph and wing2body ratio (in long-winged bugs).

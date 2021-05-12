@@ -1,11 +1,4 @@
----
-title: "Delta Flight Response"
-author: "Anastasia Bernat"
-date: "12/16/2020"
-output: html_document
----
-
-```{r setup, include=FALSE}
+## ----setup, include=FALSE------------------------------------------------------------------------------------------------
 rm(list=ls())
 dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
 setwd(dir) 
@@ -27,46 +20,13 @@ library(nnet) # multinom package
 library(dplyr)
 
 knitr::opts_chunk$set(echo = TRUE)
-```
 
-```{r}
-#knitr::purl("delta_yes_no.Rmd", output = "delta_yes_no.R") # convert Rmd to R script
-```
 
-## Multinomial Flight Modeling {.tabset}
+## ------------------------------------------------------------------------------------------------------------------------
+knitr::purl("delta_yes_no.Rmd", output = "delta_yes_no.R") # convert Rmd to R script
 
-Flight Trials Winter 2020 were conducted from 2/17/2020 - 3/10/2020. Soapberry bugs were flight tested twice (T1 vs. T2) for multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. I used  multicategorical, nominal modeling (multinom) to analyze how sex and host plant as well as changes in mass and egg-laying changed a soapberry bug's flight response between trials. 
 
-### Delta Flight Response (T1 vs. T2)
-
-[Introduction](#intro)
-
-[Clean the Data](#clean_data)
-
-[Flight Case ~ Mass Per ](#mass_percentage)
-
-[Flight Case ~ Mass Diff or Mass Perc + Sex ](#adding_sex)
-
-[Flight Case ~ Mass Diff or Mass Perc + Sex + Host Plant ](#host_plant)
-
-[Flight Case ~ Mass Diff or Mass Perc + Sex + Wing2Body ](#wing2body)
-
-Females Only
-
-- [Flew Diff ~ Mass Diff + Egg Case ](#fem_only)
-- [Flew Diff ~ Madd Diff + Egg Case + Wing2Body ](#fem_wings)
-
-<a id="intro"></a>
-
-#### Introduction
-
-Graphs I generated below illustrate how changes in mass (more specifically % mass) or egg-laying led to changes in flight response. To generate these graphs, I ran multicategorical regressions to model the probability of different flight delta cases due to sex, host plant, and changes in mass or egg-laying. Changes in speed and distance as a result of changes in mass or egg-laying were not analyzed here but rather in a separate script.
-
-To perform these analyses, a new variable will be created called "flight_case" which calculates the flight response differences between T1 and T2. Here is a formula and key describing each flight case event and encoding: 
-
-**Formula** ***: flight case = response in*** $T_2$ ***- response in*** $T_1$
-
-```{r echo=FALSE}
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # key = response in T2 - response in T1
 Event = c("flew in both trials", "flew in T2 only", " flew in neither trials", "flew in T1 only")
 Encoding = c(2, 1,0,-1)
@@ -76,44 +36,9 @@ kable(key) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
   kable_classic(html_font = "Cambria") %>%
   add_header_above(c("Delta Flight Response Key" = 2 )) 
-```
 
-Since the outcomes (or response variables) were no longer binomial, I used multicategorical logit models (refer to Chapter 6 of *An Introduction to Categorical Data Analysis, Second Edition* by Alan Agresti). Below I've written out notes on performing these analyses.
 
-**What we are interested in is a multicategorical, nominal response variable.** When the response variable is nominal, there is no natural order among the response variable categories (unordered categories). When the response variable is multicategorical, its multicategory models assume that the counts in the categories of $Y$ have a *multinomial distribution*.
-
-Let J = number of categories for $Y$.
-
-$\pi_1,...\pi_J$ = the response probabilities where $\sum_j \pi_j = 1$.
-
-With $n$ independent observations, the probability distribution for the number of outcomes of the J types is the multinomial. It specifies the probability for each possible way the $n$ observations can fall in the J categories. Multicategory logit models simultaneously use all pairs of categories by specifying the odds of outcome in one category instead of another. 
-
-Logit models for nominal response variables pair each category with a baseline category. The choice of the baseline category is arbitrary. When the last category (J) is the baseline, the **baseline-category logits** are
-
-<div align="center">$\log (\frac{\pi_j}{\pi_J}), j = 1, ..., J - 1$.</div> <br/>
-
-Given that the response falls in category j or category J, this is the log odds that the response is j. **For J = 3**, for instance, the model uses $\log(\pi_1/\pi_3)$ and $\log(\pi_2/\pi_3)$. The baseline-category logit model with a predictor x is
-
-<div align="center">$\log (\frac{\pi_j}{\pi_J}) = \alpha_j + \beta_j x, j = 1, ..., J - 1$</div> <br/>
-
-The model has J - 1 equations, with separate parameters for each. **The effects vary according to the category paired with the baseline**. When J = 2, this model simplifies to a single equation for $\log(\pi_1/\pi_2) = logit(\pi_1)$, resulting in ordinary logistic regression for binary responses. 
-
-So how do these pair of categories determine equations for all other pairs of categories? Here is an arbitrary pair of categories a and b that follows the general equation above,
-
-<div align="center">$\log (\frac{\pi_a}{\pi_b}) = \log ( \frac{\pi_a/pi_J}{\pi_b/pi_J}) = \log (\frac{\pi_a}{\pi_J}) -  \log (\frac{\pi_b}{\pi_J})$
-
-$= (\alpha_a + \beta_a x) - (\alpha_b + \beta_b x)$
-
-$= (\alpha_a - \alpha_b) + (\beta_a - \beta_b) x$ </div> <br/>
-So, the equation for categories a and b has the form $\alpha + \beta x$ with intercept parameter $\alpha = (\alpha_a - \alpha_b)$ and with slope parameter $\beta = (\beta_a - \beta_b)$.
-
-Let's apply it to our data now:
-
-<a id="clean_data"></a>
-
-#### Cleaning the Data
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
 
 script_names = c("center_flight_data.R", # Re-centers data 
@@ -136,27 +61,23 @@ data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
 d <- create_delta_data(data_tested)
-```
 
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # for machine learning | creates CSV files to be read into the python script
 #test = d[,c(1:30,59,63:73)] # for machine learning
 #short_test = d[,c(1:2,5,66:68,71:73)]
 #write.csv(test, file="unique_data-Winter2020.csv")
 #write.csv(short_test, file="unique_data-Winter2020.csv")
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 colnames(d)[c(1:2,5,66:68,71:73)]
 # for wing-to-body ratio color creating
 d$w2b_col <- 0
-```
 
-#### Age Effect 
 
-Age also plays a role in this dataset, but age was unknown because the soapberry bugs were field collected.
-
-```{r echo=FALSE}
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # fig.height=2.4, fig.width=2.7
 bar = function() {
   counts <- table(data_tested$flew_b, data_tested$trial_type)
@@ -166,19 +87,9 @@ bar = function() {
   legend = c("no flew", "yes flew"), ylim=c(0,250), beside=TRUE)
 }
 bar()
-```
 
-<a id="mass_percentage"></a>
 
-#### Modeling
-
-Below I used the **multinom function** from the **nnet package** to estimate a *multinomial logistic regression* model. There are other functions in other R packages capable of multinomial regression. I chose the multinom function because it does not require the data to be reshaped (as the mlogit package does) and to mirror the example code found in Hilbe’s *Logistic Regression Models*.
-
-First, I chose the baseline by specifying the level using relevel function. Then, I ran our model using multinom. The multinom package does not include p-value calculations for the regression coefficients, so I calculated *P* using **Wald tests (i.e. z-tests)**.
-
-Finally, I considered **mass difference** as my predictor variable where a (+) sign means the bug gained mass between trials and a (-) sign means the bug lost mass between trials.
-
-```{r echo=FALSE}
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # key = change in mass
 Event = c("gained mass from T1 to T2", "no mass change between trails", "lost mass from T1 to T2")
 Sign = c("pos","0","neg")
@@ -187,13 +98,9 @@ key = cbind(Event, Sign)
 kable(key) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
   add_header_above(c("Delta Mass Key" = 2 )) 
-```
 
-**Multinom model: flight case ~ mass_per**
 
-**Baseline**
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 df <- d %>%
   filter(!is.na(mass_diff), !is.na(flight_case)) 
   
@@ -201,39 +108,31 @@ df <- df[with(df, order(mass_per)),]
 n_trials = nrow(df)
 
 df$flight_case <- relevel(as.factor(df$flight_case), ref = "0")
-```
 
-**Null model**
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 null <- multinom(flight_case ~ 1, data = df) 
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 model <- multinom(flight_case ~ mass_per, data = df) 
 model_table = calculate_P(model)
-```
-Model comparing flying only in T2 to the baseline (not flying at all) **is not significant (P = 0.97)**. That is probably because so few bugs (only male) flew in T2 only.
-
-**Significant ML equations**
 
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 run_multinom_model = function(d) {
   m <- multinom(flight_case ~ mass_per, trace=FALSE, data = d) 
   model_table = calculate_P(m, print_table=FALSE)
   return(model_table)
 }
 ML_eqs = get_significant_models(7)
-```
 
-**The multinomial (ML) prediction equations are:**
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 gsub("Mass Change",  "Mass Percent Change", prediction_equations(model_table))
-```
 
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 eq1 = "Flew in T1 only rather than T2 only = 1.22 + 0.04 Mass %"
 eq2 = "Flew in both rather than T1 only = 1.25 - 0.02 Mass %"
 eq3 = "Flew in both rather than T2 only = 2.48 + 0.02 Mass %"
@@ -244,66 +143,30 @@ colnames(t) = c("N","Model", "P")
 
 kable(t) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
-```
 
-**Estimated Odds**
 
-For bugs of mass_perc x + 20%*(0.04) the estimated odds that bug flew in T1 rather than T2 equals
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 exp(0.04*20)
-```
 
-times the estimated odds at mass_perc x (%). So for every 20% increase in a bug's original mass, the bug is 2.23 times more likely to fly only in T1. That makes sense because the odds of flying in T2 only are very low to begin with.
 
-For bugs of mass_perc x + 40%*(-0.02), the estimated odds that the bug flew twice instead of only in T1 equals
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 exp(40*-0.02) # 2.5 times less likely to fly twice if gain mass
 exp(-40*-0.02) # 2.5 times more likely to fly twice if loose mass
-```
 
-times the estimated odds at mass_perc x (%). Similar message - for every 40% increase in a bug's original mass, the bug was 2.23 times more likely to fly only in T1 rather than fly twice. Although, when a bug looses 40% of original mass then becomes more likely to fly twice then only once. 
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 exp(coef(model)*20) # this compares to no fly, the baseline # gain large % mass
 exp(coef(model)*5) # gain small % mass
 exp(coef(model)*-5) # loose small % mass
 exp(coef(model)*-20) # loose large % mass
 # 1/0 not significant
-```
-1 vs. 0 is not significant as already stated. However, -1 vs. 0 shows that as gain more mass then become increasingly more likely to only fly once. If loose mass then most likely to not fly at all, and more likely to fly twice then fly only once.
 
-**Predicted probabilities** 
 
-You can also use predicted probabilities to help you understand the model. **The multicategory logit model has an alternative expression in terms of the response probabilities**. This is
-
-<div align="center">$\pi_j = \frac{e^{\alpha_j + \beta_j x}}{\sum_Je^{\alpha_J + \beta_J x}}, j=1,...,J$</div> <br/>
-
-The denominator is the same for each probability, and the numerators for various j sum to the denominator where $\sum_j \pi_j = 1$. The parameters ($\alpha$ and$\beta$) equal zero for whichever category is the baseline in the logit expressions. So these would be the equations for the mass diff model (code not show):
-
-   (Intercept)  Estimate DF Std. Err.     z   wald P > |z|
--1      -0.909     0.044  6     0.010 4.492 20.179   0.000
-1       -2.132     0.001  6     0.020 0.043  0.002   0.965
-2        0.344     0.021  6     0.008 2.494  6.221   0.013
-
-<div align="center">$\hat{\pi_{-1}} = \frac{e^{-1.77 + 69.21 x}}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
-
-$\hat{\pi_1} = \frac{e^{-2.13 - 6.70 x}}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
-
-$\hat{\pi_2} = \frac{e^{0.42 + 25.33 x}}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
-
-$\hat{\pi_0} = \frac{e^{0 + 0 x} = 1}{1 + e^{-1.77 + 69.21 x} + e^{-2.13 - 6.70 x} + e^{0.42 + 25.33 x}}, j=1,...,J$
-
-x = mass_diff, which can give you the estimated probabilities.</div><br/>
-
-You can calculate these predicted probabilities for each of our outcome levels using the fitted function. You can start by generating the predicted probabilities for the observations in our dataset and viewing the first few rows. Then, you can plot them.
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 head(pp <- fitted(model))
-```
 
-```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+
+## ----echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2-------------------------------------------------------------------
 plot2 = function(df, pp) {
     plot(df$mass_per, pp[,1], xlim=c(-40, 103), ylim=c(0,1), col="red", type="l", 
          ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", 
@@ -323,43 +186,33 @@ plot2 = function(df, pp) {
 pp2 = fitted(model)
 df2 <- df # for summary purposes
 plot2(df2,pp2)
-```
 
-For more on multinomial plotting for when have more than 1 predictor variables see the following: https://stats.idre.ucla.edu/r/dae/multinomial-logistic-regression/
 
-<a id="adding_sex"></a>
-
-#### Now let's compare some models
-
-**flight_case, mass_per, and sex**
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 df <- df[with(df, order(mass_per)),]
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 data <- data.frame(R = df$flight_case, 
          A = df$mass_per,
          B = df$sex_c)
 model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 2 FF.R")
 model_comparisonsAIC(model_script)
-```
-```{r}
-anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
-```
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
+anova(m3, m4, test="Chisq") # Adding A*B does not improve fit
+
+
+## ------------------------------------------------------------------------------------------------------------------------
 delta_mass_model <- multinom(flight_case ~ mass_per + sex_c, data = df)
 model_table = calculate_P2(delta_mass_model, "mass_per", "sex_c")
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 prediction_equations2(model_table, " Mass Percent Change", " Sex ")
-```
 
-**Significant models**
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 run_multinom_model = function(d) {
   m <- multinom(flight_case ~ mass_per + sex_c, trace=FALSE, data = d) 
   model_table = calculate_P2(m, "mass_per", "sex_c", print_table=FALSE)
@@ -368,9 +221,9 @@ run_multinom_model = function(d) {
 par(mfrow=c(1,2))
 MASS_ML = get_significant_models(15) # mass per
 SEX_ML = get_significant_models(16) # sex
-```
 
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # 2 vs. -1
 Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T1\\, only)$", " ")
 effect = c("Intercept", "$\\delta$ Mass %", "Sex")
@@ -400,9 +253,9 @@ key6 = getting_oddsf(Odds, effect, pars, MASS_ML[[3]], 2)
 key = rbind(key1, key2, key3, key4, key5, key6)
 rownames(key)<-NULL
 colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta$)*", "Wald", "p")
-```
 
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 kable(key, caption="Table 1. Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
   column_spec(1, width="6cm", background="white") %>%
@@ -412,9 +265,9 @@ kable(key, caption="Table 1. Estimated Parameters, Standard Errors, and Wald Tes
   footnote(general = " * Instead of a 1% mass increase, which is relatively too small, the mass percent change estimates were multiplied by 20 before calculating the log odds. These changes better represent experimental observation and offers a more realistic odds. ",
            general_title = " ", number_title = "* "
            )
-```
 
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 eq1 = "Flew in T1 only rather than T2 only = 5.81 + 0.05 Mass % + 4.93 Sex"
 eq2 = "Flew in both rather than T1 only = 1.14 - 0.02 Mass % - 0.21 Sex"
 eq3 = "Flew in both rather than T2 only = 6.94 + 0.03 Mass % + 4.72 Sex"
@@ -425,67 +278,39 @@ colnames(t) = c("N","Model", "P")
 
 kable(t) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F) 
-```
 
-**Estimated Odds**
 
-**For males:**
-
-For bugs of mass_perc x + 20%*(0.05), the estimated odds that bug flew in T1 rather than T2 equals
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 exp(0.05*20)
-```
 
-times the estimated odds at mass_perc x (%). So for every 20% increase in a bug's original mass, the bug was 2.72 times more likely to fly only in T1. That makes sense because the odds of flying in T2 only are very low to begin with.
 
-For bugs of mass_perc x + 20*(-0.02%), the estimated odds that the bug flew twice instead of only in T1 equals
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 exp(20*-0.02) # 20 times less likely to fly twice if gain mass
 exp(-20*-0.02) # 20 times more likely to fly twice if loose mass
-```
 
-times the estimated odds at mass_perc x (%). Similar message - for every 20% increase in a bug's original mass, the bug was 1.5 times more likely to fly only in T1. So, when a bug starts loosing mass it becomes more likely to fly twice then only once. 
 
-**For females:**
-
-For bugs of mass_perc x + 20%*(0.05), the estimated odds that bug flew in T1 rather than T2 equals
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 exp(0.05*20 + 4.93)
-```
-
-times the estimated odds at mass_perc x (%). So for every 20% increase in a bug's original mass, the bug was **376** times more likely to fly only in T1. Crazy! It doesn't take much for a female to only fly once.
 
 
-For bugs of mass_perc x + 20%*(0.05), the estimated odds that bug flew in both trials rather than T1 equals
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 exp(-0.02*20 - 0.21)
 exp(-0.02*-40 - 0.21)
-```
 
-times the estimated odds at mass_perc x (%). So half as likely to fly in both trials if gain mass. Would need to loose a lot of mass (40) to be almost twice as likely (1.8) to fly in both trials.
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 exp(coef(delta_mass_model)*20) # this compares to no fly, the baseline # gain large % mass
 exp(coef(delta_mass_model)*5) # gain small % mass
 exp(coef(delta_mass_model)*-5) # loose small % mass
 exp(coef(delta_mass_model)*-20) # loose large % mass
 # 1/0 mass not sig but sex**
-```
 
-- If F and gain a lot of mass then most likely to fly only in T1 rather than none.
-- If F and loose mass then most likely to not fly in either trial. 
 
-**Predicted Probabilities**
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 head(pp <- fitted(delta_mass_model))
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 df$index = 1:nrow(df)
 females = df %>%
   filter(sex=="F")
@@ -493,9 +318,9 @@ males = df %>%
   filter(sex=="M")
 Frows = females$index
 Mrows = males$index
-```
 
-```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+
+## ----echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2-------------------------------------------------------------------
 plot3 = function(df, pp) {
   plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",
      type="l",
@@ -539,67 +364,51 @@ plot3 = function(df, pp) {
 pp3 <- fitted(delta_mass_model)
 df3 <- df # for summary purposes
 plot3(df3,pp3)
-```
 
-No females flew in T2 only.
 
-<a id="host_plant"></a>
-
-#### Adding Host Plant
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 df <- df[with(df, order(mass_per)),]
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 data <- data.frame(R = df$flight_case, 
          A = df$mass_per,
          B = df$sex_c,
          C = df$host_c)
 model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 FF.R")
 model_comparisonsAIC(model_script)
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 anova(m4, m7, test="Chisq") # Adding C (host plant) does not improve fit
-```
 
-Host plant is not significant.
 
-<a id="wing2body"></a>
-
-#### Wing2Body
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 df <- df[with(df, order(mass_per)),]
 df$wing2body_c = df$wing2body - mean(df$wing2body)
 df$wing2body_scaled = df$wing2body_c/sd(df$wing2body)*100 # normalized and then multiplied by 100
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 data <- data.frame(R = df$flight_case, 
          A = df$mass_per,
          B = df$sex_c,
          C = df$wing2body_c)
 model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 FF.R")
 model_comparisonsAIC(model_script)
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 anova(m7, m12, test="Chisq") # adding A*C does not improve fit
 anova(m7, m13, test="Chisq") # Adding B*C does not improve fit
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 model <- multinom(flight_case ~ mass_per + sex_c + wing2body_c, data = df)
 model_table = calculate_P3(model)
-```
 
-Signal of flying in only T2 is weak, which is probably why the equation in the model was not significant. It does not differ much from not flying at all.
 
-**Significant equations**
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 run_multinom_model = function(d) {
   m <- multinom(flight_case ~ mass_per + sex_c + wing2body_c, trace=FALSE, data = d)
   model_table = calculate_P3(m, print_table=FALSE)
@@ -611,9 +420,9 @@ par(mfrow=c(2,2))
 MASS_PER_ML = get_significant_models(19) # mass%
 SEX_ML = get_significant_models(20) # sex
 WING2BODY_ML = get_significant_models(21) # wing2body
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 # 2 vs. -1
 #Odds = c("$\\frac{P(Yi=flew\\,twice)}{P(Yi=flew\\, in\\, T1\\, only)}$", " ", " ", " ")
 Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T1\\, only)$", " ", " ")
@@ -645,11 +454,9 @@ key = rbind(key1, key2, key3, key4, key5, key6)
 rownames(key)<-NULL
 colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta$)*", "Wald", "p")
 #  "exp($\\sum_{n=1}^{3}{\\beta_n}$)*"
-```
 
-See here for more table parameters: https://haozhu233.github.io/kableExtra/awesome_table_in_html.html
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 kable(key, caption="Table 1. Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
   column_spec(1, width="6cm", background="white") %>%
@@ -659,11 +466,9 @@ kable(key, caption="Table 1. Estimated Parameters, Standard Errors, and Wald Tes
   footnote(general = " * Instead of a 1% mass increase, which is relatively too small, or a 1 unit increase in the ratio, which is 2 magnitudes higher than approximately one standard deviation from the mean, mass and wing-to-body ratio estimates were multiplied by 20 and divided by 100, respectively, before calculating the log odds. These changes better represent experimental observation and offers a more realistic impact on the odds. ",
            general_title = " ", number_title = "* "
            )
-```
 
-**Odds**
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 # t1 vs. did not fly
 #exp(-0.01 - 0.76 + 28.09/100) # 20% increase in mass, female, and 1/20 increase in the wing2body ratio length
 1/40
@@ -672,9 +477,9 @@ exp(23.74/40+.57)
 exp(0.02*0 + 0.76 + 28.09/100)
 
 min(d$wing2body) - max(d$wing2body)
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 exp(0.02*20 - 0.76 + 28.09/100) # 20% increase in mass, female, and 1/20 increase in the wing2body ratio length
 
 exp(0.02*0 + 0.76 + 28.09/100)
@@ -682,15 +487,13 @@ exp(0.02*0 + 0.76 + 28.09/100)
 # confidence interval for wing2body ratio
 exp((28.09 + 1.96*9.72)/100) 
 exp((28.09 - 1.96*9.72)/100)
-```
 
-**Predicted Probabilities**
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 head(pp <- fitted(model))
-```
 
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 df$index = 1:nrow(df)
 females = df %>%
   filter(sex=="F")
@@ -698,9 +501,9 @@ males = df %>%
   filter(sex=="M")
 Frows = females$index
 Mrows = males$index
-```
 
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 plot4 = function(df, pp, PP, gradient=TRUE, circles=TRUE, stochasticity=TRUE, points=TRUE) {
   c = 0.65
   c2 = 1.2
@@ -768,9 +571,9 @@ plot4 = function(df, pp, PP, gradient=TRUE, circles=TRUE, stochasticity=TRUE, po
 }
 pp6 = pp
 df6 = df
-```
 
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 plot5 = function(df, pp, PP, gradient=TRUE, circles=TRUE, stochasticity=TRUE, points=TRUE) {
   c = 0.65
   c2 = 1.2
@@ -856,9 +659,9 @@ plot5 = function(df, pp, PP, gradient=TRUE, circles=TRUE, stochasticity=TRUE, po
   points(df$mass_per[srows], pp[srows,4], col="darkred", type="p", cex=c)
  }
 }
-```
 
-```{r echo=FALSE, fig.width=0.7, fig.height=1}
+
+## ----echo=FALSE, fig.width=0.7, fig.height=1-----------------------------------------------------------------------------
 # Function to plot color bar
 color.bar <- function(lut, min, max=77, nticks=3, ticks=seq(min, max, len=nticks), title='') {
     scale = (length(lut)-1)/(max-min)
@@ -875,9 +678,9 @@ color.bar <- function(lut, min, max=77, nticks=3, ticks=seq(min, max, len=nticks
      rect(0,y,10,y+1/scale, col=lut[i], border=NA)
     }
 }
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 # getting those small subset plots and scales in the top right hand corner.
 plot_histograms = function() {
   x = 0.48
@@ -898,10 +701,9 @@ plot_color_scale = function() {
   par( fig=v, new=TRUE, mar=c(0,0,0,0) )
   color.bar(colorRampPalette(c("black", "grey"))(1000), 63)
 }
-```
 
 
-```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+## ----echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2-------------------------------------------------------------------
 par(mfrow=c(1,2), tcl=-0.5) # length of tick marks set at default
 
 par(mai=c(1,0.85,0.4,0)) # bottom, right, top, left
@@ -912,8 +714,8 @@ plot5(df6,pp6, pp3, gradient=TRUE, circles=FALSE, stochasticity=TRUE, points=FAL
 
 plot_histograms()
 plot_color_scale()
-```
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 plot3 = function(df, pp) {
   c2 = 1.2
   plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",
@@ -939,24 +741,16 @@ plot3 = function(df, pp) {
          col="black",
          cex=1.1)  
 }
-```
 
-```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+
+## ----echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2-------------------------------------------------------------------
 par(mfrow=c(1,1), tcl=-0.5)
 #plot(0, xaxt = 'n', yaxt = 'n', bty = 'n', pch = '', ylab = '', xlab = '')
 #par(mai=c(1,0,0.4,0.05)) 
 plot3(df3,pp3)
-```
 
-Amazing to see what a clear impact wing2body ratio has for whether bugs are more likely to fly twice or not fly at all. Those with wing2body ratios above the mean wing2body ratio appear to be more likely to fly twice and less likely to not fly. This is true across females and males.
 
-<a id="fem_only"></a>
-
-#### Females only 
-
-**Baseline**
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 df <- d %>%
   filter(!is.na(egg_diff), !is.na(mass_diff), !is.na(flew_diff), sex_c == 1)
 
@@ -965,11 +759,9 @@ df <- df[with(df, order(mass_diff)),]
 n_tfemales = nrow(df)
 
 df$flight_case <- relevel(as.factor(df$flight_case), ref = "0")
-```
 
-**Barplot**
 
-```{r echo=FALSE}
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 data_fem = data_tested %>%
     filter(sex=="F")
 bar2 = function() {
@@ -981,11 +773,9 @@ bar2 = function() {
     legend = c("no eggs", "yes eggs"), ylim=c(0,110), beside=TRUE)
 } 
 bar2()
-```
 
-**Egg Case**
 
-```{r echo=FALSE}
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # key = response in T2 - response in T1
 Event = c("laid eggs in both trials", "laid eggs in T2 only", "laid eggs in neither trials", "laid eggs in T1 only")
 Encoding = c(2, 1,0,-1)
@@ -995,11 +785,9 @@ kable(key) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
   kable_classic(html_font = "Cambria") %>%
   add_header_above(c("Delta Flight Response Key" = 2 )) 
-```
 
-**Baseline**
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 df <- d %>%
   filter(!is.na(egg_case), !is.na(mass_diff), !is.na(flew_diff), sex_c == 1)
 
@@ -1008,41 +796,31 @@ df <- df[with(df, order(mass_diff)),]
 n_tfemales = nrow(df)
 
 df$flight_case <- relevel(as.factor(df$flight_case), ref = "0")
-```
 
-**Null model**
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 df$flight_case = droplevels(df$flight_case) # no female bug only flew in T2
 null <- multinom(flight_case ~ 1, data = df) 
-```
 
-**Multinom model: flew_diff ~ egg_case**
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 model <- multinom(flight_case ~ egg_case, data = df) 
 model_table = calculate_P(model)
-```
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 anova(null, model, test="Chisq") # adding egg_case improves fit
-```
 
-**Significant models**
 
-```{r echo=FALSE}
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 run_multinom_model = function(d) {
   m <- multinom(flight_case ~ egg_case, trace=FALSE, data = d) 
   model_table = calculate_P(m, print_table=FALSE)
   return(model_table)
 }
 ML_eqs = get_significant_modelsf(7) #-1/0 egg case not sig | 0/-1 or 2/-1 egg case not sig | -1/2 egg case not sig | but 0/2 and 2/0 egg case**
-```
 
-**Comparing models: adding host**
 
-Adding host with egg_diff and mass_diff
-
-```{r echo=FALSE}
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # key 
 Host = c("Golden Rain Tree (GRT)", "Balloon Vine (BV)")
 Encoding = c(1,-1)
@@ -1051,39 +829,35 @@ key = cbind(Host, Encoding)
 kable(key) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
   add_header_above(c("Host Plant Key" = 2 )) 
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 data <- data.frame(R = df$flight_case, 
          A = df$egg_case,
          B = df$mass_diff,
          C = df$host_c)
 model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 FF.R")
 model_comparisonsAIC(model_script)
-```
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 anova(m4, m7, test="Chisq") # Adding C does not improve fit
 anova(m7, m13, test="Chisq") # Adding  mass_diff*host does not improve fit
-```
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 #model <- multinom(flight_case ~ mass_diff + egg_case, data = df) 
 df <- df[with(df, order(mass_per)),]
 model <- multinom(flight_case ~ mass_per + egg_case, data = df) 
 model_table = calculate_P2(model, "mass_per", "egg_case")
-```
 
-**Odds**
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 exp(0.02*20 + 1.10) # egg case = -1
 exp(0.02*20 - 1.10) # egg case = 1
 exp(0.02*20) # egg case = 0
 exp(0.02*20 - 1.10*2) # egg case = 2
-```
 
-**Significant eqs**
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 run_multinom_model = function(d) {
   m <- multinom(flight_case ~ mass_per + egg_case, trace=FALSE, data = d) 
   model_table = calculate_P2(m, "mass_per", "egg_case", print_table=FALSE)
@@ -1092,10 +866,9 @@ run_multinom_model = function(d) {
 par(mfrow=c(1,2)) 
 ML_eqs = get_significant_modelsf(15) # mass_per 
 ML_eqs = get_significant_modelsf(16) # egg_case
-```
 
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 # 2 vs. -1
 Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T1\\, only)$", " ")
 effect = c("Intercept", "$\\delta$ Mass %", "Egg Response")
@@ -1113,9 +886,9 @@ key3 = getting_oddsf(Odds, effect, pars, ML_eqs[[2]], 1)
 key = rbind(key1, key2, key3)
 rownames(key)<-NULL
 colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta$)*", "Wald", "p")
-```
 
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 kable(key, caption="Table 2. Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
   column_spec(1, width="6cm", background="white") %>%
@@ -1124,10 +897,9 @@ kable(key, caption="Table 2. Estimated Parameters, Standard Errors, and Wald Tes
   footnote(general = " * Instead of a 1% mass increase, which is relatively too small, mass percent estimates were multiplied by 20 before calculating the log odds. These changes better represent experimental observations and offers a more realistic odds.",
            general_title = " ", number_title = "* "
            )
-```
 
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 tb = model_table
 # -1 / 2 | Flew in T1, not T2
 I = (tb[1,1] - tb[2,1])
@@ -1135,14 +907,12 @@ M = (tb[1,2] - tb[2,2])
 E = (tb[1,3] - tb[2,3])
 EQ1 = paste0("log(pi_-1 / pi_2) = ", round(I, 2), " + ", round(M,2), " Mass %", " + ", round(E, 2), " Egg Case", "     Flew in T1, rather than both" )
 EQ1  # mass_dff** | sex not
-```
 
-**Predicted Probabilities**
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 head(pp <- fitted(model))
-```
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 df$index = 1:nrow(df)
 
 eggT1 = df %>%
@@ -1158,9 +928,9 @@ eggT1_rows = eggT1$index
 egg_0rows = egg0$index
 egg_2rows = egg2$index
 eggT2_rows = eggT2$index
-```
 
-```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+
+## ----echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2-------------------------------------------------------------------
 plot6 = function(df, pp) {
   # only laid eggs in T1
   plot(df$mass_per[eggT1_rows], pp[eggT1_rows,1], ylim=c(0,1.05), xlim=c(-36,108), col="red", type="l", lty=1,main="Females Only", ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (g)")
@@ -1197,10 +967,9 @@ plot6 = function(df, pp) {
 pp5 = fitted(model)
 df5 = df
 plot6(df5,pp5) 
-```
 
 
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 df <- df[with(df, order(mass_diff)),]
 matrix = rbind(cbind(df$mass_diff[eggT1_rows], 
             pp[eggT1_rows,1],pp[eggT1_rows,2], pp[eggT1_rows,3]),
@@ -1224,20 +993,9 @@ matrix = rbind(cbind(df$mass_per[eggT1_rows],
             pp[eggT2_rows,3]))
 colnames(matrix) = c("mass_per", "No", "T1", "Twice")
 #write.csv(matrix, "data/animate_eggs-perc.csv") # for interactive graphs
-```
 
-- Eggs laid twice: most likely to not fly unless gain more than about 0.025 g mass and then fly only in T1 (largest mass change)
-- Eggs laid in T2:  most likely to not fly (2nd widest mass change)
-- Eggs laid only in T1: most likely to fly twice (mostly only lost mass)
-- Eggs not laid: most likely to fly twice always (smallest mass change and mostly only gained about 0.030 g)
 
-<a id="fem_wings"></a>
-
-**wing2body**
-
-**Baseline**
-
-```{r}
+## ------------------------------------------------------------------------------------------------------------------------
 df <- d %>%
   filter(!is.na(egg_case), !is.na(mass_diff), !is.na(flew_diff), !is.na(wing2body), sex_c == 1)
 
@@ -1246,29 +1004,25 @@ df <- df[with(df, order(mass_diff)),]
 n_tfemales = nrow(df)
 
 df$flight_case <- relevel(as.factor(df$flight_case), ref = "0")
-```
 
-```{r warning=FALSE}
+
+## ----warning=FALSE-------------------------------------------------------------------------------------------------------
 data <- data.frame(R = df$flight_case, 
          A = df$egg_case,
          B = df$mass_diff,
          C = df$wing2body)
 model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 FF.R")
 model_comparisonsAIC(model_script)
-```
-```{r}
+
+## ------------------------------------------------------------------------------------------------------------------------
 anova(m4, m7, test="Chisq") # adding wing2body does not include fit
 anova(m7, m12, test="Chisq") # Adding A*C does not improve fit
 anova(m7, m11, test="Chisq") 
 anova(m7, m13, test="Chisq") 
 anova(m4, m8, test="Chisq") # Adding A*B does not improve fit
-```
 
-wing2body is not in the top model for females
 
-### Encodings
-
-```{r echo=FALSE}
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # key = response in T2 - response in T1
 Event = c("flew in both trials", "flew in T2 only", " flew in neither trials", "flew in T1 only")
 Encoding = c(2, 1,0,-1)
@@ -1277,9 +1031,9 @@ key = cbind(Event, Encoding)
 kable(key) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
   add_header_above(c("Delta Flight Response Key" = 2 )) 
-```
 
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # key = change in mass
 Event = c("gained mass from T1 to T2", "no mass change between trails", "lost mass from T1 to T2")
 Sign = c("pos","0","neg")
@@ -1288,9 +1042,9 @@ key = cbind(Event, Sign)
 kable(key) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
   add_header_above(c("Delta Mass Key" = 2 )) 
-```
 
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # key 
 Host = c("Golden Rain Tree (GRT)", "Balloon Vine (BV)")
 Encoding = c(1,-1)
@@ -1299,12 +1053,9 @@ key = cbind(Host, Encoding)
 kable(key) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
   add_header_above(c("Host Plant Key" = 2 )) 
-```
 
 
-**Females Only**
-
-```{r echo=FALSE}
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # key = response in T2 - response in T1
 Event = c("flew in both trials", "flew in neither trial", "flew in T1 only")
 Encoding = c(2,0,-1)
@@ -1313,9 +1064,9 @@ key = cbind(Event, Encoding)
 kable(key) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
   add_header_above(c("Delta Flight Response Key" = 2 )) 
-```
 
-```{r echo=FALSE}
+
+## ----echo=FALSE----------------------------------------------------------------------------------------------------------
 # key = response in T2 - response in T1
 Event = c("laid eggs in both trials", "laid eggs in T2 only", "laid eggs in neither trials", "laid eggs in T1 only")
 Encoding = c(2, 1,0,-1)
@@ -1324,25 +1075,17 @@ key = cbind(Event, Encoding)
 kable(key) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  %>%
   add_header_above(c("Delta Egg Response Key" = 2 )) 
-```
 
-### Summary
 
-**flight case ~ mass per (all bugs)**
-
-```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+## ----echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2-------------------------------------------------------------------
 plot2(df2,pp2)
-```
 
-**flight case ~ mass per and sex**
 
-```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+## ----echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2-------------------------------------------------------------------
 plot3(df3,pp3)
-```
 
-**wing2body**
 
-```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+## ----echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2-------------------------------------------------------------------
 par(mfrow=c(1,2), tcl=-0.5) # length of tick marks set at default
 
 par(mai=c(1,0.85,0.4,0)) # bottom, right, top, left
@@ -1353,16 +1096,8 @@ plot5(df6,pp6, pp3, gradient=TRUE, circles=FALSE, stochasticity=TRUE, points=FAL
 
 plot_histograms()
 plot_color_scale()
-```
 
-**females only**
 
-**flight case ~ mass diff and egg case**
-
-```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+## ----echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2-------------------------------------------------------------------
 plot6(df5,pp5)
-```
 
-### Questions
-
-- Egg case and egg diff not factors. Not sure how to work around this problem.

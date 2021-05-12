@@ -23,7 +23,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-knitr::purl("wing_gls.Rmd", output = "wing_gls.R") # convert Rmd to R script
+#knitr::purl("wing_gls.Rmd", output = "wing_gls.R") # convert Rmd to R script
 ```
 
 ## GLS 

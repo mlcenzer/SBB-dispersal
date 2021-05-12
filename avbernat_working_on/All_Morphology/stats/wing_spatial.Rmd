@@ -37,7 +37,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-knitr::purl("wing_spatial.Rmd", output = "wing_spatial.R") # convert Rmd to R script
+#knitr::purl("wing_spatial.Rmd", output = "wing_spatial.R") # convert Rmd to R script
 ```
 
 # Barrier Model
