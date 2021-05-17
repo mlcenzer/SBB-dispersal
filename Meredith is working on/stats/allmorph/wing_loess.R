@@ -1,4 +1,15 @@
 ## ----setup, include=FALSE-------------------------------------------------------------------------------------------------
+
+#####MLC: Major things to check into: 
+
+##1) why is the difference in the smoothed error from loess so much wider than the standard error calculated in each dataset? 
+
+##2) In some cases, there are model estimates (e.g., p-values) being reported from glms run on a summary data set, rather than on the full dataset. We should use the model estimates from the full dataset, since summary datasets are missing most of the data's variance and will not give accurate estimates.
+
+
+
+
+###MLC NOTES: KEEP
 rm(list=ls())
 library(ggformula)
 library(splines)
@@ -6,11 +17,16 @@ library(gridExtra) #grid.arrange()
 library(ggpmisc) #stat_fit_glance
 library(cowplot)
 
+###MLC: needed to reset wd
+dir = "~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/"
+setwd(dir)
+
 knitr::opts_chunk$set(echo = TRUE)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+###MLC NOTES: KEEP
+source_path = "~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/Rsrc/"
 
 script_names = c("compare_models.R","regression_output.R", "clean_morph_data2.R", "AICprobabilities.R")
 
@@ -21,7 +37,8 @@ for (script in script_names) {
 
 
 ## ----warning=FALSE--------------------------------------------------------------------------------------------------------
-data_list <- read_morph_data("data/allmorphology05.10.21-coors.csv")
+###MLC NOTES: KEEP
+data_list <- read_morph_data("All_morphology/stats/data/allmorphology05.10.21-coors.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]]
 all_bugs = nrow(data_long)
@@ -30,6 +47,8 @@ data_long = remove_torn_wings(data_long)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: I am not sure which figures these initial sections are needed for; I'm going to comment on what figures I think should go in the paper in some form, then should keep only the chunks up here that are necessary for those.
+
 SE = function(x){sd(x)/sqrt(length(x))}
 w2b_summary<-aggregate(wing2body~sex*pophost*dates, data=data_long, FUN=mean)
 w2b_summary$se<-aggregate(wing2body~sex*pophost*dates, data=data_long,
@@ -41,6 +60,8 @@ w2b_summary$dates <- w2b_summary$dates + jitter
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
+
 # check for residuals for loess
 l1 = lowess(w2b_summary$dates, w2b_summary$wing2body, f=0.4)
 plot(w2b_summary$dates, w2b_summary$wing2body)
@@ -58,6 +79,7 @@ plot_lowess_residuals(l1, w2b_summary$dates, w2b_summary$wing2body)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP? Not sure yet what needs these
 d = w2b_summary
 
 # general plotting features
@@ -82,6 +104,7 @@ last_n_years
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP? Not sure yet which figures need these
 dfF = d[d$sex=="F",]
 dfM = d[d$sex=="M",]
 
@@ -97,6 +120,8 @@ dfM$`Host Plant` = dfM$pophost
 
 
 ## ----fig.width=4.7, fig.height=2.15---------------------------------------------------------------------------------------
+###MLC NOTES: CUT; this is a really nice figure, but ultimately I don't think the result is central/interesting enough to warrant a figure (e.g., wing2body ratio does not change detectably over time) 
+
 p0 = ggplot() + 
   ggtitle("C") + xlab("Year") + ylab("Wing-to-Body Ratio") +
   geom_vline(xintercept = xlab_years, color="gainsboro") + 
@@ -141,6 +166,7 @@ p0
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP? Not sure yet which figures need these
 w2b_summary<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=mean)
 df = w2b_summary
 
@@ -153,6 +179,7 @@ sex_colors_pts = c("brown1", "grey27")
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP? Not sure yet which figures need these
 df$pophost[df$pophost=="C.corindum"]<-"C. corindum"
 df$pophost[df$pophost=="K.elegans"]<-"K. elegans"
 df$pophost = factor(df$pophost, levels = c("K. elegans", "C. corindum") )
@@ -166,6 +193,7 @@ df$`Sex` = df$sex
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP? Not sure yet which figures need these
 customPlot = list( theme_classic(),
                    theme(axis.text=element_text(size=13),
                       axis.title=element_text(size=16), 
@@ -177,6 +205,8 @@ customPlot = list( theme_classic(),
 
 
 ## ----fig.width=4.7, fig.height=2.3----------------------------------------------------------------------------------------
+###MLC NOTES: CUT. Because there is no effect of year on wing-to-body ratio, having year on the x-axis adds complexity to the plot without adding the information we want our reader to focus on.
+ 
 # Females
 p1 = ggplot() + 
   ggtitle("Females") + xlab("Year") + ylab("Wing-to-Body Ratio") +                          # title and labels
@@ -209,6 +239,8 @@ grid.arrange(p1, p2, ncol=2)
 
 
 ## ----fig.width=4.7, fig.height=2.3----------------------------------------------------------------------------------------
+###MLC NOTES: Not sure - I am getting an error I can't resolve. The next figure looks like the one we want, though, so I'm leaning towards CUT.
+
 p5 = ggplot() + 
   ggtitle("A") + xlab("Month") + ylab("Wing-to-Body Ratio") +                              # title and labels
   geom_vline(xintercept = xlab_dates, color="gainsboro") +                                          # add grey lines for the each collection date
@@ -255,7 +287,9 @@ p6 = p6 + annotate(geom="text", x=10, y=0.744, label=alpha, color="black", parse
 
 
 ## ----fig.width=4.7*1.1, fig.height=4.4*1.1--------------------------------------------------------------------------------
-figure = ggdraw() +
+###MLC NOTES: Not sure, this plot is giving me an error I can't resolve.
+
+figure = ggdraw() + ###MLC: I get an error with ggdraw; could not find function, and does not come up with ? or ??. I assume this works in Rmd.
   draw_plot(p5, 0, .5, .5, .5) +
   draw_plot(p6, 0.5, .5, .5, .5) +
   draw_plot(p0, 0, 0, 1, .5)
@@ -264,6 +298,8 @@ figure
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
+
 # extract the LOESS
 head(ggplot_build(p5)$data[[2]]) # alpha = 0.4 (smoothing parameter)
 head(ggplot_build(p6)$data[[2]]) # alpha = 0.4 (smoothing parameter); lambda = degree of the local polynomial 
@@ -273,6 +309,7 @@ head(ggplot_build(p6)$data[[2]]) # alpha = 0.4 (smoothing parameter); lambda = d
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP
 dfF = df[df$sex=="Females",]
 dfM = df[df$sex=="Males",]
 
@@ -283,6 +320,9 @@ dfM$`Host Plant` = dfM$pophost
 
 
 ## ----fig.width=4.7, fig.height=2.3----------------------------------------------------------------------------------------
+###MLC NOTES: KEEP KEEP KEEP! This is the one I was hoping for.
+###MLC: How does this difference in variance not come out as significant between sexes?! It looks so blatant here!
+
 # females
 p3 = ggplot() + 
   ggtitle("Females") + xlab("Month") + ylab("Wing-to-Body Ratio") +
@@ -317,6 +357,8 @@ grid.arrange(p3, p4, ncol=2)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT - do we get anything from these that isn't visualized in the plot?
+
 # extract the LOESS
 head(ggplot_build(p3)$data[[2]])
 head(ggplot_build(p4)$data[[2]])
@@ -338,6 +380,8 @@ summary(mloess)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT. This is redundant with the wing_stats analysis, which is more complete. Also, we should not do an analysis of data means, as that removes most of the variance our glm is working with.
+
 # compare models
 mlinear = glm(wing2body ~ month_of_year, data=df, family=gaussian)
 mlinearF = glm(wing2body ~ month_of_year, data=dfF, family=gaussian)
@@ -352,6 +396,7 @@ summary(mlinearM)$coeff # significant for males (for K.elegans, not for C.corind
 #############wing morph plots
 
 ##Results to visualize: sex, host, months_since_start.
+###MLC NOTES: KEEP, I think
 
 w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=mean)
 w_morph_summary$se<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=SE)$wing_morph_binom
@@ -379,13 +424,17 @@ dfM = dd[dd$sex=="Males",]
 
 
 ## ----fig.width=4.7, fig.height=2.3----------------------------------------------------------------------------------------
+###MLC NOTES: UNSURE
+###MLC: Something is going wrong here calculating variance for a binomial response - a frequency or probability plot should have a y-axis with a strict minimum of 0 and maximum of 1, but that is not happening with the variance plotted here. So, the estimated variance is probably not accurate, and the expanded y-axis range makes it difficult to see changes that might be visible along the month axis. I have historically used binom.confint() in the binom() library to calculate binomial confidence intervals; I don't know what the smoothing options are, but I do think we need a different function for this one. In principal, I like this idea.
+###MLC: Actually, this is cuing me into something being off about the way loess is visualizing variance in general - the error bars on many of these plots are way wider (x10?) than the standard error on the data itself. I think it may be related to using a summary file instead of a complete data file. 
+
 p7 = ggplot() + 
   ggtitle("Females") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
   geom_smooth(data=dfF, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
               mapping = aes(x = month_of_year, y = wing_morph_binom, colour = `Host Plant`)) +
-  geom_smooth(data=dfF, method="loess", 
-              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
+  geom_smooth(data=raw_data[raw_data$sex=="F",], method="loess", 
+              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=pophost, fill=pophost)) + 
   geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
   customPlot + 
   scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
@@ -411,6 +460,8 @@ grid.arrange(p7,p8, ncol=2)
 
 
 ## ----fig.width=4.7, fig.height=2.3*2--------------------------------------------------------------------------------------
+###MLC NOTES: KEEP and UPDATE; for multi-panel plots like this, I would modify a few things. First, because the legend is the same for everyone, we can show it only on one panel. Second, we can drop the x-axis label from the top row (because it's redundant with the bottom row) and the y-axis label from the left-hand column (because it's redundant with the right-hand column). This gives the data itself more space and makes the plot cleaner. I typically use split.screen() to make figures with this many panels. Third, we want to give each panel a letter we can use to refer to it (A, B, C, D). Finally, I would move the legend over to the left so it doesn't risk bumping into the title.
+
 extrafigure = grid.arrange(p3,p4,p7,p8, ncol=2)
 ggsave("extra_figure.pdf", plot=extrafigure)
 
