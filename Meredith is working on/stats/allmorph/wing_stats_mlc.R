@@ -1,4 +1,7 @@
 ## ----setup, include=FALSE-------------------------------------------------------------------------------------------------
+
+####MLC NOTES: KEEP
+
 rm(list=ls())
 library(lme4)
 library(zoo)
@@ -19,6 +22,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP
+
 source_path = "./Rsrc/"
 
 script_names = c("compare_models.R",
@@ -31,16 +36,20 @@ for (script in script_names) {
   source(path) 
 }
 
+###MLC NOTES: PROBABLY CUT
 source("./RSsrc/spatial_dependencies.R") # space
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP
 data_list <- read_morph_data("All_morphology/stats/data/allmorphology05.10.21-coors.csv")
 raw_data = data_list[[1]]
-data_long = data_list[[2]]
+data_long = data_list[[2]] #add comments on what these are: is this just long-winged bugs?
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: PROBABLY CUT: good for data exploration, but not necessary
+
 dotplot = function(var, data) {
   plot(data[,var], seq(1:nrow(data)),
        col=data$color, ylab="Order of the data from text file", xlab=paste0("Value of ", var))
@@ -48,14 +57,19 @@ dotplot = function(var, data) {
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
-# remove NA dates
+## remove dates with missing body lengths
+###MLC NOTES: MOVE to data filtering function
+
 d = data_long %>%
   filter(!is.na(wing2body))
 
+###MLC NOTES: CUT
 range(d$wing2body) # 0.5773723 0.8472103
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT once final decisions about data inclusion have been made
+
 MyVar <- c("wing2body", "wing2thorax", "body", "wing", "beak", "thorax", "lat", "long") 
 d$color = "red"
 d$color[d$year == "2019" & d$month =="May"] = "black"
@@ -65,10 +79,13 @@ for (v in MyVar) {
   dotplot(v, d)
 }
 
+###MLC NOTES: UPDATE to filter out individuals who would unambiguously have been classified as S within raw_data
+
 # remove outliers?
 d2 = d %>% 
-  filter(!beak<4.5) %>%
-  filter(!wing2body <0.62) #%>%
+  filter(!beak<4.5) %>% ###MLC: This is just one problem individual; my guess would be that its beak broke and the measurement is truly erroneous.
+  filter(!wing2body <0.62) %>% ###MLC: One of these (wing=4.47) is absolutely an S individual mislabelled as L. The other just looks weird. Regardless this is very conservative in terms of removing individuals from the dataset.
+  filter(!wing2thorax <2.2) ###MLC: added S filtering
   #filter(!body < 8) %>%
   #filter(!wing2body > 0.79)
 
@@ -79,23 +96,25 @@ for (v in MyVar) {
   dotplot(v, d3)
 }
 
-plot(log(d3$wing)~log(d3$body))
-
 ## -------------------------------------------------------------------------------------------------------------------------
 raw_data_missing = raw_data %>%
   filter(w_morph=="" | is.na(w_morph)) # had 30 that are hard to identify as either S or L based on the wing2thorax thresholds.
 raw_data_missing # need to determine the morph of these bugs manually. In the long term...need to do this manually because the boundaries of what is defined as a morph can change over time.
+
 ####MLC: I can see that there a few sneaking in here that are clearly short-winged, but were labelled long-winged in the file. Let's take a look:
 
 raw_data_too_short<-raw_data[raw_data$w_morph=="L" & raw_data$wing2thorax<=2.2,]
 raw_data_too_long<-raw_data[raw_data$w_morph=="S" & raw_data$wing2thorax>=2.5,]
 
-###Some of these I can find in the datasheets, and are missing information - one of these is definitely L in the sheet, but S in this file.
+###MLC: Some of these I can find in the datasheets, and are missing information - one of these is definitely L in the sheet, but S in this file.
 
+###MLC: Used below to visualize with the below histograms
 #raw_data<-raw_data_backup
 #raw_data<-raw_data_backup[raw_data_backup$sex=="M",]
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP but functionalize so people can look at the removed data if they want to but it won't plot automatically
+
 par(mfrow=c(3,1))
 hist(raw_data$wing[raw_data$w_morph=="L"]/raw_data$thorax[raw_data$w_morph=="L"],
      main="Histogram of wing length/thorax length for long winged SBB",
@@ -118,11 +137,15 @@ group = raw_data %>% group_by(sex,
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT and I think you are correct here, those probably died before flight testing.
+
 #raw_data[raw_data$year =="2020",]  #476 survived shipment, so I"m guessing that about 103 bugs did not survive shipment but were still measured for morphology?
 #raw_data[raw_data$year =="2019" & raw_data$month=="October",] #similar here. 372 bugs measured but 207 survived. So that means that 165 bugs did not survive and were still measured for morph. 
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: MOVE to data cleaning script
+
 data = raw_data
 data$population[data$population=="Ft.Myers"]<-"Ft. Myers"
 data$population[data$population=="Key_Largo"]<-"Key Largo"
@@ -142,6 +165,8 @@ data$population = factor(data$population,levels=lat_order)
 
 
 ## ----echo=FALSE, fig.width=3.5, fig.height=2.3----------------------------------------------------------------------------
+###MLC NOTES: KEEP
+
 # order the histogram by latitude and change some colors 
 
 #hist(data$year, main="Numbers Collected", xlab="Year")
@@ -194,6 +219,8 @@ theme(axis.title.y = element_text(vjust = 4)) +
 
 
 ## ----echo=FALSE, fig.width=3.5, fig.height=2.3----------------------------------------------------------------------------
+###MLC NOTES: KEEP, add comments before each on what the figure will generate
+
 numF = paste0("F(", as.character(unlist(group[1:10,3])), ")")
 numM = paste0("M(", as.character(unlist(group[11:20,3])), ")")
 text = paste0(numF, "\n", numM)
@@ -222,46 +249,60 @@ p2
 p3
 
 
-## -------------------------------------------------------------------------------------------------------------------------
+##-------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: ADD transition comments (may be in Rmd file)
+
+###MLC NOTES: CUT
+
 m = glm(wing_morph_binom ~ months_since_start, data=raw_data, family="binomial")
 tidy_regression(m, is_color=FALSE)
 m = glm(wing_morph_binom ~ month_of_year, data=raw_data, family="binomial")
 tidy_regression(m, is_color=FALSE)
 
 
-## -------------------------------------------------------------------------------------------------------------------------
+##-------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 nrow(data)
 
 
-## -------------------------------------------------------------------------------------------------------------------------
+##-------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP
+
 data<-data.frame(R=raw_data$wing_morph_binom, 
                  A=raw_data$sex_binom, 
                  B=raw_data$pophost_binom, 
                  C=(raw_data$month_of_year),
                  D=raw_data$months_since_start)
 
+###MLC NOTES: CUT in favor of script including months_since_start
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
 model_comparisonsAIC(model_script)
 
 
 ## ----results = "hold"-----------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
+
 anova(m13, m15, test="Chisq") # Adding A*B marginally improves fit
 anova(m7, m13, test="Chisq") # Adding B*C marginally improves fit
-anova(m5, m7, test="Chisq")
-anova(m6, m7, test="Chisq")
-anova(m4, m7, test="Chisq")
+anova(m5, m7, test="Chisq") # Adding B improves fit
+anova(m6, m7, test="Chisq") # Adding A improves fit
+anova(m4, m7, test="Chisq") # Adding C improves fit
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 m = glm(wing_morph_binom ~ sex_binom + pophost_binom + month_of_year, data=raw_data, family="binomial")
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 tidy_regression(m, is_color=FALSE) # m7
 summary(m)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
+
 temp = raw_data %>% 
   filter(!is.na(wing_morph_binom))
 
@@ -269,11 +310,15 @@ check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=14000
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
-model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")
+###MLC NOTES: KEEP
+###MLC: this was sourcing the gaussian glm script; I updated it here, fortunately it seems to lead to the same top model!
+
+model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
 model_comparisonsAIC(model_script)
 
 
 ## ----results="hold"-------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP
 anova(m98, m110, test="Chisq") # adding B*D does not improve fit
 anova(m84, m98, test="Chisq") # adding A*B improves fit
 
@@ -282,15 +327,19 @@ anova(m51, m63, test="Chisq") # Adding B improves fit
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP
 m = glm(wing_morph_binom ~ sex_binom * pophost_binom + sex_binom * months_since_start + pophost_binom * month_of_year + month_of_year * months_since_start, data=raw_data, family="binomial") # m98 top model
 tidy_regression(m, is_color=FALSE)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 # m = glm(wing_morph_binom ~ sex_binom*months_since_start + month_of_year*months_since_start + pophost_binom*month_of_year, data=raw_data, family="binomial") # m84 was the top model
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT; the output is unclear to an outsider.
+
 temp = raw_data %>%
   filter(!is.na(wing_morph_binom)) # filter out NA's that glm did automatically
 
@@ -298,6 +347,8 @@ check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=14000
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP if discussed in paper; this is neat, but maybe not at the heart of our results!
+
 SE = function(x){sd(x)/sqrt(length(x))}
 wmorph_summaryt<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, data=raw_data, FUN=mean)
 wmorph_summaryt$sd<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, data=raw_data,
@@ -307,6 +358,8 @@ wmorph_summaryt$se<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP if discussed in paper
+
 data = wmorph_summaryt
 data<-data.frame(R=data$sd, 
                  A=data$sex_binom, 
@@ -319,21 +372,26 @@ model_comparisonsAIC(model_script)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP if discussed in paper
 anova(m2, m6, test="Chisq") # Adding C does not improve fit
-anova(m2, m4, test="Chisq") # Adding B does not improve fit
-anova(m0, m2, test="Chisq")
+anova(m2, m4, test="Chisq") # Adding A does not improve fit
+anova(m0, m2, test="Chisq") # Adding B improves fit
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP if discussed in paper
 m = glm(sd ~ pophost_binom, data=wmorph_summaryt, family="gaussian")
 tidy_regression(m, is_color=FALSE) # -1 = C.corindum
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 plot(m$fitted.values, m$residuals)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+
+###MLC NOTES: ADD transition comments (may be in Rmd file)
 data_long = remove_torn_wings(data_long)
 
 
