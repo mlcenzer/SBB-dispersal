@@ -272,15 +272,17 @@ data<-data.frame(R=raw_data$wing_morph_binom,
                  A=raw_data$sex_binom, 
                  B=raw_data$pophost_binom, 
                  C=(raw_data$month_of_year),
+                 ###MLC NOTES: CUT D
                  D=raw_data$months_since_start)
 
-###MLC NOTES: CUT in favor of script including months_since_start
+###MLC NOTES: KEEP; I went back and forth on this, but months_since_start doesn't directly contribute to our story, adds a lot of noise, and while I want to be transparent about how we approached the analyses it ultimately didn't change any of the results we're talking about, so I think it's clearer to leave it out.
+
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
 model_comparisonsAIC(model_script)
 
 
 ## ----results = "hold"-----------------------------------------------------------------------------------------------------
-###MLC NOTES: CUT
+###MLC NOTES: KEEP
 
 anova(m13, m15, test="Chisq") # Adding A*B marginally improves fit
 anova(m7, m13, test="Chisq") # Adding B*C marginally improves fit
@@ -290,12 +292,12 @@ anova(m4, m7, test="Chisq") # Adding C improves fit
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
-###MLC NOTES: CUT
+###MLC NOTES: KEEP
 m = glm(wing_morph_binom ~ sex_binom + pophost_binom + month_of_year, data=raw_data, family="binomial")
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
-###MLC NOTES: CUT
+###MLC NOTES: KEEP
 tidy_regression(m, is_color=FALSE) # m7
 summary(m)
 
@@ -310,7 +312,7 @@ check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=14000
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
-###MLC NOTES: KEEP
+###MLC NOTES: CUT
 ###MLC: this was sourcing the gaussian glm script; I updated it here, fortunately it seems to lead to the same top model!
 
 model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
@@ -318,7 +320,7 @@ model_comparisonsAIC(model_script)
 
 
 ## ----results="hold"-------------------------------------------------------------------------------------------------------
-###MLC NOTES: KEEP
+###MLC NOTES: CUT
 anova(m98, m110, test="Chisq") # adding B*D does not improve fit
 anova(m84, m98, test="Chisq") # adding A*B improves fit
 
@@ -327,7 +329,7 @@ anova(m51, m63, test="Chisq") # Adding B improves fit
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
-###MLC NOTES: KEEP
+###MLC NOTES: CUT
 m = glm(wing_morph_binom ~ sex_binom * pophost_binom + sex_binom * months_since_start + pophost_binom * month_of_year + month_of_year * months_since_start, data=raw_data, family="binomial") # m98 top model
 tidy_regression(m, is_color=FALSE)
 
@@ -347,7 +349,7 @@ check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=14000
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
-###MLC NOTES: KEEP if discussed in paper; this is neat, but maybe not at the heart of our results!
+###MLC NOTES: KEEP if discussed in paper; this is neat, but maybe not at the heart of our results. We have an interesting conflict here about pophost having a strong influence on morphology, and variance in morphology, but a weak effect on flight trial results.
 
 SE = function(x){sd(x)/sqrt(length(x))}
 wmorph_summaryt<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, data=raw_data, FUN=mean)
@@ -396,6 +398,7 @@ data_long = remove_torn_wings(data_long)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP
 data_long$compare_dates <- -1
 data_long$compare_dates[data_long$months_since_start==81] <- 1
 
@@ -405,6 +408,8 @@ tidy_regression(compare_dates_model, is_color=FALSE)
 
 
 ## ----echo=FALSE-----------------------------------------------------------------------------------------------------------
+
+###MLC NOTES: CUT
 # fig.width=3, fig.height=2.7,
 par(mar = c(5, 5, 2, 0)) 
 par(bty = 'n')
@@ -412,8 +417,9 @@ boxplot(wing2body~compare_dates,
         data=data_long, ylim=c(0.6,0.85),
         xlab = "collection date",
         ylab= "wing2body",
-        col=c(col.alpha( "red" , alpha = 0.5), 
-              col.alpha( "blue" , alpha = 0.5)),
+        col=#c(col.alpha( "red" , alpha = 0.5), ###MLC: error in col.alpha, could not find function
+              #col.alpha( "blue" , alpha = 0.5))
+              c("red", "blue"),
         border="gray30",
         names=c("2013-2020", "Winter 2020"), pch=1,
         cex=1.56, cex.lab=1.8, cex.axis=1.56
@@ -424,23 +430,30 @@ points(means,pch=18, cex=2, col="white")
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: MOVE to data cleaning script
+
 data_long$wing2body_c = (data_long$wing2body-mean(data_long$wing2body, na.rm=TRUE))
 data_long$month_of_year_c = (data_long$month_of_year-mean(data_long$month_of_year, na.rm=TRUE))
 data_long$months_since_start_c = (data_long$months_since_start-mean(data_long$months_since_start, na.rm=TRUE))
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP
+
 data<-data.frame(R=data_long$wing2body_c, # centered
                  A=data_long$sex_binom, # sex
                  B=data_long$pophost_binom, # host
                  C=data_long$month_of_year_c, 
+                 ###MLC NOTES: CUT D
                  D=data_long$months_since_start_c) 
 
+###MLC NOTES: KEEP
 model_script = paste0(source_path,"generic models-gaussian glm 3-FF.R")
 model_comparisonsAIC(model_script)
 
 
 ## ----results="hold"-------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP
 anova(m15, m17, test="Chisq") # Adding A*C does not improve fit
 anova(m11, m15, test="Chisq") # Adding B*C does not improve fit
 anova(m11, m14, test="Chisq") # Adding A*C does not improve fit
@@ -448,40 +461,59 @@ anova(m8, m11, test="Chisq") # Adding C does improve fit
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP
 m = glm(wing2body_c ~ sex_binom*pophost_binom + month_of_year_c, data=data_long, family=gaussian) 
 tidy_regression(m, is_color=FALSE) # m11
 summary(m)
+
+###MLC NOTES: CUT
 nrow(data_long)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: MOVE to data filtering script (then becomes redundant with L63 filtering)
+
 temp = data_long %>% 
   filter(!is.na(wing2body_c))
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
+
 check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=14000, is_glm=TRUE)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT; I went back and forth on this, but months_since_start doesn't directly contribute to our story, adds a lot of noise, and while I want to be transparent about how we approached the analyses it ultimately didn't change anything so I think it's clearer to leave it out.
+
 model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")
 model_comparisonsAIC(model_script)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 anova(m22, m42, test="Chisq") # adding B*C does not improve fit
-anova(m16, m22, test="Chisq") # adding C does improve fit # same top model as before
+anova(m16, m22, test="Chisq") # adding C does improve fit # same top model as before 
+anova(m22, m34, test="Chisq") # adding D does not improve fit
+anova(m34, m58, test="Chisq") # Adding B*D marginally improves fit
+
+
+###MLC: This is satisfying.
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP but unclear if they will go in the paper or stay in the script/supplement only. These are really cool demonstrations of the above results, but not central to the story.
+
 wing2body_summary<-aggregate(wing2body~pophost*month_of_year, data=data_long, FUN=mean)
-plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.factor(pophost)])
+plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.factor(pophost)])# black is C. ; Red is K. ###MLC: moved this note up
 
 wing2body_summary<-aggregate(wing2body~sex_binom*month_of_year, data=data_long, FUN=mean) # black is M; Red is F
-plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.factor(sex_binom)]) # black is C. ; Red is K.
+plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.factor(sex_binom)])
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+ ###MLC NOTES: KEEP if discussed in paper; as above with wing morph, this is neat, but maybe not at the heart of our results. We have an interesting conflict here about pophost having a strong influence on morphology, and variance in morphology, but a weak effect on flight trial results.
+ 
 SE = function(x){sd(x)/sqrt(length(x))}
 w2b_summaryt<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long, FUN=mean)
 w2b_summaryt$sd<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long,
@@ -491,11 +523,13 @@ w2b_summaryt$se<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*month
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP if discussed in paper
 data = w2b_summaryt
 data<-data.frame(R=data$sd, 
                  A=data$sex_binom, 
                  B=data$pophost_binom, 
                  C=(data$month_of_year),
+                 ###MLC NOTES: CUT D
                  D=data$months_since_start)
 
 model_script = paste0(source_path,"generic models-gaussian glm 3-FF.R")
@@ -503,17 +537,24 @@ model_comparisonsAIC(model_script)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP if discussed in paper
 anova(m2, m6, test="Chisq")
 anova(m0, m2, test="Chisq") # Adding B marginally improves fit
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: KEEP if discussed in paper
 m = glm(sd ~ pophost_binom, data=w2b_summaryt, family=gaussian) 
 tidy_regression(m, is_color=FALSE)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
-time_var_tests = function(d, print_test=FALSE) {
+###MLC NOTES: CUT. I'm glad you checked these, but ultimately I don't think it yields anything clear/consistent enough to warrant inclusion.
+
+###MLC: This seems to need a par(mfrow) statement in it to see all figures.
+###MLC: I have some issue with this, because we know there are differences in the number of individuals from each sex and pophost at each collection point, and each of these only accounts for one of those (sex OR pophost). I tried this with an added function variable, testhost; this can be commented out to run it for both together. 
+
+time_var_tests = function(d, print_test=FALSE, testhost="C.corindum") {
   
   months = sort(unique(d$month_of_year))
   month_labs <- c("Feb", "Apr", "May", "Aug", "Sept", "Oct", "Dec")
@@ -522,7 +563,9 @@ time_var_tests = function(d, print_test=FALSE) {
   i = 0
   for (m in months) {
     i = i + 1
-    data = d[d$month_of_year==m, ]
+    data = d[d$month_of_year==m 
+    			& d$pophost==testhost ###MLC: Comment out this line to run summary with both pophosts
+    			, ]
   
     VAR = var.test(wing2body ~ sex, data = data) # F test to compare the variances of two samples from normal pops
     TTEST= t.test(wing2body ~ sex, data=data) # t.test to find significant difference between the means of two groups
@@ -566,11 +609,18 @@ time_var_tests = function(d, print_test=FALSE) {
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
-summary_table = time_var_tests(data_long)
-summary_table
+###MLC NOTES: CUT
 
+summary_table_C = time_var_tests(data_long, testhost="C.corindum")
+summary_table_K = time_var_tests(data_long, testhost="K.elegans")
+summary_table_both = time_var_tests(data_long)
+
+summary_table_C
+summary_table_K
+summary_table_both
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 y = summary_table[,"F-test"]
 xlab = summary_table[, "month"]
 x = sort(unique(d$month_of_year))
@@ -581,7 +631,8 @@ abline(h=1, col=2) # non-linear relationship where at the beginning of the year 
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
-time_var_tests = function(d, print_test=FALSE) {
+###MLC NOTES: CUT
+time_var_tests = function(d, print_test=FALSE, testsex="F") {
   
   months = sort(unique(d$month_of_year))
   month_labs <- c("Feb", "Apr", "May", "Aug", "Sept", "Oct", "Dec")
@@ -590,7 +641,10 @@ time_var_tests = function(d, print_test=FALSE) {
   i = 0
   for (m in months) {
     i = i + 1
-    data = d[d$month_of_year==m, ]
+    data = d[d$month_of_year==m
+    		& d$sex==testsex ###MLC: Comment out this line to run summary with both sexes
+
+    		, ]
   
     VAR = var.test(wing2body ~ pophost, data = data) # F test to compare the variances of two samples from normal pops
     TTEST= t.test(wing2body ~ pophost, data=data) # t.test to find significant difference between the means of two groups
@@ -635,11 +689,19 @@ time_var_tests = function(d, print_test=FALSE) {
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
+summary_table_F = time_var_tests(data_long, testsex="F")
+summary_table_M = time_var_tests(data_long, testsex="M")
+
 summary_table = time_var_tests(data_long)
+
+summary_table_F
+summary_table_M
 summary_table
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 y = summary_table[,"F-test"]
 xlab = summary_table[, "month"]
 x = sort(unique(d$month_of_year))
@@ -650,11 +712,16 @@ abline(h=1, col=2) # non-linear relationship where at the beginning of the year 
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+
+###MLC NOTES: MOVE to data cleaning script
+
 temp = data_long %>%
   filter(!is.na(months_since_start), !is.na(sex), !is.na(wing2body))
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
+
 time_var_tests = function(d, print_test=FALSE) {
   
   months = unique(d$months_since_start)
@@ -712,6 +779,7 @@ summary_table
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 y = summary_table[,"F-test"]
 xlab = summary_table[, "month"]
 x = sort(unique(temp$months_since_start))
@@ -722,11 +790,13 @@ abline(h=1, col=2)
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 temp = data_long %>%
   filter(!is.na(months_since_start), !is.na(pophost), !is.na(wing2body))
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 time_var_tests = function(d, print_test=FALSE) {
   
   months = unique(d$months_since_start)
@@ -784,6 +854,7 @@ summary_table
 
 
 ## -------------------------------------------------------------------------------------------------------------------------
+###MLC NOTES: CUT
 y = summary_table[,"F-test"]
 xlab = summary_table[, "month"]
 x = sort(unique(temp$months_since_start))
