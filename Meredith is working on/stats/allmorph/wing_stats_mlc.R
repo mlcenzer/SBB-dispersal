@@ -85,7 +85,7 @@ for (v in MyVar) {
 d2 = d %>% 
   filter(!beak<4.5) %>% ###MLC: This is just one problem individual; my guess would be that its beak broke and the measurement is truly erroneous.
   filter(!wing2body <0.62) %>% ###MLC: One of these (wing=4.47) is absolutely an S individual mislabelled as L. The other just looks weird. Regardless this is very conservative in terms of removing individuals from the dataset.
-  filter(!wing2thorax <2.2) ###MLC: added S filtering
+  #filter(!wing2thorax <2.2) ###MLC: added S filtering
   #filter(!body < 8) %>%
   #filter(!wing2body > 0.79)
 
