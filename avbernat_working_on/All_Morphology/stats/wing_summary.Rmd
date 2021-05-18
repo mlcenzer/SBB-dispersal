@@ -1,0 +1,44 @@
+---
+title: "Wing Summary File"
+author: "Anastasia Bernat"
+date: "5/18/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+library(lme4)
+library(zoo)
+library(rethinking)
+
+library(lubridate)
+
+library(dplyr)
+library(ggplotify)
+library(gridExtra)
+library(ggformula)
+library(tidyselect)
+
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+setwd(dir)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Sourcing Scripts and Cleaning the Data
+
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+
+script_names = c("compare_models.R",
+                 "regression_output.R", 
+                 "clean_morph_data2.R", # two functions: read_morph_data and remove_torn_wings
+                 "AICprobabilities.R")
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spatial_dependencies.R") # space
+```
