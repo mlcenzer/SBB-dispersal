@@ -15,6 +15,9 @@ library(gridExtra) #grid.arrange()
 library(ggpmisc) #stat_fit_glance
 library(cowplot)
 
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+setwd(dir)
+
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -448,7 +451,7 @@ grid.arrange(p7,p8, ncol=2)
 
 ```{r fig.width=4.7, fig.height=2.3*2}
 extrafigure = grid.arrange(p3,p4,p7,p8, ncol=2)
-ggsave("extra_figure.pdf", plot=extrafigure)
+#ggsave("extra_figure.pdf", plot=extrafigure)
 ```
 
 
@@ -581,5 +584,5 @@ figure2 = ggdraw() +
   draw_plot(p10, 0.5, .5, .5, .5) +
   draw_plot(p11, 0, 0, 1, .5)
 figure2
-ggsave("wmorph_over_time.pdf", plot=figure2)
+#ggsave("wmorph_over_time.pdf", plot=figure2)
 ```
