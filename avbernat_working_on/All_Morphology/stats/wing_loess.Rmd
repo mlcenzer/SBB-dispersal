@@ -79,6 +79,8 @@ plot_lowess_residuals = function(lfit, x, y) {
 }
 
 plot_lowess_residuals(l1, w2b_summary$dates, w2b_summary$wing2body)
+?lowess
+loess
 ```
 
 ```{r}
@@ -91,6 +93,7 @@ host_colors_pts = c("turquoise3", "springgreen4")
 
 # date plotting features
 threshold = unique(d$dates)[10]
+threshold
 d$date_b = "2013-2014"
 d$date_b[d$dates >= threshold] = "2015-2020"
 
@@ -119,6 +122,11 @@ dfF$`Host Plant` = dfF$pophost
 dfM$pophost = factor(dfM$pophost, levels = c("K. elegans", "C. corindum") )
 dfM$`Host Plant` = dfM$pophost
 ```
+
+```{r}
+w2b_summary$se
+```
+
 
 ```{r fig.width=4.7, fig.height=2.15}
 p0 = ggplot() + 
@@ -162,6 +170,9 @@ summary(mllinear)
 
 p0 = p0 + annotate(geom="text", x=unique(d$dates)[24], y=0.743, label=pval, color="blue", parse=TRUE, size=6)
 p0
+```
+```{r}
+head(ggplot_build(p0)$data)
 ```
 
 

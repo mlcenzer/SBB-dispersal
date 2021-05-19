@@ -99,6 +99,9 @@ read_morph_data = function(path) {
   data$wing_morph_binom[data$w_morph=="S"]<-0
   data$wing_morph_binom[data$w_morph=="L"]<-1
   
+  ambiguous = rbind(data[data$w_morph=="LS",],data[data$w_morph=="SL",])
+  cat("ambiguous wing morph bug count: ", nrow(ambiguous), "\n\n")
+  
   # Pulling out only long wing morph and computing wing2body ratio
   data_long<-data[data$w_morph=="L",]
   data_long$wing2body <- data_long$wing/as.numeric(data_long$body)
@@ -112,6 +115,12 @@ read_morph_data = function(path) {
   data_long$wing2body_c = (data_long$wing2body-mean(data_long$wing2body, na.rm=TRUE))
   data_long$month_of_year_c = (data_long$month_of_year-mean(data_long$month_of_year, na.rm=TRUE))
   data_long$months_since_start_c = (data_long$months_since_start-mean(data_long$months_since_start, na.rm=TRUE))
+  
+  # Filter out outliers
+  data_long = data_long %>% 
+    filter(!beak<4.5) %>% 
+    filter(!wing2body <0.62) %>% 
+    filter(!wing2thorax <2.2) 
   
   # Returning the data
   data_list = list(data, data_long)
