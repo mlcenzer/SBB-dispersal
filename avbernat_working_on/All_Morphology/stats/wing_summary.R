@@ -36,6 +36,7 @@ data_list <- read_morph_data("data/allmorphology05.18.21.csv")
 raw_data = data_list[[1]]
 data_long = data_list[[2]] # long-wing bugs only
 
+data_long = remove_torn_wings(data_long)
 
 
 ## Histograms of Missing Wing Morph Data 
@@ -129,7 +130,7 @@ p3
 
 #################################################################
 
-## Wing Morph 
+## Wing Morph Frequency
 ### Modeling (L or S) Wing Morph
 n_wmorph = nrow(raw_data)
 
@@ -161,7 +162,7 @@ anova(m63, m84, test="Chisq") # Adding C*D improves fit
 anova(m51, m63, test="Chisq") # Adding B improves fit
 
 M2 = glm(wing_morph_binom ~ sex_binom * pophost_binom + sex_binom * months_since_start + pophost_binom * month_of_year + month_of_year * months_since_start, data=raw_data, family="binomial") # m98 top model
-tidy_regression(M2, is_color=FALSE)
+tidy_regression(M2, is_color=FALSE) # m98
 
 ### Modeling Variance
 
@@ -194,7 +195,7 @@ tidy_regression(M3, is_color=FALSE) # -1 = C.corindum
 
 #################################################################
 
-## Wing2body
+## Wing-to-Body
 ### Modeling wing-to-body ratio
 n_w2b = nrow(data_long)
 
@@ -213,7 +214,7 @@ anova(m22, m34, test="Chisq") # adding D does not improve fit
 anova(m34, m58, test="Chisq") # Adding B*D marginally improves fit
 
 M4 = glm(wing2body_c ~ sex_binom*pophost_binom + month_of_year_c, data=data_long, family=gaussian) 
-tidy_regression(M4, is_color=FALSE) # m11
+tidy_regression(M4, is_color=FALSE) # m22
 summary(M4) # Rather just do 4 factors right away.
 
 
@@ -243,9 +244,451 @@ anova(m0, m2, test="Chisq") # Adding B improves fit
 M6 = glm(sd ~ pophost_binom, data=w2b_table, family=gaussian) 
 tidy_regression(M6, is_color=FALSE)
 
-## Var Tests
-#Nothing consistent across time. Maybe pop host for females
 
-## Plots
 
+#################################################################
+
+## Variance Tests
+
+time_var_tests = function(d, print_test=FALSE) {
+  
+  months = sort(unique(d$month_of_year))
+  month_labs <- c("Feb", "Apr", "May", "Aug", "Sept", "Oct", "Dec")
+  
+  table = matrix(nrow=length(months), ncol=9)
+  i = 0
+  for (m in months) {
+    i = i + 1
+    data = d[d$month_of_year==m, ]
+    
+    VAR = var.test(wing2body ~ sex, data = data) # F test to compare the variances of two samples from normal pops
+    TTEST= t.test(wing2body ~ sex, data=data) # t.test to find significant difference between the means of two groups
+    AOV = aov(wing2body ~ sex, data=data) # used to analyze the differences among means. 
+    
+    p = TukeyHSD(AOV)$sex[,"p adj"]
+    diff = TukeyHSD(AOV)$sex[,"diff"]
+    
+    if (print_test) {
+      print(month_labs[i])
+      print("t.test")
+      print(TTEST)
+      print("anova")
+      print(summary(AOV))
+      print(TukeyHSD(AOV))
+      cat("-------------------------------------------------")
+    }
+    
+    # plot histograms
+    h = data %>%
+      ggplot( aes(x=wing2body, fill=sex)) +
+      geom_histogram( color="#e9ecef", alpha=0.6, position = 'identity') +
+      scale_fill_manual(values=c("#69b3a2", "#404080")) +
+      labs(fill="")  + labs(title=month_labs[i])
+    print(h)
+    
+    # populate matrix
+    table[i,1] = month_labs[i]
+    table[i,2] = "M-F"
+    table[i,3] = round(diff,4)
+    table[i,4] = round(p,5)
+    table[i,5] = "M=-1 | F=1"
+    table[i,6] = round(TTEST$statistic,4)
+    table[i,7] = round(TTEST$p.value,5)
+    table[i,8] = round(VAR$statistic,2)
+    table[i,9] = round(VAR$p.value, 3)
+  }
+  colnames(table) = c("month","sex", "Tukey-diff", "p-val", "sex", "ttest", "p-val", "F-test", "p-val")
+  return(table)
+} 
+
+summary_table = time_var_tests(data_long)
+summary_table
+
+y = summary_table[,"F-test"]
+xlab = summary_table[, "month"]
+x = sort(unique(data_long$month_of_year))
+
+par(mfrow=c(1,1))
+plot(x,y, ylab="F-test value", xlab="Month of Year", xaxt = "n", main="wing-to-body ~ sex")
+axis(1, at=seq(min(x),max(x),2), labels=xlab[-5])
+abline(h=1, col=2)
+
+
+time_var_tests = function(d, print_test=FALSE) {
+  
+  months = sort(unique(d$month_of_year))
+  month_labs <- c("Feb", "Apr", "May", "Aug", "Sept", "Oct", "Dec")
+  
+  table = matrix(nrow=length(months), ncol=9)
+  i = 0
+  for (m in months) {
+    i = i + 1
+    data = d[d$month_of_year==m, ]
+    
+    VAR = var.test(wing2body ~ pophost, data = data) # F test to compare the variances of two samples from normal pops
+    TTEST= t.test(wing2body ~ pophost, data=data) # t.test to find significant difference between the means of two groups
+    AOV = aov(wing2body ~ pophost, data=data) # used to analyze the differences among means. 
+    
+    p = TukeyHSD(AOV)$pophost[,"p adj"]
+    diff = TukeyHSD(AOV)$pophost[,"diff"]
+    
+    if (print_test) {
+      print(month_labs[i])
+      print("t.test")
+      print(TTEST)
+      print("anova")
+      print(summary(AOV))
+      print(TukeyHSD(AOV))
+      cat("-------------------------------------------------")
+    }
+    
+    # plot histograms
+    h = data %>%
+      ggplot( aes(x=wing2body, fill=pophost)) +
+      geom_histogram( color="#e9ecef", alpha=0.6, position = 'identity') +
+      scale_fill_manual(values=c("#69b3a2", "#404080")) +
+      labs(fill="")  + labs(title=month_labs[i])
+    print(h)
+    
+    # populate matrix
+    table[i,1] = month_labs[i]
+    table[i,2] = "GRT-BV"
+    table[i,3] = round(diff,4)
+    table[i,4] = round(p,5)
+    table[i,5] = "GRT=1 | BV=-1"
+    table[i,6] = round(TTEST$statistic,4)
+    table[i,7] = round(TTEST$p.value,5)
+    table[i,8] = round(VAR$statistic,2)
+    table[i,9] = round(VAR$p.value, 3)
+  }
+  colnames(table) = c("month","sex", "Tukey-diff", "p-val", "sex", "ttest", "p-val", "F-test", "p-val")
+  
+  return(table)
+} 
+
+summary_table = time_var_tests(data_long)
+summary_table
+
+y = summary_table[,"F-test"]
+xlab = summary_table[, "month"]
+x = sort(unique(data_long$month_of_year))
+
+plot(x,y, ylab="F-test value", xlab="Month of Year", xaxt = "n", main="wing-to-body ~ pophost")
+axis(1, at=seq(min(x),max(x),2), labels=xlab[-5])
+abline(h=1, col=2)
+
+#################################################################
+
+# Plots
+
+## Wing-to-Body
+
+SE = function(x){sd(x)/sqrt(length(x))}
+w2b_summary<-aggregate(wing2body~sex*pophost*dates, data=data_long, FUN=mean)
+w2b_summary$se<-aggregate(wing2body~sex*pophost*dates, data=data_long,
+                          FUN=SE)$wing2body
+
+jitter = runif(n=nrow(w2b_summary), min=-0.5, max=0.5) # jitter slightly
+w2b_summary$dates <- w2b_summary$dates + jitter
+d = w2b_summary
+
+### Check for Loess Residuals 
+l1 = lowess(d$dates, d$wing2body, f=0.4)
+plot(d$dates, d$wing2body)
+lines(l1, type = "l")
+
+plot_lowess_residuals = function(lfit, x, y) {
+  lfun <- approxfun(lfit)
+  fitted <- lfun(x)
+  resid <- y-fitted
+  plot(fitted,resid)
+  abline(h=0,col=8)
+}
+
+plot_lowess_residuals(l1, d$dates, d$wing2body)
+
+
+### Wing-to-Body Figure 
+
+#### Panel C: wing-to-body with year
+
+#### general plotting features
+xlab_years = na.omit(sort(unique(data_long$dates))[-2])
+host_colors_shade = c("turquoise3", "green")
+host_colors_pts = c("turquoise3", "springgreen4")
+
+#### date plotting features
+threshold = unique(d$dates)[13]
+threshold
+d$date_b = "2013-2014"
+d$date_b[d$dates >= threshold] = "2015-2020"
+d$date_b = as.factor(d$date_b)
+
+w2b_table<-aggregate(wing2body~dates, data=data_long, FUN=mean)
+w2b_table$date_b = "2013-2014"
+w2b_table$date_b[w2b_table$dates >= threshold] = "2015-2020"
+w2b_table$date_b = as.factor(w2b_table$date_b)
+
+last_n_years = w2b_table[w2b_table$date_b=="2015-2020",]
+last_n_years
+
+p0 = ggplot() + 
+  ggtitle("C") + xlab("Year") + ylab("Wing-to-Body Ratio") +
+  geom_vline(xintercept = xlab_years, color="gainsboro") + 
+  geom_smooth(data=w2b_table, method="lm", se=FALSE, linetype = "dashed",
+              mapping = aes(x = dates, y = wing2body), colour="black", lwd=0.5) +
+  geom_smooth(data=w2b_table, method="loess", 
+              mapping = aes(x = dates, y = wing2body), colour="black") + 
+  geom_point(data=w2b_table, mapping = aes(x = dates, y = wing2body)) +
+  stat_smooth(data=last_n_years, mapping = aes(x = dates, y = wing2body), method = "lm", formula = y ~ x, se = FALSE,
+              colour="blue") +
+  ylim(0.71, 0.75) + 
+  guides(fill = guide_legend(reverse = TRUE)) + 
+  theme_classic() +
+  theme(axis.text=element_text(size=13),
+        axis.title=element_text(size=16), 
+        plot.title=element_text(size=20)) + guides(color = FALSE)  + scale_linetype(guide = FALSE) +
+  theme(legend.key = element_rect(fill = "white", color = NA), 
+        legend.key.size = unit(0.5, "cm"),
+        legend.key.width = unit(0.5,"cm")) + 
+  scale_fill_manual(values = "blue", labels=c("C. corindum", "K. elegans")) + 
+  labs(fill = "Host Plant") + 
+  theme(legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13, face="italic")) +
+  scale_color_manual(values="blue") + 
+  theme(legend.position = c(0.2, 0.88)) + 
+  theme(legend.title = element_blank())
+
+#### loess and linear regressions
+alpha = paste("alpha[loess]==", ggplot_build(p0)$data[[2]]$alpha[1])
+degree="lambda[loess]==0"
+mlinear = glm(wing2body ~ dates, data=d, family=gaussian)
+pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],2))
+
+mllinear = glm(wing2body ~ dates, data=w2b_table[w2b_table$date_b=="2015-2020",], family=gaussian)
+pval = paste0("italic(p)[glm]==",round(summary(mllinear)$coeff[[8]],2))
+summary(mllinear) # last 5 years
+
+p0 = p0 + annotate(geom="text", x=unique(d$dates)[10], y=0.74, label=alpha, color="black", parse=TRUE, size=6) +
+  annotate(geom="text", x=unique(d$dates)[10], y=0.748, label=degree, color="black",parse=TRUE, size=6) +
+  annotate(geom="text", x=unique(d$dates)[15], y=0.718, label=pvalue, color="black", parse=TRUE, size=6) +
+  annotate(geom="text", x=unique(d$dates)[24], y=0.743, label=pval, color="blue", parse=TRUE, size=6)
+
+
+#### Panel A & B: wing-to-body with month
+
+w2b_summary<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=mean)
+df = w2b_summary
+
+xlab_dates = na.omit(sort(unique(data_long$month_of_year)))
+xlab_months = xlab_dates[c(-2,-5)]
+month_labs <- c("Feb", "May", "Aug", "Oct", "Dec")
+
+sex_colors_shade = c("brown1", "sienna4")
+sex_colors_pts = c("brown1", "grey27")
+
+df$pophost = factor(df$pophost, levels = c("K. elegans", "C. corindum") )
+df$`Host Plant` = df$pophost
+
+df$sex[df$sex=="F"]<-"Females"
+df$sex[df$sex=="M"]<-"Males"
+df$sex = factor(df$sex, levels = c("Males", "Females") )
+df$`Sex` = df$sex 
+
+
+customPlot = list( theme_classic(),
+                   theme(axis.text=element_text(size=13),
+                         axis.title=element_text(size=16), 
+                         plot.title=element_text(size=20),),
+                   theme(legend.position = c(0.2, 0.9)),
+                   theme(legend.title = element_text(size=14, face="italic"),
+                         legend.text = element_text(size = 13, face="italic"))
+)
+
+p1 = ggplot() + 
+  ggtitle("A") + xlab("Month") + ylab("Wing-to-Body Ratio") +
+  geom_vline(xintercept = xlab_dates, color="gainsboro") + 
+  geom_smooth(data=df, method="glm", se=FALSE, linetype = "dashed", 
+              mapping = aes(x = month_of_year, y = wing2body), colour="black", lwd=0.5) + 
+  geom_smooth(data=df, method="loess", 
+              mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, fill=`Host Plant`)) + 
+  geom_point(data=df, mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`)) + 
+  ylim(0.71, 0.75) +
+  customPlot +
+  scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
+  scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
+  scale_x_continuous(breaks=xlab_months, labels= month_labs)
+
+p2 = ggplot() + 
+  ggtitle("B") + xlab("Month") + ylab("Wing-to-Body Ratio") + 
+  geom_vline(xintercept = xlab_dates, color="gainsboro") + 
+  geom_smooth(data=df, method="glm", se=FALSE, linetype = "dashed",  
+              mapping = aes(x = month_of_year, y = wing2body), colour="black", lwd=0.5) + 
+  geom_smooth(data=df, method="loess",
+              mapping = aes(x = month_of_year, y = wing2body, colour=Sex, fill=Sex)) + 
+  geom_point(data=df, mapping = aes(x = month_of_year, y = wing2body, colour=Sex)) +
+  ylim(0.71, 0.75) +
+  customPlot +
+  scale_color_manual(values=c("Females" = "brown3", "Males" = "black")) +
+  scale_fill_manual(values = c("Females" = "brown1", "Males" = "sienna4")) +
+  scale_x_continuous(breaks=xlab_months, labels= month_labs) + theme(axis.title.y = element_blank())
+
+#### loess and linear regressions
+alpha = paste("alpha[loess]==", ggplot_build(p1)$data[[2]]$alpha[1])
+degree="lambda[loess]==0"
+mlinear = glm(wing2body ~ month_of_year, data=df, family=gaussian)
+pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],3))
+
+p1 = p1 + annotate(geom="text", x=10, y=0.744, label=alpha, color="black", parse=TRUE) +
+  annotate(geom="text", x=10, y=0.747, label=degree, color="black", parse=TRUE) +
+  annotate(geom="text", x=6.3, y=0.715, label=pvalue, color="black", parse=TRUE) 
+p2 = p2 + annotate(geom="text", x=10, y=0.744, label=alpha, color="black", parse=TRUE) +
+  annotate(geom="text", x=10, y=0.747, label=degree, color="black", parse=TRUE) +
+  annotate(geom="text", x=6.3, y=0.715, label=pvalue, color="black", parse=TRUE) 
+
+figure = ggdraw() +
+  draw_plot(p1, 0, .5, .5, .5) +
+  draw_plot(p2, 0.5, .5, .5, .5) +
+  draw_plot(p0, 0, 0, 1, .5)
+figure
+# ggsave("w2b_over_time.pdf", plot=figure, 
+#        width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
+
+
+
+## Wing Morph Frequency
+
+w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=mean)
+w_morph_summary$se<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=SE)$wing_morph_binom
+
+jitter = runif(n=nrow(w_morph_summary), min=-0.5, max=0.5) #jitter slightly
+w_morph_summary$dates <- w_morph_summary$month_of_year + jitter
+
+dd = w_morph_summary
+
+### Check for Loess Residuals 
+
+l1 = lowess(dd$dates, dd$wing_morph_binom, f=0.4)
+plot(dd$dates, dd$wing_morph_binom)
+lines(l1, type = "l")
+
+plot_lowess_residuals = function(lfit, x, y) {
+  lfun <- approxfun(lfit)
+  fitted <- lfun(x)
+  resid <- y-fitted
+  plot(fitted,resid)
+  abline(h=0,col=8)
+}
+
+plot_lowess_residuals(l1, dd$dates, dd$wing_morph_binom)
+
+### Wing Morph Frequency Figure 
+
+dd$pophost = factor(dd$pophost, levels = c("K. elegans", "C. corindum") )
+dd$`Host Plant` = dd$pophost
+
+dd$sex[dd$sex=="F"]<-"Females"
+dd$sex[dd$sex=="M"]<-"Males"
+dd$sex = factor(dd$sex, levels = c("Males", "Females") )
+dd$`Sex` = dd$sex 
+
+customPlot = list( theme_classic(),
+                   theme(axis.text=element_text(size=13),
+                         axis.title=element_text(size=16), 
+                         plot.title=element_text(size=20),),
+                   theme(legend.position = c(0.23, 0.95)),
+                   theme(legend.title = element_text(size=14, face="italic"), 
+                         legend.text = element_text(size = 13, face="italic"))
+)
+
+#### Panel A & B: wing morph freq with month
+
+p3 = ggplot() + 
+  ggtitle("A") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
+  geom_vline(xintercept = xlab_dates, color="gainsboro") + 
+  geom_smooth(data=dd, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
+              mapping = aes(x = month_of_year, y = wing_morph_binom), colour="black") +
+  geom_smooth(data=dd, method="loess", 
+              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
+  geom_point(data=dd, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
+  customPlot + 
+  scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
+  scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
+  scale_x_continuous(breaks=xlab_months, labels= month_labs) + ylim(0.3,1.2)
+
+p4 = ggplot() + 
+  ggtitle("B") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
+  geom_vline(xintercept = xlab_dates, color="gainsboro") + 
+  geom_smooth(data=dd, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
+              mapping = aes(x = month_of_year, y = wing_morph_binom), colour="black") +
+  geom_smooth(data=dd, method="loess", 
+              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=Sex, fill=Sex)) + 
+  geom_point(data=dd, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=Sex)) +
+  customPlot + 
+  scale_color_manual(values=c("Females" = "brown3", "Males" = "black")) +
+  scale_fill_manual(values = c("Females" = "brown1", "Males" = "sienna4")) +
+  scale_x_continuous(breaks=xlab_months, labels= month_labs) + theme(axis.title.y = element_blank()) + ylim(0.3,1.2)
+
+#### loess and linear regressions
+alpha = paste("alpha[loess]==", ggplot_build(p3)$data[[2]]$alpha[1])
+degree="lambda[loess]==0"
+mlinear = glm(wing_morph_binom ~ month_of_year, data=dd, family=gaussian)
+round(summary(mlinear)$coeff[[8]],3) # significant for all (but only with K.elegans)
+pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],2))
+
+p3 = p3 + annotate(geom="text", x=7.4, y=1.0, label=alpha, color="black", parse=TRUE) +
+  annotate(geom="text", x=7.4, y=1.04, label=degree, color="black", parse=TRUE) +
+  annotate(geom="text", x=5, y=0.718, label=pvalue, color="black", parse=TRUE)
+
+p4 = p4 + annotate(geom="text", x=7.4, y=1.1, label=alpha, color="black", parse=TRUE) +
+  annotate(geom="text", x=7.4, y=1.15, label=degree, color="black",parse=TRUE) +
+  annotate(geom="text", x=5, y=1, label=pvalue, color="black", parse=TRUE)
+
+
+#### Panel C: wing morph freq with year
+
+xlab_years = sort(unique(raw_data$dates))
+
+p5 = ggplot() + 
+  ggtitle("C") + xlab("Year") + ylab("Long-Wing Morph Frequency") +
+  geom_vline(xintercept = xlab_years, color="gainsboro") + 
+  geom_smooth(data=wm_table, method="lm", se=FALSE, linetype = "dashed",
+              mapping = aes(x = dates, y = wing_morph_binom), colour="black", lwd=0.5) +
+  geom_smooth(data=wm_table, method="loess", 
+              mapping = aes(x = dates, y = wing_morph_binom), colour="black") + 
+  geom_point(data=wm_table, mapping = aes(x = dates, y = wing_morph_binom)) +
+  guides(fill = guide_legend(reverse = TRUE)) + theme_classic() +
+  theme(axis.text=element_text(size=13),
+        axis.title=element_text(size=16), 
+        plot.title=element_text(size=20)) + 
+  guides(color = FALSE) + 
+  scale_linetype(guide = FALSE) +
+  theme(legend.key = element_rect(fill = "white", color = NA), 
+        legend.key.size = unit(0.5, "cm"),
+        legend.key.width = unit(0.5,"cm")) + 
+  scale_fill_manual(values = "blue", labels=c("C. corindum", "K. elegans")) + 
+  labs(fill = "Host Plant") + 
+  theme(legend.title = element_text(size = 14),
+        legend.text = element_text(size = 13, face="italic")) +
+  scale_color_manual(values="blue") + 
+  theme(legend.position = c(0.2, 0.88)) + 
+  theme(legend.title = element_blank()) + ylim(0.3,1.2)
+
+#### loess and linear regressions
+alpha = paste("alpha[loess]==", ggplot_build(p0)$data[[2]]$alpha[1])
+degree="lambda[loess]==0"
+mlinear = glm(wing_morph_binom ~ dates, data=dd, family=gaussian)
+pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],2))
+
+p5 = p5 + annotate(geom="text", x=unique(raw_data$dates)[7], y=1, label=alpha, color="black", parse=TRUE, size=6) +
+  annotate(geom="text", x=unique(raw_data$dates)[7], y=1.05, label=degree, color="black",parse=TRUE, size=6) +
+  annotate(geom="text", x=unique(raw_data$dates)[5], y=0.59, label=pvalue, color="black", parse=TRUE, size=6)
+
+figure2 = ggdraw() +
+  draw_plot(p3, 0, .5, .5, .5) +
+  draw_plot(p4, 0.5, .5, .5, .5) +
+  draw_plot(p5, 0, 0, 1, .5)
+figure2
+# ggsave("test.pdf", plot=figure2, 
+#        width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
 

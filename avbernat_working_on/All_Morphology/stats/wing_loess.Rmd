@@ -32,7 +32,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r}
 source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
 
-script_names = c("compare_models.R","regression_output.R", "clean_morph_data2.R", "AICprobabilities.R")
+script_names = c("compare_models.R","regression_output.R", "clean_morph_data3.R", "AICprobabilities.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -79,8 +79,6 @@ plot_lowess_residuals = function(lfit, x, y) {
 }
 
 plot_lowess_residuals(l1, w2b_summary$dates, w2b_summary$wing2body)
-?lowess
-loess
 ```
 
 ```{r}
@@ -92,7 +90,7 @@ host_colors_shade = c("turquoise3", "green")
 host_colors_pts = c("turquoise3", "springgreen4")
 
 # date plotting features
-threshold = unique(d$dates)[10]
+threshold = unique(d$dates)[13]
 threshold
 d$date_b = "2013-2014"
 d$date_b[d$dates >= threshold] = "2015-2020"
@@ -121,10 +119,6 @@ dfF$pophost = factor(dfF$pophost, levels = c("K. elegans", "C. corindum") )
 dfF$`Host Plant` = dfF$pophost
 dfM$pophost = factor(dfM$pophost, levels = c("K. elegans", "C. corindum") )
 dfM$`Host Plant` = dfM$pophost
-```
-
-```{r}
-w2b_summary$se
 ```
 
 
@@ -207,7 +201,7 @@ customPlot = list( theme_classic(),
                       axis.title=element_text(size=16), 
                       plot.title=element_text(size=20),),
                    theme(legend.position = c(0.2, 0.9)),
-                   theme(legend.title = element_text(size=14, face="italic"), #element_text(size = 14),
+                   theme(legend.title = element_text(size=14, face="italic"),
                          legend.text = element_text(size = 13, face="italic"))
                    )
 ```
@@ -472,7 +466,7 @@ customPlot = list( theme_classic(),
                       axis.title=element_text(size=16), 
                       plot.title=element_text(size=20),),
                    theme(legend.position = c(0.23, 0.95)),
-                   theme(legend.title = element_text(size=14, face="italic"), #element_text(size = 14),
+                   theme(legend.title = element_text(size=14, face="italic"), 
                          legend.text = element_text(size = 13, face="italic"))
                    )
 ```
