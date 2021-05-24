@@ -5,14 +5,10 @@ rm(list=ls())
 
 library(lme4)
 library(zoo)
-#library(rethinking)
 library(lubridate)
 library(dplyr)
-#library(ggplotify)
-#library(gridExtra)
 library(ggformula)
 library(cowplot)
-#library(tidyselect)
 
 dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
 setwd(dir)
@@ -427,7 +423,43 @@ customPlot = list( theme_classic(),
                          legend.text = element_text(size = 13, face="italic"))
 )
 
-#### Panel A & B: wing-to-body with month
+#### Year Effect 
+
+# Year is not in the best fit multi-variate model for wing-to-body ratio 
+# but it is significant in a single-variate model
+
+w2b_table<-aggregate(wing2body~dates, data=data_long, FUN=mean)
+
+xlab_years = na.omit(sort(unique(data_long$dates))[-2])
+
+p0 = ggplot() + 
+  ggtitle("C") + xlab("Year") + ylab("Wing-to-Body Ratio") +
+  geom_vline(xintercept = xlab_years, color="gainsboro") + 
+  geom_smooth(data=data_long, method="lm", se=FALSE, linetype = "dashed",
+              mapping = aes(x = dates, y = wing2body), colour="black", lwd=0.5) +
+  geom_smooth(data=w2b_table, method="loess", 
+              mapping = aes(x = dates, y = wing2body), colour="black") + 
+  geom_point(data=w2b_table, mapping = aes(x = dates, y = wing2body)) +
+  ylim(0.71, 0.75) + 
+  customPlot
+
+#### loess and linear regressions
+alpha = paste("alpha[loess]==", ggplot_build(p0)$data[[2]]$alpha[1])
+degree="lambda[loess]==0"
+mlinear = glm(wing2body ~ dates, data=d, family=gaussian) # aggregated df
+M4b <- lm(wing2body ~ dates, data = data_long) # individual bugs df
+M4b_beta = summary(M4b)$coeff[,"Estimate"][2]
+M4b_pvalue = round(summary(M4b)$coeff[,"Pr(>|t|)"][2],3)
+pvalue = paste0("italic(p)[glm]==", M4b_pvalue)
+
+p0 = p0 + 
+  annotate(geom="text", x=unique(d$dates)[10], y=0.74, label=alpha, color="black", parse=TRUE, size=6) +
+  annotate(geom="text", x=unique(d$dates)[10], y=0.748, label=degree, color="black",parse=TRUE, size=6) +
+  annotate(geom="text", x=unique(d$dates)[15], y=0.718, label=pvalue, color="black", parse=TRUE, size=6) 
+
+p0
+
+#### Paper Figure: Panel A & B: wing-to-body with month
 
 w2b_summary<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=mean)
 df = w2b_summary
@@ -453,7 +485,7 @@ df$`Sex` = df$sex
 p1 = ggplot() + 
   ggtitle("A") + xlab("Month") + ylab("Wing-to-Body Ratio") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
-  geom_smooth(data=df, method="glm", se=FALSE, linetype = "dashed", 
+  geom_smooth(data=data_long, method="glm", se=FALSE, linetype = "dashed", 
               mapping = aes(x = month_of_year, y = wing2body), colour="black", lwd=0.5) + 
   geom_smooth(data=df, method="loess", 
               mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, fill=`Host Plant`)) + 
@@ -467,7 +499,7 @@ p1 = ggplot() +
 p2 = ggplot() + 
   ggtitle("B") + xlab("Month") + ylab("Wing-to-Body Ratio") + 
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
-  geom_smooth(data=df, method="glm", se=FALSE, linetype = "dashed",  
+  geom_smooth(data=data_long, method="glm", se=FALSE, linetype = "dashed",  
               mapping = aes(x = month_of_year, y = wing2body), colour="black", lwd=0.5) + 
   geom_smooth(data=df, method="loess",
               mapping = aes(x = month_of_year, y = wing2body, colour=Sex, fill=Sex)) + 
@@ -481,8 +513,11 @@ p2 = ggplot() +
 #### loess and linear regressions
 alpha = paste("alpha[loess]==", ggplot_build(p1)$data[[2]]$alpha[1])
 degree="lambda[loess]==0"
-mlinear = glm(wing2body ~ month_of_year, data=df, family=gaussian)
-pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],3))
+mlinear = glm(wing2body ~ month_of_year, data=df, family=gaussian) # aggregated df
+summary(M4) # individual bugs df (best fit model)
+M4_beta = summary(M4)$coeff[,"Estimate"][4]
+M4_pvalue = round(summary(M4)$coeff[,"Pr(>|t|)"][4],10)
+pvalue = paste0("italic(p)[glm]==", M4_pvalue)
 
 p1 = p1 + annotate(geom="text", x=10, y=0.744, label=alpha, color="black", parse=TRUE) +
   annotate(geom="text", x=10, y=0.747, label=degree, color="black", parse=TRUE) +
@@ -493,43 +528,124 @@ p2 = p2 + annotate(geom="text", x=10, y=0.744, label=alpha, color="black", parse
 
 p1
 p2
-#### Panel C: wing-to-body with year (not present in the best fit model)
-
-w2b_table<-aggregate(wing2body~dates, data=data_long, FUN=mean)
-
-xlab_years = na.omit(sort(unique(data_long$dates))[-2])
-
-#### loess and linear regressions
-alpha = paste("alpha[loess]==", ggplot_build(p0)$data[[2]]$alpha[1])
-degree="lambda[loess]==0"
-mlinear = glm(wing2body ~ dates, data=d, family=gaussian) # aggregated df
-M4b <- lm(wing2body ~ dates, data = data_long) # individual bugs df
-M4b_beta = summary(M4b)$coeff[,"Estimate"][2]
-M4b_pvalue = round(summary(M4b)$coeff[,"Pr(>|t|)"][2],3)
-pvalue = paste0("italic(p)[glm]==", M4b_pvalue)
-
-p0 = ggplot() + 
-  ggtitle("C") + xlab("Year") + ylab("Wing-to-Body Ratio") +
-  geom_vline(xintercept = xlab_years, color="gainsboro") + 
-  geom_smooth(data=data_long, method="lm", se=FALSE, linetype = "dashed",
-              mapping = aes(x = dates, y = wing2body), colour="black", lwd=0.5) +
-  geom_smooth(data=w2b_table, method="loess", 
-              mapping = aes(x = dates, y = wing2body), colour="black") + 
-  geom_point(data=w2b_table, mapping = aes(x = dates, y = wing2body)) +
-  ylim(0.71, 0.75) + 
-  customPlot + 
-  annotate(geom="text", x=unique(d$dates)[10], y=0.74, label=alpha, color="black", parse=TRUE, size=6) +
-  annotate(geom="text", x=unique(d$dates)[10], y=0.748, label=degree, color="black",parse=TRUE, size=6) +
-  annotate(geom="text", x=unique(d$dates)[15], y=0.718, label=pvalue, color="black", parse=TRUE, size=6) 
-
-p0
 
 figure = ggdraw() +
+  draw_plot(p1, 0, 0, .5, 1) +
+  draw_plot(p2, .5, 0, .5, 1) 
+figure
+# ggsave("w2b_over_time2.pdf", plot=figure, width = 4.7*2.1, height = 4.4*2.1/2, dpi = 300, units = "in")
+
+#### Panel C & D : wing-to-body with month 
+
+df = w2b_summary
+dfF = df[df$sex=="F",]
+dfM = df[df$sex=="M",]
+
+dfF$pophost = factor(dfF$pophost, levels = c("K. elegans", "C. corindum") )
+dfF$`Host Plant` = dfF$pophost
+dfM$pophost = factor(dfM$pophost, levels = c("K. elegans", "C. corindum") )
+dfM$`Host Plant` = dfM$pophost
+
+data_long$`Host Plant` = data_long$pophost
+
+#cbind(data_long$`Host Plant`, data_long$sex_binom,)
+
+temp = data_long %>%
+  filter(sex_binom==1)  %>%
+  filter(!is.na(pophost_binom)) %>%
+  filter(!is.na(`Host Plant`)) %>%
+  filter(!is.na(month_of_year))
+
+M4_interceptF = sum(summary(M4)$coeff[,"Estimate"][1:3])
+M4_beta = summary(M4)$coeff[,"Estimate"][5]
+M4_pvalue = round(summary(M4)$coeff[,"Pr(>|t|)"][5],6)
+pvalue = paste0("italic(p)[glm]==", M4_pvalue)
+
+fit = glm(formula = wing2body ~ sex_binom * pophost_binom + month_of_year, 
+              family = gaussian, data = data_long)
+equation1=function(x){coef(fit)[1] + coef(fit)[4]*x + coef(fit)[2] + coef(fit)[3]}
+equation2=function(x){coef(fit)[1] + coef(fit)[4]*x + coef(fit)[2] + coef(fit)[3]*-1}
+
+ggplot(temp,aes(x = month_of_year, y = wing2body, color=`Host Plant`))+
+  geom_point()+
+  stat_function(fun=equation1,geom="line",color="springgreen4", linetype="dashed")+
+  stat_function(fun=equation2,geom="line",color="skyblue3", linetype="dashed")
+
+
+p3 = ggplot(temp) + 
+  ggtitle("Females") + xlab("Month") + ylab("Wing-to-Body Ratio") +
+  geom_vline(xintercept = xlab_dates, color="gainsboro") +
+  geom_smooth(data=temp,
+              mapping = aes(x = month_of_year, y = wing2body, color=`Host Plant`),
+              method = "nls", formula = y ~ `Host Plant` + x, se = F,
+              linetype = "dashed", lwd=0.5,
+              method.args = list(start = list(`Host Plant`=-1, y=min(y), x=min(x)))
+              ) +
+  stat_function(fun=equation1,geom="line",color="springgreen4", linetype="dashed") +
+  stat_function(fun=equation2,geom="line",color="skyblue3", linetype="dashed") +
+  # geom_abline(intercept=0.72, slope=M4_beta, linetype="dashed") + 
+  # geom_abline(intercept=0.72, slope=M4_beta * -1, linetype="dashed") +
+ # geom_smooth(data=dfF, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
+ #             mapping = aes(x = month_of_year, y = wing2body, colour = `Host Plant`)) +
+  geom_smooth(data=dfF, method="loess", 
+              mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, fill=`Host Plant`)) + 
+  geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`)) +
+  ylim(0.70, 0.765) +
+  customPlot + 
+  scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
+  scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
+  scale_x_continuous(breaks=xlab_months, labels= month_labs)
+
+p3
+
+##### females
+p3 = ggplot() + 
+  ggtitle("Females") + xlab("Month") + ylab("Wing-to-Body Ratio") +
+  geom_vline(xintercept = xlab_dates, color="gainsboro") + 
+  geom_smooth(data=dfF, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
+              mapping = aes(x = month_of_year, y = wing2body, colour = `Host Plant`)) +
+  geom_smooth(data=dfF, method="loess", 
+              mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, fill=`Host Plant`)) + 
+  geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`)) +
+  ylim(0.70, 0.765) +
+  customPlot + 
+  scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
+  scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
+  scale_x_continuous(breaks=xlab_months, labels= month_labs)
+
+##### males
+p4 = ggplot() + 
+  ggtitle("Males") + xlab("Month") + ylab("Wing-to-Body Ratio") +
+  geom_vline(xintercept = xlab_dates, color="gainsboro") + 
+  geom_smooth(data=dfM, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
+              mapping = aes(x = month_of_year, y = wing2body, colour = `Host Plant`)) +
+  geom_smooth(data=dfM, method="loess", 
+              mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, fill=`Host Plant`)) + 
+  geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`)) +
+  ylim(0.70, 0.765) +
+  customPlot + 
+  scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
+  scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
+  scale_x_continuous(breaks=xlab_months, labels= month_labs) + theme(axis.title.y = element_blank())
+
+figure = ggdraw() +
+  draw_plot(p3, 0, 0, .5, 1) +
+  draw_plot(p4, .5, 0, .5, 1) 
+figure
+# ggsave("w2b_over_time2.pdf", plot=figure, width = 4.7*2.1, height = 4.4*2.1/2, dpi = 300, units = "in")
+
+
+grid.arrange(p3, p4, ncol=2)
+
+# K. elegans = 1
+# F = 1
+
+paper_figure = ggdraw() +
   draw_plot(p1, 0, .5, .5, .5) +
   draw_plot(p2, 0.5, .5, .5, .5) +
   draw_plot(p0, 0, 0, 1, .5)
-figure
-# ggsave("w2b_over_time.pdf", plot=figure, width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
+paper_figure
+# ggsave("w2b_over_time.pdf", plot=paper_figure, width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
 
 
 
