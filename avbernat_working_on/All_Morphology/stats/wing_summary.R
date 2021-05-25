@@ -546,64 +546,27 @@ dfF$`Host Plant` = dfF$pophost
 dfM$pophost = factor(dfM$pophost, levels = c("K. elegans", "C. corindum") )
 dfM$`Host Plant` = dfM$pophost
 
-data_long$`Host Plant` = data_long$pophost
-
-#cbind(data_long$`Host Plant`, data_long$sex_binom,)
-
-temp = data_long %>%
-  filter(sex_binom==1)  %>%
-  filter(!is.na(pophost_binom)) %>%
-  filter(!is.na(`Host Plant`)) %>%
-  filter(!is.na(month_of_year))
-
-M4_interceptF = sum(summary(M4)$coeff[,"Estimate"][1:3])
-M4_beta = summary(M4)$coeff[,"Estimate"][5]
-M4_pvalue = round(summary(M4)$coeff[,"Pr(>|t|)"][5],6)
-pvalue = paste0("italic(p)[glm]==", M4_pvalue)
-
-fit = glm(formula = wing2body ~ sex_binom * pophost_binom + month_of_year, 
-              family = gaussian, data = data_long)
-equation1=function(x){coef(fit)[1] + coef(fit)[4]*x + coef(fit)[2] + coef(fit)[3]}
-equation2=function(x){coef(fit)[1] + coef(fit)[4]*x + coef(fit)[2] + coef(fit)[3]*-1}
-
-ggplot(temp,aes(x = month_of_year, y = wing2body, color=`Host Plant`))+
-  geom_point()+
-  stat_function(fun=equation1,geom="line",color="springgreen4", linetype="dashed")+
-  stat_function(fun=equation2,geom="line",color="skyblue3", linetype="dashed")
+#data_long$`Host Plant` = data_long$pophost
 
 
-p3 = ggplot(temp) + 
-  ggtitle("Females") + xlab("Month") + ylab("Wing-to-Body Ratio") +
+fit = glm(formula = wing2body ~ sex_binom * pophost_binom + month_of_year, family = gaussian, data = data_long)
+
+equation1=function(x){coef(fit)[1] + coef(fit)[4]*x + coef(fit)[2] + # F and K. elegans
+                      coef(fit)[3] + coef(fit)[2]*coef(fit)[3]}
+equation2=function(x){coef(fit)[1] + coef(fit)[4]*x + coef(fit)[2] + # F and C. corindum
+                      coef(fit)[3]*-1 + coef(fit)[2]*coef(fit)[3]*-1}
+equation3=function(x){coef(fit)[1] + coef(fit)[4]*x + coef(fit)[2]*-1 + # M and K. elegans
+                      coef(fit)[3] + coef(fit)[2]*coef(fit)[3]}
+equation4=function(x){coef(fit)[1] + coef(fit)[4]*x + coef(fit)[2]*-1 + # M and C. corindum
+                      coef(fit)[3]*-1 + coef(fit)[2]*coef(fit)[3]*-1}
+
+p3 = ggplot(data_long) + 
+  ggtitle("C") + xlab("Month") + ylab("Wing-to-Body Ratio") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") +
-  geom_smooth(data=temp,
-              mapping = aes(x = month_of_year, y = wing2body, color=`Host Plant`),
-              method = "nls", formula = y ~ `Host Plant` + x, se = F,
-              linetype = "dashed", lwd=0.5,
-              method.args = list(start = list(`Host Plant`=-1, y=min(y), x=min(x)))
-              ) +
-  stat_function(fun=equation1,geom="line",color="springgreen4", linetype="dashed") +
+  stat_function(fun=equation1,geom="line",color="darkgreen", linetype="dashed") +
   stat_function(fun=equation2,geom="line",color="skyblue3", linetype="dashed") +
-  # geom_abline(intercept=0.72, slope=M4_beta, linetype="dashed") + 
-  # geom_abline(intercept=0.72, slope=M4_beta * -1, linetype="dashed") +
- # geom_smooth(data=dfF, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
- #             mapping = aes(x = month_of_year, y = wing2body, colour = `Host Plant`)) +
-  geom_smooth(data=dfF, method="loess", 
-              mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, fill=`Host Plant`)) + 
-  geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`)) +
-  ylim(0.70, 0.765) +
-  customPlot + 
-  scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
-  scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
-  scale_x_continuous(breaks=xlab_months, labels= month_labs)
-
-p3
-
-##### females
-p3 = ggplot() + 
-  ggtitle("Females") + xlab("Month") + ylab("Wing-to-Body Ratio") +
-  geom_vline(xintercept = xlab_dates, color="gainsboro") + 
-  geom_smooth(data=dfF, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
-              mapping = aes(x = month_of_year, y = wing2body, colour = `Host Plant`)) +
+  # geom_smooth(data=dfF, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
+  #            mapping = aes(x = month_of_year, y = wing2body, colour = `Host Plant`)) +
   geom_smooth(data=dfF, method="loess", 
               mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, fill=`Host Plant`)) + 
   geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`)) +
@@ -614,11 +577,13 @@ p3 = ggplot() +
   scale_x_continuous(breaks=xlab_months, labels= month_labs)
 
 ##### males
-p4 = ggplot() + 
-  ggtitle("Males") + xlab("Month") + ylab("Wing-to-Body Ratio") +
+p4 = ggplot(data_long) + 
+  ggtitle("D") + xlab("Month") + ylab("Wing-to-Body Ratio") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
-  geom_smooth(data=dfM, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
-              mapping = aes(x = month_of_year, y = wing2body, colour = `Host Plant`)) +
+  stat_function(fun=equation3,geom="line",color="darkgreen", linetype="dashed") +
+  stat_function(fun=equation4,geom="line",color="skyblue3", linetype="dashed") +
+  # geom_smooth(data=dfM, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
+  #             mapping = aes(x = month_of_year, y = wing2body, colour = `Host Plant`)) +
   geom_smooth(data=dfM, method="loess", 
               mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, fill=`Host Plant`)) + 
   geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`)) +
@@ -626,26 +591,44 @@ p4 = ggplot() +
   customPlot + 
   scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
   scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
-  scale_x_continuous(breaks=xlab_months, labels= month_labs) + theme(axis.title.y = element_blank())
+  scale_x_continuous(breaks=xlab_months, labels= month_labs) + theme(axis.title.y = element_blank()) 
 
 figure = ggdraw() +
   draw_plot(p3, 0, 0, .5, 1) +
   draw_plot(p4, .5, 0, .5, 1) 
 figure
-# ggsave("w2b_over_time2.pdf", plot=figure, width = 4.7*2.1, height = 4.4*2.1/2, dpi = 300, units = "in")
+#ggsave("w2b_over_time2.pdf", plot=figure, width = 4.7*2.1, height = 4.4*2.1/2, dpi = 300, units = "in")
 
+M4_pvalue = round(summary(M4)$coeff[,"Pr(>|t|)"][5],6)
+pvalue = paste0("italic(p)[glm]==", M4_pvalue)
 
-grid.arrange(p3, p4, ncol=2)
+p1 = p1 + labs(x = " ", y = " ")
 
-# K. elegans = 1
-# F = 1
+p2 = p2 + labs(x = " ", y = " ")
 
+p3 = p3 + theme(legend.position = "none") +
+  annotate(geom="text", x=3, y=0.765, label="Females", color="black", size=6, fontface = 'italic') + 
+  annotate(geom="text", x=10, y=0.760, label=alpha, color="black", parse=TRUE) +
+  annotate(geom="text", x=10, y=0.765, label=degree, color="black", parse=TRUE) +
+  annotate(geom="text", x=3, y=0.765, label=pvalue, color="black", parse=TRUE) +
+  labs(x = " ", y = " ")
+
+p4 = p4 + theme(legend.position = "none") +
+  annotate(geom="text", x=3, y=0.765, label="Males", color="black", size=6, fontface = 'italic')+
+  annotate(geom="text", x=10, y=0.756, label=alpha, color="black", parse=TRUE) +
+  annotate(geom="text", x=10, y=0.761, label=degree, color="black", parse=TRUE) +
+  annotate(geom="text", x=3, y=0.765, label=pvalue, color="black", parse=TRUE) +
+  labs(x = " ", y = " ")
+  
 paper_figure = ggdraw() +
   draw_plot(p1, 0, .5, .5, .5) +
-  draw_plot(p2, 0.5, .5, .5, .5) +
-  draw_plot(p0, 0, 0, 1, .5)
+  draw_plot(p2, .5, .5, .5, .5) +
+  draw_plot(p3, 0, 0, .5, .5) +
+  draw_plot(p4, .5, 0, .5, .5) + 
+  draw_plot_label("Month", 0.45, 0.035, fontface="plain") +
+  draw_plot_label("Wing-to-Body Ratio", 0, 0.3, fontface="plain", angle=90)
 paper_figure
-# ggsave("w2b_over_time.pdf", plot=paper_figure, width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
+ggsave("w2b_overtime.pdf", plot=paper_figure, width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
 
 
 
