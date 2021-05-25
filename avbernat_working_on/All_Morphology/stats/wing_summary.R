@@ -526,14 +526,6 @@ p2 = p2 + annotate(geom="text", x=10, y=0.744, label=alpha, color="black", parse
   annotate(geom="text", x=10, y=0.747, label=degree, color="black", parse=TRUE) +
   annotate(geom="text", x=6.3, y=0.715, label=pvalue, color="black", parse=TRUE) 
 
-p1
-p2
-
-figure = ggdraw() +
-  draw_plot(p1, 0, 0, .5, 1) +
-  draw_plot(p2, .5, 0, .5, 1) 
-figure
-# ggsave("w2b_over_time2.pdf", plot=figure, width = 4.7*2.1, height = 4.4*2.1/2, dpi = 300, units = "in")
 
 #### Panel C & D : wing-to-body with month 
 
@@ -546,9 +538,6 @@ dfF$`Host Plant` = dfF$pophost
 dfM$pophost = factor(dfM$pophost, levels = c("K. elegans", "C. corindum") )
 dfM$`Host Plant` = dfM$pophost
 
-#data_long$`Host Plant` = data_long$pophost
-
-
 fit = glm(formula = wing2body ~ sex_binom * pophost_binom + month_of_year, family = gaussian, data = data_long)
 
 equation1=function(x){coef(fit)[1] + coef(fit)[4]*x + coef(fit)[2] + # F and K. elegans
@@ -560,6 +549,10 @@ equation3=function(x){coef(fit)[1] + coef(fit)[4]*x + coef(fit)[2]*-1 + # M and 
 equation4=function(x){coef(fit)[1] + coef(fit)[4]*x + coef(fit)[2]*-1 + # M and C. corindum
                       coef(fit)[3]*-1 + coef(fit)[2]*coef(fit)[3]*-1}
 
+M4_pvalue = round(summary(M4)$coeff[,"Pr(>|t|)"][5],6)
+pvalue = paste0("italic(p)[glm]==", M4_pvalue)
+
+##### females
 p3 = ggplot(data_long) + 
   ggtitle("C") + xlab("Month") + ylab("Wing-to-Body Ratio") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") +
@@ -593,15 +586,6 @@ p4 = ggplot(data_long) +
   scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) + theme(axis.title.y = element_blank()) 
 
-figure = ggdraw() +
-  draw_plot(p3, 0, 0, .5, 1) +
-  draw_plot(p4, .5, 0, .5, 1) 
-figure
-#ggsave("w2b_over_time2.pdf", plot=figure, width = 4.7*2.1, height = 4.4*2.1/2, dpi = 300, units = "in")
-
-M4_pvalue = round(summary(M4)$coeff[,"Pr(>|t|)"][5],6)
-pvalue = paste0("italic(p)[glm]==", M4_pvalue)
-
 p1 = p1 + labs(x = " ", y = " ")
 
 p2 = p2 + labs(x = " ", y = " ")
@@ -610,14 +594,14 @@ p3 = p3 + theme(legend.position = "none") +
   annotate(geom="text", x=3, y=0.765, label="Females", color="black", size=6, fontface = 'italic') + 
   annotate(geom="text", x=10, y=0.760, label=alpha, color="black", parse=TRUE) +
   annotate(geom="text", x=10, y=0.765, label=degree, color="black", parse=TRUE) +
-  annotate(geom="text", x=3, y=0.765, label=pvalue, color="black", parse=TRUE) +
+  annotate(geom="text", x=5, y=0.705, label=pvalue, color="black", parse=TRUE) +
   labs(x = " ", y = " ")
 
 p4 = p4 + theme(legend.position = "none") +
   annotate(geom="text", x=3, y=0.765, label="Males", color="black", size=6, fontface = 'italic')+
   annotate(geom="text", x=10, y=0.756, label=alpha, color="black", parse=TRUE) +
   annotate(geom="text", x=10, y=0.761, label=degree, color="black", parse=TRUE) +
-  annotate(geom="text", x=3, y=0.765, label=pvalue, color="black", parse=TRUE) +
+  annotate(geom="text", x=5, y=0.705, label=pvalue, color="black", parse=TRUE) +
   labs(x = " ", y = " ")
   
 paper_figure = ggdraw() +
@@ -628,7 +612,8 @@ paper_figure = ggdraw() +
   draw_plot_label("Month", 0.45, 0.035, fontface="plain") +
   draw_plot_label("Wing-to-Body Ratio", 0, 0.3, fontface="plain", angle=90)
 paper_figure
-ggsave("w2b_overtime.pdf", plot=paper_figure, width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
+#ggsave("w2b_overtime.pdf", plot=paper_figure, width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
+
 
 
 
@@ -677,13 +662,30 @@ customPlot = list( theme_classic(),
                          legend.text = element_text(size = 13, face="italic"))
 )
 
+fit = glm(wing_morph_binom ~ month_of_year, family = "binomial", data = raw_data)
+xmonth <- seq(2,12, 0.01)
+wing_probs <- predict(fit, list(month_of_year = xmonth),type="response")
+fit_pvalue = round(summary(fit)$coeff[,"Pr(>|z|)"][2],10)
+pvalue = paste0("italic(p)[glm]==", fit_pvalue)
+
+# raw_data$success[raw_data$wing_morph_binom==1]<-1
+# raw_data$failure[raw_data$wing_morph_binom==0]<-1
+
 #### Panel A & B: wing morph freq with month
 
-p3 = ggplot() + 
+p5 = ggplot() + 
   ggtitle("A") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
-  geom_smooth(data=dd, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
-              mapping = aes(x = month_of_year, y = wing_morph_binom), colour="black") +
+  #stat_function(fun=equation,geom="line", linetype="dashed") +
+  geom_line(aes(x=xmonth, y=wing_probs), linetype = "dashed") +
+  # geom_smooth(data=dd, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
+  #             mapping = aes(x = month_of_year, y = wing_morph_binom), colour="black") +
+  # geom_smooth(
+  #   mapping=aes(x=month_of_year, y=success/(success+failure), succ=success, fail=failure),
+  #   method="glm",
+  #   method.args=list(family="binomial"),
+  #   formula = cbind(succ, fail) ~ x
+  # ) + 
   geom_smooth(data=dd, method="loess", 
               mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
   geom_point(data=dd, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
@@ -692,11 +694,12 @@ p3 = ggplot() +
   scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) + ylim(0.3,1.2)
 
-p4 = ggplot() + 
+p6 = ggplot() + 
   ggtitle("B") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
-  geom_smooth(data=dd, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
-              mapping = aes(x = month_of_year, y = wing_morph_binom), colour="black") +
+  geom_line(aes(x=xmonth, y=wing_probs), linetype = "dashed") +
+  # geom_smooth(data=dd, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
+  #             mapping = aes(x = month_of_year, y = wing_morph_binom), colour="black") +
   geom_smooth(data=dd, method="loess", 
               mapping = aes(x = month_of_year, y = wing_morph_binom, colour=Sex, fill=Sex)) + 
   geom_point(data=dd, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=Sex)) +
@@ -708,18 +711,19 @@ p4 = ggplot() +
 #### loess and linear regressions
 alpha = paste("alpha[loess]==", ggplot_build(p3)$data[[2]]$alpha[1])
 degree="lambda[loess]==0"
-mlinear = glm(wing_morph_binom ~ month_of_year, data=dd, family=gaussian)
-round(summary(mlinear)$coeff[[8]],3) # significant for all (but only with K.elegans)
-pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],2))
+#mlinear = glm(wing_morph_binom ~ month_of_year, data=dd, family=gaussian)
+#round(summary(mlinear)$coeff[[8]],3) # significant for all (but only with K.elegans)
+#pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],2))
 
-p3 = p3 + annotate(geom="text", x=7.4, y=1.0, label=alpha, color="black", parse=TRUE) +
+p5 = p5 + annotate(geom="text", x=7.4, y=1.0, label=alpha, color="black", parse=TRUE) +
   annotate(geom="text", x=7.4, y=1.04, label=degree, color="black", parse=TRUE) +
   annotate(geom="text", x=5, y=0.718, label=pvalue, color="black", parse=TRUE)
 
-p4 = p4 + annotate(geom="text", x=7.4, y=1.1, label=alpha, color="black", parse=TRUE) +
+p6 = p6 + annotate(geom="text", x=7.4, y=1.1, label=alpha, color="black", parse=TRUE) +
   annotate(geom="text", x=7.4, y=1.15, label=degree, color="black",parse=TRUE) +
   annotate(geom="text", x=5, y=1, label=pvalue, color="black", parse=TRUE)
 
+grid.arrange(p5,p6, ncol=2)
 
 #### Panel C: wing morph freq with year
 
@@ -730,7 +734,7 @@ wm_table$date_b = as.factor(wm_table$date_b)
 
 xlab_years = sort(unique(raw_data$dates))
 
-p5 = ggplot() + 
+p7 = ggplot() + 
   ggtitle("C") + xlab("Year") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_years, color="gainsboro") + 
   geom_smooth(data=wm_table, method="lm", se=FALSE, linetype = "dashed",
@@ -761,15 +765,74 @@ degree="lambda[loess]==0"
 mlinear = glm(wing_morph_binom ~ dates, data=dd, family=gaussian)
 pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],2))
 
-p5 = p5 + annotate(geom="text", x=unique(raw_data$dates)[6], y=1.05, label=alpha, color="black", parse=TRUE, size=6) +
+p7 = p7 + annotate(geom="text", x=unique(raw_data$dates)[6], y=1.05, label=alpha, color="black", parse=TRUE, size=6) +
   annotate(geom="text", x=unique(raw_data$dates)[6], y=1.12, label=degree, color="black",parse=TRUE, size=6) +
   annotate(geom="text", x=unique(raw_data$dates)[5], y=0.50, label=pvalue, color="black", parse=TRUE, size=6)
 
 
 figure2 = ggdraw() +
-  draw_plot(p3, 0, .5, .5, .5) +
-  draw_plot(p4, 0.5, .5, .5, .5) +
-  draw_plot(p5, 0, 0, 1, .5)
+  draw_plot(p5, 0, .5, .5, .5) +
+  draw_plot(p6, 0.5, .5, .5, .5) +
+  draw_plot(p7, 0, 0, 1, .5)
 figure2
-ggsave("test.pdf", plot=figure2, width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
+ggsave("wing_morph_freq.pdf", plot=figure2, width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
 
+
+
+
+
+w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=mean)
+w_morph_summary$se<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=SE)$wing_morph_binom
+
+#jitter slightly
+jitter = runif(n=nrow(w_morph_summary), min=-0.5, max=0.5)
+w_morph_summary$dates <- w_morph_summary$month_of_year + jitter
+
+# create groups
+dd = w_morph_summary
+
+dd$pophost[dd$pophost=="C.corindum"]<-"C. corindum"
+dd$pophost[dd$pophost=="K.elegans"]<-"K. elegans"
+dd$pophost = factor(dd$pophost, levels = c("K. elegans", "C. corindum") )
+
+dd$`Host Plant` = dd$pophost
+
+dd$sex[dd$sex=="F"]<-"Females"
+dd$sex[dd$sex=="M"]<-"Males"
+dd$sex = factor(dd$sex, levels = c("Males", "Females") )
+dd$`Sex` = dd$sex 
+
+dfF = dd[dd$sex=="Females",]
+dfM = dd[dd$sex=="Males",]
+
+
+
+p7 = ggplot() + 
+  ggtitle("Females") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
+  geom_vline(xintercept = xlab_dates, color="gainsboro") + 
+  geom_smooth(data=dfF, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
+              mapping = aes(x = month_of_year, y = wing_morph_binom, colour = `Host Plant`)) +
+  geom_smooth(data=raw_data[raw_data$sex=="F",], method="loess", 
+              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=pophost, fill=pophost)) + 
+  geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
+  customPlot + 
+  scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
+  scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
+  scale_x_continuous(breaks=xlab_months, labels= month_labs) +
+  ylim(-0.75,2.25)
+
+p8 = ggplot() + 
+  ggtitle("Males") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
+  geom_vline(xintercept = xlab_dates, color="gainsboro") + 
+  geom_smooth(data=dfM, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
+              mapping = aes(x = month_of_year, y = wing_morph_binom, colour = `Host Plant`)) +
+  geom_smooth(data=dfM, method="loess", 
+              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
+  geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
+  customPlot + 
+  scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
+  scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
+  scale_x_continuous(breaks=xlab_months, labels= month_labs) +
+  ylim(-0.75,2.25)
+
+grid.arrange(p7,p8, ncol=2)
