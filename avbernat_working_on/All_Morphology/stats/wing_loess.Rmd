@@ -591,3 +591,7 @@ figure2 = ggdraw() +
 figure2
 #ggsave("wmorph_over_time.pdf", plot=figure2)
 ```
+
+MLC: Something is going wrong here calculating variance for a binomial response - a frequency or probability plot should have a y-axis with a strict minimum of 0 and maximum of 1, but that is not happening with the variance plotted here. So, the estimated variance is probably not accurate, and the expanded y-axis range makes it difficult to see changes that might be visible along the month axis. I have historically used binom.confint() in the binom() library to calculate binomial confidence intervals; I don't know what the smoothing options are, but I do think we need a different function for this one. In principal, I like this idea.
+
+MLC: Actually, this is cuing me into something being off about the way loess is visualizing variance in general - the error bars on many of these plots are way wider (x10?) than the standard error on the data itself. I think it may be related to using a summary file instead of a complete data file. 

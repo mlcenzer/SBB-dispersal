@@ -9,6 +9,7 @@ library(lubridate)
 library(dplyr)
 library(ggformula)
 library(cowplot)
+library(gridExtra) # remove after clean file
 
 dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
 setwd(dir)
@@ -25,6 +26,8 @@ for (script in script_names) {
   path = paste0(source_path, script)
   source(path) 
 }
+
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/vartests.R")
 
 #################################################################
 
@@ -199,6 +202,7 @@ tidy_regression(M3, is_color=FALSE) # -1 = C.corindum
 
 ## Wing-to-Body
 ### Modeling wing-to-body ratio
+
 n_w2b = nrow(data_long)
 
 data<-data.frame(R=data_long$wing2body_c, # centered
@@ -221,6 +225,7 @@ summary(M4) # Rather just do 4 factors right away.
 
 
 ### Modeling Variance 
+
 SE = function(x){sd(x)/sqrt(length(x))}
 w2b_table<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, 
                      data=data_long, FUN=mean)
@@ -252,136 +257,60 @@ tidy_regression(M6, is_color=FALSE)
 
 ## Variance Tests
 
-time_var_tests = function(d, print_test=FALSE) {
-  
-  months = sort(unique(d$month_of_year))
-  month_labs <- c("Feb", "Apr", "May", "Aug", "Sept", "Oct", "Dec")
-  
-  table = matrix(nrow=length(months), ncol=9)
-  i = 0
-  for (m in months) {
-    i = i + 1
-    data = d[d$month_of_year==m, ]
-    
-    VAR = var.test(wing2body ~ sex, data = data) # F test to compare the variances of two samples from normal pops
-    TTEST= t.test(wing2body ~ sex, data=data) # t.test to find significant difference between the means of two groups
-    AOV = aov(wing2body ~ sex, data=data) # used to analyze the differences among means. 
-    
-    p = TukeyHSD(AOV)$sex[,"p adj"]
-    diff = TukeyHSD(AOV)$sex[,"diff"]
-    
-    if (print_test) {
-      print(month_labs[i])
-      print("t.test")
-      print(TTEST)
-      print("anova")
-      print(summary(AOV))
-      print(TukeyHSD(AOV))
-      cat("-------------------------------------------------")
-    }
-    
-    # plot histograms
-    h = data %>%
-      ggplot( aes(x=wing2body, fill=sex)) +
-      geom_histogram( color="#e9ecef", alpha=0.6, position = 'identity') +
-      scale_fill_manual(values=c("#69b3a2", "#404080")) +
-      labs(fill="")  + labs(title=month_labs[i])
-    print(h)
-    
-    # populate matrix
-    table[i,1] = month_labs[i]
-    table[i,2] = "M-F"
-    table[i,3] = round(diff,4)
-    table[i,4] = round(p,5)
-    table[i,5] = "M=-1 | F=1"
-    table[i,6] = round(TTEST$statistic,4)
-    table[i,7] = round(TTEST$p.value,5)
-    table[i,8] = round(VAR$statistic,2)
-    table[i,9] = round(VAR$p.value, 3)
-  }
-  colnames(table) = c("month","sex", "Tukey-diff", "p-val", "sex", "ttest", "p-val", "F-test", "p-val")
-  return(table)
-} 
-
-summary_table = time_var_tests(data_long)
+summary_table = time_var_testsSEX(data_long)
 summary_table
 
 y = summary_table[,"F-test"]
 xlab = summary_table[, "month"]
 x = sort(unique(data_long$month_of_year))
-
 par(mfrow=c(1,1))
 plot(x,y, ylab="F-test value", xlab="Month of Year", xaxt = "n", main="wing-to-body ~ sex")
 axis(1, at=seq(min(x),max(x),2), labels=xlab[-5])
 abline(h=1, col=2)
 
-
-time_var_tests = function(d, print_test=FALSE) {
-  
-  months = sort(unique(d$month_of_year))
-  month_labs <- c("Feb", "Apr", "May", "Aug", "Sept", "Oct", "Dec")
-  
-  table = matrix(nrow=length(months), ncol=9)
-  i = 0
-  for (m in months) {
-    i = i + 1
-    data = d[d$month_of_year==m, ]
-    
-    VAR = var.test(wing2body ~ pophost, data = data) # F test to compare the variances of two samples from normal pops
-    TTEST= t.test(wing2body ~ pophost, data=data) # t.test to find significant difference between the means of two groups
-    AOV = aov(wing2body ~ pophost, data=data) # used to analyze the differences among means. 
-    
-    p = TukeyHSD(AOV)$pophost[,"p adj"]
-    diff = TukeyHSD(AOV)$pophost[,"diff"]
-    
-    if (print_test) {
-      print(month_labs[i])
-      print("t.test")
-      print(TTEST)
-      print("anova")
-      print(summary(AOV))
-      print(TukeyHSD(AOV))
-      cat("-------------------------------------------------")
-    }
-    
-    # plot histograms
-    h = data %>%
-      ggplot( aes(x=wing2body, fill=pophost)) +
-      geom_histogram( color="#e9ecef", alpha=0.6, position = 'identity') +
-      scale_fill_manual(values=c("#69b3a2", "#404080")) +
-      labs(fill="")  + labs(title=month_labs[i])
-    print(h)
-    
-    # populate matrix
-    table[i,1] = month_labs[i]
-    table[i,2] = "GRT-BV"
-    table[i,3] = round(diff,4)
-    table[i,4] = round(p,5)
-    table[i,5] = "GRT=1 | BV=-1"
-    table[i,6] = round(TTEST$statistic,4)
-    table[i,7] = round(TTEST$p.value,5)
-    table[i,8] = round(VAR$statistic,2)
-    table[i,9] = round(VAR$p.value, 3)
-  }
-  colnames(table) = c("month","sex", "Tukey-diff", "p-val", "sex", "ttest", "p-val", "F-test", "p-val")
-  
-  return(table)
-} 
-
-summary_table = time_var_tests(data_long)
+summary_table = time_var_testsHOST(data_long)
 summary_table
 
 y = summary_table[,"F-test"]
 xlab = summary_table[, "month"]
 x = sort(unique(data_long$month_of_year))
-
+par(mfrow=c(1,1))
 plot(x,y, ylab="F-test value", xlab="Month of Year", xaxt = "n", main="wing-to-body ~ pophost")
 axis(1, at=seq(min(x),max(x),2), labels=xlab[-5])
 abline(h=1, col=2)
 
+# Month of May is the only month where there are significant differences 
+# in the variances between host plants and sex
+
+
+
+
 #################################################################
 
-# Regression Plots (LOESS & Linear)
+# LOESS & Linear Regression Plots
+
+## General plotting features
+
+customPlot = list( theme_classic(),
+                   theme(axis.text=element_text(size=13),
+                         axis.title=element_text(size=16), 
+                         plot.title=element_text(size=20),),
+                   theme(legend.position = c(0.2, 0.9)),
+                   theme(legend.title = element_text(size=14, face="italic"),
+                         legend.text = element_text(size = 13, face="italic"))
+)
+
+xlab_years = na.omit(sort(unique(data_long$dates))[-2])
+
+xlab_dates = na.omit(sort(unique(data_long$month_of_year)))
+xlab_months = xlab_dates[c(-2,-5)]
+month_labs <- c("Feb", "May", "Aug", "Oct", "Dec")
+
+# host_colors_shade = c("turquoise3", "green")
+# host_colors_pts = c("turquoise3", "springgreen4")
+# sex_colors_shade = c("brown1", "sienna4")
+# sex_colors_pts = c("brown1", "grey27")
+
 
 ## Wing-to-Body
 
@@ -395,6 +324,7 @@ w2b_summary$dates <- w2b_summary$dates + jitter
 d = w2b_summary
 
 ### Check for Loess Residuals 
+par(mfrow=c(1,2))
 l1 = lowess(d$dates, d$wing2body, f=0.4)
 plot(d$dates, d$wing2body)
 lines(l1, type = "l")
@@ -410,27 +340,12 @@ plot_lowess_residuals = function(lfit, x, y) {
 plot_lowess_residuals(l1, d$dates, d$wing2body)
 
 
-### Wing-to-Body Figure 
-
-#### General plotting features
-
-customPlot = list( theme_classic(),
-                   theme(axis.text=element_text(size=13),
-                         axis.title=element_text(size=16), 
-                         plot.title=element_text(size=20),),
-                   theme(legend.position = c(0.2, 0.9)),
-                   theme(legend.title = element_text(size=14, face="italic"),
-                         legend.text = element_text(size = 13, face="italic"))
-)
-
-#### Year Effect 
+#### Plot 0: Year Effect
 
 # Year is not in the best fit multi-variate model for wing-to-body ratio 
 # but it is significant in a single-variate model
 
 w2b_table<-aggregate(wing2body~dates, data=data_long, FUN=mean)
-
-xlab_years = na.omit(sort(unique(data_long$dates))[-2])
 
 p0 = ggplot() + 
   ggtitle("C") + xlab("Year") + ylab("Wing-to-Body Ratio") +
@@ -464,18 +379,8 @@ p0
 w2b_summary<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=mean)
 df = w2b_summary
 
-xlab_dates = na.omit(sort(unique(data_long$month_of_year)))
-xlab_months = xlab_dates[c(-2,-5)]
-month_labs <- c("Feb", "May", "Aug", "Oct", "Dec")
-
-# host_colors_shade = c("turquoise3", "green")
-# host_colors_pts = c("turquoise3", "springgreen4")
-# sex_colors_shade = c("brown1", "sienna4")
-# sex_colors_pts = c("brown1", "grey27")
-
 df$pophost = factor(df$pophost, levels = c("K. elegans", "C. corindum") )
 df$`Host Plant` = df$pophost
-
 df$sex[df$sex=="F"]<-"Females"
 df$sex[df$sex=="M"]<-"Males"
 df$sex = factor(df$sex, levels = c("Males", "Females") )
@@ -629,7 +534,8 @@ dd = w_morph_summary
 
 ### Check for Loess Residuals 
 
-l1 = lowess(dd$dates, dd$wing_morph_binom, f=0.4)
+l1 = lowess(dd$dates, dd$wing_morph_binom, f=0.4) # f = alpha, smoother span
+# vs. lambda = degree of the local polynomial 
 plot(dd$dates, dd$wing_morph_binom)
 lines(l1, type = "l")
 
@@ -775,45 +681,50 @@ figure2 = ggdraw() +
   draw_plot(p6, 0.5, .5, .5, .5) +
   draw_plot(p7, 0, 0, 1, .5)
 figure2
-ggsave("wing_morph_freq.pdf", plot=figure2, width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
+#ggsave("wing_morph_freq.pdf", plot=figure2, width = 4.7*2.1, height = 4.4*2.1, dpi = 300, units = "in")
 
 
+library(spatialEco)
+dfFC = dfF[dfF$pophost == "C. corindum",]
+loess.ci(dfF$wing_morph_binom, 
+         dfF$month_of_year, 
+         p = 0.95, plot = FALSE, span=0.4)
 
-
-
-w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=mean)
-w_morph_summary$se<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=SE)$wing_morph_binom
-
-#jitter slightly
-jitter = runif(n=nrow(w_morph_summary), min=-0.5, max=0.5)
-w_morph_summary$dates <- w_morph_summary$month_of_year + jitter
+dfFC = dfF[dfF$pophost == "K. elegans",]
 
 # create groups
-dd = w_morph_summary
-
-dd$pophost[dd$pophost=="C.corindum"]<-"C. corindum"
-dd$pophost[dd$pophost=="K.elegans"]<-"K. elegans"
-dd$pophost = factor(dd$pophost, levels = c("K. elegans", "C. corindum") )
-
-dd$`Host Plant` = dd$pophost
-
-dd$sex[dd$sex=="F"]<-"Females"
-dd$sex[dd$sex=="M"]<-"Males"
-dd$sex = factor(dd$sex, levels = c("Males", "Females") )
-dd$`Sex` = dd$sex 
 
 dfF = dd[dd$sex=="Females",]
 dfM = dd[dd$sex=="Males",]
+# raw_data[raw_data$sex=="F",]
+
+raw_data$`Host Plant` = raw_data$pophost
+
+head(ggplot_build(p8)$data)
+head(ggplot_build(p8)$data[[3]])
+head(ggplot_build(p8)$data[[3]])$ymin
+head(ggplot_build(p8)$data[[3]])$ymax
+head(ggplot_build(p8)$data[[3]])$se*1.96
+head(ggplot_build(p8)$data[[3]])$y + head(ggplot_build(p8)$data[[3]])$se*1.96
+
+# y
+# predicted value
+# ymin
+# lower pointwise confidence interval around the mean
+# ymax
+# upper pointwise confidence interval around the mean
+# se
+# standard error
+#  confidence interval is obtained as the values 1.96×SE either side of the mean.
 
 
-
-p7 = ggplot() + 
+p8 = ggplot() + 
   ggtitle("Females") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
   geom_smooth(data=dfF, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
               mapping = aes(x = month_of_year, y = wing_morph_binom, colour = `Host Plant`)) +
-  geom_smooth(data=raw_data[raw_data$sex=="F",], method="loess", 
-              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=pophost, fill=pophost)) + 
+  geom_smooth(data=dfF, method="loess", span=0.8,
+              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
   geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
   customPlot + 
   scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
@@ -821,12 +732,12 @@ p7 = ggplot() +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) +
   ylim(-0.75,2.25)
 
-p8 = ggplot() + 
+p9 = ggplot() + 
   ggtitle("Males") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
   geom_smooth(data=dfM, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
               mapping = aes(x = month_of_year, y = wing_morph_binom, colour = `Host Plant`)) +
-  geom_smooth(data=dfM, method="loess", 
+  geom_smooth(data=dfM, method="loess", span=0.8,
               mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
   geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
   customPlot + 
@@ -835,4 +746,22 @@ p8 = ggplot() +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) +
   ylim(-0.75,2.25)
 
-grid.arrange(p7,p8, ncol=2)
+
+grid.arrange(p8,p9, ncol=2)
+
+head(ggplot_build(p9)$data)
+head(ggplot_build(p9)$data[[3]])
+#head(ggplot_build(p8)$data[[2]])
+#head(ggplot_build(p9)$data[[2]])
+
+library(dplyr)
+DF_melted <- DF_melted %>%
+  group_by(X) %>%
+  mutate(ymax = cumsum(value/sum(value)),
+         ymin = ymax - value/sum(value))
+
+head(DF_melted)
+
+?cumsum
+
+cumsum(1:10)
