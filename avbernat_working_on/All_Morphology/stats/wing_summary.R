@@ -5,11 +5,10 @@ rm(list=ls())
 
 library(lme4)
 library(zoo)
-library(lubridate)
+#library(lubridate)
 library(dplyr)
 library(ggformula)
 library(cowplot)
-library(gridExtra) # remove after clean file
 
 dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
 setwd(dir)
@@ -609,8 +608,6 @@ p5 = p5 + annotate(geom="text", x=7.4, y=1.0, label=alpha, color="black", parse=
 p6 = p6 + annotate(geom="text", x=7.4, y=1.1, label=alpha, color="black", parse=TRUE) +
   annotate(geom="text", x=7.4, y=1.15, label=degree, color="black",parse=TRUE) +
   annotate(geom="text", x=5.5, y=1, label=pvalue, color="black", parse=TRUE)
-
-grid.arrange(p5, p6, ncol=2)
 
 #### Panel C: wing morph freq with year
 
