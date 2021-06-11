@@ -9,7 +9,9 @@ output:
 rm(list=ls())
 
 # Set Working Directory
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+#dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+###MLC: Added alternate dir for my machine and propagated so it can be changed only here and not at various points in the script
+dir = "~/Documents/Github/SBB-dispersal/avbernat_working_on/"
 setwd(dir)
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -24,12 +26,13 @@ library(lme4) # fit regressions
 library(dplyr) # data manipulation 
 library(ggformula) # ggplot plotting
 library(cowplot) # ggplot helper functions to arrange multi-panel figures
+library(binom) # binomial confidence intervals
 ```
 
 ## Read Source Files
 
 ```{r message=FALSE}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = paste0(dir,"/Rsrc/")
 
 script_names = c("compare_models.R", # 1 function: model_comparisonsAIC()
                  "regression_output.R", # 1 function: tidy_regression()
@@ -41,13 +44,13 @@ for (script in script_names) {
   source(path) 
 }
 
-source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/vartests.R")
+source(paste0(dir, "/RTsrc/vartests.R"))
 ```
 
 ## Read the Data
 
 ```{r}
-data_list <- read_morph_data("data/allmorphology05.18.21.csv")
+data_list <- read_morph_data(paste0(dir,"All_Morphology/stats/data/allmorphology05.18.21.csv"))
 raw_data = data_list[[1]]
 data_long = data_list[[2]] # long-wing bugs only
 
@@ -214,6 +217,8 @@ wmorph_table$sd<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_yea
                               data=raw_data,FUN=sd)$wing_morph_binom
 wmorph_table$se<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, 
                               data=raw_data,FUN=SE)$wing_morph_binom
+wmorph_table$n<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, 
+                              data=raw_data,FUN=length)$wing_morph_binom
 ```
 
 ```{r}
@@ -264,10 +269,11 @@ model_comparisonsAIC(model_script)
 &nbsp;
 
 ```{r results = "hold"}
-anova(m22, m42, test="Chisq") # adding B*C does not improve fit
-anova(m16, m22, test="Chisq") # adding C does improve fit  
-anova(m22, m34, test="Chisq") # adding D does not improve fit
-anova(m34, m58, test="Chisq") # Adding B*D marginally improves fit
+###MLC:  I'm seeing m88 as the top model coming out of this set; the only one of these showing up for me is m58
+anova(m88, m58, test="Chisq") # Adding A*D marginally improves fit
+anova(m76, m58, test="Chisq") # Adding C*D does not improve fit
+anova(m88, m99, test="Chisq") # adding C*D does not improve fit
+anova(m34, m58, test="Chisq") # Adding B*D improves fit
 ```
 
 &nbsp;
@@ -275,7 +281,7 @@ anova(m34, m58, test="Chisq") # Adding B*D marginally improves fit
 ## Best Fit
 
 ```{r}
-M3 = glm(wing2body_c ~ sex_binom*pophost_binom + month_of_year_c, data=data_long, family=gaussian) 
+M3 = glm(wing2body_c ~ sex_binom*pophost_binom + pophost_binom*months_since_start_c + month_of_year_c, data=data_long, family=gaussian) 
 summary(M3) 
 ```
 
@@ -354,12 +360,21 @@ sex_col_shade = c("brown1", "sienna4")
 ### Group significant elements 
 
 ```{r}
+###MLC: function to calculate 95% CI. 
+CI_95 <- function(x){qnorm(0.975)*sd(x)/sqrt(length(x))}
+CI_95_binom_upper <- function(y) {binom.confint(x=sum(y, na.rm=TRUE), n=length(y[!is.na(y)]), conf.level=0.95, methods='exact')$upper}
+CI_95_binom_lower <- function(y) {binom.confint(x=sum(y, na.rm=TRUE), n=length(y[!is.na(y)]), conf.level=0.95, methods='exact')$lower}
+
 w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
                            , data=raw_data, FUN=mean)
 w_morph_summary$se<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
                               , data=raw_data, FUN=SE)$wing_morph_binom
+w_morph_summary$upper<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
+                              , data=raw_data, FUN=CI_95_binom_upper)$wing_morph_binom
+w_morph_summary$lower<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
+                              , data=raw_data, FUN=CI_95_binom_lower)$wing_morph_binom
 
-jitter = runif(n=nrow(w_morph_summary), min=-0.5, max=0.5) # jitter points slightly
+jitter = runif(n=nrow(w_morph_summary), min=-0.1, max=0.1) # jitter points slightly
 w_morph_summary$dates <- w_morph_summary$month_of_year + jitter
 
 dd = w_morph_summary
