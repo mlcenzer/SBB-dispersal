@@ -33,7 +33,6 @@ library(binom) # binomial confidence intervals
 source_path = paste0(dir,"/Rsrc/")
 
 script_names = c("compare_models.R", # 1 function: model_comparisonsAIC()
-                 "regression_output.R", # 1 function: tidy_regression()
                  "clean_morph_data3.R", # 2 functions: read_morph_data(), remove_torn_wings()
                  "AICprobabilities.R") # 1 function: AICprobs()
 
@@ -466,7 +465,7 @@ p5 = ggplot() +
   ylim(0.3,1.2) + 
   theme(axis.title.y = element_blank()) 
 
-# extract alpha, smoothing parameter, from LOESS regression(s))
+# extract alpha, smoothing parameter, from LOESS regression(s)
 alpha = paste("alpha[loess]==", ggplot_build(p5)$data[[3]]$alpha[1])
 degree="lambda[loess]==0"
 
@@ -511,9 +510,7 @@ predFC = pred[pred$bhost==-1 & pred$bsex==1,]
 
 predMK = pred[pred$bhost==1 & pred$bsex==-1,]
 predMC = pred[pred$bhost==-1 & pred$bsex==-1,]
-# extract pvalue from best fit regression model
-fit_pvalue = round(summary(M1)$coeff[,"Pr(>|z|)"][6],4)
-pvalue = paste0("italic(p)[glm]==", fit_pvalue)
+
 # extract pvalue from best fit regression model
 fit_pvalue = round(summary(M1)$coeff[,"Pr(>|z|)"][6],4)
 pvalue = paste0("italic(p)[glm]==", fit_pvalue)
@@ -553,7 +550,7 @@ p7 = ggplot() +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) +
   ylim(0,1.3)
 
-# extract alpha, smoothing parameter, from LOESS regression(s))
+# extract alpha, smoothing parameter from LOESS regression(s)
 alpha = paste("alpha[loess]==", ggplot_build(p7)$data[[4]]$alpha[1])
 degree="lambda[loess]==0"
 
@@ -596,7 +593,7 @@ p8 = ggplot() +
   ylim(0.3,1.2) +
   customPlot
 
-# extract alpha, smoothing parameter, from LOESS regression(s)) and pvalue from linear model
+# extract alpha, smoothing parameter from LOESS regression(s) and pvalue from linear model
 alpha = paste("alpha[loess]==", ggplot_build(p8)$data[[3]]$alpha[1])
 degree="lambda[loess]==0"
 mlinear = glm(wing_morph_binom ~ dates, data=wm_table, family=gaussian) # AB: wrong
@@ -688,8 +685,6 @@ paper_figure1
 w2b_summary<-aggregate(wing2body~sex*pophost*dates*month_of_year, data=data_long, FUN=mean)
 w2b_summary$se<-aggregate(wing2body~sex*pophost*dates, data=data_long,
                           FUN=SE)$wing2body
-# w2b_summary<-aggregate(wing2body~sex*pophost*month_of_year, data=data_long, FUN=mean)
-# df = w2b_summary
 
 jitter = runif(n=nrow(w2b_summary), min=-0.1, max=0.1) # jitter slightly
 w2b_summary$dates <- w2b_summary$dates + jitter
@@ -721,6 +716,7 @@ d$`Sex` = d$sex
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ### Panels A and B
 
+### host plant
 p10 = ggplot() + 
   ggtitle("A") + xlab("Month") + ylab(" ") +
   geom_vline(xintercept = xlab_allmonths, color="gainsboro") + 
@@ -736,6 +732,7 @@ p10 = ggplot() +
   scale_x_continuous(breaks=xlab_months, labels=month_labs) + 
   theme(axis.title.x = element_blank())
 
+### sex
 p11 = ggplot() + 
   ggtitle("B") + xlab("Month") + ylab(" ") + 
   geom_vline(xintercept = xlab_allmonths, color="gainsboro") + 
@@ -751,7 +748,7 @@ p11 = ggplot() +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) + 
   theme(axis.title.x = element_blank())
 
-#### loess and linear regressions
+# extract alpha, smoothing parameter from LOESS regression(s) and pvalue from linear model
 alpha = paste("alpha[loess]==", ggplot_build(p10)$data[[3]]$alpha[1])
 degree="lambda[loess]==0"
 fit_pvalue = round(summary(M3)$coeff[,"Pr(>|t|)"][5],7)
