@@ -1,0 +1,201 @@
+---
+title: "Modeling Flight Response Summary File"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+
+# set working directory
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/"
+setwd(dir)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Data Cleaning And Exploration
+
+## Read Libraries
+
+```{r message=FALSE, warning=FALSE}
+library(lme4) # fit regressions 
+library(rethinking) # Bayesian data analysis and plotting
+library(popbio) # logistic regression plotting
+#library(dplyr) # data manipulation 
+#library(ggformula) # ggplot plotting
+#library(cowplot) # ggplot helper functions to arrange multi-panel figures
+```
+
+## Read Source Files
+
+```{r message=FALSE, warning=FALSE}
+source_path = paste0(dir,"/Rsrc/")
+
+script_names = c("center_flight_data.R", # 1 function: center_data()
+                 "clean_flight_data.R", # 1 function: clean_flight_data()
+                 "unique_flight_data.R", # 1 function: create_delta_data()
+                 "compare_models.R", # 1 function: model_comparisonsAIC()
+                 "AICprobabilities.R") # 1 function: AICprobs()
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+```
+
+## Read the Data
+
+```{r message=FALSE, warning=FALSE}
+data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_all <- data[[1]]
+data_tested <- data[[2]]
+d <- create_delta_data(data_tested, tested_more_than_once=FALSE)
+```
+
+## Repeating Plot Parameters & Functions
+
+```{r}
+# scale/magnifications
+
+c1 = 1.5 # size of points
+c2 = 1.2 # size of text
+c3 = 2 # size of title 
+
+# compute confidence interval
+get_CI = function(x,y,m) {
+  x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
+  prd <- data.frame(x=x.seq) # newdata
+  err <- predict(m, newdata = prd, se.fit = TRUE)
+  prd$lci <- err$fit - 1.96 * err$se.fit
+  prd$fit <- err$fit
+  prd$uci <- err$fit + 1.96 * err$se.fit
+  mu_ci <- t(matrix(c(prd$lci,prd$uci), ncol=2))
+  return(list(mu_ci, prd))
+}
+
+```
+
+## Across-Trial Flight Response
+
+### Experimental Effects
+
+```{r echo=FALSE, fig.height=2.7*2, fig.width=6*2}
+# day tested: flight prob vs. days from start
+
+par(mfrow=c(1,2))
+
+# plot A (for linear regression)
+dt = aggregate(flew_b ~ days_from_start, data=data_tested, FUN=mean)
+x=dt$days_from_start
+y=dt$flew_b
+m <- glm(y ~ x, data=dt, family="gaussian")
+
+shading = get_CI(x,y,m)
+mu_ci=shading[[1]]
+prd=shading[[2]]
+
+plot(dt$flew_b~dt$days_from_start, 
+     ylab="Flight Probability", xlab="Days From Start", 
+     pch=19, 
+     col=1, 
+     cex=c1,
+     cex.lab=c2)
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(11, 0.45, pval, cex=c2)
+mtext("A", side=3, adj=0, line=0.5, cex=c3, font=1)
+
+
+# plot B (for logistic regression)
+m = glm(flew_b ~ days_from_start, data=data_tested, family = "binomial" )
+pvalue <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+
+logi.hist.plot(data_tested$days_from_start,data_tested$flew_b,boxp=FALSE,type="hist",col="indianred",
+               ylabel="Flight Probability", xlabel="Days From Start")
+text(11, 0.45, pvalue, cex=c2)
+mtext("B", side=3, adj=0, line=0.5, cex=c3, font=1)
+```
+
+```{r echo=FALSE, fig.height=2.7*2, fig.width=6*2}
+# time tested: recording duration (HR) vs. trial start time (HR)
+
+par(mfrow=c(1,2))
+
+# plot C (all bugs)
+x=data_tested$hr_start
+y=data_tested$recording_duration/60/60
+m <- glm(y ~ x, data=data_tested, family="gaussian") # marginal effect
+
+shading = get_CI(x,y,m)
+mu_ci=shading[[1]]
+prd=shading[[2]]
+
+plot(data_tested$hr_start, data_tested$recording_duration/60/60,
+     xlab="Trial Start Time (HR)", 
+     ylab="Recording Duration (HR)")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3))
+text(15, 11, pval, cex=c2)
+mtext("C", side=3, adj=0, line=0.5, cex=c3, font=1)
+
+
+# plot D (filter out bugs that didn't fly)
+dt=data_tested %>%
+  filter(flew_b !=0)
+x=dt$hr_start
+y=dt$recording_duration/60/60
+m <- glm(y ~ x, data=dt, family="gaussian") # marginal effect
+
+shading = get_CI(x,y,m)
+mu_ci=shading[[1]]
+prd=shading[[2]]
+
+plot(dt$hr_start, dt$recording_duration/60/60,
+     xlab="Trial Start Time (HR)", 
+     ylab="Recording Duration (HR)")
+abline(m, lty=2)
+shade(mu_ci, lim = prd$x)
+pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
+text(15, 11, pval, cex=c2)
+mtext("D", side=3, adj=0, line=0.5, cex=c3, font=1)
+```
+
+### Single-Variate Effects
+
+```{r}
+# repeating plotting features
+
+## tailoring variables for plotting
+# d$mass_block<-round(d$average_mass/0.005)*0.005
+# d$wing2body_block<-round(d$wing2body, digits=2)
+# d$days_block<-round(d$avg_days, digits=0)
+```
+
+```{r}
+# group by sex and re-center
+# data_fem <- d[d$sex=="F",]
+# data_male <- d[d$sex=="M",]
+# data_fem <- center_data(data_fem, is_not_binded = FALSE) 
+# data_male <- center_data(data_male, is_not_binded = FALSE)
+# 
+# # sex vs. flight prob
+# data_temp <- aggregate(flew_prob~sex, data=d, FUN=mean)
+# data_temp$trials <-c(sum(d$num_flew[d$sex=="F"]+d$num_notflew[d$sex=="F"]), sum(d$num_flew[d$sex=="M"]+d$num_notflew[d$sex=="M"]))
+# #data_temp$CI <- aggregate(flew_prob~sex, data=d, FUN=function(x) qnorm(0.975)*sd(x)/length(x))$flew_prob Oops, that's for normal data, not binomial data
+# 
+# # calculate binomial confidence interval
+# data_temp$successes <- c(sum(d$num_flew[d$sex=="F"]), sum(d$num_flew[d$sex=="M"]))
+# data_temp$CI<-binom.confint(data_temp$successes, data_temp$trials, methods="exact")
+```
+
+
+
+
+
+
+
+

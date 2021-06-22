@@ -92,6 +92,33 @@ read_flight_data<-function(filename){
       }
     }
     
+    ############ 6. ) Compute datetimes ##################
+    
+    data_tested$dt_start_c = paste(as.character(data_tested$test_date), as.character(data_tested$time_start))
+    data_tested$dt_end_c= paste(as.character(data_tested$test_date), as.character(data_tested$time_end))
+    
+    data_tested$datetime_start <- strptime(x = as.character(data_tested$dt_start_c), format = "%Y-%m-%d %H:%M:%S")
+    data_tested$datetime_end <- strptime(x = as.character(data_tested$dt_end_c), format = "%Y-%m-%d %H:%M:%S")
+    
+    hrs = hours(data_tested$datetime_start)
+    min_frac = sub("0.", ".", as.character(minutes(data_tested$datetime_start)/60))
+    for (i in seq(1:length(min_frac))){
+      if (min_frac[i] == "0"){
+        min_frac[i] =""
+      }
+    }
+    data_tested$hr_start = as.numeric(paste0(hrs, min_frac)) 
+    
+    hrs = hours(data_tested$datetime_end)
+    min_frac = sub("0.", ".", as.character(minutes(data_tested$datetime_end)/60))
+    for (i in seq(1:length(min_frac))){
+      if (min_frac[i] == "0"){
+        min_frac[i] =""
+      }
+    }
+    
+    data_tested$hr_end = as.numeric(paste0(hrs, min_frac)) 
+    
     return(list(data_all, data_tested))
     
 }

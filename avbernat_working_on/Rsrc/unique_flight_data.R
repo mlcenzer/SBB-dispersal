@@ -1,3 +1,7 @@
+library(dplyr)
+library(chron)
+library(lubridate)
+
 create_delta_data = function(data, tested_more_than_once=TRUE) {
   # INPUT     data as the tested_data with each row as a unique ID and trial.
   # OUTPUT    dataset with each row as a unique ID only.
@@ -20,6 +24,9 @@ create_delta_data = function(data, tested_more_than_once=TRUE) {
   d$dist_diff <- 0
   d$speed_diff <- 0
   d$mass_per <- 0 
+  
+  d$rec_dur_avg <- 0
+  d$time_start_avg <- 0
   
   for(row in 1:length(d$flew_b)){
     
@@ -46,6 +53,10 @@ create_delta_data = function(data, tested_more_than_once=TRUE) {
     d$dist_diff[[row]] <- d$distance[[row]][2] - d$distance[[row]][1]  # T2 - T1
     d$speed_diff[[row]] <- d$average_speed[[row]][2] - d$average_speed[[row]][1]  # T2 - T1
     d$egg_diff[[row]] <- d$eggs_b[[row]][2] - d$eggs_b[[row]][1]  # T2 - T1
+    
+    # recording duration and time start 
+    d$rec_dur_avg[row] <- mean(d$recording_duration[[row]])
+    d$time_start_avg[row] <- (times(d$time_start[[row]][1]) + times(d$time_start[[row]][2])) / 2
     
   }
  
@@ -74,6 +85,21 @@ create_delta_data = function(data, tested_more_than_once=TRUE) {
   d$egg_case = NA
   d$egg_case = d$num_egg
   d$egg_case[d$egg_diff == -1] = -1
+  
+  # Compute Additional Factors & Transformations
+  
+  # compute flight probability across both trials for each bug 
+  d$flew_prob<-d$num_flew/(d$num_flew+d$num_notflew) 
+  
+  # compute average days
+  d$avg_days_c<-d$avg_days-mean(d$avg_days, na.rm=TRUE)
+  
+  # transform average mass
+  d$average_mass_trans<-log(sqrt(d$average_mass))-mean(log(sqrt(d$average_mass)), na.rm=TRUE)
+  
+  # transform wing2body; note, this transformation has an inverse relationship with wing2body ratio, 
+  # so effect estimate directions need to be flipped for interpretation.
+  d$wing2body_trans<-log(sqrt(0.85-d$wing2body))-mean(log(sqrt(0.85-d$wing2body)), na.rm=TRUE)
   
   return(d)
 }
