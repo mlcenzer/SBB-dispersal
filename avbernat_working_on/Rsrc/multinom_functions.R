@@ -91,14 +91,14 @@ prediction_equations2 = function(tb, var1, var2, third_eq = TRUE) {
   I = (tb[1,1] - tb[2,1])
   M = (tb[1,2] - tb[2,2])
   S = (tb[1,3] - tb[2,3])
-  EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), var1, " + ", round(S, 2), var2, "     Flew in T1, rather than T2" )
+  EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), var1, " + ", round(S, 2), var2, "   Flew in T1, not T2" )
   
   if (third_eq) {
     # 2 / -1 | Flew in both, not T1
     I = (tb[3,1] - tb[1,1])
     M = (tb[3,2] - tb[1,2])
     S = (tb[3,3] - tb[1,3])
-    EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", round(M,2), var1, " + ", round(S, 2), var2, "     Flew in both, rather than T1" )
+    EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", round(M,2), var1, " + ", round(S, 2), var2, "   Flew in both, not T1" )
   }
   
   if (third_eq) {
@@ -106,7 +106,7 @@ prediction_equations2 = function(tb, var1, var2, third_eq = TRUE) {
     I = (tb[3,1] - tb[2,1])
     M = (tb[3,2] - tb[2,2])
     S = (tb[3,3] - tb[2,3])
-    EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", round(M,2),  var1, " + ", round(S, 2), var2, "     Flew in both, rather than T2")
+    EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", round(M,2),  var1, " + ", round(S, 2), var2, "    Flew in both, not T2")
   }
   
   eqs = EQ1
