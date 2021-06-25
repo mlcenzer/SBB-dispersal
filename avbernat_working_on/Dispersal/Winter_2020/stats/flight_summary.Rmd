@@ -24,9 +24,6 @@ library(lme4) # fit regressions
 library(rethinking) # Bayesian data analysis and plotting
 library(popbio) # logistic regression plotting
 library(binom) # binomial confidence intervals
-#library(dplyr) # data manipulation 
-#library(ggformula) # ggplot plotting
-#library(cowplot) # ggplot helper functions to arrange multi-panel figures
 ```
 
 ## Read Source Files
@@ -49,7 +46,9 @@ for (script in script_names) {
 ## Read the Data
 
 ```{r message=FALSE, warning=FALSE}
-data <- read_flight_data("data/all_flight_data-Winter2020.csv")
+data_path = paste0(dir,"/Dispersal/Winter_2020/stats/data/all_flight_data-Winter2020.csv")
+
+data <- read_flight_data(data_path)
 data_all <- data[[1]]
 data_tested <- data[[2]]
 d <- create_delta_data(data_tested, tested_more_than_once=FALSE)
@@ -59,10 +58,9 @@ d <- create_delta_data(data_tested, tested_more_than_once=FALSE)
 
 ```{r}
 # scale/magnifications
-
-c1 = 1.5 # size of points
-c2 = 1.2 # size of text
-c3 = 2 # size of title 
+c1 = 1.3*2 # size of points
+c2 = 1.2*2 # size of text
+c3 = 2*2 # size of title 
 
 # compute confidence interval
 get_CI = function(x,y,m) {
@@ -82,16 +80,31 @@ d$wing2body_block<-round(d$wing2body, digits=2)
 d$days_block<-round(d$avg_days, digits=0)
 ```
 
-## Across-Trial Flight Response
+# Across-Trial Flight Response
 
-### Experimental Effects
+## Experimental Effects
 
-```{r echo=FALSE, fig.height=2.7*2, fig.width=6*2}
+```{r echo=FALSE, fig.height=2.7*3, fig.width=6*3}
 # day tested: flight prob vs. days from start
 
-par(mfrow=c(1,2))
+par(mfrow=c(1,2), mar = c(4.3, 7, 3.5, 0)) 
 
-# plot A (for linear regression)
+# plot A (barplot)
+counts <- table(data_tested$flew_b, data_tested$trial_type)
+counts <- counts[1:2,2:3]
+barplot(counts,
+        xlab="Trial", col=c("#b57783","#820331"),
+        ylab="Frequency",
+        ylim=c(0,250), beside=TRUE,
+        cex.lab=c2)
+legend("topright",
+       legend = c("no flew", "yes flew"),
+       col=c("#b57783","#820331"),
+       pch=15,
+       cex = c2)
+mtext("A", side=3, adj=0, line=0.5, cex=c3, font=1)
+  
+# plot B (for linear & logistic regression)
 dt = aggregate(flew_b ~ days_from_start, data=data_tested, FUN=mean)
 x=dt$days_from_start
 y=dt$flew_b
@@ -103,31 +116,30 @@ prd=shading[[2]]
 
 plot(dt$flew_b~dt$days_from_start, 
      ylab="Flight Probability", xlab="Days From Start", 
-     pch=19, 
-     col=1, 
-     cex=c1,
-     cex.lab=c2)
+     pch=19, col=1, 
+     cex=c1, cex.lab=c2,
+     ylim=c(0.4,1))
 abline(m, lty=2)
 shade(mu_ci, lim = prd$x)
 pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
 text(11, 0.45, pval, cex=c2)
-mtext("A", side=3, adj=0, line=0.5, cex=c3, font=1)
+mtext("B", side=3, adj=0, line=0.5, cex=c3, font=1)
 
-
-# plot B (for logistic regression)
+#par(fig=c(.33,.48,0.68,1),new=TRUE)
+par(fig=c(.70,1,0.5,0.99), new=TRUE, mar=c(1,1,1,1))
 m = glm(flew_b ~ days_from_start, data=data_tested, family = "binomial" )
 pvalue <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
 
-logi.hist.plot(data_tested$days_from_start,data_tested$flew_b,boxp=FALSE,type="hist",col="indianred",
-               ylabel="Flight Probability", xlabel="Days From Start")
-text(11, 0.45, pvalue, cex=c2)
-mtext("B", side=3, adj=0, line=0.5, cex=c3, font=1)
+logi.hist.plot(data_tested$days_from_start, 
+               data_tested$flew_b,boxp=FALSE,
+               type="hist",col="indianred", ylabel="Flight Prob", xlabel="Days From Start")
+text(7, 0.38, pvalue, cex=2)
 ```
 
-```{r echo=FALSE, fig.height=2.7*2, fig.width=6*2}
+```{r echo=FALSE, fig.height=2.7*2.7, fig.width=6*3}
 # time tested: recording duration (HR) vs. trial start time (HR)
 
-par(mfrow=c(1,2))
+par(mfrow=c(1,2), mar = c(4.3, 7, 3.5, 0))
 
 # plot C (all bugs)
 x=data_tested$hr_start
@@ -140,7 +152,8 @@ prd=shading[[2]]
 
 plot(data_tested$hr_start, data_tested$recording_duration/60/60,
      xlab="Trial Start Time (HR)", 
-     ylab="Recording Duration (HR)")
+     ylab="Recording Duration (HR)",
+     cex=c1, cex.lab=c2)
 abline(m, lty=2)
 shade(mu_ci, lim = prd$x)
 pval <- paste0("p = ", round(summary(m)$coefficients[8],3))
@@ -161,7 +174,8 @@ prd=shading[[2]]
 
 plot(dt$hr_start, dt$recording_duration/60/60,
      xlab="Trial Start Time (HR)", 
-     ylab="Recording Duration (HR)")
+     ylab="Recording Duration (HR)",
+     cex=c1, cex.lab=c2)
 abline(m, lty=2)
 shade(mu_ci, lim = prd$x)
 pval <- paste0("p = ", round(summary(m)$coefficients[8],3), "*")
@@ -169,14 +183,14 @@ text(15, 11, pval, cex=c2)
 mtext("D", side=3, adj=0, line=0.5, cex=c3, font=1)
 ```
 
-There was a negative of day a bug was tested but only when the full dataset is considered (not the unique dataset).
-There was a negative effect of the trial start time but only after removing bugs that didn't fly.
+**A & B.** There was a negative effect of day a bug was tested but only when the full dataset is considered (not the unique dataset).
+**C & D.** There was a negative effect of the trial start time but only after removing bugs that didn't fly.
 
-### Single-Variate Effects
+## Single-Variate Effects
 
-```{r echo=FALSE, fig.height=2.7*2*2, fig.width=6*2}
+```{r echo=FALSE, fig.height=2.7*2*2.7, fig.width=6*3}
 
-par(mfrow=c(2,2))
+par(mfrow=c(2,2), mar = c(4.3, 7, 3.5, 0))
 
 # plot A (flight probability grouped by sex)
 
@@ -192,11 +206,11 @@ plot(data_temp$CI$mean~c(1,2), xaxt='n',
      ylab="Flight probability", 
      xlab="Sex", ylim=c(0,1), 
      xlim=c(0.5,2.5), 
-     cex=3, pch=19, col=c("red", "blue"))
+     cex=c1, cex.lab=c2, pch=19, col=c("red", "blue"))
 lines(x=xy.coords(x=c(1,1), y=c(data_temp$CI$lower[1], data_temp$CI$upper[1])), lwd=3, col="red")
 lines(x=xy.coords(x=c(2,2), y=c(data_temp$CI$lower[2], data_temp$CI$upper[2])), lwd=3, col="blue")
 axis(side=1, at=c(1,2), labels=c("female", "male"))
-mtext(text=c("N=120", "N=213"), at=c(1,2), side=1, line=-1.2)
+mtext(text=c("N=120", "N=213"), at=c(1,2), side=1, line=-1.2, cex=c2)
 mtext("A", side=3, adj=0, line=0.5, cex=c3, font=1)
 
 # plot B (wing2body ratio vs. flew_prob grouped by sex)
@@ -226,17 +240,17 @@ prd2=shading[[2]]
 plot(data_temp$flew_prob~data_temp$wing2body_block, 
      ylab="Flight probability", xlab="wing-to-body ratio", 
      pch=19, col=c("red","blue")[as.factor(data_temp$sex)], 
-     cex=2, ylim=c(0,1))
+     cex=c1, cex.lab=c2, ylim=c(0,1))
 abline(m1, lty=2, col="indianred1")
 abline(m2, lty=2, col="darkblue")
 shade(mu_ci1, lim = prd1$x, col=col.alpha("indianred1"))
 shade(mu_ci2, lim = prd2$x) #, col=col.alpha("darkblue"))
 pval1 <- paste0("p = ", round(summary(m1)$coefficients[8],2))
 pval2 <- paste0("p = ", round(summary(m2)$coefficients[8],5), "*")
-text(0.72, 0.05, pval1, cex=1, col="darkred")
-text(0.67, 0.6, pval2) #, cex=c4, col="darkblue")
+text(0.72, 0.05, pval1, cex=c2, col="darkred")
+text(0.67, 0.6, pval2, cex=c2) #, cex=c4, col="darkblue")
 legend(0.64, 1, legend=c("male", "female"), pch=19, col=c("blue", "red"), y.intersp=1.5, pt.cex=2, cex=.8)
-
+mtext("B", side=3, adj=0, line=0.5, cex=c3, font=1)
 
 # plot C (mass vs. flew_prob grouped by sex)
 data_temp<-aggregate(flew_prob~sex*mass_block, data=d, FUN=mean)
@@ -266,7 +280,7 @@ plot(data_temp$flew_prob~data_temp$mass_block,
      xlab="Mass (g)", 
      pch=19, 
      col=c("red","blue")[as.factor(data_temp$sex)], 
-     cex=2, 
+     cex=c1, cex.lab=c2,
      ylim=c(0,1), xlim=c(0.02, 0.18))
 legend(0.14, 1, legend=c("male", "female"), pch=19, col=c("blue", "red"), y.intersp=1.5, pt.cex=2, cex=.8)
 abline(m1, lty=2) #, col="indianred1")
@@ -275,9 +289,177 @@ shade(mu_ci1, lim = prd1$x) #, col=col.alpha("indianred1"))
 shade(mu_ci2, lim = prd2$x, col=col.alpha("darkblue"))
 pval1 <- paste0("p = ", round(summary(m1)$coefficients[8],3), "*")
 pval2 <- paste0("p = ", round(summary(m2)$coefficients[8],2))
-text(0.11, 0.5, pval1) #, cex=c4, col="indianred1")
-text(0.1, 0.9, pval2, cex=1, col="darkblue")
+text(0.11, 0.5, pval1, cex=c2) #, cex=c4, col="indianred1")
+text(0.1, 0.9, pval2, cex=c2, col="darkblue")
 mtext("C", side=3, adj=0, line=0.5, cex=c3, font=1)
+```
+
+# Between-Trial Flight Response (T1 vs. T2)
+
+## Read Libraries
+
+```{r warning=FALSE, message=FALSE}
+library(dplyr) # data manipulation 
+library(zoo) # data manipulation
+library(nnet) # multinomial modeling 
+library(kableExtra) # table formatting
+```
+
+## Read Source Files
+
+```{r}
+script_names = c( "get_warnings.R", # 1 function: withWarnings()
+                  "multinom_functions.R") # 9 functions: calculate_P(),
+                                          # calculate_P2(), calculate_P3(),
+                                          # prediction_equations(),
+                                          # prediction_equations2(),
+                                          # get_significant_models(),
+                                          # get_significant_modelsf(),
+                                          # getting_odds()
+                                          # getting_oddsf()
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+```
+
+## Read the Data
+
+```{r}
+d <- create_delta_data(data_tested, tested_more_than_once=TRUE)
+```
+
+```{r echo=FALSE}
+# key = response in T2 - response in T1
+Event = c("flew in both trials", "flew in T2 only", " flew in neither trials", "flew in T1 only")
+Encoding = c(2, 1,0,-1)
+key = cbind(Event, Encoding)
+
+kable(key) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  kable_classic(html_font = "Cambria") %>%
+  add_header_above(c("Delta Flight Response Key" = 2 )) 
+```
+
+We wanted to model the probability of different delta flight response cases with sex, host plant, percent changes in mass, and percent changes in egg-laying response as predictors. Since the outcomes (or response variables) were no longer binomial, we used multicategorical logit models. See the Appendix for an explanation and examples of computing multicategorical logit models.
+
+```{r echo=FALSE}
+Event = c("gained mass from T1 to T2", "no mass change between trails", "lost mass from T1 to T2")
+Sign = c("pos","0","neg")
+key = cbind(Event, Sign)
+
+kable(key) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  kable_classic(html_font = "Cambria") %>%
+  add_header_above(c("Delta Mass Key" = 2 )) 
+```
+
+## Multinomial Modeling
+
+### Baseline
+
+```{r}
+df <- d %>%
+  filter(!is.na(mass_diff), !is.na(flight_case)) 
+  
+df <- df[with(df, order(mass_per)),]
+n_trials = nrow(df)
+
+df$flight_case <- relevel(as.factor(df$flight_case), ref = "0")
+```
+
+### Null Model
+
+```{r}
+null <- multinom(flight_case ~ 1, data = df) 
+```
+
+### Compare Models
+
+#### flight case ~ mass %, sex, host
+
+```{r warning=FALSE}
+data <- data.frame(R = df$flight_case, 
+         A = df$mass_per,
+         B = df$sex_c,
+         C = df$host_c)
+model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 FF.R")
+model_comparisonsAIC(model_script)
+```
+
+```{r warning=FALSE, results = "hold"}
+anova(m4, m7, test="Chisq") # Adding C (host plant) does not improve fit
+anova(m4, m8, test="Chisq") # Adding A*B does not improve fit
+```
+
+```{r warning=FALSE, results = "hold"}
+delta_mass_model <- multinom(flight_case ~ mass_per + sex_c, data = df)
+model_table = calculate_P2(delta_mass_model, "mass_per", "sex_c")
+```
+
+```{r warning=FALSE}
+prediction_equations2(model_table, " Mass Percent Change", " Sex ")
+```
+
+```{r warning=FALSE, results = "hold"}
+run_multinom_model = function(d) {
+  m <- multinom(flight_case ~ mass_per + sex_c, trace=FALSE, data = d) 
+  model_table = calculate_P2(m, "mass_per", "sex_c", print_table=FALSE)
+  return(model_table)
+}
+par(mfrow=c(1,2))
+MASS_ML = get_significant_models(15) # mass per
+SEX_ML = get_significant_models(16) # sex
+```
+
+#### flight case ~ mass %, sex, wing2body
+
+```{r warning=FALSE}
+df <- df[with(df, order(mass_per)),]
+df$wing2body_c = df$wing2body - mean(df$wing2body)
+df$wing2body_scaled = df$wing2body_c/sd(df$wing2body)*100 # normalized and then multiplied by 100
+```
+
+```{r warning=FALSE}
+data <- data.frame(R = df$flight_case, 
+         A = df$mass_per,
+         B = df$sex_c,
+         C = df$wing2body_c)
+model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 FF.R")
+model_comparisonsAIC(model_script)
+```
+
+```{r warning=FALSE, results = "hold"}
+anova(m7, m12, test="Chisq") # adding A*C does not improve fit
+anova(m7, m13, test="Chisq") # Adding B*C does not improve fit
+```
+
+```{r warning=FALSE, results = "hold"}
+model <- multinom(flight_case ~ mass_per + sex_c + wing2body_c, data = df)
+model_table = calculate_P3(model)
+```
+
+```{r warning=FALSE, results = "hold"}
+run_multinom_model = function(d) {
+  m <- multinom(flight_case ~ mass_per + sex_c + wing2body_c, trace=FALSE, data = d)
+  model_table = calculate_P3(m, print_table=FALSE)
+  return(model_table)
+}
+
+# ML's below are all the same
+par(mfrow=c(2,2))
+MASS_PER_ML = get_significant_models(19) # mass%
+SEX_ML = get_significant_models(20) # sex
+WING2BODY_ML = get_significant_models(21) # wing2body
+```
+
+```{r}
+#library(knitr) # table formatting
+#library(dplyr) # data manipulation 
+#library(ggformula) # ggplot plotting
+#library(cowplot) # ggplot helper functions to arrange multi-panel figures
 ```
 
 
