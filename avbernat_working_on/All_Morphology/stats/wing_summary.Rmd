@@ -719,6 +719,8 @@ paper_figure1
 w2b_summary<-aggregate(wing2body~sex*pophost*dates*month_of_year, data=data_long, FUN=mean)
 w2b_summary$se<-aggregate(wing2body~sex*pophost*dates, data=data_long,
                           FUN=SE)$wing2body
+w2b_summary$n<-aggregate(wing2body~sex*pophost*dates, data=data_long,
+                          FUN=length)$wing2body
 
 jitter = runif(n=nrow(w2b_summary), min=-0.1, max=0.1) # jitter slightly
 w2b_summary$dates <- w2b_summary$dates + jitter
@@ -749,6 +751,11 @@ d$`Sex` = d$sex
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ### Panels A and B
+###MLC: Should move column additions up
+data_long$'Host Plant' <- factor(data_long$pophost, levels = c("K. elegans", "C. corindum") )
+data_long$Sex[data_long$sex=="F"]<-"Females"
+data_long$Sex[data_long$sex=="M"]<-"Males"
+data_long$Sex = factor(data_long$Sex, levels = c("Males", "Females") )
 
 ### host plant
 p10 = ggplot() + 
@@ -756,10 +763,15 @@ p10 = ggplot() +
   geom_vline(xintercept = xlab_allmonths, color="gainsboro") + 
   geom_smooth(data=data_long, method="glm", se=FALSE, linetype = "dashed", 
               mapping = aes(x = month_of_year, y = wing2body), colour="black", lwd=0.5) + 
-  geom_smooth(data=d, method="loess", 
+  geom_smooth(data=data_long, method="loess", 
               mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, fill=`Host Plant`)) + 
-  geom_point(data=d, mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`)) + 
-  ylim(0.71, 0.75) +
+  geom_point(data=d, mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, size=n)) + 
+  
+  ###MLC: Any data outside of this range in the geom_smooth dataset will be dropped (and thus mess up model predictions). I hope there is a way to fix this in ggplot, because this is very zoomed out.
+  
+  ylim(0.65, 0.85) +
+  ####MLC: Solution to the ylim problem!
+  coord_cartesian(ylim=c(0.7,0.75)) + 
   customPlot +
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
@@ -772,10 +784,11 @@ p11 = ggplot() +
   geom_vline(xintercept = xlab_allmonths, color="gainsboro") + 
   geom_smooth(data=data_long, method="glm", se=FALSE, linetype = "dashed",  
               mapping = aes(x = month_of_year, y = wing2body), colour="black", lwd=0.5) + 
-  geom_smooth(data=d, method="loess",
+  geom_smooth(data=data_long, method="loess",
               mapping = aes(x = month_of_year, y = wing2body, colour=Sex, fill=Sex)) + 
-  geom_point(data=d, mapping = aes(x = month_of_year, y = wing2body, colour=Sex)) +
-  ylim(0.71, 0.75) +
+  geom_point(data=d, mapping = aes(x = month_of_year, y = wing2body, colour=Sex, size=n)) +
+  ylim(0.65, 0.85) +
+  coord_cartesian(ylim=c(0.7,0.75)) + 
   customPlot +
   scale_color_manual(values=c("Females" = sex_col_pts[1], "Males" = sex_col_pts[2])) +
   scale_fill_manual(values = c("Females" = sex_col_shade[1], "Males" = sex_col_shade[2])) +
@@ -800,6 +813,8 @@ p11 = p11 +
 ```
 
 ```{r echo=FALSE}
+##MLC: This method of getting model predictions looks good to me.
+
 # multi-variate model with year, sex, and host plant predicting wing morph
 fit4 = glm(wing2body ~ pophost_binom * dates, data = data_long)
 xyr <- seq(sort(unique(dd$dates))[1],sort(unique(dd$dates))[10], 1)
@@ -829,13 +844,14 @@ p12 = ggplot() +
   geom_vline(xintercept = xlab_years, color="gainsboro") + 
   geom_line(aes(x=predK$xyr, y=predK$wprobs), linetype = "dashed", color=hp_col_lines[2], lwd=0.5) +
   geom_line(aes(x=predC$xyr, y=predC$wprobs), linetype = "dashed", color=hp_col_lines[1], lwd=0.5) +
-  geom_smooth(data=d, method="loess", span=0.8,
+  geom_smooth(data=data_long, method="loess", span=0.8,
               mapping = aes(x = dates, y = wing2body, colour=`Host Plant`, fill=`Host Plant`)) + 
-  geom_point(data=d, mapping = aes(x = dates, y = wing2body, colour=`Host Plant`)) +
+  geom_point(data=d, mapping = aes(x = dates, y = wing2body, colour=`Host Plant`, size=n)) +
   customPlot +
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
-  ylim(0.71, 0.75) +
+  ylim(0.65, 0.85) +
+  coord_cartesian(ylim=c(0.705,0.75)) + 
   theme(legend.position = "none")
 
 #### loess and linear regressions
