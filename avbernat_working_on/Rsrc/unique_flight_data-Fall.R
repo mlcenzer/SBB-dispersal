@@ -35,6 +35,7 @@ create_delta_data.Fall <- function(data) {
   d$num_flew_twice2 <- 0
   d$num_egg_twice2 <- 0
   
+  d$wing2body <- 0
   # compare 1st and 2nd trial
   for(row in 1:nrow(d)){
     
@@ -70,6 +71,9 @@ create_delta_data.Fall <- function(data) {
       d$num_flew_twice2[[row]] <- d$flew_b[[row]][3] + d$flew_b[[row]][2]
       d$num_egg_twice2[[row]] <- d$eggs_b[[row]][3] + d$eggs_b[[row]][2]
     }
+    
+    # wing2body
+    d$wing2body[row] = d$wing[[row]][1] / d$body[[row]][1]
   }
   
   d <- select(d, -filename, -channel_letter, -set_number)
@@ -101,6 +105,9 @@ create_delta_data.Fall <- function(data) {
   d$egg_case2[d$num_egg_twice2 == 2] = 2
   d$egg_case2[d$egg_diff2 == -1] = -1
   d$egg_case2[d$egg_diff2 == 1] = 1
+  
+  # centering
+  d$wing2body_c = d$wing2body - mean(d$wing2body)
   
   return(d)
 }
