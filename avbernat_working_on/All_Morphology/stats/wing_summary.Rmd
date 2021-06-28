@@ -9,8 +9,10 @@ output:
 rm(list=ls())
 
 # set working directory
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/"
+#dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/"
+dir <- "~/Documents/GitHub/SBB-dispersal/avbernat_working_on/"
 setwd(dir)
+knitr::opts_knit$set(root.dir = dir)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -368,6 +370,9 @@ CI_95_binom_lower <- function(y) {binom.confint(x=sum(y, na.rm=TRUE), n=length(y
 ```
 
 ```{r}
+####MLC: I tested adding population as a parameter here - I think it gives a better view of the variability within host plants in the point plots.
+###MLC: Came back and dropped population
+
 w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
                            , data=raw_data, FUN=mean)
 w_morph_summary$se<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
@@ -376,6 +381,9 @@ w_morph_summary$upper<-aggregate(wing_morph_binom~sex*pophost*month_of_year*mont
                               , data=raw_data, FUN=CI_95_binom_upper)$wing_morph_binom
 w_morph_summary$lower<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
                               , data=raw_data, FUN=CI_95_binom_lower)$wing_morph_binom
+###MLC: adding n to look at differences in sample rate
+w_morph_summary$n<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
+                              , data=raw_data, FUN=length)$wing_morph_binom
 
 jitter = runif(n=nrow(w_morph_summary), min=-0.1, max=0.1) # jitter points slightly
 w_morph_summary$dates <- w_morph_summary$month_of_year + jitter
@@ -434,6 +442,8 @@ pvalue = paste0("italic(p)[glm]==", fit_pvalue)
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ### Panels A and B
+
+##MLC: I am in favor of dropping p4 and p5, as they are redundant with p6 and p7.
 
 ### host plant
 p4 = ggplot() + 
@@ -519,6 +529,8 @@ pvalue = paste0("italic(p)[glm]==", fit_pvalue)
 
 ```{r echo=FALSE, message=FALSE}
 ### Panels C and D
+##MLC: Data column additions should be relocated
+raw_data$'Host Plant'=raw_data$pophost
 
 ### females & host plant
 p6 = ggplot() + 
@@ -526,14 +538,20 @@ p6 = ggplot() +
   geom_vline(xintercept = xlab_allmonths, color="gainsboro") + 
   geom_line(aes(x=predFK$xmon, y=predFK$wprobs), linetype = "dashed", color=hp_col_lines[2]) +
   geom_line(aes(x=predFC$xmon, y=predFC$wprobs), linetype = "dashed", color=hp_col_lines[1]) +
-  geom_smooth(data=dfF, method="loess", span=0.8,
-              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
-  geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
+  ##plotting shading as a function of full data set, NAs removed
+  #geom_smooth(data=dtF, method="loess", span=0.8,
+  #            mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
+  geom_smooth(data=raw_data[raw_data$sex=="F" & !is.na(raw_data$wing_morph_binom),], method="loess", span=0.8,
+              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) +
+###MLC: I was interetwed in trying to plot each population as a different shape, but the 'shape' parameter here is very picky about not using more than 6 shape types and I am not familiar enough with ggplot to do it manually
+  ###MLC: added 'size=n' to weight points by the sample size at each date - I think this helps explain the shapes a little bit
+  geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, size=n)) +
   customPlot + 
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) +
   ylim(0,1.3)
+
 
 ### males & host plant
 p7 = ggplot() + 
@@ -541,9 +559,12 @@ p7 = ggplot() +
   geom_vline(xintercept = xlab_allmonths, color="gainsboro") + 
   geom_line(aes(x=predMK$xmon, y=predMK$wprobs), linetype = "dashed", color=hp_col_lines[2]) +
   geom_line(aes(x=predMC$xmon, y=predMC$wprobs), linetype = "dashed", color=hp_col_lines[1]) +
-  geom_smooth(data=dfM, method="loess", span=0.8,
-              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
-  geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
+  #geom_smooth(data=dfM, method="loess", span=0.8,
+  #            mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) +
+  ##plotting shading as a function of full data set, NAs removed
+  geom_smooth(data=raw_data[raw_data$sex=="M" & !is.na(raw_data$wing_morph_binom),], method="loess", span=0.8,
+              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`pophost`, fill=`pophost`)) +
+  geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, size=n)) +
   customPlot + 
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
@@ -576,6 +597,8 @@ p7 = p7 +
 
 
 ```{r echo=FALSE, message=FALSE}
+##MC: Drop this figure
+
 wm_table<-aggregate(wing_morph_binom~dates, data=raw_data, FUN=mean) # AB: wrong
 ```
 
@@ -608,6 +631,7 @@ p8 = p8 +
 ```{r echo=FALSE}
 # group data by sex 
 wm_table<-aggregate(wing_morph_binom~dates*sex, data=raw_data, FUN=mean)
+wm_table$n<-aggregate(wing_morph_binom~dates*sex, data=raw_data, FUN=length)$wing_morph_binom
 dd = wm_table
 
 dd$sex[dd$sex=="F"]<-"Females"
@@ -644,20 +668,30 @@ pvalue = paste0("italic(p)[glm]==", fit_pvalue)
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 ### Panel F
+##MLC: Data column additions should be relocated
+raw_data$Sex=NA
+raw_data$Sex[raw_data$sex=="F"]<-"Females"
+raw_data$Sex[raw_data$sex=="M"]<-"Males"
+
 
 p9 = ggplot() + 
   ggtitle("F") + xlab("Year") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_yrs, color="gainsboro") + 
   geom_line(aes(x=predF$xyr, y=predF$wprobs), linetype = "dashed", color=sex_col_lines[1], lwd=0.5) +
   geom_line(aes(x=predM$xyr, y=predM$wprobs), linetype = "dashed", color=sex_col_lines[2], lwd=0.5) +
-  geom_smooth(data=dd, method="loess", span=0.8,
+  #geom_smooth(data=dd, method="loess", span=0.8,
+  #            mapping = aes(x = dates, y = wing_morph_binom, colour=`Sex`, fill=`Sex`)) + 
+  geom_smooth(data=raw_data[!is.na(raw_data$wing_morph_binom),], method="loess", span=0.8,
               mapping = aes(x = dates, y = wing_morph_binom, colour=`Sex`, fill=`Sex`)) + 
-  geom_point(data=dd, mapping = aes(x = dates, y = wing_morph_binom, colour=`Sex`)) +
+  geom_point(data=dd, mapping = aes(x = dates, y = wing_morph_binom, colour=`Sex`, size=n)) +
   customPlot + 
   scale_color_manual(values=c("Females" = sex_col_pts[1], "Males" = sex_col_pts[2])) +
   scale_fill_manual(values = c("Females" = sex_col_shade[1], "Males" = sex_col_shade[2])) +
-  ylim(0.3,1.2) +
+  ###MLC: Note that the lower ylim value must be 0 or lower, or 0s in the data will be designated 'non-finite'
+  ylim(0,1) +
   theme(legend.position = "none") 
+
+##MLC: need to scoot legends to reflect 0,1 ylim
 
 p9 = p9 +
   annotate(geom="text", x=xlab_yrs[7], y=1.05, label=alpha, parse=TRUE, size=6) +
@@ -667,11 +701,11 @@ p9 = p9 +
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=13.5, fig.width=10}
 paper_figure1 = ggdraw() +
-  draw_plot(p4, 0, .66, .5, .33) +
-  draw_plot(p5, 0.5, .66, .5, .33) +
-  draw_plot(p6, 0, .33, .5, .33) +
-  draw_plot(p7, 0.5, .33, .5, .33) +
-  draw_plot(p9, 0, 0, 1, .33) + 
+  #draw_plot(p4, 0, .66, .5, .33) +
+  #draw_plot(p5, 0.5, .66, .5, .33) +
+  draw_plot(p6, 0, .5, .5, .5) +
+  draw_plot(p7, 0.5, .5, .5, .5) +
+  draw_plot(p9, 0, 0, 1, .5) + 
   draw_plot_label("Month", 0.47, 0.338, fontface="plain") +
   draw_plot_label("Long-Wing Morph Frequency", 0, 0.46, fontface="plain", angle=90)
 paper_figure1
