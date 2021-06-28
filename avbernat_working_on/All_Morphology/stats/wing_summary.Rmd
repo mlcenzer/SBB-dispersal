@@ -370,16 +370,20 @@ CI_95_binom_lower <- function(y) {binom.confint(x=sum(y, na.rm=TRUE), n=length(y
 ```
 
 ```{r}
-####MLC: Note that I added population as a parameter here - I think it gives a better view of the variability within host plants in the point plots. I'm not married to it, but I think, if we're going to show points, it looks odd to have so few when we have so much data per sample point.
+####MLC: I tested adding population as a parameter here - I think it gives a better view of the variability within host plants in the point plots.
+###MLC: Came back and dropped population
 
-w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start*population
+w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
                            , data=raw_data, FUN=mean)
-w_morph_summary$se<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start*population
+w_morph_summary$se<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
                               , data=raw_data, FUN=SE)$wing_morph_binom
-w_morph_summary$upper<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start*population
+w_morph_summary$upper<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
                               , data=raw_data, FUN=CI_95_binom_upper)$wing_morph_binom
-w_morph_summary$lower<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start*population
+w_morph_summary$lower<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
                               , data=raw_data, FUN=CI_95_binom_lower)$wing_morph_binom
+###MLC: adding n to look at differences in sample rate
+w_morph_summary$n<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
+                              , data=raw_data, FUN=length)$wing_morph_binom
 
 jitter = runif(n=nrow(w_morph_summary), min=-0.1, max=0.1) # jitter points slightly
 w_morph_summary$dates <- w_morph_summary$month_of_year + jitter
@@ -539,9 +543,9 @@ p6 = ggplot() +
   #            mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
   geom_smooth(data=raw_data[raw_data$sex=="F" & !is.na(raw_data$wing_morph_binom),], method="loess", span=0.8,
               mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) +
-###MLC: I would like to try plotting each population as a different shape, but the 'shape' parameter here is very picky about not using more than 6 shape types and I am not familiar enough with ggplot to do it manually
-  
-  geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
+###MLC: I was interetwed in trying to plot each population as a different shape, but the 'shape' parameter here is very picky about not using more than 6 shape types and I am not familiar enough with ggplot to do it manually
+  ###MLC: added 'size=n' to weight points by the sample size at each date - I think this helps explain the shapes a little bit
+  geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, size=n)) +
   customPlot + 
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
@@ -560,7 +564,7 @@ p7 = ggplot() +
   ##plotting shading as a function of full data set, NAs removed
   geom_smooth(data=raw_data[raw_data$sex=="M" & !is.na(raw_data$wing_morph_binom),], method="loess", span=0.8,
               mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`pophost`, fill=`pophost`)) +
-  geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
+  geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, size=n)) +
   customPlot + 
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
@@ -627,6 +631,7 @@ p8 = p8 +
 ```{r echo=FALSE}
 # group data by sex 
 wm_table<-aggregate(wing_morph_binom~dates*sex, data=raw_data, FUN=mean)
+wm_table$n<-aggregate(wing_morph_binom~dates*sex, data=raw_data, FUN=length)$wing_morph_binom
 dd = wm_table
 
 dd$sex[dd$sex=="F"]<-"Females"
@@ -678,14 +683,16 @@ p9 = ggplot() +
   #            mapping = aes(x = dates, y = wing_morph_binom, colour=`Sex`, fill=`Sex`)) + 
   geom_smooth(data=raw_data[!is.na(raw_data$wing_morph_binom),], method="loess", span=0.8,
               mapping = aes(x = dates, y = wing_morph_binom, colour=`Sex`, fill=`Sex`)) + 
-  geom_point(data=dd, mapping = aes(x = dates, y = wing_morph_binom, colour=`Sex`)) +
+  geom_point(data=dd, mapping = aes(x = dates, y = wing_morph_binom, colour=`Sex`, size=n)) +
   customPlot + 
   scale_color_manual(values=c("Females" = sex_col_pts[1], "Males" = sex_col_pts[2])) +
   scale_fill_manual(values = c("Females" = sex_col_shade[1], "Males" = sex_col_shade[2])) +
+  ###MLC: Note that the lower ylim value must be 0 or lower, or 0s in the data will be designated 'non-finite'
   ylim(0,1) +
   theme(legend.position = "none") 
 
 ##MLC: need to scoot legends to reflect 0,1 ylim
+
 p9 = p9 +
   annotate(geom="text", x=xlab_yrs[7], y=1.05, label=alpha, parse=TRUE, size=6) +
   annotate(geom="text", x=xlab_yrs[7], y=1.12, label=degree, parse=TRUE, size=6) +
