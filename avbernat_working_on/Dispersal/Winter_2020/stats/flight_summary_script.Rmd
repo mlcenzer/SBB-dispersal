@@ -59,7 +59,7 @@ output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if ge
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
-d <- create_delta_data(data_tested, tested_more_than_once = FALSE)
+d <- create_delta_data(data_tested, remove_bugs_tested_once = FALSE) # keep bugs only tested once
 ```
 
 ```{r}

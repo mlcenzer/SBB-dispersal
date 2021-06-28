@@ -2,7 +2,7 @@ library(dplyr)
 library(chron)
 library(lubridate)
 
-create_delta_data = function(data, tested_more_than_once=TRUE) {
+create_delta_data = function(data, remove_bugs_tested_once=TRUE) {
   # INPUT     data as the tested_data with each row as a unique ID and trial.
   # OUTPUT    dataset with each row as a unique ID only.
   d <- data %>%
@@ -65,7 +65,7 @@ create_delta_data = function(data, tested_more_than_once=TRUE) {
   d <- select(d, -filename, -channel_letter, -set_number)
   
   # Filter out bugs that were not tested twice:
-  if (tested_more_than_once) {
+  if (remove_bugs_tested_once) {
     rows_remove <- c()
     for (row in 1:nrow(d)){
       if (length(d$trial_type[[row]]) < 2) {
