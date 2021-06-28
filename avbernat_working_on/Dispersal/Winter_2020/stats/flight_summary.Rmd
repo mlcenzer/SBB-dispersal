@@ -889,7 +889,7 @@ eggT2_rows = eggT2$index
 plot6 = function(df, pp) {
   # only laid eggs in T1
   plot(df$mass_per[eggT1_rows], pp[eggT1_rows,1], ylim=c(0,1.05), xlim=c(-36,108), col="red", type="l", lty=1,main="Females Only", ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (g)")
-  # xlim=c(-0.045,0.07)
+  
   points(df$mass_per[eggT1_rows], pp[eggT1_rows,2], col="blue", type="l", lty=1, cex=0.45) 
   points(df$mass_per[eggT1_rows], pp[eggT1_rows,3], col="black", type="l", lty=1, cex=0.45) 
   # no egg change
@@ -905,11 +905,6 @@ plot6 = function(df, pp) {
   points(df$mass_per[eggT2_rows], pp[eggT2_rows,2], col="blue", type="l", lty=3) # flew in T1 only
   points(df$mass_per[eggT2_rows], pp[eggT2_rows,3], col="black", type="l", lty=3) # flew in both
   
-  # rect(-0.038,-1,0.064,2, NA, col = rgb(0.5,0,0.5,1/15), border="pink") # most likely to not fly unless gain more than about 0.025 g mass and then fly only in T1 (eggs were laid twice).
-  # rect(-0.045,-1,0.038,2, NA, col = rgb(0.5,0.2,0.5,1/15), border="pink") # most likely to not fly (2nd widest mass change, and laid eggs in T2)
-  # rect(-0.039,-1,0.008,2, NA, col = rgb(0.1,0.5,0.5,1/10), border="lightblue") # most likely to fly twice (lost mass and laid eggs only in T1)
-  # rect(-0.005,-1,0.029,2, NA, col = rgb(0.4,0.5,0.5,1/4), border="lightblue") # most likely to fly twice always (smallest mass change and did not lay eggs)
-  # 
   text(70,0.68, labels="Flew in T1 only", col="blue") # 0.059,0.54
   text(-20,0.95, labels="Did Not Fly", col="red") # -0.036,0.95
   text(-20,0.55, labels="Flew Twice", col="black") # -0.02,0.35
@@ -923,6 +918,226 @@ pp5 = fitted(M3)
 df5 = df
 plot6(df5,pp5) 
 ```
+
+# Flight Response Predictions
+
+## Read Libraries 
+
+```{r}
+library(cvms) # cross-validating regressions
+```
+
+## Read Source Files 
+
+```{r warning=FALSE, message=FALSE}
+script_names = c("clean_flight_data-Fall2.R", # 1 function: clean_flight_data.Fall()
+                 "unique_flight_data-Fall.R", # 1 function: create_delta_data.Fall()
+                 "prediction_accuracy.R", # 1 function: calculate_accuracy()
+                 "confusion_matrix.R") # 1 function: get_confusion_matrix()
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+```
+
+## Read the Data
+
+```{r warning=FALSE}
+dataFall = clean_flight_data.Fall("data/full_data-Fall2019.csv")
+
+# extract sets with an experimental design similar to the Winter tests
+ongoing_data = dataFall %>%
+  filter(!is.na(mass))  %>%
+  filter(set_number > 71)
+
+# create delta data
+d = create_delta_data.Fall(ongoing_data) 
+```
+
+## Compute predicted probabilities
+
+```{r}
+d <- d[with(d, order(mass_per)),]
+```
+
+```{r}
+neither = c()
+T1_rather_than_none = c()
+T2_rather_than_none = c()
+both_rather_than_none = c()
+
+for (i in 1:nrow(d)) {
+  m = d$mass_per[[i]]
+  s = d$sex_c[[i]]
+  #w = d$wing[[i]][1] / d$body[[i]][1]
+  w = d$wing2body_c[i]
+  top0 = exp(0) # just equals 1
+  #top1 = exp(-17.862 + 0.041*m - 0.571*s + 23.558*w )
+  #top2 = exp(-4.395 - 0.005*m - 9.580*s - 8.937*w)
+  #top3 = exp(-19.931 + 0.018*m - 0.760*s + 28.019*w)
+  top1 = exp(-0.935 + 0.041*m - 0.571*s + 23.739*w)
+  top2 = exp(-8.177 - 0.005*m - 6.954*s - 6.595*w)
+  top3 = exp(0.201 + 0.018*m - 0.760*s + 28.094*w)
+  bottom = top0 + top1 + top2 + top3
+  neither = c(neither, top0/bottom)
+  T1_rather_than_none = c(T1_rather_than_none, top1/bottom)
+  T2_rather_than_none = c(T2_rather_than_none, top2/bottom)
+  both_rather_than_none = c(both_rather_than_none, top3/bottom)
+}
+```
+
+## Plot predicted probabilities
+
+```{r echo=FALSE}
+d$index = 1:nrow(d)
+females = d %>%
+  filter(sex=="F")
+males = d %>%
+  filter(sex=="M")
+Frows = females$index
+Mrows = males$index
+```
+
+```{r echo=FALSE}
+plot(d$mass_per[Frows], T1_rather_than_none[Frows], ylim=c(0,1), xlim=c(-40,104), col="blue", type="l",
+     ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) #T1 only
+points(d$mass_per[Mrows], T1_rather_than_none[Mrows], col="blue", type="l", lty=2)
+points(d$mass_per[Frows], T2_rather_than_none[Frows], col="darkgreen", type="l", lty=1)
+points(d$mass_per[Mrows], T2_rather_than_none[Mrows], col="darkgreen", type="l", lty=2)
+points(d$mass_per[Frows], both_rather_than_none[Frows], col="maroon", type="l", lty=1)
+points(d$mass_per[Mrows], both_rather_than_none[Mrows], col="maroon", type="l", lty=2)
+points(d$mass_per[Frows], neither[Frows], col="red", type="l", lty=1)
+points(d$mass_per[Mrows], neither[Mrows], col="red", type="l", lty=2)
+
+text(-20,0.85, labels="Did Not Fly", col="red")
+text(0,0.5, labels="Flew Twice", col="maroon")
+text(40,0.25, labels="Flew in T1 only", col="blue")
+text(30,0.1, labels="Flew in T2 only", col="darkgreen")
+
+legend(84, 1.02,
+       legend = c("female","male"),
+       lty=1:2,
+       col="black",
+       cex=0.8)
+```
+
+## Overall and Grouped Accuracies
+
+```{r}
+probs = round(cbind(neither, T1_rather_than_none, T2_rather_than_none, both_rather_than_none),2)
+summary_probs = cbind(as.character(d$flight_case), as.character(d$sex), probs)
+colnames(summary_probs) = c("event", "sex", "none", "T1", "T2", "both")
+dataframe = as.data.frame(summary_probs)
+nrow(dataframe)
+```
+
+```{r}
+# overall
+acc = calculate_accuracy(dataframe,3,6)
+paste("Overall prediction accuracy, ", round(acc,2))
+
+# by sex
+femdata = dataframe %>%
+  filter(sex=="F")
+maledata = dataframe %>%
+  filter(sex=="M")
+
+accF = calculate_accuracy(femdata,3,6)
+paste("Female prediction accuracy, ", round(accF,2))
+accM = calculate_accuracy(maledata,3,6)
+paste("Male prediction accuracy, ", round(accM,2))
+```
+
+## Confusion Matrix
+
+```{r}
+acc_table = get_confusion_matrix(dataframe,3,6)
+acc_table
+confusion_matrix <- acc_table$'Confusion Matrix'[[1]]
+confusion_matrix
+plot_confusion_matrix(confusion_matrix, add_sums=FALSE)
+```
+
+# Females Only
+
+```{r}
+dfem = d %>%
+  filter(sex=="F")
+```
+```{r}
+dfem <- dfem[with(dfem, order(mass_diff)),]
+```
+
+```{r}
+neither = c()
+T1_rather_than_none = c()
+both_rather_than_none = c()
+for (i in 1:nrow(dfem)) {
+  md = dfem$mass_diff[[i]]
+  ed = dfem$egg_diff[[i]]
+  top0 = exp(0) # just equals 1
+  top1 = exp(-0.88 - 0.53*ed + 57.43*md )
+  top2 = exp(-0.53 - 1.09*ed + 18.67*md)
+  bottom = top0 + top1 + top2
+  neither = c(neither, top0/bottom)
+  T1_rather_than_none = c(T1_rather_than_none, top1/bottom)
+  both_rather_than_none = c(both_rather_than_none, top2/bottom)
+}
+```
+
+## Compute predicted probabilities
+
+```{r}
+probs = round(cbind(neither, T1_rather_than_none, both_rather_than_none),2)
+summary_probs = cbind(as.character(dfem$flight_case), as.character(dfem$egg_diff), probs)
+colnames(summary_probs) = c("event", "egg_diff", "none", "T1", "both")
+
+egg2 = c(1,2,3,5,6,7,9,10,11,13)
+noegg = c(4,8,12)
+
+dataframe = as.data.frame(summary_probs)
+dataframe$egg_cat = c(2,2,2,0,2,2,2,0,2,2,2,0,2)
+```
+
+## Plot predicted probabilities
+
+```{r echo=FALSE}
+plot(dfem$mass_diff[egg2], T1_rather_than_none[egg2], ylim=c(0,1), col="blue", type="l",
+     ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)", main="Females Only", lty=2) #T1 only
+points(dfem$mass_diff[noegg], T1_rather_than_none[noegg], col="blue", type="l", lty=1)
+points(dfem$mass_diff[egg2], both_rather_than_none[egg2], col="maroon", type="l", lty=2)
+points(dfem$mass_diff[noegg], both_rather_than_none[noegg], col="maroon", type="l", lty=1)
+points(dfem$mass_diff[egg2], neither[egg2], col="red", type="l", lty=2)
+points(dfem$mass_diff[noegg], neither[noegg], col="red", type="l", lty=1)
+
+text(0,0.75, labels="Did Not Fly", col="red")
+text(0,0.35, labels="Flew Twice", col="maroon")
+text(0,0.15, labels="Flew in T1 only", col="blue")
+legend(0.01, 0.98,
+       legend = c("no eggs","2 eggs"),
+       lty=1:2,
+       col="black",
+       cex=0.8)
+```
+
+## Overall and Grouped Accuracies
+
+```{r}
+accF_eggs = calculate_accuracy(dataframe,3,5)
+paste("Female prediction accuracy for mass diff and egg model, ", round(accF_eggs,2))
+```
+
+## Confusion Matrix
+
+```{r}
+acc_table = get_confusion_matrix(dataframe,3,5)
+acc_table
+confusion_matrix <- acc_table$'Confusion Matrix'[[1]]
+confusion_matrix
+plot_confusion_matrix(confusion_matrix, add_sums=FALSE)
+```
+
 ```{r echo=FALSE}
 #library(knitr) # table formatting
 #library(dplyr) # data manipulation 
