@@ -14,7 +14,7 @@ create_delta_data = function(data, remove_bugs_tested_once=TRUE) {
   
   d$num_flew <- 0
   d$num_notflew <- 0
-  d$average_mass <- 0
+  d$avg_mass <- 0
   d$avg_days <- 0
   d$num_egg <- 0
   
@@ -25,8 +25,8 @@ create_delta_data = function(data, remove_bugs_tested_once=TRUE) {
   d$speed_diff <- 0
   d$mass_per <- 0 
   
-  d$rec_dur_avg <- 0
-  d$time_start_avg <- 0
+  d$avg_rec_dur <- 0
+  d$avg_time_start <- 0
   
   for(row in 1:length(d$flew_b)){
     
@@ -40,7 +40,7 @@ create_delta_data = function(data, remove_bugs_tested_once=TRUE) {
     d$num_egg[[row]] <- n_egg 
     
     avg_mass <- mean(d$mass[[row]])
-    d$average_mass[[row]] <- avg_mass
+    d$avg_mass[[row]] <- avg_mass
     
     avg_days <- mean(d$days_from_start[[row]]) 
     d$avg_days[[row]] <- avg_days
@@ -55,8 +55,8 @@ create_delta_data = function(data, remove_bugs_tested_once=TRUE) {
     d$egg_diff[[row]] <- d$eggs_b[[row]][2] - d$eggs_b[[row]][1]  # T2 - T1
     
     # recording duration and time start 
-    d$rec_dur_avg[row] <- mean(d$recording_duration[[row]])
-    d$time_start_avg[row] <- (times(d$time_start[[row]][1]) + times(d$time_start[[row]][2])) / 2
+    d$avg_rec_dur[row] <- mean(d$recording_duration[[row]])
+    d$avg_time_start[row] <- (times(d$time_start[[row]][1]) + times(d$time_start[[row]][2])) / 2
     
   }
  
@@ -91,15 +91,19 @@ create_delta_data = function(data, remove_bugs_tested_once=TRUE) {
   # compute flight probability across both trials for each bug 
   d$flew_prob<-d$num_flew/(d$num_flew+d$num_notflew) 
   
-  # compute average days
+  # compute average days from start: 
+  # individuals tested early will have a low value
+  # compared to those tested a mix of early and late
   d$avg_days_c<-d$avg_days-mean(d$avg_days, na.rm=TRUE)
   
-  # transform average mass
-  d$average_mass_trans<-log(sqrt(d$average_mass))-mean(log(sqrt(d$average_mass)), na.rm=TRUE)
+  # transform average mass: 
+  # log-square-root transformation that lessens long right-tails (makes average mass more normal)
+  d$avg_mass_logsqrt<-log(sqrt(d$avg_mass))-mean(log(sqrt(d$avg_mass)), na.rm=TRUE)
   
-  # transform wing2body; note, this transformation has an inverse relationship with wing2body ratio, 
+  # transform wing2body: 
+  # this transformation has an inverse relationship with wing2body ratio, 
   # so effect estimate directions need to be flipped for interpretation.
-  d$wing2body_trans<-log(sqrt(0.85-d$wing2body))-mean(log(sqrt(0.85-d$wing2body)), na.rm=TRUE)
+  d$wing2body_logsqrt_i<-log(sqrt(0.85-d$wing2body))-mean(log(sqrt(0.85-d$wing2body)), na.rm=TRUE)
   
   return(d)
 }

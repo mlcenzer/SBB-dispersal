@@ -1,15 +1,16 @@
+library(dplyr)
 
-# Function that centers the data for which ever flight data subset you give it
+center_data <- function(d, is_not_unique_data = TRUE) {
 
-center_data <- function(d, is_not_binded = TRUE) {
-
+  # Function that centers the data for which ever flight data subset you give it (full or unique)
+  
   # Distance From Sympatric Zone
   d$lat_c<-d$latitude-mean(d$latitude)
   d$sym_dist<-abs(d$latitude-25.49197)
   d$sym_dist_s <- (d$sym_dist - mean(d$sym_dist)) / sd(d$sym_dist)
 
   # Flight Duration (minutes) 
-  if (is_not_binded) {
+  if (is_not_unique_data) {
     d$minute_duration <- 0
     d$minute_duration <- as.integer(d$recording_duration / 60)
     d$minute_duration_c <- d$minute_duration - mean(d$minute_duration)
@@ -30,7 +31,7 @@ center_data <- function(d, is_not_binded = TRUE) {
   d$min_from_IncStart_s <- (d$min_from_IncStart-mean(d$min_from_IncStart)) / sd(d$min_from_IncStart)
   
   # Days From Starting Time
-  if (is_not_binded) {
+  if (is_not_unique_data) {
     d$days_from_start <- 0
     d$test_date[d$tested == "no"] <- d$test_date[1]
     d$test_date <- as_date(d$test_date) 
@@ -48,15 +49,27 @@ center_data <- function(d, is_not_binded = TRUE) {
   }
   
   # Mass 
-  if (is_not_binded) {
+  if (is_not_unique_data) {
     d$mass_c <- d$mass-mean(d$mass, na.rm=TRUE) 
     d$mass_s <- (d$mass-mean(d$mass, na.rm=TRUE)) / sd(d$mass, na.rm=TRUE)
-    d$average_mass <- 0 # this is a quick fix for now
+    d$avg_mass <- 0 
+    
+    dt <- d %>%
+      group_by(ID) %>%
+      summarise_all(funs(list(na.omit(.))))
+    dt$avg_mass <- 0
+    for(row in 1:length(dt$flew_b)){ 
+      dt$avg_mass[[row]] <- mean(dt$mass[[row]])
+    }
+    dt = dt[,c("ID", "avg_mass")]
+    
+    d = d %>%
+      left_join(dt, by = c("ID"), suffix = c("", "")) 
   }
   
   # Average Mass
-  d$average_mass_c <- d$average_mass-mean(d$average_mass, na.rm=TRUE) 
-  d$average_mass_s <- (d$average_mass-mean(d$average_mass, na.rm=TRUE)) / sd(d$average_mass, na.rm=TRUE)
+  d$avg_mass_c <- d$avg_mass-mean(d$avg_mass, na.rm=TRUE) 
+  d$avg_mass_s <- (d$avg_mass-mean(d$avg_mass, na.rm=TRUE)) / sd(d$avg_mass, na.rm=TRUE)
   
   # Eggs
   d$total_eggs_c <- d$total_eggs-mean(d$total_eggs, na.rm=TRUE) 

@@ -55,35 +55,19 @@ for (script in script_names) {
 }
 
 output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if generating an HTML
+```
 
+```{r}
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
-d <- create_delta_data(data_tested, remove_bugs_tested_once = FALSE) # keep bugs only tested once
+
+# keep bugs only tested once then recenter:
+d <- create_delta_data(data_tested, remove_bugs_tested_once = FALSE) 
+d_all <- center_data(d, is_not_unique_data = FALSE)
 ```
 
-```{r}
-d_all <- center_data(d, is_not_binded = FALSE) # AB: need this here or else average_mass_c and some other columns do not get calculated
-d_all
-```
-
-#### Three Additional Variables
-
-```{r}
-# average days from start; this deals with the problem of individuals who were only tested early, who will have a low value here, and with any chance individuals who happened to get in early or late in both trials.
-d_all$avg_days_c <- d_all$avg_days - mean(d_all$avg_days, na.rm=TRUE)
-
-## Log-square-root transformation; this transformation gets average_mass to act normal and not give haywire effect estimates
-## AB: Log-square-root transformation - does neither work on their own?
-d_all$average_mass_trans <- log(sqrt(d_all$average_mass)) - mean(log(sqrt(d_all$average_mass)), na.rm=TRUE)
-
-## Log-square-root transformation; this transformation gets wing2body ratio to act normal and not give haywire effect estimates; note that this has an inverse relationship with wing2body ratio itself, so effect estimate directions need to be flipped for interpretation.
-d_all$wing2body_trans <- log(sqrt(0.85-d_all$wing2body)) - mean(log(sqrt(0.85-d_all$wing2body)), na.rm=TRUE)
-
-# wing2body - take out a constant
-```
-
-The long-square-root transformation is a transformation for long right-tails. It makes them more normal.
+#### Exploratory Plots
 
 ```{r}
 # Compare Number of Trials a Bug Flew in to Average Days
@@ -107,7 +91,7 @@ grid.arrange(s, h, nrow=1)
 ```
 
 ```{r}
-d <- center_data(d_all, is_not_binded = FALSE)
+d <- center_data(d_all, is_not_unique_data = FALSE)
 ```
 
 ### All
@@ -125,7 +109,7 @@ R2 = d$num_notflew
 A = d$host_c
 B = d$sex_c
 C = d$sym_dist_s
-D = d$average_mass_trans
+D = d$avg_mass_logsqrt
 E = d$avg_days_c
 
 data<-data.frame(R1, R2, A, B, C, D, E)

@@ -47,7 +47,6 @@ read_flight_data<-function(filename){
     data_all <- center_data(data_all)
     
     data_tested <- data_all[data_all$tested == "yes",]
-    data_tested <- center_data(data_tested)
     
     ############ 4. ) Re-Center Column Values ##################
     

@@ -9,8 +9,8 @@ output:
 rm(list=ls())
 
 # set working directory
-#dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/"
-dir <- "~/Documents/GitHub/SBB-dispersal/avbernat_working_on/"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/"
+#dir <- "~/Documents/GitHub/SBB-dispersal/avbernat_working_on/"
 setwd(dir)
 knitr::opts_knit$set(root.dir = dir)
 
@@ -90,7 +90,6 @@ Bugs were collected on different years and months. These barplots show the bugs 
 ```{r echo=FALSE}
 # repeating plot features
 customPlot = list(geom_bar(position='stack', color="black", width=0.7),
-                  theme_bw(),
                   theme_classic(),
                   theme(axis.text.y = element_text(size=11),
                         axis.text.x=element_text(size=11, angle = 45, hjust = 1.1),
@@ -370,9 +369,7 @@ CI_95_binom_lower <- function(y) {binom.confint(x=sum(y, na.rm=TRUE), n=length(y
 ```
 
 ```{r}
-####MLC: I tested adding population as a parameter here - I think it gives a better view of the variability within host plants in the point plots.
-###MLC: Came back and dropped population
-
+# aggregate the full data and calculate standard error (SE), upper and lower CI, and sample size (n)
 w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
                            , data=raw_data, FUN=mean)
 w_morph_summary$se<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
@@ -381,7 +378,6 @@ w_morph_summary$upper<-aggregate(wing_morph_binom~sex*pophost*month_of_year*mont
                               , data=raw_data, FUN=CI_95_binom_upper)$wing_morph_binom
 w_morph_summary$lower<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
                               , data=raw_data, FUN=CI_95_binom_lower)$wing_morph_binom
-###MLC: adding n to look at differences in sample rate
 w_morph_summary$n<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start
                               , data=raw_data, FUN=length)$wing_morph_binom
 
@@ -425,12 +421,10 @@ dd$sex = factor(dd$sex, levels = c("Males", "Females") )
 dd$`Sex` = dd$sex 
 ```
 
-```{r echo=FALSE}
-# single-variate model of month predicting wing morph
-# AB: best fit model, M1, has multiple interaction terms with month, so single-variate models
-# were substituted for cleaner glm fit plotting
-# (see around lines 471 for the same situation)
+Note: Single-variate models or simpler models substituted best fit slope calculations below in order to avoid multiple interaction terms found in the best fit model. This led to cleaner glm line plotting.
 
+```{r}
+# single-variate model of month predicting wing morph
 fit = glm(wing_morph_binom ~ month_of_year, family="binomial", data=raw_data)
 xmonth <- seq(2,12, 0.01)
 wing_probs <- predict(fit, list(month_of_year=xmonth), type="response")
@@ -577,55 +571,24 @@ degree="lambda[loess]==0"
 
 p6 = p6 + 
   #annotate(geom="text", x=10.7, y=1.3, label="Females", size=6, fontface = 'italic') + 
-  annotate(geom="text", x=3.5, y=1.3, label="Females", size=6, fontface = 'italic') + 
+  annotate(geom="text", x=3.5, y=1.05, label="Females", size=6, fontface = 'italic') + 
   annotate(geom="text", x=10, y=1.1, label=alpha, parse=TRUE) +
   annotate(geom="text", x=10, y=1.17, label=degree, parse=TRUE) +
-  annotate(geom="text", x=10, y=0.25, label=pvalue, parse=TRUE) + 
+  annotate(geom="text", x=10, y=0.45, label=pvalue, parse=TRUE) + 
   theme(legend.position = "none") + 
-  labs(x = " ", y = " ")
+  labs(x = " ", y = " ") +
+  coord_cartesian(ylim=c(0.30,1.055))
 
 p7 = p7 + 
   #annotate(geom="text", x=11, y=1.3, label="Males", size=6, fontface = 'italic') + 
-  annotate(geom="text", x=3, y=1.3, label="Males", size=6, fontface = 'italic') + 
+  annotate(geom="text", x=3, y=1.05, label="Males", size=6, fontface = 'italic') + 
   annotate(geom="text", x=10, y=1.1, label=alpha, parse=TRUE) +
   annotate(geom="text", x=10, y=1.17, label=degree,parse=TRUE) +
-  annotate(geom="text", x=10, y=0.25, label=pvalue, parse=TRUE) +
+  annotate(geom="text", x=10, y=0.45, label=pvalue, parse=TRUE) +
   theme(legend.position = "none") + 
   theme(axis.title.y = element_blank()) + 
-  labs(x = " ", y = " ")
-```
-
-
-```{r echo=FALSE, message=FALSE}
-##MC: Drop this figure
-
-wm_table<-aggregate(wing_morph_binom~dates, data=raw_data, FUN=mean) # AB: wrong
-```
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-### Panel E
-
-p8 = ggplot() + 
-  ggtitle("E") + xlab("Year") + ylab("Long-Wing Morph Frequency") +
-  geom_vline(xintercept = xlab_yrs, color="gainsboro") + 
-  geom_smooth(data=wm_table, mapping = aes(x = dates, y = wing_morph_binom),
-              method="lm", se=FALSE, linetype = "dashed", color="black", lwd=0.5) +
-  geom_smooth(data=wm_table, mapping = aes(x = dates, y = wing_morph_binom),
-              method="loess", color="black") + 
-  geom_point(data=wm_table, mapping = aes(x = dates, y = wing_morph_binom)) +
-  ylim(0.3,1.2) +
-  customPlot
-
-# extract alpha, smoothing parameter from LOESS regression(s) and pvalue from linear model
-alpha = paste("alpha[loess]==", ggplot_build(p8)$data[[3]]$alpha[1])
-degree="lambda[loess]==0"
-mlinear = glm(wing_morph_binom ~ dates, data=wm_table, family=gaussian) # AB: wrong
-pvalue = paste0("italic(p)[glm]==",round(summary(mlinear)$coeff[[8]],2)) # AB: wrong
-
-p8 = p8 + 
-  annotate(geom="text", x=unique(raw_data$dates)[6], y=1.05, label=alpha, parse=TRUE, size=6) +
-  annotate(geom="text", x=unique(raw_data$dates)[6], y=1.12, label=degree, parse=TRUE, size=6) +
-  annotate(geom="text", x=unique(raw_data$dates)[5], y=0.50, label=pvalue, parse=TRUE, size=6) 
+  labs(x = " ", y = " ") +
+  coord_cartesian(ylim=c(0.30,1.055))
 ```
 
 ```{r echo=FALSE}
@@ -687,8 +650,9 @@ p9 = ggplot() +
   customPlot + 
   scale_color_manual(values=c("Females" = sex_col_pts[1], "Males" = sex_col_pts[2])) +
   scale_fill_manual(values = c("Females" = sex_col_shade[1], "Males" = sex_col_shade[2])) +
-  ###MLC: Note that the lower ylim value must be 0 or lower, or 0s in the data will be designated 'non-finite'
-  ylim(0,1) +
+  ylim(0,1) + # lower ylim value must be <=0 or 0s in the data will be marked as 'non-finite'
+  # coord_cartesian(ylim=c(0.55,1)) +
+  coord_cartesian(ylim=c(0.30,1.055)) +
   theme(legend.position = "none") 
 
 ##MLC: need to scoot legends to reflect 0,1 ylim
@@ -696,10 +660,12 @@ p9 = ggplot() +
 p9 = p9 +
   annotate(geom="text", x=xlab_yrs[7], y=1.05, label=alpha, parse=TRUE, size=6) +
   annotate(geom="text", x=xlab_yrs[7], y=1.12, label=degree, parse=TRUE, size=6) +
-  annotate(geom="text", x=xlab_yrs[4], y=0.40, label=pvalue, parse=TRUE, size=6)
+  annotate(geom="text", x=xlab_yrs[4], y=0.59, label=pvalue, parse=TRUE, size=6)
 ```
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=13.5, fig.width=10}
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
+#```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=13.5, fig.width=10}
 paper_figure1 = ggdraw() +
   #draw_plot(p4, 0, .66, .5, .33) +
   #draw_plot(p5, 0.5, .66, .5, .33) +
@@ -766,11 +732,7 @@ p10 = ggplot() +
   geom_smooth(data=data_long, method="loess", 
               mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, fill=`Host Plant`)) + 
   geom_point(data=d, mapping = aes(x = month_of_year, y = wing2body, colour=`Host Plant`, size=n)) + 
-  
-  ###MLC: Any data outside of this range in the geom_smooth dataset will be dropped (and thus mess up model predictions). I hope there is a way to fix this in ggplot, because this is very zoomed out.
-  
-  ylim(0.65, 0.85) +
-  ####MLC: Solution to the ylim problem!
+  ylim(0.65, 0.85) + # data outside this range will be dropped
   coord_cartesian(ylim=c(0.7,0.75)) + 
   customPlot +
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
@@ -813,8 +775,6 @@ p11 = p11 +
 ```
 
 ```{r echo=FALSE}
-##MLC: This method of getting model predictions looks good to me.
-
 # multi-variate model with year, sex, and host plant predicting wing morph
 fit4 = glm(wing2body ~ pophost_binom * dates, data = data_long)
 xyr <- seq(sort(unique(dd$dates))[1],sort(unique(dd$dates))[10], 1)
@@ -851,7 +811,7 @@ p12 = ggplot() +
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
   ylim(0.65, 0.85) +
-  coord_cartesian(ylim=c(0.705,0.75)) + 
+  coord_cartesian(ylim=c(0.705,0.75)) + # AB: edit, not the same 
   theme(legend.position = "none")
 
 #### loess and linear regressions
