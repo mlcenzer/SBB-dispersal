@@ -610,8 +610,9 @@ anova(m4, m8, test="Chisq") # Adding A*B does not improve fit
 
 ```{r warning=FALSE, results = "hold"}
 M4 = multinom(flight_case ~ mass_per + sex_c, data = df)
-model_table = calculate_P2(M4, "mass_per", "sex_c")
+model_table4 = calculate_P2(M4, "mass_per", "sex_c")
 ```
+
 &nbsp;
 
 Host plant was not a significant predictor, so we tested the wing-to-body ratio as a predictor next.
@@ -645,10 +646,34 @@ anova(m7, m13, test="Chisq") # Adding B*C does not improve fit
 
 ```{r warning=FALSE, results = "hold"}
 M5 = multinom(flight_case ~ mass_per + sex_c + wing2body_c, data = df)
-model_table = calculate_P3(M5)
+model_table5 = calculate_P3(M5)
 ```
 
-&nbsp;
+### Prediction Equations 
+
+```{r}
+get_prediction_eq = function(tb, table_rowA, table_rowB, var_lab1, var_lab2, var_lab3, 
+                             log_lab, title_lab) { 
+  I = (tb[table_rowA,1] - tb[table_rowB,1])
+  M = (tb[table_rowA,2] - tb[table_rowB,2])
+  S = (tb[table_rowA,3] - tb[table_rowB,3])
+  W = (tb[table_rowA,4] - tb[table_rowB,4])
+  EQ = paste0(log_lab, round(I, 2), " + ", round(M,2), var_lab1, " + ", round(S, 2), 
+               var_lab2, " + ", round(W, 2), var_lab3, title_lab)
+  print(EQ)
+  
+  return(EQ)
+}
+```
+
+```{r results='hold'}
+EQ1 = get_prediction_eq(model_table5, 1, 2, " Mass %", " Sex", " Wing-to-Body", 
+                        "log(pi_-1 / pi_1) = ","   Flew in T1, not T2")
+EQ2 = get_prediction_eq(model_table5, 3, 1, " Mass %", " Sex", " Wing-to-Body", 
+                        "log(pi_2 / pi_-1) = ", "   Flew in both, not T1" )
+EQ3 = get_prediction_eq(model_table5, 3, 2, " Mass %", " Sex", " Wing-to-Body", 
+                        "log(pi_2 / pi_1) = ", "   Flew in both, not T2" )
+```
 
 ### Visualize Significant Multinomial Functions
 
@@ -670,6 +695,7 @@ w2b_ML = get_significant_models(21) # wing2body
   mtext("C. Wing2Body", side=3, adj=0, line=0.5, cex=1.3, font=1)
 ```
 
+&nbsp;
 
 ### Plot Predicted Probabilities 
 
@@ -1003,6 +1029,8 @@ model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 
 model_comparisonsAIC(model_script)
 ```
 
+&nbsp;
+
 ```{r results='hold', warning=FALSE}
 anova(m4, m7, test="Chisq") # adding wing2body does not include fit
 anova(m7, m13, test="Chisq") # Adding A*C does not improve fit
@@ -1011,14 +1039,35 @@ anova(m7, m12, test="Chisq") # Adding B*C does not improve fit
 
 ### Best Fit
 
-```{r results="hold"}
+```{r results="hold", warning=FALSE, message=FALSE}
 M6 = multinom(flight_case ~ mass_per + egg_case, data = df) # same top model 
-model_table = calculate_P2(M6, "mass_per", "egg_case")
+model_table6 = calculate_P2(M6, "mass_per", "egg_case")
 ```
 
-&nbsp;
+### Prediction Equations 
 
-```{r warning=FALSE, results = "hold", fig.width=11, fig.height=5}
+```{r}
+get_prediction_eq = function(tb, table_rowA, table_rowB, var_lab1, var_lab2, 
+                             log_lab, title_lab) { 
+  I = (tb[table_rowA,1] - tb[table_rowB,1])
+  M = (tb[table_rowA,2] - tb[table_rowB,2])
+  E = (tb[table_rowA,3] - tb[table_rowB,3])
+  EQ = paste0(log_lab, round(I, 2), " + ", round(M,2), var_lab1, " + ", round(E, 2), 
+               var_lab2, title_lab)
+  print(EQ)
+  
+  return(EQ)
+}
+```
+
+```{r results='hold'}
+EQ = get_prediction_eq(model_table6, 1, 2, " Mass %", " Egg Case",
+                        "log(pi_-1 / pi_1) = ","   Flew in T1, not T2")
+```
+
+### Visualize Significant Multinomial Functions
+
+```{r warning=FALSE, results = "hold", fig.width=11, fig.height=4.7}
 # define a run_multinom_model function based on the best fit model
 run_multinom_model = function(d) {
   m <- multinom(flight_case ~ mass_per + egg_case, trace=FALSE, data = d) 
@@ -1041,7 +1090,7 @@ data_fem = data_tested[data_tested$sex=="F",]
 binary_counts <- table(data_fem$eggs_b, data_fem$trial_type)[,2:3]
 ```
 
-```{r echo=FALSE, warning=FALSE}
+```{r echo=FALSE, warning=FALSE, fig.height=4.3}
 par(mfrow=c(1,2))
 
 barplot(binary_counts, ylab="Frequency",
@@ -1077,7 +1126,7 @@ eggT2_rows = eggT2$index
 ```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
 plot4 = function(df, pp) {
   # only laid eggs in T1
-  plot(df$mass_per[eggT1_rows], pp[eggT1_rows,1], ylim=c(0,1.05), xlim=c(-36,108), col="red", type="l", lty=1,main="Females Only", ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (g)")
+  plot(df$mass_per[eggT1_rows], pp[eggT1_rows,1], ylim=c(0,1.05), xlim=c(-36,108), col="red", type="l", lty=1,main="Females Only", ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)")
   
   points(df$mass_per[eggT1_rows], pp[eggT1_rows,2], col="blue", type="l", lty=1, cex=0.45) 
   points(df$mass_per[eggT1_rows], pp[eggT1_rows,3], col="black", type="l", lty=1, cex=0.45) 
@@ -1159,16 +1208,14 @@ both_rather_than_none = c()
 for (i in 1:nrow(d)) {
   m = d$mass_per[[i]]
   s = d$sex_c[[i]]
-  #w = d$wing[[i]][1] / d$body[[i]][1]
   w = d$wing2body_c[i]
-  top0 = exp(0) # just equals 1
-  #top1 = exp(-17.862 + 0.041*m - 0.571*s + 23.558*w )
-  #top2 = exp(-4.395 - 0.005*m - 9.580*s - 8.937*w)
-  #top3 = exp(-19.931 + 0.018*m - 0.760*s + 28.019*w)
-  top1 = exp(-0.935 + 0.041*m - 0.571*s + 23.739*w)
-  top2 = exp(-8.177 - 0.005*m - 6.954*s - 6.595*w)
-  top3 = exp(0.201 + 0.018*m - 0.760*s + 28.094*w)
+  # extract effects from the best fit model
+  top0 = exp(0) # equals 1
+  top1 = exp(model_table5[1,1] + model_table5[1,2]*m + model_table5[1,3]*s + model_table5[1,4]*w)
+  top2 = exp(model_table5[2,1] + model_table5[2,2]*m + model_table5[2,3]*s + model_table5[2,4]*w)
+  top3 = exp(model_table5[3,1] + model_table5[3,2]*m + model_table5[3,3]*s + model_table5[3,4]*w)
   bottom = top0 + top1 + top2 + top3
+  # calculate predicted probabilities
   neither = c(neither, top0/bottom)
   T1_rather_than_none = c(T1_rather_than_none, top1/bottom)
   T2_rather_than_none = c(T2_rather_than_none, top2/bottom)
@@ -1180,38 +1227,117 @@ for (i in 1:nrow(d)) {
 
 ```{r echo=FALSE}
 d$index = 1:nrow(d)
-females = df[df$sex=="F",]
-males = df[df$sex=="M",]
+females = d[d$sex=="F",]
+males = d[d$sex=="M",]
 Frows = females$index
 Mrows = males$index
 ```
 
 ```{r echo=FALSE}
-plot(d$mass_per[Frows], T1_rather_than_none[Frows], ylim=c(0,1), xlim=c(-40,104), col="blue", type="l",
-     ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) #T1 only
-points(d$mass_per[Mrows], T1_rather_than_none[Mrows], col="blue", type="l", lty=2)
-points(d$mass_per[Frows], T2_rather_than_none[Frows], col="darkgreen", type="l", lty=1)
-points(d$mass_per[Mrows], T2_rather_than_none[Mrows], col="darkgreen", type="l", lty=2)
-points(d$mass_per[Frows], both_rather_than_none[Frows], col="maroon", type="l", lty=1)
-points(d$mass_per[Mrows], both_rather_than_none[Mrows], col="maroon", type="l", lty=2)
-points(d$mass_per[Frows], neither[Frows], col="red", type="l", lty=1)
-points(d$mass_per[Mrows], neither[Mrows], col="red", type="l", lty=2)
+plot5 = function(d, T1_rather_than_none, T2_rather_than_none, both_rather_than_none, neither) {
+  d$w2b_col = 0
+  plot(d$mass_per[Frows], T1_rather_than_none[Frows], ylim=c(0,1), xlim=c(-40,104), col="blue", type="l",
+       ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) #T1 only
+  points(d$mass_per[Frows], T2_rather_than_none[Frows], col="darkgreen", type="l", lty=1)
+  points(d$mass_per[Frows], both_rather_than_none[Frows], col="darkorange1", type="l", lty=1)
+  points(d$mass_per[Frows], neither[Frows], col="red", type="l", lty=1)
 
-text(-20,0.85, labels="Did Not Fly", col="red")
-text(0,0.5, labels="Flew Twice", col="maroon")
-text(40,0.25, labels="Flew in T1 only", col="blue")
-text(30,0.1, labels="Flew in T2 only", col="darkgreen")
+  rbPal <- colorRampPalette(c('black','royalblue1'))
+  d$w2b_col <- rbPal(10)[as.numeric(cut(d$wing2body,breaks = 10))]
+  points(d$mass_per[Frows], T1_rather_than_none[Frows], pch=20, col=d$w2b_col[Frows])
+      
+  rbPal <- colorRampPalette(c('black','palegreen2'))
+  d$w2b_col <- rbPal(10)[as.numeric(cut(d$wing2body,breaks = 10))]
+  points(d$mass_per[Frows], T2_rather_than_none[Frows], pch=20, col=d$w2b_col[Frows])  
+  
+  rbPal <- colorRampPalette(c('black','orange')) #violetred1
+  df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+  points(d$mass_per[Frows], both_rather_than_none[Frows], pch=20, col=df$w2b_col[Frows])
+      
+  rbPal <- colorRampPalette(c('black','red'))
+  d$w2b_col <- rbPal(10)[as.numeric(cut(d$wing2body,breaks = 10))]
+  points(d$mass_per[Frows], neither[Frows], pch=20, col=d$w2b_col[Frows])
+  
+  text(-20,0.85, labels="Did Not Fly", col="red")
+  text(25,0.35, labels="Flew Twice", col="darkorange1")
+  text(55,0.25, labels="Flew in T1 only", col="blue")
+  text(40,0.1, labels="Flew in T2 only", col="darkgreen")
+  
+  legend(70, 1.02,
+         legend = c("female","male"),
+         lty=1:2,
+         col="black",
+         cex=0.8)
+}
 
-legend(84, 1.02,
-       legend = c("female","male"),
-       lty=1:2,
-       col="black",
-       cex=0.8)
+plot6 = function(d, T1_rather_than_none, T2_rather_than_none, both_rather_than_none, neither) {
+  d$w2b_col = 0
+  plot(d$mass_per[Mrows], T1_rather_than_none[Mrows], ylim=c(0,0.8), xlim=c(-20,60), col="blue", type="l",
+       ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) #T1 only
+  points(d$mass_per[Mrows], T2_rather_than_none[Mrows], col="darkgreen", type="l", lty=2)
+  points(d$mass_per[Mrows], both_rather_than_none[Mrows], col="darkorange1", type="l", lty=2)
+  points(d$mass_per[Mrows], neither[Mrows], col="red", type="l", lty=2)
+  
+  rbPal <- colorRampPalette(c('black','royalblue1'))
+  d$w2b_col <- rbPal(10)[as.numeric(cut(d$wing2body,breaks = 10))]
+  points(d$mass_per[Mrows], T1_rather_than_none[Mrows], pch=20, col=d$w2b_col[Mrows])
+
+  rbPal <- colorRampPalette(c('black','palegreen2'))
+  d$w2b_col <- rbPal(10)[as.numeric(cut(d$wing2body,breaks = 10))]
+  points(d$mass_per[Mrows], T2_rather_than_none[Mrows], pch=20, col=d$w2b_col[Mrows])
+
+  rbPal <- colorRampPalette(c('black','orange')) #violetred1
+  df$w2b_col <- rbPal(10)[as.numeric(cut(df$wing2body,breaks = 10))]
+  points(d$mass_per[Mrows], both_rather_than_none[Mrows], pch=20, col=df$w2b_col[Mrows])
+
+  rbPal <- colorRampPalette(c('black','red'))
+  d$w2b_col <- rbPal(10)[as.numeric(cut(d$wing2body,breaks = 10))]
+  points(d$mass_per[Mrows], neither[Mrows], pch=20, col=d$w2b_col[Mrows])
+
+  text(-12,0.38, labels="Did Not Fly", col="red")
+  text(25,0.55, labels="Flew Twice", col="darkorange1")
+  text(30,0.25, labels="Flew in T1 only", col="blue")
+  text(30,0.1, labels="Flew in T2 only", col="darkgreen")
+}
 ```
+
+```{r warning=FALSE, echo=FALSE}
+# generate small subset plots and scales in the top right hand corner
+plot_histograms = function() {
+  x = 0.34
+  v <- c(x-0.13,x, 0.85, 0.90)
+  par( fig=v, new=TRUE, mar=c(0,0,0,0) )
+  hist(d$wing2body[Frows], col="white", main="", cex.axis=0.9, xlim=c(0.68,0.78)) 
+  text(0.64,45, labels="w2b", cex=0.9)
+
+  x = 0.88
+  v <- c(x-0.13, x, 0.85, 0.90)
+  par( fig=v, new=TRUE, mar=c(0,0,0,0) )
+  hist(d$wing2body[Mrows], col="white", main="", cex.axis=0.9, xlim=c(0.68,0.78)) 
+  text(0.66,40, labels="w2b", cex=0.9)
+}
+```
+
+```{r echo=FALSE, warning=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+par(mfrow=c(1,2), tcl=-0.5) # length of tick marks set at default
+
+par(mai=c(1,0.85,0.4,0)) # bottom, right, top, left
+plot5(d, T1_rather_than_none, T2_rather_than_none, both_rather_than_none, neither)
+text(45, 0.99, labels="w2b", cex=0.9)
+
+par(mai=c(1,0.6,0.4,0.05))
+plot6(d, T1_rather_than_none, T2_rather_than_none, both_rather_than_none, neither)
+text(50,0.79, labels="Wing-to-body", cex=0.9)
+text(23, 0.79, labels="w2b", cex=0.9)
+
+plot_histograms()
+plot_color_scale()
+```
+
 
 ## Overall and Grouped Accuracies
 
-```{r}
+```{r results='hold'}
 probs = round(cbind(neither, T1_rather_than_none, T2_rather_than_none, both_rather_than_none),2)
 summary_probs = cbind(as.character(d$flight_case), as.character(d$sex), probs)
 colnames(summary_probs) = c("event", "sex", "none", "T1", "T2", "both")
@@ -1219,7 +1345,7 @@ dataframe = as.data.frame(summary_probs)
 nrow(dataframe)
 ```
 
-```{r}
+```{r results='hold'}
 # overall
 acc = calculate_accuracy(dataframe,3,6)
 paste("Overall prediction accuracy, ", round(acc,2))
@@ -1238,7 +1364,7 @@ paste("Male prediction accuracy, ", round(accM,2))
 
 ```{r}
 acc_table = get_confusion_matrix(dataframe,3,6)
-acc_table
+acc_table[,1:5]
 confusion_matrix <- acc_table$'Confusion Matrix'[[1]]
 confusion_matrix
 plot_confusion_matrix(confusion_matrix, add_sums=FALSE)
@@ -1249,8 +1375,9 @@ plot_confusion_matrix(confusion_matrix, add_sums=FALSE)
 ```{r}
 dfem = d[d$sex=="F",]
 ```
+
 ```{r}
-dfem <- dfem[with(dfem, order(mass_diff)),]
+dfem <- dfem[with(dfem, order(mass_per)),]
 ```
 
 ```{r}
@@ -1258,11 +1385,11 @@ neither = c()
 T1_rather_than_none = c()
 both_rather_than_none = c()
 for (i in 1:nrow(dfem)) {
-  md = dfem$mass_diff[[i]]
-  ed = dfem$egg_diff[[i]]
-  top0 = exp(0) # just equals 1
-  top1 = exp(-0.88 - 0.53*ed + 57.43*md )
-  top2 = exp(-0.53 - 1.09*ed + 18.67*md)
+  M = dfem$mass_per[[i]]
+  EC = dfem$egg_diff[[i]]
+  top0 = exp(0) #  equals 1
+  top1 = exp(model_table6[1,1] + model_table6[1,2]*M + model_table6[1,3]*EC)
+  top2 = exp(model_table6[2,1] + model_table6[2,2]*M + model_table6[2,3]*EC)
   bottom = top0 + top1 + top2
   neither = c(neither, top0/bottom)
   T1_rather_than_none = c(T1_rather_than_none, top1/bottom)
@@ -1286,19 +1413,19 @@ dataframe$egg_cat = c(2,2,2,0,2,2,2,0,2,2,2,0,2)
 
 ## Plot predicted probabilities
 
-```{r echo=FALSE}
-plot(dfem$mass_diff[egg2], T1_rather_than_none[egg2], ylim=c(0,1), col="blue", type="l",
-     ylab="Flight Case Probability", xlab="Change in Mass From T1 to T2 (g)", main="Females Only", lty=2) #T1 only
-points(dfem$mass_diff[noegg], T1_rather_than_none[noegg], col="blue", type="l", lty=1)
-points(dfem$mass_diff[egg2], both_rather_than_none[egg2], col="maroon", type="l", lty=2)
-points(dfem$mass_diff[noegg], both_rather_than_none[noegg], col="maroon", type="l", lty=1)
-points(dfem$mass_diff[egg2], neither[egg2], col="red", type="l", lty=2)
-points(dfem$mass_diff[noegg], neither[noegg], col="red", type="l", lty=1)
+```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+plot(dfem$mass_per[egg2], T1_rather_than_none[egg2], ylim=c(0,1), col="blue", type="l",
+     ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", main="Females Only", lty=2) #T1 only
+points(dfem$mass_per[noegg], T1_rather_than_none[noegg], col="blue", type="l", lty=1)
+points(dfem$mass_per[egg2], both_rather_than_none[egg2], col="black", type="l", lty=2)
+points(dfem$mass_per[noegg], both_rather_than_none[noegg], col="black", type="l", lty=1)
+points(dfem$mass_per[egg2], neither[egg2], col="red", type="l", lty=2)
+points(dfem$mass_per[noegg], neither[noegg], col="red", type="l", lty=1)
 
-text(0,0.75, labels="Did Not Fly", col="red")
-text(0,0.35, labels="Flew Twice", col="maroon")
-text(0,0.15, labels="Flew in T1 only", col="blue")
-legend(0.01, 0.98,
+text(0,0.42, labels="Did Not Fly", col="red")
+text(0,0.60, labels="Flew Twice", col="black")
+text(0,0.20, labels="Flew in T1 only", col="blue")
+legend(20, 0.98,
        legend = c("no eggs","2 eggs"),
        lty=1:2,
        col="black",
@@ -1316,19 +1443,8 @@ paste("Female prediction accuracy for mass diff and egg model, ", round(accF_egg
 
 ```{r}
 acc_table = get_confusion_matrix(dataframe,3,5)
-acc_table
+acc_table[,1:5]
 confusion_matrix <- acc_table$'Confusion Matrix'[[1]]
 confusion_matrix
 plot_confusion_matrix(confusion_matrix, add_sums=FALSE)
 ```
-
-```{r echo=FALSE}
-#library(knitr) # table formatting
-#library(dplyr) # data manipulation 
-#library(ggformula) # ggplot plotting
-#library(cowplot) # ggplot helper functions to arrange multi-panel figures
-```
-
-
-
-
