@@ -9,7 +9,8 @@ output:
 rm(list=ls())
 
 # set working directory
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/"
+#dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/"
+dir = "~/Documents/GitHub/SBB-dispersal/avbernat_working_on"
 setwd(dir)
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -239,7 +240,7 @@ h <- ggplot(dc, aes(x=avg_days, color=num_trials)) +
 h
 ```
 
-The advantage of this computed variable is that it controls for the fact that some bugs were tested once late, and some by chance had been tested twice early. This allows the multi-variate models, which control for ID, to converge, but average days does not show the same strong, significant effect as days from start:
+The advantage of this computed variable is that it controls for the fact that some bugs were tested once late, and some by chance had been tested twice early; it also accounts for individuals who died before they could be tested twice, and thus have an early start date. Using the average day from start allows the multi-variate models, which control for multiple testing of each ID number, to converge. Because test day was randomized, when multiple measures for each individual are combined across days, they balance each other out. Thus, our randomization of date appears to have worked, and not been impacted by non-random mortality. The effect of average days does not show the same strong, significant effect as days from start:
 
 ```{r}
 days_model<-glm(cbind(num_flew,num_notflew)~avg_days_c, data=d, family=binomial)
@@ -447,6 +448,15 @@ M2 <- glm(cbind(num_flew, num_notflew) ~ host_c * avg_mass_logsqrt +  wing2body_
 summary(M2)
 ```
 
+```{r}
+###MC: This summary is in here to help me interpret the interactions, especially when there are transformations - we can cut it before uploading scripts to dryad.
+#look at summarized relationship to interpret host plant*mass interaction (and wing2body if desired)
+data_fem$mass_block <- round(data_fem$avg_mass, digits=2)
+data_fem$wing2body_block <- round(data_fem$wing2body, digits=2)
+
+summary_fem <- aggregate(num_flew/(num_flew+num_notflew)~host_plant*mass_block, data=data_fem, FUN=mean)
+```
+
 &nbsp;
 
 ### Males
@@ -484,6 +494,16 @@ anova(m50, m62, test="Chisq") # adding C does not improve fit
 M3<-glm(cbind(num_flew, num_notflew)~host_c*wing2body_logsqrt_i + sym_dist*wing2body_logsqrt_i 
         + avg_days_c, family=binomial, data=data_male) 
 summary(M3)
+```
+
+```{r}
+###MC: This summary is in here to help me interpret the interactions, especially when there are transformations - we can cut it before uploading scripts to dryad.
+#look at summarized relationship to interpret host plant*mass interaction (and wing2body if desired)
+data_male$mass_block <- round(data_male$avg_mass, digits=2)
+data_male$wing2body_block <- round(data_male$wing2body, digits=2)
+
+summary_male <- aggregate(num_flew/(num_flew+num_notflew)~wing2body_block*host_plant, data=data_male, FUN=mean)
+summary_male
 ```
 
 &nbsp;
@@ -615,7 +635,7 @@ model_table4 = calculate_P2(M4, "mass_per", "sex_c")
 
 &nbsp;
 
-Host plant was not a significant predictor, so we tested the wing-to-body ratio as a predictor next.
+Host plant was not a significant predictor. The remaining models were simple enough that it was tractable to test wing-to-body ratio as a predictor next. 
 
 &nbsp;
 &nbsp;
@@ -728,6 +748,7 @@ plot1 = function(df, pp) {
   text(68,0.7, labels="Flew in T1 only", col="blue")
   text(-27,0.9, labels="Did Not Fly", col="red")
   text(13,0.37, labels="Flew Twice", col="darkred")
+  text(75, 0.05, labels="Flew in T2 only", col="darkgreen")
   legend(83, 1.0,
          legend = c("female","male"),
          lty=1:2,
@@ -925,13 +946,13 @@ plot_histograms = function() {
   x = 0.48
   v <- c(x-0.13,x, 0.85, 0.90)
   par( fig=v, new=TRUE, mar=c(0,0,0,0) )
-  hist(df$wing2body[Frows], col="white", main="", cex.axis=0.9) 
+  hist(df$wing2body[Frows], col="white", main="", cex.axis=0.9, breaks=seq(0.62,0.77, by=0.01)) 
   text(0.64,45, labels="w2b", cex=0.9)
 
   x = 0.88
   v <- c(x-0.13, x, 0.85, 0.90)
   par( fig=v, new=TRUE, mar=c(0,0,0,0) )
-  hist(df$wing2body[Mrows], col="white", main="", cex.axis=0.9, xlim=c(0.64,0.78)) 
+  hist(df$wing2body[Mrows], col="white", main="", cex.axis=0.9, breaks=seq(0.62,0.77, by=0.01)) 
   text(0.66,40, labels="w2b", cex=0.9)
 }
 plot_color_scale = function() {
