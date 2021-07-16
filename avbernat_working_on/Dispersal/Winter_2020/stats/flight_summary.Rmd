@@ -1053,7 +1053,7 @@ model_comparisonsAIC(model_script)
 &nbsp;
 
 ```{r results='hold', warning=FALSE}
-anova(m4, m7, test="Chisq") # adding wing2body does not include fit
+anova(m4, m7, test="Chisq") # adding wing2body does not improve fit
 anova(m7, m13, test="Chisq") # Adding A*C does not improve fit
 anova(m7, m12, test="Chisq") # Adding B*C does not improve fit
 ```
@@ -1097,9 +1097,11 @@ run_multinom_model = function(d) {
 }
 
 # determine which multinomial model equations are significant with a plot
-par(mfrow=c(1,2)) 
-mass_per_ML = get_significant_modelsf(15) # mass_per 
+par(mfrow=c(1,2))
+
+mass_per_ML = get_significant_modelsf(15, effect_cat="mass_per") # mass_per 
   mtext("A. Mass", side=3, adj=0, line=0.5, cex=1.6, font=1)
+
 egg_case_ML = get_significant_modelsf(16) # egg_case
   mtext("B. Egg \nResponse", side=3, adj=0, line=0.3, cex=1.6, font=1)
 ```
