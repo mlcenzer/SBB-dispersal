@@ -1,6 +1,5 @@
 model_comparisonsAIC <- function(model_selection_filepath){
   
-  #source("src/AICprobabilities.R")
   source(model_selection_filepath)
   
   using_glmer <- FALSE

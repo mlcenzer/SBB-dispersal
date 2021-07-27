@@ -76,8 +76,9 @@ library(binom) # binomial confidence intervals
 ```{r message=FALSE}
 source_path = paste0(dir,"/Rsrc/")
 
-script_names = c("compare_models.R", # 1 function: model_comparisonsAIC()
-                 "clean_morph_data3.R", # 2 functions: read_morph_data(), remove_torn_wings()
+script_names = c("clean_morph_data3.R", # 2 functions: read_morph_data(), remove_torn_wings()
+                 "compare_models.R", # 1 function: model_comparisonsAIC()
+                 "get_Akaike_weights.R", # 1 function: get_model_probs()
                  "AICprobabilities.R") # 1 function: AICprobs()
 
 for (script in script_names) { 

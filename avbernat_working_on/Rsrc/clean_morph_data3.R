@@ -2,20 +2,6 @@ library(zoo)
 library(lubridate)
 library(dplyr)
 
-remove_torn_wings = function(d){
-  
-  d$drop <- FALSE
-  for(row in 1:nrow(d)){
-    if(length(unlist(strsplit(strsplit(paste("test ", d$notes[row], 
-                                             " test", sep=""), "torn")[[1]], "wing")))>2){
-      #browser()	
-      d$drop[row] <- TRUE
-    }
-  }
-  df <- d[d$drop==FALSE,]
-  return(df)
-}
-
 remove_torn_wings = function(d) {
   rows2remove = c()
   for (i in 1:nrow(d)) {

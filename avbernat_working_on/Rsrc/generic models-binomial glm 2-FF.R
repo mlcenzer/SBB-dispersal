@@ -16,6 +16,6 @@ sort(summary$AIC, index.return=TRUE)
 
 #Run AICprobabilities in generic models folder
 
-P<-AICprobs(summary$AIC)
+P<-get_model_probs(summary$AIC) # AICprobs
 sort(P, index.return=TRUE, decreasing=TRUE) #remember, we want the largest one of these
 library(lmtest) #you might want this later to test for heteroscedacity in your models

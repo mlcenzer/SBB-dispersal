@@ -6,6 +6,4 @@ AICprobs <- function ( x ) {
 
 	return ( tmp / sum ( tmp ) )
 
-
-
 }
