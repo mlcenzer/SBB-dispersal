@@ -18,6 +18,7 @@ model_comparisonsAIC <- function(model_selection_filepath){
   print(rbind(AICs, models, probs))
   
   cat("\n")
+  
   for (m_num in unlist(models)) {
 
     if (m_num == max(nrow(summary))) {

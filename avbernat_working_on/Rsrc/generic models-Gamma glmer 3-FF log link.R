@@ -1,5 +1,5 @@
-library(lme4)
 
+# generic three factor analysis with Gamma(link="log") data
 
 m0<-glmer(R~1 + (1|X), data=data, family=Gamma(link="log"))
 m1<-glmer(R~A + (1|X), data=data, family=Gamma(link="log"))
@@ -28,12 +28,12 @@ m17<-glmer(R~A*B + A*C + B*C + (1|X), data=data, family=Gamma(link="log"))
 
 #m18<-glmer(R~A*B*C + (1|X), family=Gamma(link="log"), data=data)
 
-#identify top models using AIC
-summary<-AIC(m1,m2,m3,m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m0)
+# identify top models using AIC
+summary<-AIC(m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m0)
 sort(summary$AIC, index.return=TRUE)
 
 
-#Run AICprobabilities in generic models folder
-
-P<-AICprobs(summary$AIC)
-sort(P, index.return=TRUE, decreasing=TRUE) #remember, we want the largest one of these
+# run get_Akaike_weights script in Rsrc folder
+P<-get_model_probs(summary$AIC)
+sort(P, index.return=TRUE, decreasing=TRUE) # want the largest one of these
+library(lmtest) # can use later to test for heteroscedacity in the models

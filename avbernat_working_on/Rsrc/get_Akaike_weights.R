@@ -1,7 +1,7 @@
 
 get_model_probs <- function(AIC) {
   
-  # Akaike weights are can be used in model averaging. 
+  # Akaike weights can be used in model averaging. 
   # They represent the relative likelihood of a model-
   # also known as the goodness of fit of a model.
   
@@ -11,7 +11,7 @@ get_model_probs <- function(AIC) {
   
   Akaike_weights = relative_likelihood / sum(relative_likelihood) # relative likelihoods are normalized
   
-  return(Akaike_weights) # Akaike weights can be interpreted as conditional probabilities for each model.
+  return(Akaike_weights) # Akaike weights can be interpreted as conditional probabilities for each model
   
 }
 

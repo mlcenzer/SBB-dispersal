@@ -73,13 +73,18 @@ library(binom) # binomial confidence intervals
 
 ## Read Source Files
 
+Need to explain this: 
+
+model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
+model_comparisonsAIC(model_script)
+
 ```{r message=FALSE}
 source_path = paste0(dir,"/Rsrc/")
 
-script_names = c("clean_morph_data3.R", # 2 functions: read_morph_data(), remove_torn_wings()
-                 "compare_models.R", # 1 function: model_comparisonsAIC()
-                 "get_Akaike_weights.R", # 1 function: get_model_probs()
-                 "AICprobabilities.R") # 1 function: AICprobs()
+script_names = c("clean_morph_data3.R",  # 1 function: read_morph_data() 
+                 "remove_torn_wings.R",  # 1 function: remove_torn_wings()
+                 "compare_models.R",     # 1 function: model_comparisonsAIC()
+                 "get_Akaike_weights.R") # 1 function: get_model_probs()
 
 for (script in script_names) { 
   path = paste0(source_path, script)

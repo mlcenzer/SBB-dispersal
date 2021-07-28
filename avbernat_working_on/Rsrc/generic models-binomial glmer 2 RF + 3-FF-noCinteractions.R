@@ -1,5 +1,5 @@
 
-#generic three factor analysis with binomial data
+# generic three factor analysis with binomial data
 
 m0<-glmer(R~1 + (1|X), family=binomial, data=data)
 m1<-glmer(R~A + (1|X), family=binomial, data=data)
@@ -40,15 +40,15 @@ m27<-glmer(R~A*B + (1|X) + (1|Y), family=binomial, data=data)
 m28<-glmer(R~A*B + C + (1|X) + (1|Y), family=binomial, data=data)
 
 
-#identify top models using AIC
+# identify top models using AIC
 summary<-AIC(m1,m2,m3,m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, 
              m17, m18, m19, m20, m21, m22, m23, m24, m25, m26, m27, m28, m0)
 
 sort(summary$AIC, index.return=TRUE)
 
 
-#Run AICprobabilities in generic models folder
+# run get_Akaike_weights script in Rsrc folder
+P<-get_model_probs(summary$AIC)
+sort(P, index.return=TRUE, decreasing=TRUE) # want the largest one of these
+library(lmtest) # can use later to test for heteroscedacity in the models
 
-P<-AICprobs(summary$AIC)
-sort(P, index.return=TRUE, decreasing=TRUE) #remember, we want the largest one of these
-library(lmtest) #you might want this later to test for heteroscedacity in your models

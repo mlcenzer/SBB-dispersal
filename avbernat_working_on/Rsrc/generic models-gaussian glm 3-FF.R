@@ -1,4 +1,6 @@
-#generic three factor analysis with gaussian data
+
+# generic three factor analysis with gaussian data
+
 m0<-glm(R~1, family=gaussian, data=data)
 m1<-glm(R~A, family=gaussian, data=data)
 m2<-glm(R~B, family=gaussian, data=data)
@@ -26,12 +28,12 @@ m17<-glm(R~A*B + A*C + B*C, family=gaussian, data=data)
 
 
 
-#identify top models using AIC
+# identify top models using AIC
 summary<-AIC(m1,m2,m3,m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17, m0)
 sort(summary$AIC, index.return=TRUE) #We want the smallest one of these
 
-#Run AICprobabilities in generic models folder
-
-P<-AICprobs(summary$AIC)
-sort(P, index.return=TRUE, decreasing=TRUE) #remember, we want the largest one of these
+# run get_Akaike_weights script in Rsrc folder
+P<-get_model_probs(summary$AIC)
+sort(P, index.return=TRUE, decreasing=TRUE) # want the largest one of these
+library(lmtest) # can use later to test for heteroscedacity in the models
 
