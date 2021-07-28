@@ -39,21 +39,23 @@ All code and output from the statistical analyses is shown. Code for data cleani
 
 ## Description of the Data
 
-This document analyzes two main datasets, **raw_data** and **data_long**. The raw_data set provides morphology measurements for each soapberry bug, *Jadera haematoloma*, collected and measured between the years 2013 and 2020. There are four morphology measurements: beak length, thorax width, wing length, and body length. The sex, wing morph (long-winged, shot-winged, or ambiguously-winged), and host plant the bug was collected from as well as the month and year each bug was collected in was recorded. The data_long set provides the same recordings as the raw_data set, but it has been filtered for only long-winged soapberry bugs.
+This document analyzes two main datasets, `raw_data` and `data_long`. The raw_data set provides morphology measurements for each soapberry bug, *Jadera haematoloma*, collected and measured between the years 2013 and 2020. There are four morphology measurements: beak length, thorax width, wing length, and body length. The sex, wing morph (long-winged, shot-winged, or ambiguously-winged), and host plant the bug was collected from as well as the month and year each bug was collected in was recorded. The data_long set provides the same recordings as the raw_data set, but it has been filtered for only long-winged soapberry bugs.
 
 ## Abbreviations Used in the Data and Code
 
-* **sd** - standard deviation
-* **se** - standard error
-* **binom** - a column name that ends in 'binom' is a column that has been recodified into binary data (0's and 1's). Example columns: sex_binom, pophost_binom, and wing_morph_binom
-* **pophost** - the host plant soapberry bugs were collected from, which was either *Koelreuteria elegans* or *Cardiospermum corindum*, occasionally called (and abbreviated) as goldenrain tree (GRT) or balloon vine (BV), respectively
-* **months_since_start** - proxy for year where the first collection occurred on May 2013
-* **month_of_year** - proxy for season where collections occurred only in months February, April, May, August, September, October, and September
-* **wing2body** - a computed and unitless column that calculates the wing length divided by the body length of a soapberry bug
-* **wing2thorax** - a computed and unitless column that calculates the wing length divided by the thorax width of a soapberry bug
+* **SBB** - soapberry bug, *Jadera haematoloma*
 * **S** - short-winged morph
 * **L** - long-winged morph
 * **LS** or **SL** - ambiguous wing morph
+* **pophost** - the host plant soapberry bugs were collected from, which was either *Koelreuteria elegans* or *Cardiospermum corindum*, occasionally called (and abbreviated) as goldenrain tree (GRT) or balloon vine (BV), respectively
+* **months_since_start** - proxy for year where the first collection occurred on April 2013
+* **month_of_year** - proxy for season where collections occurred only in months February, April, May, August, September, October, and September
+* **wing2body** - a computed and unitless column that calculates the wing length divided by the body length of a soapberry bug
+* **wing2thorax** - a computed and unitless column that calculates the wing length divided by the thorax width of a soapberry bug
+* **sd** - standard deviation
+* **se** - standard error
+* **c** - a column name that ends in `_c` is a column that has been centered. Example columns: wing2body_c, month_of_year_c, and months_since_start_c
+* **binom** - a column name that ends in `_binom` is a column that has been recodified into binary data (0's and 1's). Example columns: sex_binom, pophost_binom, and wing_morph_binom
 
 # Data Cleaning And Exploration
 
@@ -81,7 +83,7 @@ model_comparisonsAIC(model_script)
 ```{r message=FALSE}
 source_path = paste0(dir,"/Rsrc/")
 
-script_names = c("clean_morph_data3.R",  # 1 function: read_morph_data() 
+script_names = c("clean_morph_data.R",   # 1 function: read_morph_data() 
                  "remove_torn_wings.R",  # 1 function: remove_torn_wings()
                  "compare_models.R",     # 1 function: model_comparisonsAIC()
                  "get_Akaike_weights.R") # 1 function: get_model_probs()
@@ -94,6 +96,8 @@ for (script in script_names) {
 
 ## Read the Data
 
+The morphology data were started in 2013-04-28 and last updated on 2021-05-18. The `read_morph_data()` function standardizes population names, host plant names, and month and year inputs. Month and year inputs are also converted into datetimes. Variables of interest like wing-to-body ratio and wing-to-thorax ratio are also calculated and centered Then, the full dataset, `raw_data`, and a long-winged bug only dataset, `data_long` are returned. 
+
 ```{r}
 data_list = read_morph_data(paste0(dir,"All_Morphology/stats/data/allmorphology05.18.21.csv"))
 raw_data = data_list[[1]]
@@ -101,32 +105,35 @@ data_long = data_list[[2]] # long-wing bugs only
 
 data_long = remove_torn_wings(data_long)
 ```
-\newpage
+Bugs marked as having torn wings during measurements were only filtered out of the `data_long` dataset. That was because `data_long` is used only to analyze the wing-to-body ratio, which was computed for long-winged bugs since no short-winged bugs can fly. `raw_data` is only used to analyze wing-morph frequency (either short-winged or long-winged).
 
 ## Histograms of Wing Morph Data 
 
+To better visualize how wing-morph relates to another allometric measurement, wing-to-thorax ratio, the following histograms were plotted:
+
 &nbsp;
 
-```{r fig.height=5.7, fig.width=6.6, echo=FALSE}
+```{r fig.height=6, fig.width=6.6, echo=FALSE}
 raw_data_missing = raw_data %>% 
   filter(w_morph=="" | is.na(w_morph)) 
 
 par(mfrow=c(3,1))
 hist(raw_data$wing[raw_data$w_morph=="L"]/raw_data$thorax[raw_data$w_morph=="L"],
-     main="Histogram of wing length/thorax length for long winged SBB",
+     main="wing-to-thorax for long winged SBB",
      xlab="wing length/thorax length",
      breaks=seq(0.5, 3.8, by=0.05))
 hist(raw_data_missing$wing/raw_data_missing$thorax, 
-     main="Histogram of wing length/thorax length for SBB w/o recorded wing morph",
+     main="wing-to-thorax for SBB w/o recorded wing morph",
      xlab="wing length/thorax length",
-     breaks=seq(0.5, 3.8, by=0.05))
+     breaks=seq(0.5, 3.8, by=0.05),
+     ylim=c(0,12))
 hist(raw_data$wing[raw_data$w_morph=="S"]/raw_data$thorax[raw_data$w_morph=="S"],
-     main="Histogram of wing length/thorax length for short winged SBB",
+     main="wing-to-thorax for short winged SBB",
      xlab="wing length/thorax length",
      breaks=seq(0.5,3.8,by=0.05))
 ```
 
-Notice that there are 30 bugs that are hard to identify as either S or L. 
+From the histograms, the relationship between wing-morph and wing-to-thorax ratio is bimodal. Long-winged bugs have larger wing-to-thorax ratios with a frequency peak around 2.75, whereas short-winged bugs have much smaller wing-to-thorax ratios with a frequency peak around 1.75. It is then noticeable that there are 22 bugs who had not been identified as either S or L during measurements, but cannot be categorized into S or L based on wing-to-thorax bimodality because these data reside in-between the two modes.
 
 \newpage
 
