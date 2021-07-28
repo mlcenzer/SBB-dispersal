@@ -4,6 +4,8 @@ get_model_probs <- function(AIC) {
   # Akaike weights can be used in model averaging. 
   # They represent the relative likelihood of a model-
   # also known as the goodness of fit of a model.
+  # It can be interpreted as the probability 
+  # that a given model is the best approximating model.
   
   deltaAIC <- AIC - min(AIC)
   
