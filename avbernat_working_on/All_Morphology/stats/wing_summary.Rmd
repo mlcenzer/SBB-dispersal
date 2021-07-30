@@ -75,7 +75,7 @@ library(binom) # binomial confidence intervals
 
 ## Read Source Files
 
-Each sourced script below aides in either data cleaning (`read_morph_data()`, `remove_torn_wings()`) or multivariate GLM (`model_comparisonsAIC()`, `get_model_probs()`). Additionally, `model_comparisonsAIC()` takes in the path of a generic multi-factor script specific to the GLM family and link function needed to build the predictive models. All aforementioned, sourced scripts are located in the **Rscr** folder.
+Each sourced script below aides in either data cleaning (`read_morph_data()`, `remove_torn_wings()`) or multivariate GLM (`model_comparisonsAIC()`, `get_model_probs()`). Additionally, the function `model_comparisonsAIC()` takes in the path of a generic multi-factor script specific to the GLM family and link function needed to build the predictive models. All aforementioned, sourced scripts are located in the **Rscr** folder.
 
 ```{r message=FALSE}
 source_path = paste0(dir,"/Rsrc/")
@@ -96,7 +96,9 @@ for (script in script_names) {
 The morphology data were started in 2013-04-28 and last updated on 2021-05-18. The `read_morph_data()` function standardizes population names, host plant names, and month and year inputs. Month and year inputs are also converted into datetimes. Variables of interest like wing-to-body ratio and wing-to-thorax ratio are also calculated and centered Then, the full dataset, `raw_data` (n=3532), and a long-winged bug only dataset, `data_long` (n=2096) are returned. 
 
 ```{r}
-data_list = read_morph_data(paste0(dir,"All_Morphology/stats/data/allmorphology05.18.21.csv"))
+datapath = paste0(dir,"All_Morphology/stats/data/allmorphology05.18.21.csv")
+data_list = read_morph_data(datapath)
+
 raw_data = data_list[[1]]
 data_long = data_list[[2]] # long-wing bugs only
 
@@ -314,7 +316,7 @@ summary(M2)
 
 Host plant (`K. elegans = 1`, `C. corindum = -1`) is significant in predicting long-wing morph frequency variance. Soapberry bugs collected from *C. corindum*, balloon vine, experience more variance in long-wing morph frequency than those collected from *K. elegans*, goldenrain tree.
 
-&nbsp;
+\newpage
 
 ## Wing-to-Body Ratio 
 
@@ -342,8 +344,6 @@ anova(m34, m58, test="Chisq") # Adding B*D improves fit
 
 The best fit model is m58. It did not have the minimum AIC value or maximum Akaike weight, but the addition of `A*D (sex_binom*months_since_start_c)` was not detected as a significant improvement in model fit, according to the ANOVA test.
 
-&nbsp;
-
 ### Best Fit
 
 ```{r}
@@ -363,12 +363,15 @@ We then tested how sex, host plant, month, or year effects the wing-to-body rati
 First, the mean wing-to-body ratio was computed using `aggregate()` to group the wing-to-body ratio recordings in `data_long` according to sex, host plant, month, and year. The subsequent subset data created was `w2b_table` (n=36). Then, summary statistics were applied to the data subset and variance (`sd`) was modeled.
 
 ```{r}
-w2b_table = aggregate(wing2body ~ sex_binom*pophost_binom*month_of_year*months_since_start, 
-                      data=data_long, FUN=mean)
-w2b_table$sd = aggregate(wing2body ~ sex_binom*pophost_binom*month_of_year*months_since_start, 
-                         data=data_long, FUN=sd)$wing2body
-w2b_table$se = aggregate(wing2body ~ sex_binom*pophost_binom*month_of_year*months_since_start, 
-                         data=data_long, FUN=SE)$wing2body
+w2b_table = aggregate(wing2body ~ 
+                        sex_binom*pophost_binom*month_of_year*months_since_start, 
+                        data=data_long, FUN=mean)
+w2b_table$sd = aggregate(wing2body ~ 
+                           sex_binom*pophost_binom*month_of_year*months_since_start, 
+                           data=data_long, FUN=sd)$wing2body
+w2b_table$se = aggregate(wing2body ~ 
+                           sex_binom*pophost_binom*month_of_year*months_since_start, 
+                           data=data_long, FUN=SE)$wing2body
 ```
 
 ```{r}
@@ -406,6 +409,8 @@ Host plant (`K. elegans = 1,C. corindum = -1`) is significant in predicting wing
 
 # LOESS & Linear Regression Plots
 
+Locally-weighted scatterplot smoothing (LOESS) helped display and explore the non-linear fluctuations in long-wing morph frequency and wing-to-body ratio across time. Each data set was fit with a local polynomial regression using `lowess()` to determine LOESS parameters ($\alpha$ and $\lambda$) and `geom_smooth()` for plotting more aesthetic visuals.  
+
 ```{r echo=FALSE}
 # repeating plotting features
 customPlot = list( theme_classic(),
@@ -438,61 +443,84 @@ font_size = 4.5
 
 ### Group significant elements 
 
+Data are aggregated according to predictors present in their respective aforementioned best fit GLM model. For predicting long-wing morph frequency (`raw_data`), the best fit model had the following predictors: sex, host plant, month, and year. We used `dates`, a datetime object, instead of `months_since_start` for cleaner plotting, but the two are interchangeable.
+
 ```{r}
 # function to calculate 95% confidence interval (CI). 
 CI_95 = function(x){qnorm(0.975)*sd(x)/sqrt(length(x))}
-CI_95_binom_upper = function(y) {binom.confint(x=sum(y, na.rm=TRUE), n=length(y[!is.na(y)]), 
-                                               conf.level=0.95, methods='exact')$upper}
-CI_95_binom_lower = function(y) {binom.confint(x=sum(y, na.rm=TRUE), n=length(y[!is.na(y)]), 
-                                               conf.level=0.95, methods='exact')$lower}
+CI_95_binom_upper = function(y) {
+                        binom.confint(x=sum(y, na.rm=TRUE), 
+                                      n=length(y[!is.na(y)]), 
+                                      conf.level=0.95, 
+                                      methods='exact')$upper}
+CI_95_binom_lower = function(y) {
+                        binom.confint(x=sum(y, na.rm=TRUE), 
+                                      n=length(y[!is.na(y)]), 
+                                      conf.level=0.95, 
+                                      methods='exact')$lower}
 ```
 
 ```{r}
 # aggregate the full data
-w_morph_summary = aggregate(wing_morph_binom ~ sex*pophost*month_of_year*months_since_start,
+w_morph_summary = aggregate(wing_morph_binom ~
+                            sex*pophost*month_of_year*dates, 
                             data=raw_data, FUN=mean)
 
 # compute standard error (SE), upper and lower CI, & sample size (n)
 w_morph_summary$se = aggregate(wing_morph_binom ~ 
-                               sex*pophost*month_of_year*months_since_start,
-                               data=raw_data, FUN=SE)$wing_morph_binom
+                               sex*pophost*month_of_year*dates,
+                               data=raw_data, 
+                               FUN=SE)$wing_morph_binom
 w_morph_summary$upper = aggregate(wing_morph_binom ~ 
-                                  sex*pophost*month_of_year*months_since_start,
-                                  data=raw_data, FUN=CI_95_binom_upper)$wing_morph_binom
+                                  sex*pophost*month_of_year*dates,
+                                  data=raw_data, 
+                                  FUN=CI_95_binom_upper)$wing_morph_binom
 w_morph_summary$lower = aggregate(wing_morph_binom ~ 
-                                  sex*pophost*month_of_year*months_since_start,
-                                  data=raw_data, FUN=CI_95_binom_lower)$wing_morph_binom
+                                  sex*pophost*month_of_year*dates,
+                                  data=raw_data, 
+                                  FUN=CI_95_binom_lower)$wing_morph_binom
 w_morph_summary$n = aggregate(wing_morph_binom ~ 
-                              sex*pophost*month_of_year*months_since_start,
-                              data=raw_data, FUN=length)$wing_morph_binom
-
-# jitter points slightly
-jitter = runif(n=nrow(w_morph_summary), min=-0.1, max=0.1) 
-w_morph_summary$dates = w_morph_summary$month_of_year + jitter
+                              sex*pophost*month_of_year*dates,
+                              data=raw_data, 
+                              FUN=length)$wing_morph_binom
 
 dd = w_morph_summary
 ```
 
 ### Check for LOESS Residuals 
 
+To determine the span ($\alpha$, the smoothing parameter) and the degree of zero ($\lambda$) of the LOESS, smoothers were applied with increasing weights until the residuals appeared to have constant variance. Only the best LOESS parameters are shown below:
+ 
 ```{r}
-plot_lowess_residuals = function(lfit, x, y) {
+plot_lowess_residuals = function(lfit, x, y, color) {
   lfun = approxfun(lfit)
   fitted = lfun(x)
   resid = y-fitted
-  plot(fitted,resid)
+  plot(fitted,resid,col=color)
   abline(h=0,col=8)
 }
 ```
 
-```{r fig.height=4.5}
-l1 = lowess(dd$dates, dd$wing_morph_binom, f=0.4) # f = alpha, the smoother span
+```{r warning=FALSE, fig.height=3, fig.show = 'hold'}
+# loess models (month and year)
+lM = lowess(dd$month_of_year, dd$wing_morph_binom, f=0.4) # f = alpha, the smoother span
+lY = lowess(dd$dates, dd$wing_morph_binom, f=0.4)
 
-par(mfrow=c(1,2))
-plot(dd$dates, dd$wing_morph_binom)
-lines(l1, type = "l")
-plot_lowess_residuals(l1, dd$dates, dd$wing_morph_binom)
+# plot loess fit and residuals 
+par(mfrow=c(1,2), mai=c(0.80,0.80,0.3,0.3))
+
+plot(dd$month_of_year, dd$wing_morph_binom, 
+     xlab="month of year", ylab="long-wing morph freq", col="darkgreen")
+lines(lM, type = "l")
+plot_lowess_residuals(lM, dd$month_of_year, dd$wing_morph_binom, "darkgreen")
+
+plot(dd$dates, dd$wing_morph_binom, 
+     xlab="year", ylab="long-wing morph freq", col="darkblue")
+lines(lY, type = "l")
+plot_lowess_residuals(lY, dd$dates, dd$wing_morph_binom, "darkblue")
 ```
+
+From these residual plots (right-side), we selected a $\lambda$=0 and $\alpha$=0.4. With a zero degree polynomial, LOESS acts as a weighted moving average and a span of 0.4 demonstrates independence between the residuals. 
 
 ### Figure: Panels A, B, C, D (long-wing morph freq with month) & E (long-wing morph freq with year)
 
@@ -513,7 +541,9 @@ raw_data$Sex[raw_data$sex=="F"] = "Females"
 raw_data$Sex[raw_data$sex=="M"] = "Males"
 ```
 
-Note: Single-variate models or simpler models substituted best fit slope calculations below in order to avoid multiple interaction terms found in the best fit model. This led to cleaner glm line plotting.
+In addition to plotting local polynomial regression lines, the effects (slopes) of the best fit GLM models were also plotted. However, due to multiple interaction terms, we substituted the complex GLM models with single-variate or simpler models. This led to cleaner GLM line plotting, and the plots still reasonably reflected the aforementioned GLM models. Finally, all p-values displayed were extracted from the aforementioned best fit GLM model.
+
+&nbsp;
 
 \begin{center}
  \textbf{Panels A and B Regression Computations:}
@@ -521,11 +551,11 @@ Note: Single-variate models or simpler models substituted best fit slope calcula
 
 ```{r}
 # single-variate model of month predicting wing morph
-fit = glm(wing_morph_binom ~ month_of_year, family="binomial", data=raw_data)
+fit1 = glm(wing_morph_binom ~ month_of_year, family="binomial", data=raw_data)
 xmonth = seq(2,12, 0.01)
-wing_probs = predict(fit, list(month_of_year=xmonth), type="response")
+wing_probs = predict(fit1, list(month_of_year=xmonth), type="response")
 
-# extract pvalue from best fit regression model
+# extract p-value from best fit regression model
 fit_pvalue = round(summary(M1)$coeff[,"Pr(>|z|)"][5],5)
 pvalue = paste0("italic(p)[glm]==", fit_pvalue)
 ```
@@ -599,8 +629,9 @@ dfM = dd[dd$sex=="Males",]
 # multi-variate model with month, sex, and host plant predicting wing morph
 fit2 = glm(wing_morph_binom ~ sex_binom * pophost_binom + 
           pophost_binom * month_of_year, family = "binomial", data = raw_data)
-xmon = seq(2,12, 0.01)
+
 set.seed(194842)
+xmon = seq(2,12, 0.01)
 bsex = sample(c(-1,1), replace=TRUE, size=length(xmon))
 bhost = sample(c(-1,1), replace=TRUE, size=length(xmon))
 wprobs = predict(fit2, list(sex_binom = bsex,
@@ -616,7 +647,7 @@ predFC = pred[pred$bhost==-1 & pred$bsex==1,]
 predMK = pred[pred$bhost==1 & pred$bsex==-1,]
 predMC = pred[pred$bhost==-1 & pred$bsex==-1,]
 
-# extract pvalue from best fit regression model
+# extract p-value from best fit regression model
 fit_pvalue = round(summary(M1)$coeff[,"Pr(>|z|)"][6],4)
 pvalue = paste0("italic(p)[glm]==", fit_pvalue)
 ```
@@ -682,21 +713,6 @@ p7 = p7 +
   coord_cartesian(ylim=c(0.30,1.1))
 ```
 
-```{r echo=FALSE}
-# group data by sex 
-wm_table = aggregate(wing_morph_binom~dates*sex, data=raw_data, FUN=mean)
-wm_table$n = aggregate(wing_morph_binom~dates*sex, data=raw_data, FUN=length)$wing_morph_binom
-dd = wm_table
-
-dd$sex[dd$sex=="F"] = "Females"
-dd$sex[dd$sex=="M"] = "Males"
-dd$sex = factor(dd$sex, levels = c("Males", "Females") )
-dd$`Sex` = dd$sex 
-
-dF = dd[dd$sex=="Females",]
-dM = dd[dd$sex=="Males",]
-```
-
 \begin{center}
   \textbf{Panel F Regression Computations:}
 \end{center}
@@ -704,8 +720,9 @@ dM = dd[dd$sex=="Males",]
 ```{r}
 # multi-variate model with year, sex, and host plant predicting wing morph
 fit3 = glm(wing_morph_binom ~ sex_binom * dates, family = "binomial", data = raw_data)
-xyr = seq(sort(unique(dd$dates))[1],sort(unique(dd$dates))[10], 1)
+
 set.seed(194842)
+xyr = seq(sort(unique(dd$dates))[1],sort(unique(dd$dates))[10], 1)
 bsex = sample(c(-1,1), replace=TRUE, size=length(xyr))
 bhost = sample(c(-1,1), replace=TRUE, size=length(xyr))
 wprobs = predict(fit3, list(sex_binom = bsex,
@@ -719,7 +736,7 @@ pred$xyr = as.Date.numeric(pred$xyr)
 predF = pred[pred$bsex==1,]
 predM = pred[pred$bsex==-1,]
 
-# extract pvalue from best fit regression model
+# extract p-value from best fit regression model
 fit_pvalue = round(summary(M1)$coeff[,"Pr(>|z|)"][7],3)
 pvalue = paste0("italic(p)[glm]==", fit_pvalue)
 ```
@@ -764,6 +781,8 @@ paper_figure1 = ggdraw() +
 paper_figure1
 ```
 
+**Extension of Figure 4. Evaluation of the frequency of long-winged morph soapberry bugs averaged across month and year from April 2013 to February 2020 using exploratory plots.** For each point, the mean frequency of long-winged morphs of each month and year is plotted with LOESS smooth lines (solid lines) and 95% confidence intervals (shading) and linear regression line(s) (dashed line(s)).
+
 ```{r eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
 
 p6B = p6 + theme(legend.position = c(0.83, 0.96)) + ggtitle("A")
@@ -782,39 +801,54 @@ paper_figure1 = ggdraw() +
 paper_figure1
 ```
 
-
-&nbsp;
-
 \newpage
 
 ## Wing-to-Body Ratio
 
 ### Group significant elements 
 
-```{r}
-w2b_summary = aggregate(wing2body~sex*pophost*dates*month_of_year, data=data_long, FUN=mean)
-w2b_summary$se = aggregate(wing2body~sex*pophost*dates, data=data_long,
-                          FUN=SE)$wing2body
-w2b_summary$n = aggregate(wing2body~sex*pophost*dates, data=data_long,
-                          FUN=length)$wing2body
+Data are aggregated according to predictors present in their respective aforementioned best fit GLM model. For predicting wing-to-body ratio (`data_long`), the best fit model had the following predictors: sex, host plant, month, and year. We used `dates`, a datetime object, instead of `months_since_start` for cleaner plotting, but the two are interchangeable.
 
-jitter = runif(n=nrow(w2b_summary), min=-0.1, max=0.1) # jitter slightly
-w2b_summary$dates = w2b_summary$dates + jitter
+```{r}
+w2b_summary = aggregate(wing2body~sex*pophost*dates*month_of_year, 
+                        data=data_long, FUN=mean)
+w2b_summary$se = aggregate(wing2body~sex*pophost*dates, 
+                           data=data_long,
+                           FUN=SE)$wing2body
+w2b_summary$n = aggregate(wing2body~sex*pophost*dates, 
+                          data=data_long,
+                          FUN=length)$wing2body
 d = w2b_summary
 ```
 
 ### Check for LOESS Residuals 
 
-```{r fig.height=4.5}
-l1 = lowess(d$dates, d$wing2body, f=0.4)
+To determine the span ($\alpha$, the smoothing parameter) and the degree of zero ($\lambda$) of the LOESS, smoothers were applied with increasing weights until the residuals appeared to have constant variance. Only the best LOESS parameters are shown below:
 
-par(mfrow=c(1,2))
-plot(d$dates, d$wing2body)
-lines(l1, type = "l")
-plot_lowess_residuals(l1, d$dates, d$wing2body)
+```{r warning=FALSE, fig.height=2.7, fig.show = 'hold'}
+# loess models (month and year)
+lM = lowess(d$month_of_year, d$wing2body, f=0.4) # f = alpha, the smoother span
+lY = lowess(d$dates, d$wing2body, f=0.4)
+
+# plot loess fit and residuals 
+par(mfrow=c(1,2), mai=c(0.80,0.80,0.3,0.3))
+
+plot(d$month_of_year, d$wing2body, 
+     xlab="month of year", ylab="wing-to-body ratio", col="darkgreen")
+lines(lM, type = "l")
+plot_lowess_residuals(lM, d$month_of_year, d$wing2body, "darkgreen")
+
+plot(d$dates, d$wing2body, 
+     xlab="year", ylab="wing-to-body ratio", col="darkblue")
+lines(lY, type = "l")
+plot_lowess_residuals(lY, d$dates, d$wing2body, "darkblue")
 ```
 
+Similarly, from these residual plots (right-side), we selected a $\lambda$=0 and $\alpha$=0.4. 
+
 ### Figure: Panels A, B, (wing-to-body ratio with month) & C (wing-to-body ratio with year)
+
+In similar fashion, the local polynomial regression lines and the effects (slopes) of the best fit GLM models were plotted together. Due to multiple interaction terms, we substituted the complex GLM models with single-variate or simpler models. This led to cleaner GLM line plotting, and the plots still reasonably reflected the aforementioned GLM models. Finally, all p-values displayed were extracted from the aforementioned best fit GLM model.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 # relevel and rename factors for cleaner plotting
@@ -831,6 +865,12 @@ data_long$Sex[data_long$sex=="F"] = "Females"
 data_long$Sex[data_long$sex=="M"] = "Males"
 data_long$Sex = factor(data_long$Sex, levels = c("Males", "Females") )
 ```
+
+\begin{center}
+ \textbf{Panels A and B Regression Computations:}
+\end{center}
+
+Wing-to-body ratio is continuous data, unlike the wing morph data which is binary data. As a result, rather than using the `predict()` function to calculate the best fit line between wing-to-body and month, we used a single line of `ggplot` code, `geom_smooth(data=data_long, method="glm", mapping = aes(x = month_of_year, y = wing2body)...)`. This line of code can be see in the wing_summary.Rmd script.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ### Panels A and B
@@ -869,7 +909,7 @@ p11 = ggplot() +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) + 
   theme(axis.title.x = element_blank())
 
-# extract alpha, smoothing parameter from LOESS regression(s) and pvalue from linear model
+# extract alpha, smoothing parameter from LOESS regression(s) and p-value from linear model
 alpha = paste("alpha[loess]==", ggplot_build(p10)$data[[3]]$alpha[1])
 degree="lambda[loess]==0"
 fit_pvalue = round(summary(M3)$coeff[,"Pr(>|t|)"][5],7)
@@ -891,10 +931,11 @@ p11 = p11 +
 \end{center}
 
 ```{r}
-# multi-variate model with year, sex, and host plant predicting wing2body ratio
+# multi-variate model with year and host plant predicting wing2body ratio
 fit4 = glm(wing2body ~ pophost_binom * dates, data = data_long)
-xyr = seq(sort(unique(dd$dates))[1],sort(unique(dd$dates))[10], 1)
+
 set.seed(194842)
+xyr = seq(sort(unique(dd$dates))[1],sort(unique(dd$dates))[10], 1)
 bhost = sample(c(-1,1), replace=TRUE, size=length(xyr))
 wprobs = predict(fit4, list(pophost_binom = bhost,
                                 dates = xyr), type="response")
@@ -906,7 +947,7 @@ pred$xyr = as.Date.numeric(pred$xyr)
 predK = pred[pred$bhost==1,]
 predC = pred[pred$bhost==-1,]
 
-# extract pvalue from best fit regression model
+# extract p-value from best fit regression model
 fit_pvalue = round(summary(M3)$coeff[,"Pr(>|t|)"][7],3)
 pvalue = paste0("italic(p)[glm]==", fit_pvalue)
 ```
@@ -953,3 +994,4 @@ paper_figure2 = ggdraw() +
 paper_figure2
 ```
 
+**Figure 5. Evaluation of the wing-to-body ratio of soapberry bugs averaged across month and year from April 2013 to February 2020 using exploratory plots.** For each point, the mean wing-to-body ratio of soapberry bugs collected in each month and year is plotted with LOESS smooth lines (solid lines) and 95% confidence intervals (shading) and linear regression line(s) (dashed line(s)). 
