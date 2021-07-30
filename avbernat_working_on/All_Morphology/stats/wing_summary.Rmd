@@ -223,7 +223,7 @@ Multivariate, GLM was performed using the `glm()` function in the `lme4` package
 
 ## Long-Wing Morph Frequency
 
-We tested how sex, host plant, month, and/or year effected whether a soapberry bug is long-winged (`wing_morph_binom=1`) or short-winged (`wing_morph_binom=0`)? 
+We tested how sex, host plant, month, and/or year effected whether a soapberry bug is long-winged (`wing_morph_binom=1`) or short-winged (`wing_morph_binom=0`). 
 
 ```{r}
 data = data.frame(R=raw_data$wing_morph_binom, 
@@ -245,7 +245,7 @@ anova(m63, m84, test="Chisq")  # Adding C*D improves fit
 anova(m51, m63, test="Chisq")  # Adding B improves fit
 ```
 
-The best fit model is m98. That is confirmed by its minimum AIC value, maximum Akaike weight, and the addition of `A*B` (`sex_binom*pophost_binom`) leading to a significant improvement in model fit detected by the ANOVA test.
+The best fit model is m98. That is confirmed by its minimum AIC value, maximum Akaike weight, and the addition of `A*B` (`sex_binom*pophost_binom`) leading to a significant improvement in model fit as detected by the ANOVA test.
 
 ### Best Fit
 
@@ -262,7 +262,7 @@ All single effects and their interactions are significant in the best fit model 
 
 We then tested how sex, host plant, month, and/or year effected long-wing morph frequency variance.
 
-First, the long-wing morph frequency was computed using `aggregate()` to group the `raw_data` long-wing morph recordings according to sex, host plant, month, and year. The subsequent subset data created was `wmorph_table` (n=40) Then, summary statistics were applied to the data subset and variance (sd) was modeled.
+First, the long-wing morph mean frequency was computed using `aggregate()` to group the long-wing morph recordings in `raw_data` according to sex, host plant, month, and year. The subsequent subset data created was `wmorph_table` (n=40) Then, summary statistics were applied to the data subset and variance (`sd`) was modeled.
 
 ```{r}
 wmorph_table = aggregate(wing_morph_binom ~ 
@@ -303,7 +303,7 @@ anova(m2, m9, test="Chisq") # Adding D does not improve fit
 anova(m0, m2, test="Chisq") # Adding B improves fit
 ```
 
-The best fit model is m2. That is confirmed by its minimum AIC value, maximum Akaike weight, and the addition of `B` (`pophost_binom`) to the null model leading to a significant improvement in model fit detected by the ANOVA test.
+The best fit model is m2. That is confirmed by its minimum AIC value, maximum Akaike weight, and the addition of `B` (`pophost_binom`) to the null model leading to a significant improvement in model fit as detected by the ANOVA test.
 
 ### Best Fit
 
@@ -318,14 +318,14 @@ Host plant (`K. elegans = 1`, `C. corindum = -1`) is significant in predicting l
 
 ## Wing-to-Body Ratio 
 
-How does sex, host plant, month, and/or year effect the wing-to-body ratio of long-winged soapberry bugs?
+We tested how sex, host plant, month, and/or year effected whether the wing-to-body ratio of long-winged soapberry bugs.
 
 ```{r}
-data = data.frame(R=data_long$wing2body_c, # centered
-                 A=data_long$sex_binom,
-                 B=data_long$pophost_binom,
-                 C=data_long$month_of_year_c, # centered
-                 D=data_long$months_since_start_c) # centered
+data = data.frame(R=data_long$wing2body_c,
+                  A=data_long$sex_binom,
+                  B=data_long$pophost_binom,
+                  C=data_long$month_of_year_c, 
+                  D=data_long$months_since_start_c)
 
 model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")
 model_comparisonsAIC(model_script)
@@ -334,11 +334,13 @@ model_comparisonsAIC(model_script)
 &nbsp;
 
 ```{r results = "hold"}
-anova(m88, m58, test="Chisq") # Adding A*D marginally improves fit
-anova(m76, m58, test="Chisq") # Adding C*D does not improve fit
 anova(m88, m99, test="Chisq") # adding C*D does not improve fit
+anova(m58, m88, test="Chisq") # Adding A*D marginally improves fit
+anova(m58, m76, test="Chisq") # Adding C*D does not improve fit
 anova(m34, m58, test="Chisq") # Adding B*D improves fit
 ```
+
+The best fit model is m58. It did not have the minimum AIC value or maximum Akaike weight, but the addition of `A*D (sex_binom*months_since_start_c)` was not detected as a significant improvement in model fit, according to the ANOVA test.
 
 &nbsp;
 
@@ -350,19 +352,23 @@ M3 = glm(wing2body_c ~ sex_binom*pophost_binom + pophost_binom*months_since_star
 summary(M3) 
 ```
 
+All single effects except `months_since_start` and all interactions are significant in the best fit model for predicting wing-to-body ratio. It is noticeable that month and year effect sizes are relatively small.
+
 &nbsp;
 
 ## Wing-to-Body Ratio Variance 
 
-In addition to modeling how sex, host plant, month, or year effects the wing-to-body ratio of a soapberry bug, we modeled how those same factors affected the variance of wing-to-body ratio.
+We then tested how sex, host plant, month, or year effects the wing-to-body ratio variance of long-winged soapberry bugs.
+
+First, the mean wing-to-body ratio was computed using `aggregate()` to group the wing-to-body ratio recordings in `data_long` according to sex, host plant, month, and year. The subsequent subset data created was `w2b_table` (n=36). Then, summary statistics were applied to the data subset and variance (`sd`) was modeled.
 
 ```{r}
-w2b_table = aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, 
-                     data=data_long, FUN=mean)
-w2b_table$sd = aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, 
-                           data=data_long, FUN=sd)$wing2body
-w2b_table$se = aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, 
-                           data=data_long, FUN=SE)$wing2body
+w2b_table = aggregate(wing2body ~ sex_binom*pophost_binom*month_of_year*months_since_start, 
+                      data=data_long, FUN=mean)
+w2b_table$sd = aggregate(wing2body ~ sex_binom*pophost_binom*month_of_year*months_since_start, 
+                         data=data_long, FUN=sd)$wing2body
+w2b_table$se = aggregate(wing2body ~ sex_binom*pophost_binom*month_of_year*months_since_start, 
+                         data=data_long, FUN=SE)$wing2body
 ```
 
 ```{r}
@@ -385,12 +391,16 @@ anova(m2, m8, test="Chisq") # Adding C does not improve fit
 anova(m0, m2, test="Chisq") # Adding B improves fit
 ```
 
+The best fit model is m2. It did not have the minimum AIC value or maximum Akaike weight, but the addition of `B` (`pophost_binom`) to the null model lead to a significant improvement in model fit detected by the ANOVA test.
+
 ### Best Fit
 
 ```{r}
 M4 = glm(sd ~ pophost_binom, data=w2b_table, family=gaussian) 
 summary(M4)
 ```
+
+Host plant (`K. elegans = 1,C. corindum = -1`) is significant in predicting wing-to-body ratio variance. Soapberry bugs collected from *K. elegans*, goldenrain tree, experience more variance in wing-to-body ratio than those collected from *C. corindum*, balloon vine.
 
 &nbsp;
 
@@ -432,25 +442,32 @@ font_size = 4.5
 # function to calculate 95% confidence interval (CI). 
 CI_95 = function(x){qnorm(0.975)*sd(x)/sqrt(length(x))}
 CI_95_binom_upper = function(y) {binom.confint(x=sum(y, na.rm=TRUE), n=length(y[!is.na(y)]), 
-                                                conf.level=0.95, methods='exact')$upper}
+                                               conf.level=0.95, methods='exact')$upper}
 CI_95_binom_lower = function(y) {binom.confint(x=sum(y, na.rm=TRUE), n=length(y[!is.na(y)]), 
-                                                conf.level=0.95, methods='exact')$lower}
+                                               conf.level=0.95, methods='exact')$lower}
 ```
 
 ```{r}
-# aggregate the full data and compute standard error (SE), upper and lower CI, & sample size (n)
-w_morph_summary = aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start,
-                           data=raw_data, FUN=mean)
-w_morph_summary$se = aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start,
-                              data=raw_data, FUN=SE)$wing_morph_binom
-w_morph_summary$upper = aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start,
-                                 data=raw_data, FUN=CI_95_binom_upper)$wing_morph_binom
-w_morph_summary$lower = aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start,
-                                 data=raw_data, FUN=CI_95_binom_lower)$wing_morph_binom
-w_morph_summary$n = aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start,
-                             data=raw_data, FUN=length)$wing_morph_binom
+# aggregate the full data
+w_morph_summary = aggregate(wing_morph_binom ~ sex*pophost*month_of_year*months_since_start,
+                            data=raw_data, FUN=mean)
 
-jitter = runif(n=nrow(w_morph_summary), min=-0.1, max=0.1) # jitter points slightly
+# compute standard error (SE), upper and lower CI, & sample size (n)
+w_morph_summary$se = aggregate(wing_morph_binom ~ 
+                               sex*pophost*month_of_year*months_since_start,
+                               data=raw_data, FUN=SE)$wing_morph_binom
+w_morph_summary$upper = aggregate(wing_morph_binom ~ 
+                                  sex*pophost*month_of_year*months_since_start,
+                                  data=raw_data, FUN=CI_95_binom_upper)$wing_morph_binom
+w_morph_summary$lower = aggregate(wing_morph_binom ~ 
+                                  sex*pophost*month_of_year*months_since_start,
+                                  data=raw_data, FUN=CI_95_binom_lower)$wing_morph_binom
+w_morph_summary$n = aggregate(wing_morph_binom ~ 
+                              sex*pophost*month_of_year*months_since_start,
+                              data=raw_data, FUN=length)$wing_morph_binom
+
+# jitter points slightly
+jitter = runif(n=nrow(w_morph_summary), min=-0.1, max=0.1) 
 w_morph_summary$dates = w_morph_summary$month_of_year + jitter
 
 dd = w_morph_summary
