@@ -9,8 +9,8 @@ output:
 rm(list=ls())
 
 # set working directory
-#dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/"
-dir = "~/Documents/GitHub/SBB-dispersal/avbernat_working_on"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/"
+#dir = "~/Documents/GitHub/SBB-dispersal/avbernat_working_on"
 setwd(dir)
 
 knitr::opts_chunk$set(echo = TRUE)

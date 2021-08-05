@@ -66,11 +66,11 @@ The occurrence of long-wing morphology and the wing-to-body ratio of *J. haemato
 Additional R packages not shown below, but embedded in the sourced scripts are `zoo` and `lubridate`, which aid in data manipulation and datetime manipulation, respectively. 
 
 ```{r message=FALSE}
-library(lme4) # fit regressions 
-library(dplyr) # data manipulation 
+library(lme4)      # fit regressions 
+library(dplyr)     # data manipulation 
 library(ggformula) # ggplot plotting
-library(cowplot) # ggplot helper functions to arrange multi-panel figures
-library(binom) # binomial confidence intervals
+library(cowplot)   # ggplot helper functions to arrange multi-panel figures
+library(binom)     # binomial confidence intervals
 ```
 
 ## Read Source Files
