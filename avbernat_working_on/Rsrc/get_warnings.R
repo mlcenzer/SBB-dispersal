@@ -1,6 +1,6 @@
 # Get details about the warnings:
 
-withWarnings <- function(expr) {
+catch_warnings <- function(expr) {
   myWarnings <- NULL
   wHandler <- function(w) {
     myWarnings <<- c(myWarnings, list(w))

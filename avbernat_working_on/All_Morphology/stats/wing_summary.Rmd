@@ -62,7 +62,7 @@ This document analyzes two main datasets, `raw_data` and `data_long`. The raw_da
 
 ## Read Libraries
 
-The occurrence of long-wing morphology and the wing-to-body ratio of *J. haematoloma* were analyzed using multivariate, generalized linear modeling (GLM) as implemented in the R packages `lme4` and `binom`. The `dplyr` package helped speed data manipulation processes by grouping data quickly. All plots, except the histograms, were generated using `ggplot` libraries and helper functions found in R packages `ggformula` and `cowplot`.
+The occurrence of long-wing morphology and the wing-to-body ratio of *J. haematoloma* were analyzed using multivariate, generalized linear modeling (GLM) as implemented in the R packages `lme4` and `binom`. The `dplyr` package helped pipeline data manipulation processes by grouping data quickly. All plots, except the histograms, were generated using `ggplot` libraries and helper functions found in R packages `ggformula` and `cowplot`.
 
 Additional R packages not shown below, but embedded in the sourced scripts are `zoo` and `lubridate`, which aid in data manipulation and datetime manipulation, respectively. 
 
@@ -94,7 +94,7 @@ for (script in script_names) {
 
 ## Read the Data
 
-The morphology data were started in 2013-04-28 and last updated on 2021-05-18. The `read_morph_data()` function standardizes population names, host plant names, and month and year inputs. Month and year inputs are also converted into datetimes. Variables of interest like wing-to-body ratio and wing-to-thorax ratio are also calculated and centered Then, the full dataset, `raw_data` (n=3532), and a long-winged bug only dataset, `data_long` (n=2096) are returned. 
+The morphology data were started in 2013-04-28 and last updated on 2021-05-18. The `read_morph_data()` function standardizes population names, host plant names, and month and year inputs. Month and year inputs are also converted into datetimes. Variables of interest like wing-to-body ratio and wing-to-thorax ratio are also calculated and centered. Then, the full dataset, `raw_data` (n=3532), and a long-winged bug only dataset, `data_long` (n=2096) are returned. 
 
 ```{r}
 datapath = paste0(dir,"All_Morphology/stats/data/allmorphology05.18.21.csv")

@@ -5,7 +5,7 @@ center_data = function(d, is_not_unique_data = TRUE) {
   # Function that centers the data for which ever flight data subset you give it (full or unique)
   
   # Distance From Sympatric Zone
-  d$lat_c =d$latitude-mean(d$latitude)
+  d$lat_c = d$latitude-mean(d$latitude)
   
   sym_zone = d[d$population == "Homestead",]$latitude
   d$sym_dist = abs(d$latitude-sym_zone)
