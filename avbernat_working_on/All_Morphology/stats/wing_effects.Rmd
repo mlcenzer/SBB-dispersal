@@ -1,0 +1,247 @@
+---
+title: "Wing Effects"
+author: "Anastasia Bernat"
+date: "8/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list = ls())
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+MOY_coeff = 0.0995560*1
+#sex_coeff = -0.2597900*-1
+inter_coeff = -0.0014557*69*1
+model =  MOY_coeff + inter_coeff 
+beta = model
+per_change = (exp(beta) - 1) * 100 
+per_change # year over powers the months_since_start for the first month, but for all other months, seasonality drives the appearance of long-wing morphs
+
+# plot this interaction...(1-12 for MOY_coeff and 0-72 for the year coeff)
+```
+
+```{r}
+intercept = 0.7516501
+MOY_coeff = 0.0995560*1
+sex_coeff = -0.2597900*-1
+host_coeff = 1.1256358
+inter_coeff = -0.0014557*72*1 
+model =  MOY_coeff + inter_coeff 
+beta = host_coeff #+ intercept
+per_change = (exp(beta) - 1) * 100 
+per_change # year over powers the months_since_start for the first month, but for all other months, seasonality drives the appearance of long-wing morphs
+
+# plot this interaction...(1-12 for MOY_coeff and 0-72 for the year coeff)
+```
+
+
+```{r fig.height=4, fig.width=5}
+
+M = seq(1,12)
+MSS = seq(0,72) # and you can project this and you'll see as the years proceed you would get WAY MORE PLASTICITY at later months
+c = expand.grid(M,MSS)
+
+eq = function(combo_matrix) {
+  effects_col = c()
+  for (i in 1:nrow(c)) {
+    mo=c[i,1]
+    yr=c[i,2]
+    bm = 0.0995560
+    bi = -0.0014557
+    total_effect = bm*mo + bi*mo*yr
+    perchange =  (exp(total_effect) - 1) * 100 
+    effects_col = c(effects_col, perchange)
+  }
+  
+  return(effects_col)
+}
+MODEL = eq(c)
+c$model = MODEL
+colnames(c) = c("month", "year", "model")
+
+
+library(plotrix)
+set.seed(1)
+x <- sort(runif(length(MSS), min = 0, max = 1))
+colorfunc = colorRamp(c("blue","purple","red"))
+mycolors_yr = rgb(colorfunc(x), maxColorValue=255)
+x <- sort(runif(length(M), min = 0, max = 1))
+mycolors_mo = rgb(colorfunc(x), maxColorValue=255)
+
+par(mfrow=c(2,2))
+plot(c$month, c$model, ylab="% change", xlab="month", col=mycolors_yr[as.factor(c$year)])
+grid()
+abline(h=0, col="black")
+legend(1, 235, title="year", legend=c("2013", "2017", "2020"), col=c("blue","purple", "red"), pch=16)
+
+plot(c$year, c$model, ylab="% change", xlab="months since start", col=mycolors_mo[as.factor(c$month)])
+grid()
+abline(h=0, col="black")
+abline(v=69, col="black")
+legend(50, 235, title="month", legend=c("1  ", "6  ", "12  "), col=c("blue","purple", "red"), pch=16)
+text(55, 130, "year = 2019")
+
+
+M = seq(1,12)
+MSS = seq(0,72) # and you can project this and you'll see as the years proceed you would get WAY MORE PLASTICITY at later months
+c = expand.grid(M,MSS)
+
+eq = function(combo_matrix) {
+  effects_col = c()
+  for (i in 1:nrow(c)) {
+    mo=c[i,1]
+    yr=c[i,2]
+    by = 0.0107239
+    bi = -0.0014557
+    total_effect = by*mo + bi*mo*yr
+    perchange =  (exp(total_effect) - 1) * 100 
+    effects_col = c(effects_col, perchange)
+  }
+  
+  return(effects_col)
+}
+
+MODEL = eq(c)
+c$model = MODEL
+colnames(c) = c("month", "year", "model")
+
+
+library(plotrix)
+set.seed(1)
+x <- sort(runif(length(MSS), min = 0, max = 1))
+colorfunc = colorRamp(c("blue","purple","red"))
+mycolors_yr = rgb(colorfunc(x), maxColorValue=255)
+x <- sort(runif(length(M), min = 0, max = 1))
+mycolors_mo = rgb(colorfunc(x), maxColorValue=255)
+
+
+plot(c$month, c$model, ylab="% change", xlab="month", col=mycolors_yr[as.factor(c$year)])
+grid()
+abline(h=0, col="black")
+legend(1, -45, title="year", legend=c("2013", "2017", "2020"), col=c("blue","purple", "red"), pch=16)
+
+plot(c$year, c$model, ylab="% change", xlab="months since start", col=mycolors_mo[as.factor(c$month)])
+grid()
+abline(h=0, col="black")
+abline(v=7, col="black")
+legend(12, -45, title="month", legend=c("1  ", "6  ", "12  "), col=c("blue","purple", "red"), pch=16)
+text(15, -30, "year \n= \n2013")
+```
+
+
+Less likely in later months than early months for LATER YEARS
+But more likely in later months than early months for EARLY YEARS
+
+
+EARLY YEAR meant that LATE MONTH had most likely chance of being long winged BUT that ended soon after 2013 where across all months saw a decrease in long-wing morph appearance but you had the least decrease if you were in the early months. 
+
+
+```{r}
+# sex ----- 
+# sex_binom:pophost_binom           0.0973323
+# sex_binom:months_since_start      0.0037212 
+# K. elegans"  "1" | F = 1 
+intercept_var = 0.35216 
+sexhp = 0.0037212 * 11
+#sexmss = 0.0037212 * 1
+beta = sexhp #+ intercept_var
+per_change = (exp(beta) - 1) * 100 
+per_change
+```
+
+```{r}
+# sex ----- 
+# sex_binom:pophost_binom           0.0973323
+# sex_binom:months_since_start      0.0037212 
+# K. elegans"  "1" | F = 1 
+S = c(1,-1)
+HP = c(1,-1)
+MSS = seq(0,72) # and you can project this and you'll see as the years proceed you would get WAY MORE PLASTICITY at later months
+c = expand.grid(S, HP, MSS)
+
+eq = function(combo_matrix) {
+  effects_col = c()
+  for (i in 1:nrow(c)) {
+    sex=c[i,1]
+    hp=c[i,2]
+    yr=c[i,3]
+    bsex = -0.2597900
+    bshp = 0.0973323
+    bsmss = 0.0037212
+    total_effect = bsex * sex + (bshp * sex * hp) + (bsmss * sex * yr)
+    perchange =  (exp(total_effect) - 1) * 100 
+    effects_col = c(effects_col, perchange)
+  }
+  
+  return(effects_col)
+}
+
+MODEL = eq(c)
+c$model = MODEL
+colnames(c) = c("sex", "hp", "year", "model")
+
+plot(c$year, c$model, ylab="% change", xlab="month",
+     col=c("blue","red")[as.factor(c$sex)], pch=c(1,16)[as.factor(c$hp)],
+     ylim = c(-30, 60))
+grid()
+abline(v=43, col="black")
+abline(v=70, col="black")
+legend(55, 60, legend=c("M + BV", "M + GRT", "F + GRT", "F + BV"), col=c("blue", "blue", "red", "red"), pch=c(1,16,16,1),cex=.7)
+text(37, 50, "year = 2016", cex=.7)
+text(64, 23, "year = 2019", cex=.7)
+```
+
+```{r}
+# pophost_binom:month_of_year      -0.0379395 
+hpm = -0.0379395 * -1 * 1 # larger for BV smaller for GRT
+beta = hpm 
+per_change = (exp(beta) - 1) * 100 
+per_change
+
+Probability = 1 / (1 + exp(beta)) * 100 # or p = exp(beta) / (1 + exp(beta))
+Probability = exp(beta) / (1 + exp(beta)) * 100 
+Probability
+```
+
+```{r}
+# pophost_binom                     1.1256358 
+# sex_binom:pophost_binom           0.0973323 
+# pophost_binom:month_of_year      -0.0379395 
+
+S = c(1,-1)
+HP = c(1,-1)
+M = seq(1,12) # and you can project this and you'll see as the years proceed you would get WAY MORE PLASTICITY at later months
+c = expand.grid(S, HP, M)
+
+eq = function(combo_matrix) {
+  effects_col = c()
+  for (i in 1:nrow(c)) {
+    sex=c[i,1]
+    hp=c[i,2]
+    m=c[i,3]
+    bhp = 1.1256358 
+    bshp = 0.0973323
+    bhpm = -0.0379395 
+    total_effect = bhp * hp + (bshp * sex * hp) + (bhpm * hp * m)
+    perchange =  (exp(total_effect) - 1) * 100 
+    effects_col = c(effects_col, perchange)
+  }
+  
+  return(effects_col)
+}
+
+MODEL = eq(c)
+c$model = MODEL
+colnames(c) = c("sex", "hp", "month", "model")
+
+plot(c$month, c$model, ylab="% change", xlab="month",
+     col=c("blue","red")[as.factor(c$sex)], pch=c(1,16)[as.factor(c$hp)], ylim=c(-80, 260))
+grid()
+abline(v=43, col="black")
+abline(v=70, col="black")
+legend(10.3, 260, legend=c("M + BV", "M + GRT", "F + GRT", "F + BV"), col=c("blue", "blue", "red", "red"), pch=c(1,16,16,1),cex=.7)
+text(37, 50, "year = 2016", cex=.7)
+text(64, 23, "year = 2019", cex=.7)
+```
