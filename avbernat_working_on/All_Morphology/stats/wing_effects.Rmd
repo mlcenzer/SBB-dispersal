@@ -2,7 +2,9 @@
 title: "Wing Effects"
 author: "Anastasia Bernat"
 date: "8/14/2021"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -37,7 +39,7 @@ per_change # year over powers the months_since_start for the first month, but fo
 ```
 
 
-```{r fig.height=4, fig.width=5}
+```{r fig.height=4*2, fig.width=5*2, echo=FALSE}
 
 M = seq(1,12)
 MSS = seq(0,72) # and you can project this and you'll see as the years proceed you would get WAY MORE PLASTICITY at later months
@@ -151,7 +153,7 @@ per_change = (exp(beta) - 1) * 100
 per_change
 ```
 
-```{r}
+```{r, echo=FALSE}
 # sex ----- 
 # sex_binom:pophost_binom           0.0973323
 # sex_binom:months_since_start      0.0037212 
@@ -199,13 +201,9 @@ hpm = -0.0379395 * -1 * 1 # larger for BV smaller for GRT
 beta = hpm 
 per_change = (exp(beta) - 1) * 100 
 per_change
-
-Probability = 1 / (1 + exp(beta)) * 100 # or p = exp(beta) / (1 + exp(beta))
-Probability = exp(beta) / (1 + exp(beta)) * 100 
-Probability
 ```
 
-```{r}
+```{r, echo=FALSE}
 # pophost_binom                     1.1256358 
 # sex_binom:pophost_binom           0.0973323 
 # pophost_binom:month_of_year      -0.0379395 
