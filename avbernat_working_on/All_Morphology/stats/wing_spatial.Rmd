@@ -49,7 +49,9 @@ source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc
 
 script_names = c("compare_models.R",
                  "regression_output.R",
-                 "clean_morph_data2.R", # two functions: read_morph_data and remove_torn_wings
+                 "remove_torn_wings.R",
+                 "clean_morph_data.R", # two functions: read_morph_data and remove_torn_wings
+                 "get_Akaike_weights.R",
                  "AICprobabilities.R",
                  "HighstatLibV13.R")
 
@@ -140,10 +142,16 @@ d2 = check_spatial_dependencies(M2, temp, temp$long, temp$lat, zone = 16, cutoff
 ## Model Ony the Keys and Homestead
 
 ```{r}
-keys = c("North_Key_Largo", "Key_Largo", "Plantation_Key", "Homestead", "HomesteadBV", "HomesteadGRT")
+unique(d2$population)
+```
+
+```{r}
+keys = c("North Key Largo", "Key Largo", "Plantation Key", "Homestead")
 
 d3 = d2 %>%
-  filter(population == "North_Key_Largo" | population =="Key_Largo" | population == "Plantation_Key" | population == "Homestead" | population == "HomesteadBV" | population == "HomesteadGRT")
+  filter(population == keys[1] | population == keys[2] | population == keys[3] | population == keys[4])
+
+unique(d3$population)
 ```
 
 ```{r}
@@ -171,8 +179,10 @@ d3 = check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff
 ## Model Only Keys
 
 ```{r}
+keys = c("North Key Largo", "Key Largo", "Plantation Key")
+
 d4 = d2 %>%
-  filter(population == "North_Key_Largo" | population =="Key_Largo" | population == "Plantation_Key")
+  filter(population == keys[1] | population == keys[2] | population == keys[3])
 ```
 
 ```{r}
@@ -260,6 +270,7 @@ mesh     <- inla.mesh.2d(boundary = Hull,
                          cutoff =  MaxEdge / 5)
 mesh$n
 ```
+
 ```{r}
 # This is the mesh
 par(mfrow = c(1,1), mar=c(0,0,0,0))

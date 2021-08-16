@@ -45,6 +45,7 @@ script_names = c("center_flight_data.R", # Re-centers data
                  "get_warnings.R", 
                  "compare_models.R",
                  "regression_output.R", # Cleans regression outputs; prints in color or B&W
+                 "get_Akaike_weights.R",
                  "AICprobabilities.R")
 
 for (script in script_names) { 
@@ -170,7 +171,7 @@ data<-data.frame(R=d_T1$distance,
                  X=d_T1$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 3-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -210,7 +211,7 @@ data<-data.frame(R=d_T1$distance,
                  X=d_T1$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 3-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -252,7 +253,7 @@ data<-data.frame(R=d_T1$distance,
                  X=d_T1$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 3-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -290,7 +291,7 @@ data<-data.frame(R=d_T1$distance,
                  X=d_T1$chamber) # singular fit if run with min_from_IncStart meaning the variance is near 0
 
 model_script = paste0(source_path,"generic models-Gamma glmer 2-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 ```{r}
@@ -395,7 +396,7 @@ data<-data.frame(R=d_T2$distance,
                  X=d_T2$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 3-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -433,7 +434,7 @@ data<-data.frame(R=d_T2$distance,
                  D=d_T2$mass_c, X=d_T2$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 4-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -465,7 +466,7 @@ data<-data.frame(R=d_T2$distance,
                  X=d_T2$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 4-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 ```{r}
@@ -487,7 +488,7 @@ data<-data.frame(R=d_T2$distance,
                  X=d_T2$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 2-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -603,7 +604,7 @@ data<-data.frame(R=d_fem$distance,
                  X=d_fem$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 2-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -642,7 +643,7 @@ data<-data.frame(R=d_fem$distance,
                  X=d_fem$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 2-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -654,14 +655,6 @@ anova(m0, m1, test="Chisq") # Adding A does not improve fit
 ```{r}
 best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_fem) 
 tidy_regression(best.fit, is_color=output_col)
-```
-
-
-```{r}
-s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
-qqnorm(resid(best.fit))
-qqline(resid(best.fit))
-text(-1, 0.1, s.test)
 ```
 
 
@@ -677,7 +670,7 @@ data<-data.frame(R=d_fem$distance,
                  X=d_fem$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 3-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -690,13 +683,6 @@ anova(m0, m2, test="Chisq") # Adding B does not improve fit
 ```{r}
 best.fit <- glm(distance ~ 1, family = Gamma(link = "log"), data = d_fem) 
 tidy_regression(best.fit, is_color=output_col)
-```
-
-```{r}
-s.test <- paste("pval: ", shapiro.test(residuals(best.fit))$p.value)
-qqnorm(resid(best.fit))
-qqline(resid(best.fit))
-text(-1, 0.1, s.test)
 ```
 
 <a id="fmorph"></a>
@@ -714,7 +700,7 @@ data<-data.frame(R=d_fem$distance,
                  X=d_fem$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 2-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -750,7 +736,7 @@ data<-data.frame(R=d_fem$distance,
                  X=d_fem$chamber) # adding D=d_fem$wing2body_c leads to a massive converging error
 
 model_script = paste0(source_path,"generic models-Gamma glmer 3-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -865,7 +851,7 @@ data<-data.frame(R=d_male$distance,
                  X=d_male$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 2-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -903,7 +889,7 @@ data<-data.frame(R=d_male$distance,
                  X=d_male$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 3-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -938,7 +924,7 @@ data<-data.frame(R=d_male$distance,
                  X=d_male$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 3-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
@@ -970,7 +956,7 @@ text(-1, 0.1, s.test)
 data<-data.frame(R=d_male$distance, A=d_male$wing2body, B=d_male$thorax_c, X=d_male$chamber)
 
 model_script = paste0(source_path,"generic models-Gamma glmer 2-FF log link.R")
-errors <- withWarnings(model_comparisonsAIC(model_script))
+errors <- catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge:", length(errors$warnings))
 ```
 
