@@ -858,6 +858,30 @@ points(x = Loc[,1],
 ##########################################
 ```
 
+```{r fig.width=12.5, fig.height=4.5}
+# And the rest is a matter of plotting the
+# correlation values, contour of the coast and the
+# sampling locations.
+PlotField2(Corr, 
+           mesh.barrier, 
+           ContourMap = Keys.UTM,  
+           zlim = c(0.2, 1),
+           Add = FALSE)
+#It will find the closest point on the mesh:
+points(x = 1174723.0528, y = 12810472.1565, col = 2, pch = 16, cex = 2)
+
+plot(Keys.UTM, 
+     axes = TRUE, 
+     add = TRUE)
+points(x = Loc[,1],
+       y = Loc[,2],
+       cex = 0.5, 
+       col = "black", 
+       pch = 16)
+# This is not working...
+##########################################
+```
+
 Is a barrier really needed? Even without:
 
 ```{r}
