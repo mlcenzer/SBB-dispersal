@@ -108,6 +108,26 @@ data_long = remove_torn_wings(data_long)
 
 Bugs marked as having torn wings during measurements were only filtered out of the `data_long` dataset (n=1903). That was because `data_long` is used only to analyze the wing-to-body ratio, which was computed for long-winged bugs since no short-winged bugs can fly. `raw_data` is only used to analyze long-wing morph frequency.
 
+```{r fig.height=1.7, fig.width=3.5, message=FALSE, warning=FALSE}
+# delete this below
+store = "                              Soapberry bug collections (2013-2020)"
+ggplot(raw_data, aes(x = beak, color = sex)) +
+  geom_histogram(position = "identity", alpha = 0.4, fill="white") + 
+  labs(title=" ", 
+       x="beak length (mm)", y = "count") +
+  theme_classic() +
+  scale_color_manual(values=c("red2", "black")) + 
+  theme(text = element_text(size = 17))  
+
+ggplot(raw_data, aes(x = thorax, color = sex)) +
+  geom_histogram(position = "identity", alpha = 0.4, fill="white") + 
+  labs(title=" ", 
+       x="thorax length (mm)", y = "count") +
+  theme_classic() +
+  scale_color_manual(values=c("red2", "black")) + 
+  theme(text = element_text(size = 17))  
+```
+
 ## Histograms of Wing Morph Data 
 
 To better visualize how wing morph relates to another allometric measurement, wing-to-thorax ratio, the following histograms were plotted:
@@ -132,6 +152,149 @@ hist(raw_data$wing[raw_data$w_morph=="S"]/raw_data$thorax[raw_data$w_morph=="S"]
      main="wing-to-thorax for short-winged SBB",
      xlab="wing length/thorax length",
      breaks=seq(0.5,3.8,by=0.05))
+```
+
+```{r fig.height=6, fig.width=6.6, echo=FALSE}
+par(mfrow=c(3,1))
+hist(raw_data$wing[raw_data$w_morph=="L"]/raw_data$body[raw_data$w_morph=="L"],
+     main="wing-to-body for long-winged SBB",
+     xlab="wing length/body length"
+     #,breaks=seq(0.5, 3.8, by=0.05)
+     )
+# hist(raw_data_missing$wing/raw_data_missing$body, 
+#      main="wing-to-body for SBB w/o recorded wing morph",
+#      xlab="wing length/body length"
+#      # ,breaks=seq(0.5, 3.8, by=0.05),
+#      # ylim=c(0,12)
+#      )
+hist(raw_data$wing[raw_data$w_morph=="S"]/raw_data$body[raw_data$w_morph=="S"],
+     main="wing-to-body for short-winged SBB",
+     xlab="wing length/body length"
+     #,breaks=seq(0.5,3.8,by=0.05)
+     )
+```
+```{r}
+raw_data$wing2body = raw_data$wing/raw_data$body
+```
+
+
+
+```{r fig.height=1.7, fig.width=3.5}
+d = raw_data %>%
+  filter(!is.na(w_morph)) %>%
+  filter(w_morph != "LS" & w_morph != "SL" & w_morph !="") %>%
+  filter(!is.na(wing2body))
+d$`wing morph` = d$w_morph
+
+unique(d$`wing morph`)
+max(d$wing2body)
+ggplot(d, aes(x = wing2body, color = `wing morph`)) +
+  geom_histogram(position = "identity", alpha = 0.4, fill="white", bins=100) + 
+  ylim(0,300) +
+  labs(title=" ", 
+       x="wing-to-body ratio", y = "count") +
+  theme_classic() +
+  scale_color_manual(values=c("red2", "black")) + 
+  theme(text = element_text(size = 17))  
+
+d = raw_data %>%
+  filter(!is.na(w_morph)) %>%
+  filter(w_morph != "LS" & w_morph != "SL" & w_morph !="") %>%
+  filter(!is.na(wing2thorax))
+d$`wing morph` = d$w_morph
+
+ggplot(d, aes(x = wing2thorax, color = `wing morph`)) +
+  geom_histogram(position = "identity", alpha = 0.4, fill="white", bins=100) + 
+  labs(title=" ", 
+       x="wing-to-thorax ratio", y = "count") +
+  theme_classic() +
+  scale_color_manual(values=c("red2", "black")) + 
+  theme(text = element_text(size = 17))  
+
+# ggplot(raw_data, aes(x = thorax, color = sex)) +
+#   geom_histogram(position = "identity", alpha = 0.4, fill="white") + 
+#   labs(title=" ", 
+#        x="thorax length (mm)", y = "count") +
+#   theme_classic() +
+#   scale_color_manual(values=c("red2", "black")) + 
+#   theme(text = element_text(size = 17))  
+```
+
+```{r}
+Round <- function(number){
+  # for plotting
+  x <- round(number, 1)
+  if(x%%1 == 0){
+    return(paste(as.character(x), ".0", sep = ""))
+  }
+  else{
+    return(x)
+  }
+}
+```
+
+```{r}
+PCA_graphs <- function(dataset, PCA_title){
+    # cos2 and the alpha.var: alpha.var colours variables by cos2 
+    # (importance of most important PC to variable), 
+    # see https://personal.utdallas.edu/~herve/abdi-awPCA2010.pdf
+  
+    GFpca <- PCA(dataset, scale.unit = TRUE, graph = TRUE, ncp = 10)
+    
+    eig.val <- get_eigenvalue(GFpca)
+    var.val <- GFpca$var
+    print(eig.val) #will only show in in console
+    print(var.val)
+    
+    scree <- fviz_eig(GFpca, addlabels = TRUE, ylim = c(0, 100))
+    print(scree)
+    
+    labX <- paste("PC1 (", Round(eig.val[1, 2]), "%)", sep = "")
+    labY <- paste("PC1 (", Round(eig.val[2, 2]), "%)", sep = "")
+    leplot <- fviz_pca_biplot(GFpca, geom.id = c("point"), 
+                              geom.var = c("arrow", "text"), 
+                              alpha.var = "cos2",
+                              label = "var", repel = T, 
+                              col.ind = "gray", col.var = "black")
+    print(leplot)
+    
+    ggpubr::ggpar(leplot, title = PCA_title, xlab = labX, ylab = labY, 
+                  ggtheme = theme_classic(), font.main = c(20, "bold"), 
+                  font.x = 14, font.y = 14, font.tickslab = 12
+                  )
+    
+    D = cor(dataset)
+    test <- cor.mtest(dataset)$p
+    par(mfrow=c(1,2))
+    corrplot.mixed(D,lower.col = "black", number.cex = .7, p.mat=test, sig.level=0.05)
+    corrplot.mixed(D,lower.col = "black", number.cex = .7)
+    
+    return(GFpca)
+}
+```
+
+```{r}
+# delete
+# temp <- data_long %>%
+#   select(thorax, wing2body, beak) %>%
+#   filter(!is.na(wing2body))
+# colnames(temp) <- c("thorax", "wing2body", "beak")
+# MorphPCA = PCA_graphs(temp, "(a) ")
+```
+
+```{r}
+library(factoextra)
+temp = cbind(d$wing, d$body, d$thorax, d$beak)
+temp2 = temp[complete.cases(temp),]
+res.pca <- prcomp(temp2, scale = TRUE)
+fviz_eig(res.pca)
+fviz_pca_ind(res.pca
+             #col.ind = "cos2",
+             #addEllipses = TRUE
+            # col.ind = "cos2", # Color by the quality of representation
+            # gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+            #repel = TRUE     # Avoid text overlapping
+             )
 ```
 
 From the histograms, the relationship between wing morph and wing-to-thorax ratio is bimodal. Long-winged bugs have larger wing-to-thorax ratios with a frequency peak around 2.75, whereas short-winged bugs have much smaller wing-to-thorax ratios with a frequency peak around 1.75. It is then noticeable that there are 22 bugs who had not been identified as either S or L during measurements, but cannot be categorized into S or L based on wing-to-thorax bimodality because these data reside in-between the two modes.
@@ -200,11 +363,81 @@ It is noticeable here that there was a heterogeneous population collection patte
 
 ### Plot 2: Collection numbers grouped by Host Plant and Datetime
 
+```{r}
+# delete
+ss=29
+customPlot = list(geom_bar(position='stack', color="black", width=0.7),
+                  theme_classic(),
+                  theme(axis.text.y = element_text(size=ss),
+                        axis.text.x = element_text(size=ss, angle = 45, hjust = 1.1),
+                        axis.title = element_text(size=ss)),
+                  theme(axis.title.x = element_text(size=ss,vjust = -3)),
+                  theme(axis.title.y = element_text(size=ss, vjust = 4)),
+                  theme(plot.margin=unit(c(1,1,1.1,1.2),"cm"))
+                  )
+```
+
+```{r fig.height=4.5, fig.width=4.2, echo=FALSE}
+# delete
+p2 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
+  labs(title=" ", fill="Host Plant", x="Field Collection Date", y = "Number of Bugs Collected") +
+  scale_fill_manual(values=c("#7cc7f2", "#69b34d")) + 
+  customPlot + theme(text = element_text(size = 24)) 
+#+ theme(legend.position="top")
+p2
+```
+
+```{r fig.height=4.5, fig.width=4.2, echo=FALSE}
+# delete
+p3 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=sex)) + 
+  labs(title=" ", fill="Sex", x="Field Collection Date", y = " ") +
+  scale_fill_manual(values=c("#db5c5c", "#8a4d5c"), # e66532, #80635b
+                    labels = c("Female", "Male")) + customPlot + theme(text = element_text(size = 24)) 
+#+ theme(legend.position="top")
+p3
+```
+
+```{r fig.height=4.5, fig.width=4.2, echo=FALSE}
+# delete
+pop_colors = c("#787a87", "#E69F00", "#409973", "#9bc969",
+               "grey", "gold", 
+               "#56B4E9", "royalblue", 
+                "ivory2") 
+
+p1 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=population)) + 
+  labs(title=" ", fill="Population",x="Field Collection Date", y = " ") +
+  scale_fill_manual(values=pop_colors) + 
+  customPlot + theme(text = element_text(size = 24)) 
+p1
+```
+```{r fig.height=4.5, fig.width=18.7, echo=FALSE}
+p2a = p2 + theme(title=element_blank()) + theme(text = element_text(size = ss+2)) 
+# + theme(legend.position="top")
+p3a = p3 + theme(title=element_blank()) + theme(text = element_text(size = ss+2)) 
+#+ theme(legend.position="top")
+p1a = p1 + theme(title=element_blank()) + theme(text = element_text(size = ss+2)) 
+
+#grid.arrange(p2a,p3a,p1a, nrow=1)
+```
+
+```{r fig.height=8.5, fig.width=4.5, echo=FALSE}
+#library(gridExtra) # delete
+p2b = p2 + theme(title=element_blank(),
+                 axis.title.x=element_blank(),
+                 axis.text.x=element_blank()) 
+p3b = p3 + theme(title=element_blank(),
+                 axis.title.x=element_blank(),
+                 axis.text.x=element_blank())
+p1b = p1 + theme(title=element_blank())
+#grid.arrange(p2b,p3b,p1b, ncol=1)
+```
+
+
 ```{r fig.height=4.5, fig.width=7.2, echo=FALSE}
 p2 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
   labs(title=" ", fill="Host Plant", x="Field Collection Date", y = "Number of Bugs Collected") +
   scale_fill_manual(values=c("#56B4E9", "chartreuse4")) + 
-  customPlot
+  customPlot 
 p2
 ```
 
@@ -767,6 +1000,16 @@ p9 = p9 +
   annotate(geom="text", x=xlab_yrs[4], y=0.59, label=pvalue, parse=TRUE, size=font_size)
 ```
 
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.4, fig.width=5}
+paper_figure2 = ggdraw() +
+  draw_plot(p6, 0, .5, .5, .5) +
+  draw_plot(p7, .5, .5, .5, .5) +
+  draw_plot(p9, 0, 0, 1, .5) +  
+  draw_plot_label("Month", 0.47, 0.51, fontface="plain") +
+  draw_plot_label("Long-Wing Morph Frequency", 0, 0.35, fontface="plain", angle=90)
+paper_figure2
+```
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=13.5, fig.width=11}
 customGRID1 = list(draw_plot(p4, 0, .66, .5, .33),
                    draw_plot(p5, 0.5, .66, .5, .33),
@@ -985,7 +1228,8 @@ p12 = p12 +
   annotate(geom="text", x=unique(d$dates)[15], y=0.716, label=pvalue, parse=TRUE, size=font_size)
 ```
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
+#```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.2, fig.width=5}
 paper_figure2 = ggdraw() +
   draw_plot(p10, 0, .5, .5, .5) +
   draw_plot(p11, .5, .5, .5, .5) +
