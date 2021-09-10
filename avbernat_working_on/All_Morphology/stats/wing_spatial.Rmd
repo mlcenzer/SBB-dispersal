@@ -424,7 +424,29 @@ Keys.UTM = crop(Florida_ShapeFile.UTM, extent(439300.8+700000, 1194383, 12721244
 
 ```{r}
 plot(Florida_ShapeFile.UTM)
+```
+
+```{r}
+plot(Florida_ShapeFile.UTM)
 points(Loc[,1], Loc[,2] + 10000000, col=2, cex=1) 
+```
+
+```{r}
+tm_shape(Florida_ShapeFile.UTM) + tm_polygons(col="white") 
+```
+
+```{r}
+tm_shape(Florida_ShapeFile.UTM) +
+  tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey79") + tm_polygons(col="#b5ed80") 
+```
+
+```{r}
+tm_shape(Keys.UTM) + 
+  tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey79") + tm_polygons(col="#a5c2f0") 
+```
+
+```{r}
+tm_shape(Keys.UTM) + tm_polygons(col="white") 
 ```
 
 ```{r}

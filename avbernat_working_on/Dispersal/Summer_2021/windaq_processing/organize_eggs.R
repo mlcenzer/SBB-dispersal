@@ -7,7 +7,7 @@ masterlist = read.csv("masterlist.csv", header=TRUE, sep=",", quote="", stringsA
 deaddata = masterlist[masterlist$died=="Y",]
 
 motherdata = read.csv("mother_laying_bydate.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
-eggdata = read.csv("egg_tube_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+eggdata = read.csv("egg_tube_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
 eggdata$`dead?` = ""
 
 unique(cbind(eggdata$MID, eggdata$pop))
