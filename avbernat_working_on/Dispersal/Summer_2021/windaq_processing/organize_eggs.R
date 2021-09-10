@@ -14,7 +14,7 @@ unique(cbind(eggdata$MID, eggdata$pop))
 
 eggdata = eggdata[!is.na(eggdata$MID),]
 
-last_input = 432
+last_input = 569
 for (i in 1:nrow(eggdata)) {
   mid = eggdata$MID[i]
   if (mid %in% deaddata$ID) {
