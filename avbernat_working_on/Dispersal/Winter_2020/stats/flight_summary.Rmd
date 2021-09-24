@@ -37,7 +37,8 @@ script_names = c("center_flight_data.R", # 1 function: center_data()
                  "unique_flight_data.R", # 1 function: create_delta_data()
                  "compare_models.R", # 1 function: model_comparisonsAIC()
                  "AICprobabilities.R", # 1 function: AICprobs() 
-                 "get_warnings.R") # 1 function: withWarnings() 
+                 "get_warnings.R",
+                 "get_Akaike_weights.R") # 1 function: catch_warnings() 
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -387,7 +388,7 @@ data<-data.frame(R1 = dc$num_flew,
                  E = dc$avg_days_c)
 
 model_script = paste0(source_path,"generic models-binomial glm 2R ~ 4-FF + E.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -427,7 +428,7 @@ data<-data.frame(R1 = data_fem$num_flew,
                  E = data_fem$avg_days_c)
 
 model_script = paste0(source_path,"generic models-binomial glm 2R ~ 4-FF + E.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -476,7 +477,7 @@ data<-data.frame(R1 = data_male$num_flew,
                  E = data_male$avg_days_c)
 
 model_script = paste0(source_path,"generic models-binomial glm 2R ~ 4-FF + E.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 

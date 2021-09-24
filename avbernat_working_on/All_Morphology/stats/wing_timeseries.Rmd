@@ -43,7 +43,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 When to use a time series vs. a linear regression? 
 
-If you have continuous target variable, then it is a regression problem. For instance, in flight trials we have the flight distance to predict, which is continuous. Hence this becomes a regression problem. About time series, when the datapoints are time dependent, then it becomes a time series problem. Each data point has an order and is, typically, related to the data points before and after by some underlying process. 
+If you have a continuous target variable, then it is a regression problem. For instance, in flight trials we have the flight distance to predict, which is continuous. Hence this becomes a regression problem. About time series, when the datapoints are time dependent, then it becomes a time series problem. Each data point has an order and is, typically, related to the data points before and after by some underlying process. 
 
 In turn, a times series regression is a statistical method for predicting a future response based on the response history (known as autoregressive dynamics) and the transfer of dynamics from relevant predictors. Time series regression is commonly used for modeling and forecasting of economic, financial, and biological systems.
 
@@ -79,8 +79,9 @@ source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc
 
 script_names = c("compare_models.R",
                  "regression_output.R",
-                 "clean_morph_data2.R", # two functions: read_morph_data and remove_torn_wings
-                 "AICprobabilities.R")
+                 "clean_morph_data.R", # two functions: read_morph_data and remove_torn_wings
+                 "AICprobabilities.R",
+                 "remove_torn_wings.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -159,6 +160,13 @@ events <- xts(c("Irma (S. FL)", "Michael (N. Fl)"),
 
 ```{r}
 plot_consecutive_yrs(wing_avg, "wing length (mm)") # not strong; the points are very dispersed
+# df = as.data.frame(wing_avg)
+# df$date = rownames(df)
+# rownames(df) <- NULL
+# colnames(df) = c("wing_length_avg", "date")
+# df[,c(1,2)]
+# 
+# write.csv(df[], file="wing_avg_data.csv", row.names=FALSE)
 ```
 
 9) Create xts-zoo object and plot the time series data. Add any events to the plot with addEventLines(). 

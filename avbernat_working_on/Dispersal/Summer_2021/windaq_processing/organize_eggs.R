@@ -7,8 +7,9 @@ masterlist = read.csv("masterlist.csv", header=TRUE, sep=",", quote="", stringsA
 deaddata = masterlist[masterlist$died=="Y",]
 
 motherdata = read.csv("mother_laying_bydate.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
-eggdata = read.csv("egg_tube_data2.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
+eggdata = read.csv("egg_tube_data.csv", header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
 eggdata$`dead?` = ""
+head(eggdata)
 
 unique(cbind(eggdata$MID, eggdata$pop))
 
@@ -23,23 +24,39 @@ for (i in 1:nrow(eggdata)) {
   }
 }
 
-alive_eggs = eggdata[eggdata$`dead?`!="yes",]
+alive_mothers = eggdata[eggdata$`dead?`!="yes",]
 
 # who is left?
-unique(cbind(alive_eggs$MID, alive_eggs$pop)) # 3 KL and 1 PK
+unique(cbind(alive_mothers$MID, alive_mothers$pop)) # 3 KL and 1 PK
 
-# what is the date distribution?
+# what is the date distribution of alive nymphs?
 
-hatched = alive_eggs[alive_eggs$hatch_date !="",]
-dates = as.Date(hatched$hatch_date, "%m.%d.%y")
-hatched$date = dates
+hatched = eggdata[eggdata$hatch_date !="",]
+alive_nymphs = hatched[hatched$death_date =="",]
+dates = as.Date(alive_nymphs$hatch_date, "%m.%d.%y")
+alive_nymphs$date = dates
 
-unique(hatched$date)
-hist(hatched$date, breaks=14, freq=TRUE)
+unique(alive_nymphs$date)
+hist(alive_nymphs$date, breaks=14, freq=TRUE)
 
+# by pop
 library(ggplot2)
-ggplot(hatched, aes(x=date, fill=pop)) +
+ggplot(alive_nymphs, aes(x=date, fill=pop)) +
   geom_histogram()
+
+# yes/no wing date
+
+alive_nymphs$adult <- "no"
+alive_nymphs$adult[alive_nymphs$wing_date !=""] = "yes"
+
+ggplot(alive_nymphs, aes(x=date, fill=adult)) +
+  geom_histogram()
+
+# numbers of PK vs KL (pretty even)
+
+paste("PK", nrow(alive_nymphs[alive_nymphs$pop == "PK",]))
+paste("KL", nrow(alive_nymphs[alive_nymphs$pop == "KL",]))
+
 
 # Check how many mothers are left 
 
