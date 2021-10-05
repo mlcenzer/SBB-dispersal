@@ -1,0 +1,168 @@
+---
+title: "Preliminary Extreme Trial Analyses"
+author: "Anastasia Bernat"
+date: "10/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+dir = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Summer_2021/windaq_processing/data/"
+setwd(dir)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+prelims = read.csv(paste0(dir,"prelim_extreme_data.csv"), header=TRUE, stringsAsFactors = TRUE)
+```
+
+```{r}
+library(dplyr)
+prelims = prelims %>%
+  filter(died. != "?", died. != "Y", ID != "ID", set_number!="")
+prelims = prelims[,-c(2,13)]
+```
+
+
+```{r}
+colnames(prelims) = c("ID1", "chamber", "set_number", "test_date", "time_start", "time_end", 
+                      "temp", "RH", "population", "flew", "flight_type", "mass", "EWM", "NOTES",
+                      "acclimated")
+```
+
+```{r}
+prelims$acc_b[prelims$acclimated=="Y"] = 1
+prelims$acc_b[prelims$acclimated=="N"] = -1
+
+prelims$flew_b[prelims$flew=="Y"] = 1
+prelims$flew_b[prelims$flew=="N"] = -1
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(prelims[prelims$temp == "12",], aes(x=acc_b, fill=flew)) +
+  geom_histogram() # 70 % RH 
+ggplot(prelims[prelims$temp == "20",], aes(x=acc_b, fill=flew)) +
+  geom_histogram() # 70 % RH 
+# ggplot(prelims[prelims$temp == "28",], aes(x=acc_b, fill=flew)) +
+#   geom_histogram() # 40 % RH 
+# ggplot(prelims[prelims$temp == "36",], aes(x=acc_b, fill=flew)) +
+#   geom_histogram() # 70 % RH # all not acclimated
+ggplot(prelims[prelims$temp == "38",], aes(x=acc_b, fill=flew)) +
+  geom_histogram() # 70 % RH 
+```
+
+```{r}
+# how does acclimation affect whether bugs flew or not?
+m = glm(flew ~ acc_b, data=prelims[prelims$temp != "36",], family = "binomial")
+summary(m) # it doesn't
+
+#  does acclimating matter more for continuous flyers?
+
+contin = prelims %>%
+  filter(temp != "36", flight_type != "B")
+
+contin$temp = as.integer(as.character(contin$temp))
+
+m = glm(flew ~ acc_b, data=contin, family = "binomial")
+summary(m) # it doesn't
+
+
+# how does temperature affect whether flew or not?
+
+m = glm(flew ~ temp, data=contin, family = "binomial")
+summary(m) # it doesn't
+```
+
+
+```{r}
+ggplot(contin, aes(x=temp, fill=flew)) +
+  geom_histogram(bins=20) 
+
+
+ggplot(contin, aes(x=temp, fill=flew)) +
+  geom_histogram(bins=20)  +
+  facet_grid(acclimated ~ ., scales = "free")  +
+  ylim(0, 12)
+
+# but see declines and that parabolic curve...distance and speed 
+# would be more accurate measurement for this 
+```
+
+It's hard to tell what the effect of temperature is if these bugs still flew at 38 C and 70%. More visible may be the effect of temperature on distance or speed for those that flew continuously? Acclimation doesn't seem to matter here in a consistently obvious way either.
+
+
+Temporary conclusion, SBB have a **wide thermal tolerance and high dispersal drive.** Still need to check distance and speeds. Quick proxi for distance is duration spent flying:
+
+
+```{r}
+prelims$temp = as.integer(as.character(prelims$temp))
+```
+
+```{r}
+prelims
+```
+
+```{r}
+
+#times2decimals <- as.character(prelims$time_start)
+
+times2decimals = function(times) {
+  decimals = sapply(strsplit(times,":"),
+  function(x) {
+    x <- as.numeric(x)
+    x[1]+x[2]/60
+    }
+)
+  return(decimals)
+}
+
+
+prelims[prelims$ID1 == 229,] # row 81
+prelims[prelims$ID1 == 191,] # row 119
+prelims[prelims$ID1 == 27,] # row 139
+prelims[119,] 
+
+prelims$time_start_dec = times2decimals(as.character(prelims$time_start))
+prelims$time_end_dec = times2decimals(as.character(prelims$time_end))
+
+duration = prelims$time_end_dec - prelims$time_start_dec
+
+# add 24 hrs for the bugs that flew overnight 
+duration[duration<0] + 24
+overnight_i = which(duration<0)
+duration[overnight_i] = duration[overnight_i] + 24
+
+prelims$duration = duration
+```
+
+```{r}
+contin2 = prelims %>%
+  filter(temp != "36", flight_type != "B", flew != "N")
+
+plot(contin2$temp, contin2$duration, xlab="temp (C)", ylab="duration (hrs)")
+
+m = lm(duration ~ temp, data=contin2)
+summary(m)
+```
+
+
+```{r}
+m = lm(duration ~ acc_b, data=contin2)
+summary(m) # acclimation does not matter for duration
+```
+
+```{r}
+ggplot(contin2, aes(x=duration, fill=flew)) +
+  geom_histogram(bins=30)  +
+  facet_grid(acclimated ~ ., scales = "free")  +
+  ylim(0, 12)
+```
+
+
+
+
+
+
