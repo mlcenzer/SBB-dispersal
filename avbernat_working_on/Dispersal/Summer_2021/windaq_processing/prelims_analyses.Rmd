@@ -14,6 +14,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
+# cleaning and checking of the data input
+
 prelims = read.csv(paste0(dir,"prelim_extreme_data.csv"), header=TRUE, stringsAsFactors = TRUE)
 ```
 

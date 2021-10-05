@@ -1,0 +1,30 @@
+---
+title: "Flight Trial Analyses"
+author: "Anastasia Bernat"
+date: "10/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+dir = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Summer_2021/windaq_processing/data/"
+setwd(dir)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# cleaning and checking of the data input
+dataT1 = read.csv(paste0(dir, "flight_T1_data.csv"))
+
+dataT1 = dataT1[,-13]
+
+colnames(dataT1) = c("ID", "died", colnames(dataT1)[3:7], "temp")
+```
+
+```{r}
+
+```
+
+
+
