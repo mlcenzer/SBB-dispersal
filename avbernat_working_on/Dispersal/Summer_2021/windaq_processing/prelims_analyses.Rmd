@@ -28,9 +28,13 @@ prelims = prelims[,-c(2,13)]
 
 
 ```{r}
-colnames(prelims) = c("ID1", "chamber", "set_number", "test_date", "time_start", "time_end", 
+colnames(prelims) = c("ID", "chamber", "set_number", "test_date", "time_start", "time_end", 
                       "temp", "RH", "population", "flew", "flight_type", "mass", "EWM", "NOTES",
                       "acclimated")
+```
+
+```{r}
+write.csv(prelims, paste0(dir,"prelim_extreme_data-clean.csv"), row.names = FALSE)
 ```
 
 ```{r}
