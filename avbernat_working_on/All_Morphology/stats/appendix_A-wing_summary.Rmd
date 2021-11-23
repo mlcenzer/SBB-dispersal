@@ -66,7 +66,7 @@ The occurrence of long-wing morphology and the wing-to-body ratio of *J. haemato
 
 Additional R packages not shown below, but embedded in the sourced scripts are `zoo` and `lubridate`, which aid in data manipulation and datetime manipulation, respectively. 
 
-```{r message=FALSE}
+```{r reading-libraries, message=FALSE}
 library(lme4)      # fit regressions 
 library(dplyr)     # data manipulation 
 library(ggformula) # ggplot plotting
@@ -78,7 +78,7 @@ library(binom)     # binomial confidence intervals
 
 Each sourced script below aides in either data cleaning (`read_morph_data()`, `remove_torn_wings()`) or multivariate GLM (`model_comparisonsAIC()`, `get_model_probs()`). Additionally, the function `model_comparisonsAIC()` takes in the path of a generic multi-factor script specific to the GLM family and link function needed to build the predictive models. All aforementioned, sourced scripts are located in the **Rscr** folder.
 
-```{r message=FALSE}
+```{r sourcing-scripts, message=FALSE}
 source_path = paste0(dir,"/Rsrc/")
 
 script_names = c("clean_morph_data.R",   # 1 function: read_morph_data() 
@@ -96,7 +96,7 @@ for (script in script_names) {
 
 The morphology data were started in 2013-04-28 and last updated on 2021-05-18. The `read_morph_data()` function standardizes population names, host plant names, and month and year inputs. Month and year inputs are also converted into datetimes. Variables of interest like wing-to-body ratio and wing-to-thorax ratio are also calculated and centered. Then, the full dataset, `raw_data` (n=3532), and a long-winged bug only dataset, `data_long` (n=2096) are returned. 
 
-```{r}
+```{r reading-data}
 datapath = paste0(dir,"All_Morphology/stats/data/allmorphology05.18.21.csv")
 data_list = read_morph_data(datapath)
 
@@ -108,7 +108,7 @@ data_long = remove_torn_wings(data_long)
 
 Bugs marked as having torn wings during measurements were only filtered out of the `data_long` dataset (n=1903). That was because `data_long` is used only to analyze the wing-to-body ratio, which was computed for long-winged bugs since no short-winged bugs can fly. `raw_data` is only used to analyze long-wing morph frequency.
 
-```{r fig.height=1.7, fig.width=3.5, message=FALSE, warning=FALSE}
+```{r sex-differences, fig.height=1.7, fig.width=3.5, message=FALSE, warning=FALSE}
 # delete this below
 store = "                              Soapberry bug collections (2013-2020)"
 ggplot(raw_data, aes(x = beak, color = sex)) +
@@ -134,7 +134,7 @@ To better visualize how wing morph relates to another allometric measurement, wi
 
 &nbsp;
 
-```{r fig.height=6, fig.width=6.6, echo=FALSE}
+```{r wing-morph-histograms, fig.height=6, fig.width=6.6, echo=FALSE}
 raw_data_missing = raw_data %>% 
   filter(w_morph=="" | is.na(w_morph)) 
 
@@ -154,7 +154,7 @@ hist(raw_data$wing[raw_data$w_morph=="S"]/raw_data$thorax[raw_data$w_morph=="S"]
      breaks=seq(0.5,3.8,by=0.05))
 ```
 
-```{r fig.height=6, fig.width=6.6, echo=FALSE}
+```{r wing-morph-histograms-2, fig.height=6, fig.width=6.6, echo=FALSE}
 par(mfrow=c(3,1))
 hist(raw_data$wing[raw_data$w_morph=="L"]/raw_data$body[raw_data$w_morph=="L"],
      main="wing-to-body for long-winged SBB",
@@ -173,13 +173,13 @@ hist(raw_data$wing[raw_data$w_morph=="S"]/raw_data$body[raw_data$w_morph=="S"],
      #,breaks=seq(0.5,3.8,by=0.05)
      )
 ```
+
 ```{r}
 raw_data$wing2body = raw_data$wing/raw_data$body
 ```
 
 
-
-```{r fig.height=1.7, fig.width=3.5}
+```{r wing-morph-differences, fig.height=1.7, fig.width=3.5}
 d = raw_data %>%
   filter(!is.na(w_morph)) %>%
   filter(w_morph != "LS" & w_morph != "SL" & w_morph !="") %>%
@@ -282,7 +282,7 @@ PCA_graphs <- function(dataset, PCA_title){
 # MorphPCA = PCA_graphs(temp, "(a) ")
 ```
 
-```{r}
+```{r wing-morphology-PCA}
 library(factoextra)
 temp = cbind(d$wing, d$body, d$thorax, d$beak)
 temp2 = temp[complete.cases(temp),]
@@ -320,7 +320,7 @@ customPlot = list(geom_bar(position='stack', color="black", width=0.7),
 
 ### Plot 1: Collection numbers grouped by Population and Datetime
 
-```{r message=FALSE, fig.height=4.5, fig.width=7.2, echo=FALSE}
+```{r pop-barplot, message=FALSE, fig.height=4.5, fig.width=7.2, echo=FALSE}
 pop_colors = c("#787a87", "#E69F00", "#56B4E9", "royalblue", 
                "grey", "gold", "#409973", "#9bc969", "ivory2") 
 
@@ -363,7 +363,7 @@ It is noticeable here that there was a heterogeneous population collection patte
 
 ### Plot 2: Collection numbers grouped by Host Plant and Datetime
 
-```{r}
+```{r hostplant-barplot}
 # delete
 ss=29
 customPlot = list(geom_bar(position='stack', color="black", width=0.7),
@@ -377,7 +377,7 @@ customPlot = list(geom_bar(position='stack', color="black", width=0.7),
                   )
 ```
 
-```{r fig.height=4.5, fig.width=4.2, echo=FALSE}
+```{r hostplant-barplot-2, fig.height=4.5, fig.width=4.2, echo=FALSE}
 # delete
 p2 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
   labs(title=" ", fill="Host Plant", x="Field Collection Date", y = "Number of Bugs Collected") +
@@ -387,7 +387,7 @@ p2 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=pophos
 p2
 ```
 
-```{r fig.height=4.5, fig.width=4.2, echo=FALSE}
+```{r sexes-barplot, fig.height=4.5, fig.width=4.2, echo=FALSE}
 # delete
 p3 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=sex)) + 
   labs(title=" ", fill="Sex", x="Field Collection Date", y = " ") +
@@ -397,7 +397,7 @@ p3 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=sex)) 
 p3
 ```
 
-```{r fig.height=4.5, fig.width=4.2, echo=FALSE}
+```{r pop-barplot-2, fig.height=4.5, fig.width=4.2, echo=FALSE}
 # delete
 pop_colors = c("#787a87", "#E69F00", "#409973", "#9bc969",
                "grey", "gold", 
@@ -433,7 +433,7 @@ p1b = p1 + theme(title=element_blank())
 ```
 
 
-```{r fig.height=4.5, fig.width=7.2, echo=FALSE}
+```{r hostplant-barplot-3, fig.height=4.5, fig.width=7.2, echo=FALSE}
 p2 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
   labs(title=" ", fill="Host Plant", x="Field Collection Date", y = "Number of Bugs Collected") +
   scale_fill_manual(values=c("#56B4E9", "chartreuse4")) + 
@@ -443,7 +443,7 @@ p2
 
 ### Plot 3: Collection numbers grouped by Sex and Datetime
 
-```{r fig.height=4.5, fig.width=7.2, echo=FALSE}
+```{r sexes-barplot-2, fig.height=4.5, fig.width=7.2, echo=FALSE}
 p3 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=sex)) + 
   labs(title=" ", fill="Sex", x="Field Collection Date", y = "Number of Bugs Collected") +
   scale_fill_manual(values=c("#db5c5c", "#80635b"),
@@ -735,7 +735,7 @@ plot_lowess_residuals = function(lfit, x, y, color) {
 }
 ```
 
-```{r warning=FALSE, fig.height=3, fig.show = 'hold'}
+```{r plot-loess-fit, warning=FALSE, fig.height=3, fig.show = 'hold'}
 # loess models (month and year)
 lM = lowess(dd$month_of_year, dd$wing_morph_binom, f=0.4) # f = alpha, the smoother span
 lY = lowess(dd$dates, dd$wing_morph_binom, f=0.4)
@@ -1001,7 +1001,7 @@ p9 = p9 +
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=10.5, fig.width=11}
+```{r figure-4, echo=FALSE, message=FALSE, warning=FALSE, fig.height=10.5, fig.width=11}
 #```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.4, fig.width=5}
 paper_figure2 = ggdraw() +
   draw_plot(p6, 0, .5, .5, .5) +
@@ -1014,7 +1014,7 @@ paper_figure2
 
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=13.5, fig.width=11}
+```{r figure-4-extension, echo=FALSE, message=FALSE, warning=FALSE, fig.height=13.5, fig.width=11}
 customGRID1 = list(draw_plot(p4, 0, .66, .5, .33),
                    draw_plot(p5, 0.5, .66, .5, .33),
                    draw_plot(p6, 0, .33, .5, .33),
@@ -1031,7 +1031,7 @@ paper_figure1
 
 **Extension of Figure 4. Evaluation of the frequency of long-winged morph soapberry bugs averaged across month and year from April 2013 to February 2020 using exploratory plots.** For each point, the mean frequency of long-winged morphs of each month and year is plotted with LOESS smooth lines (solid lines) and 95% confidence intervals (shading) and linear regression line(s) (dashed line(s)).
 
-```{r eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
+```{r figure-4B, eval=FALSE, echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
 
 p6B = p6 + theme(legend.position = c(0.83, 0.96)) + ggtitle("A")
 p7B = p7 + ggtitle("B")
@@ -1073,7 +1073,7 @@ d = w2b_summary
 
 To determine the span ($\alpha$, the smoothing parameter) and the degree of zero ($\lambda$) of the LOESS, smoothers were applied with increasing weights until the residuals appeared to have constant variance. Only the best LOESS parameters are shown below:
 
-```{r warning=FALSE, fig.height=2.7, fig.show = 'hold'}
+```{r plot-loess-fit-2, warning=FALSE, fig.height=2.7, fig.show = 'hold'}
 # loess models (month and year)
 lM = lowess(d$month_of_year, d$wing2body, f=0.4) # f = alpha, the smoother span
 lY = lowess(d$dates, d$wing2body, f=0.4)
@@ -1234,7 +1234,7 @@ p12 = p12 +
 
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
+```{r figure-5, echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
 #```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.2, fig.width=5}
 paper_figure2 = ggdraw() +
   draw_plot(p10, 0, .5, .5, .5) +
