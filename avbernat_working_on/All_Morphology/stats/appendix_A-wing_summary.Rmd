@@ -1000,7 +1000,9 @@ p9 = p9 +
   annotate(geom="text", x=xlab_yrs[4], y=0.59, label=pvalue, parse=TRUE, size=font_size)
 ```
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.4, fig.width=5}
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=10.5, fig.width=11}
+#```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.4, fig.width=5}
 paper_figure2 = ggdraw() +
   draw_plot(p6, 0, .5, .5, .5) +
   draw_plot(p7, .5, .5, .5, .5) +
@@ -1009,6 +1011,8 @@ paper_figure2 = ggdraw() +
   draw_plot_label("Long-Wing Morph Frequency", 0, 0.35, fontface="plain", angle=90)
 paper_figure2
 ```
+
+
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=13.5, fig.width=11}
 customGRID1 = list(draw_plot(p4, 0, .66, .5, .33),
@@ -1228,8 +1232,10 @@ p12 = p12 +
   annotate(geom="text", x=unique(d$dates)[15], y=0.716, label=pvalue, parse=TRUE, size=font_size)
 ```
 
-#```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.2, fig.width=5}
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
+#```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.2, fig.width=5}
 paper_figure2 = ggdraw() +
   draw_plot(p10, 0, .5, .5, .5) +
   draw_plot(p11, .5, .5, .5, .5) +
