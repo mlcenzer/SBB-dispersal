@@ -7,18 +7,18 @@ read_morph_data = function(path) {
   data = read.csv(path, header=TRUE, sep=",", quote="", stringsAsFactors=FALSE)
   
   # Standardize population and host plant names of the all-morphology data
-  data$population[data$population=="GainesvilleGRT"]<-"Gainesville"
-  data$population[data$population=="HomesteadBV"]<-"Homestead"
-  data$population[data$population=="HomesteadGRT"]<-"Homestead"
-  data$population[data$population=="Ft.Myers"]<-"Ft. Myers"
-  data$population[data$population=="Key_Largo"]<-"Key Largo"
-  data$population[data$population=="Lake_Placid"]<-"Lake Placid"
-  data$population[data$population=="Lake_Wales"]<-"Lake Wales"
-  data$population[data$population=="North_Key_Largo"]<-"North Key Largo"
-  data$population[data$population=="Plantation_Key"]<-"Plantation Key"
+  data$population[data$population=="GainesvilleGRT"]="Gainesville"
+  data$population[data$population=="HomesteadBV"]="Homestead"
+  data$population[data$population=="HomesteadGRT"]="Homestead"
+  data$population[data$population=="Ft.Myers"]="Ft. Myers"
+  data$population[data$population=="Key_Largo"]="Key Largo"
+  data$population[data$population=="Lake_Placid"]="Lake Placid"
+  data$population[data$population=="Lake_Wales"]="Lake Wales"
+  data$population[data$population=="North_Key_Largo"]="North Key Largo"
+  data$population[data$population=="Plantation_Key"]="Plantation Key"
   
-  data$pophost[data$pophost=="C.corindum"]<-"C. corindum"
-  data$pophost[data$pophost=="K.elegans"]<-"K. elegans"
+  data$pophost[data$pophost=="C.corindum"]="C. corindum"
+  data$pophost[data$pophost=="K.elegans"]="K. elegans"
   
   data = data[order(-data$lat),] 
   lat_order = c("Gainesville", "Leesburg", "Lake Wales", "Lake Placid", "Ft. Myers",  "Homestead",  "North Key Largo", "Key Largo", "Plantation Key")
@@ -26,19 +26,19 @@ read_morph_data = function(path) {
   data$population = factor(data$population,levels=lat_order)
   
   # Only grab C. corindum and K. elegans host plants
-  data<-data[data$pophost=="C. corindum" | data$pophost=="K. elegans",]
-  data<-data[data$sex=="F" | data$sex=="M",]
+  data=data[data$pophost=="C. corindum" | data$pophost=="K. elegans",]
+  data=data[data$sex=="F" | data$sex=="M",]
   
   # Sex recoding
-  data$sex_binom <- -1
-  data$sex_binom[data$sex=="F"] <- 1
-  data$pophost_binom <- -1
-  data$pophost_binom[data$pophost=="K. elegans"] <- 1
+  data$sex_b = -1
+  data$sex_b[data$sex=="F"] = 1
+  data$pophost_b = -1
+  data$pophost_b[data$pophost=="K. elegans"] = 1
   
   # Datetime
-  data$date <- paste(data$month, data$year, sep="/")
-  data$datetime <- as.yearmon(data$date, "%B/%Y")
-  data$datetime <- as.factor(data$datetime)
+  data$date = paste(data$month, data$year, sep="/")
+  data$datetime = as.yearmon(data$date, "%B/%Y")
+  data$datetime = as.factor(data$datetime)
   n_missing_dates = nrow(data[is.na(data$datetime),])
   
   # merge May 2015 with April 2015 because very few bugs were collected in May 2015.
@@ -47,11 +47,11 @@ read_morph_data = function(path) {
   data$date[data$date == "May/2013"] = "April/2013"
   
   # convert to yearmon object and then factor
-  data$datetime <- as.yearmon(data$date, "%B/%Y")
-  data$datetime <- as.factor(data$datetime)
+  data$datetime = as.yearmon(data$date, "%B/%Y")
+  data$datetime = as.factor(data$datetime)
   
   # convert to datetime object and then extract month number (month_of_year)
-  monyeardate <- paste(data$datetime," 01",sep="")
+  monyeardate = paste(data$datetime," 01",sep="")
   dates = as.Date(monyeardate, "%b %Y %d")
   data$dates = dates
   data$month_of_year = month(dates)
@@ -63,21 +63,21 @@ read_morph_data = function(path) {
   cat("morph types:", unique(data$w_morph), "\n")
   cat("   recoding missing morph types...\n   S if wing2thorax <=2.2, L if wing2thorax >=2.5\n\n")
   
-  data$wing2thorax <- data$wing/data$thorax
+  data$wing2thorax = data$wing/data$thorax
   
-  data$w_morph[data$w_morph=="" & data$wing2thorax<=2.2]<-"S"
-  data$w_morph[data$w_morph=="" & data$wing2thorax>=2.35]<-"L"
+  data$w_morph[data$w_morph=="" & data$wing2thorax<=2.2]="S"
+  data$w_morph[data$w_morph=="" & data$wing2thorax>=2.35]="L"
   
-  data$wing_morph_binom<-NA
-  data$wing_morph_binom[data$w_morph=="S"]<-0
-  data$wing_morph_binom[data$w_morph=="L"]<-1
+  data$wing_morph_b = NA
+  data$wing_morph_b[data$w_morph=="S"]=0
+  data$wing_morph_b[data$w_morph=="L"]=1
   
   ambiguous = rbind(data[data$w_morph=="LS",],data[data$w_morph=="SL",])
   cat("ambiguous wing morph bug count: ", nrow(ambiguous), "\n\n")
   
   # Pulling out only long wing morph and computing wing2body ratio
-  data_long<-data[data$w_morph=="L",]
-  data_long$wing2body <- data_long$wing/as.numeric(data_long$body)
+  data_long=data[data$w_morph=="L",]
+  data_long$wing2body = data_long$wing/as.numeric(data_long$body)
   cat("filtered out NA wing2body for data_long...\n")
   
   # Remove NA wing2body
