@@ -740,10 +740,6 @@ plot_lowess_residuals = function(lfit, x, y, color) {
 }
 ```
 
-```{r}
-alpha("black", alpha = 0.75)
-```
-
 ```{r plot-loess-fit, warning=FALSE, fig.height=3*2, fig.show = 'hold'}
 # loess models (month and year)
 lM = lowess(dd$month_of_year, dd$wing_morph_b, f=0.4) # f = alpha, the smoother span
@@ -752,7 +748,7 @@ lY = lowess(dd$dates, dd$wing_morph_b, f=0.4)
 # plot loess fit and residuals 
 par(mfrow=c(2,2), mai=c(0.80,0.80,0.3,0.3), mgp=c(2.3,1,0)) 
 
-color="#00000080"
+color=alpha("black", alpha = 0.75)
 plot(dd$month_of_year, dd$wing_morph_b,
      xlab="month of year", ylab="long-wing morph freq", col=color)
 lines(lM, type = "l")
