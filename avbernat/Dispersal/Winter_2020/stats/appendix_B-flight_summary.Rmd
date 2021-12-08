@@ -157,8 +157,17 @@ pink = "#b57783"
 darkred = "#820331"
 red = "#cd5c5c"
 grey = "#999999"
+grey = "grey78"
 #yellow = "#E69F00"
 blue = "#4255d4"
+orange = "#e34a33"
+lightorange = "#fdbb84"
+red = "#de2d26"
+#red = "#2ca25f"
+#red = orange
+#grey = "#99d8c9" # "grey48"
+black = "black"
+
 
 ## compute 95% confidence interval for regression line
 get_CI = function(x,y,m) {
@@ -193,13 +202,13 @@ dd = aggregate(flew_b ~ days_from_start, data=data_tested, FUN=mean)
 par(mfrow=c(1,2), mar = c(4.3, 7, 3.5, 0.1), cex.axis=c3, cex.lab=c2) 
 
 # plot A (barplot)
-barplot(binary_counts, 
+barplot(binary_counts,
         ylim=c(0,250), beside=TRUE,
-        xlab="Trial", col=c(pink, darkred),
+        xlab="Trial", col=c(lightorange, orange),
         ylab="Frequency")
-legend("topright",
+legend(4, 245,
        legend = c("no flew", "yes flew"),
-       col=c(pink, darkred),
+       col=c(lightorange, orange),
        pch=15,
        cex = c2)
 mtext("A", side=3, adj=0, line=0.5, cex=c4, font=1)
@@ -212,7 +221,7 @@ shading = get_CI(x,y,m)
 mu_ci=shading[[1]]
 prd=shading[[2]]
 
-plot(dd$flew_b~dd$days_from_start, 
+plot(dd$flew_b~dd$days_from_start, frame.plot=F,
      ylab="Flight Probability", xlab="Days From Start", 
      pch=19, col=1, 
      cex=c1,
@@ -231,7 +240,7 @@ pvalue = paste0("p = ", round(summary(m)$coefficients[8],3), "*")
 
 logi.hist.plot(data_tested$days_from_start, 
                data_tested$flew_b,boxp=FALSE,
-               type="hist",col=red, ylabel="", ylabel2 = "", xlabel="")
+               type="hist",col=grey, ylabel="", ylabel2 = "", xlabel="")
 text(7, 0.38, pvalue, cex=c3)
 mtext("Frequency", side=4, cex=c3, line=1)
 ```
@@ -250,25 +259,25 @@ shading = get_CI(x,y,m)
 mu_ci=shading[[1]]
 prd=shading[[2]]
 
-plot(dt$hr_start, dt$recording_duration/60/60,
+plot(dt$hr_start, dt$recording_duration/60/60, frame.plot=F,
      xlab="Trial Start Time (HR)", 
      ylab="Recording Duration (HR)",
-     cex=c1)
+     cex=c1, 
+     pch=19,
+     ylim=c(0,16))
 abline(m, lty=2)
 shade(mu_ci, lim = prd$x)
 pval = paste0("p = ", round(summary(m)$coefficients[8],3)) # marginal effect
 text(15, 11, pval, cex=c2) 
 context = expression(italic("all tested bugs"))
-text(15, 13, context, cex=c2)
+text(9.5, 15.5, context, cex=c2)
 mtext("C", side=3, adj=0, line=0.5, cex=c4, font=1)
 
-
 # plot D (filter out bugs that did not fly then categorize by flight type)
-C = "#e83c70"
-BC = "#e83c70"
-B =  "grey48"  #"#e8b43c" #"#e83c70" #"#5fc0c7"
-CB = "#e83c70"
-flight_type = c(CB, B, BC, C)
+flight_type_col = c(CB = red, 
+                    B = black, 
+                    BC = red,
+                    C = red)
 
 dt=data_tested[data_tested$flew_b !=0,]
 x=dt$hr_start
@@ -286,100 +295,26 @@ shading2 = get_CI(x,y,m2)
 mu_ci2=shading2[[1]]
 prd2=shading2[[2]]
 
-plot(dt$hr_start, dt$recording_duration/60/60,
+plot(dt$hr_start, dt$recording_duration/60/60, frame.plot=F,
      xlab="Trial Start Time (HR)", 
      ylab="Recording Duration (HR)",
-     col=flight_type[as.factor(dt$flight_type)],
+     col=flight_type_col[as.factor(dt$flight_type)],
      cex=c1,
-     pch=16,
-     ylim=c(0,15))
-legend(14.5, 12, 
+     pch=19,
+     ylim=c(0,16))
+legend(13.7, 15, 
        title="Flight Type",
        legend=c("continous", "burster"), 
-       col=c("#e83c70", "grey48"),
+       col=c(red, black),
        pch=19, y.intersp=1.3, 
-       pt.cex=c1, cex = c2)
+       pt.cex=c1, cex = c3)
 abline(m2, lty=2)
-shade(mu_ci2, lim = prd2$x, col=col.alpha("#e83c70", alpha=0.4))
+shade(mu_ci2, lim = prd2$x, col=col.alpha(red, alpha=0.4))
 pval2 = paste0("p = ", round(summary(m2)$coefficients[8],3), "*")
-text(13.2, 6.6, pval2, cex=c2, col="#e83c70")
+text(13.2, 6.6, pval2, cex=c2, col=red)
 context = expression(italic("only tested bugs that flew"))
-text(13.7, 13, context, cex=c2)
-mtext("E", side=3, adj=0, line=0.5, cex=c4, font=1)
-```
-
-
-```{r echo=FALSE, fig.height=2.7*3, fig.width=6*3}
-#delete
-
-par(mfrow=c(1,2), mar = c(4.3, 7, 3.5, 0.1), cex.axis=c3, cex.lab=c2) 
-
-# plot D (filter out bugs that did not fly)
-dt=data_tested[data_tested$flew_b !=0,]
-x=dt$hr_start
-y=dt$recording_duration/60/60
-m = glm(y ~ x, data=dt, family="gaussian") 
-shading = get_CI(x,y,m)
-mu_ci=shading[[1]]
-prd=shading[[2]]
-
-plot(dt$hr_start, dt$recording_duration/60/60,
-     xlab="Trial Start Time (HR)", 
-     ylab="Recording Duration (HR)",
-     cex=c1,
-     ylim=c(0,15))
-abline(m, lty=2)
-shade(mu_ci, lim = prd$x)
-pval = paste0("p = ", round(summary(m)$coefficients[8],3), "*")
-text(15, 11, pval, cex=c2)
-context = expression(italic("only tested bugs that flew"))
-text(13.7, 13, context, cex=c2)
+text(10.7, 15.5, context, cex=c2)
 mtext("D", side=3, adj=0, line=0.5, cex=c4, font=1)
-
-
-# plot E (from the bugs that did fly - distinguish by flight type)
-C = "#e83c70"
-BC = "#e83c70"
-B =  "grey48"  #"#e8b43c" #"#e83c70" #"#5fc0c7"
-CB = "#e83c70"
-flight_type = c(CB, B, BC, C)
-
-dt=data_tested[data_tested$flew_b !=0,]
-x=dt$hr_start
-y=dt$recording_duration/60/60
-m = glm(y ~ x, data=dt, family="gaussian") 
-shading = get_CI(x,y,m)
-mu_ci=shading[[1]]
-prd=shading[[2]]
-
-dtt=data_tested[data_tested$flew_b !=0 & data_tested$flight_type == "C",]
-x=dtt$hr_start
-y=dtt$recording_duration/60/60
-m2 = glm(y ~ x, data=dtt, family="gaussian") 
-shading2 = get_CI(x,y,m2)
-mu_ci2=shading2[[1]]
-prd2=shading2[[2]]
-
-plot(dt$hr_start, dt$recording_duration/60/60,
-     xlab="Trial Start Time (HR)", 
-     ylab="Recording Duration (HR)",
-     col=flight_type[as.factor(dt$flight_type)],
-     cex=c1,
-     pch=16,
-     ylim=c(0,15))
-legend(14.5, 12, 
-       title="Flight Type",
-       legend=c("continous", "burster"), 
-       col=c("#e83c70", "grey48"),
-       pch=19, y.intersp=1.3, 
-       pt.cex=c1, cex = c2)
-abline(m2, lty=2)
-shade(mu_ci2, lim = prd2$x, col=col.alpha("#e83c70", alpha=0.4))
-pval2 = paste0("p = ", round(summary(m2)$coefficients[8],3), "*")
-text(13.2, 6.6, pval2, cex=c2, col="#e83c70")
-context = expression(italic("only tested bugs that flew"))
-text(13.7, 13, context, cex=c2)
-mtext("E", side=3, adj=0, line=0.5, cex=c4, font=1)
 ```
 
 **A & B.** There was a negative effect of day a bug was tested (since the start of trials) on flight probability, but there was a significant effect only when the full dataset is considered. It is not significant for the unique dataset because days from start had to be averaged between trials. This is explored in the next section of the report. **C & D.** There was a negative effect of the trial start time on flight duration but only after removing bugs that did not fly (*p* = 0.031). Continuous flyers are driving this significant relationship (**D**).
@@ -415,8 +350,7 @@ avg_days_model<-glm(cbind(num_flew,num_notflew)~avg_days_c, data=dc, family=bino
 summary(avg_days_model)
 ```
 
-#```{r echo=FALSE, fig.width=4.7, fig.height=3.4}
-```{r echo=FALSE, fig.width=3, fig.height=2}
+```{r echo=FALSE, fig.width=3.5, fig.height=2.5}
 dc$num_trials <- as.factor(rowSums(dc[,c("num_flew", "num_notflew")]))
 
 h <- ggplot(dc, aes(x=avg_days, color=num_trials)) +
@@ -907,8 +841,8 @@ Frows = females$index
 Mrows = males$index
 ```
 
-#```{r warning=FALSE, echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
-```{r warning=FALSE, echo=FALSE, fig.width=3.2*1.5, fig.height=2.8}
+```{r warning=FALSE, echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+#```{r warning=FALSE, echo=FALSE, fig.width=3.2*1.5, fig.height=2.8}
 plot1 = function(df, pp) {
   plot(df$mass_per[Frows], pp[Frows,1], ylim=c(0,1), xlim=c(-40,104), col="red",
      type="l",
@@ -1139,8 +1073,8 @@ plot_color_scale = function() {
 }
 ```
 
-#```{r echo=FALSE, warning=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
-```{r echo=FALSE, warning=FALSE, fig.width=3.2*1.7*1.5, fig.height=2.8*1.5}
+```{r echo=FALSE, warning=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
+#```{r echo=FALSE, warning=FALSE, fig.width=3.2*1.7*1.5, fig.height=2.8*1.5}
 par(mfrow=c(1,2), tcl=-0.5) # length of tick marks set at default
 
 par(mai=c(1,0.85,0.4,0)) # bottom, right, top, left
