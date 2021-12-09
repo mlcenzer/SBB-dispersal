@@ -37,9 +37,9 @@ All code and output from the statistical analyses are shown. Code for data clean
 
 ## Description of the Data
 
-Soapberry bugs, *Jadera haematoloma*, were flight tested in the Fall 2019 (2019-10-15 to 2019-11-08) and Winter 2020 (2020-02-17 to 2020-03-10) seasons using a flight mill machine. Soapberry bugs were flight tested twice for either set time increments or multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. For each trial, the mass, flight response, egg-laying response, distance, duration, average speed, and max speed of each soapberry bug was recorded and then processed. All Python scripts used to process the flight records are located in the GitHub repository within the directory **avbernat_working_on > Dispersal > Winter_2020 > windaq_processing **. After trials, morphology measurements were taken for each bug. There are four morphology measurements: beak length, thorax width, wing length, and body length. The sex, wing morph (long-winged, shot-winged, or ambiguously-winged), host plant, and population of each bug were also recorded.
+Soapberry bugs, *Jadera haematoloma*, were flight tested in the Fall 2019 (2019-10-15 to 2019-11-08) and Winter 2020 (2020-02-17 to 2020-03-10) seasons using a flight mill machine. Soapberry bugs were flight tested twice for either set time increments or multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. For each trial, the mass, flight response, egg-laying response, distance, duration, average speed, and max speed of each soapberry bug was recorded and then processed. All Python scripts used to process the flight records are located in the GitHub repository within the directory **avbernat > Dispersal > Winter_2020 > windaq_processing **. After trials, morphology measurements were taken for each bug. There are four morphology measurements: beak length, thorax width, wing length, and body length. The sex, wing morph (long-winged, shot-winged, or ambiguously-winged), host plant, and population of each bug were also recorded.
 
-As a result of the experimental design, this document analyzes two main types of datasets: a full dataset and a unique dataset. A **full dataset** is a dataset where each row has a unique ID and trial type. A **unique dataset** is a dataset where each row has a unique ID because each trial has been grouped by ID. Examples are provided below. The advantage of generating a unique dataset is that changes between trials can be observed and analyzed.
+As a result of the experimental design, this document analyzes two main types of datasets: a full dataset and a unique dataset. A **full dataset** is a dataset where each row has a unique ID and trial type combination. A **unique dataset** is a dataset where each row has a unique ID because each trial has been grouped by ID. Examples are provided below. The advantage of generating a unique dataset is that changes between trials can be observed and analyzed.
 
 ## Abbreviations Used in the Data and Code
 
@@ -162,12 +162,20 @@ grey = "grey78"
 blue = "#4255d4"
 orange = "#e34a33"
 lightorange = "#fdbb84"
+
 red = "#de2d26"
 #red = "#2ca25f"
 #red = orange
 #grey = "#99d8c9" # "grey48"
 black = "black"
 
+#lightorange = "#bdb0af"
+lightorange = orange
+orange = "#bdb0af"
+
+red = "#bdb0af"
+red = "black"
+black = "#bdb0af"
 
 ## compute 95% confidence interval for regression line
 get_CI = function(x,y,m) {
@@ -309,7 +317,8 @@ legend(13.7, 15,
        pch=19, y.intersp=1.3, 
        pt.cex=c1, cex = c3)
 abline(m2, lty=2)
-shade(mu_ci2, lim = prd2$x, col=col.alpha(red, alpha=0.4))
+#shade(mu_ci2, lim = prd2$x, col=col.alpha(red, alpha=0.4))
+shade(mu_ci2, lim = prd2$x)
 pval2 = paste0("p = ", round(summary(m2)$coefficients[8],3), "*")
 text(13.2, 6.6, pval2, cex=c2, col=red)
 context = expression(italic("only tested bugs that flew"))
@@ -350,17 +359,25 @@ avg_days_model<-glm(cbind(num_flew,num_notflew)~avg_days_c, data=dc, family=bino
 summary(avg_days_model)
 ```
 
-```{r echo=FALSE, fig.width=3.5, fig.height=2.5}
+```{r echo=FALSE, fig.width=3.8, fig.height=4.2}
 dc$num_trials <- as.factor(rowSums(dc[,c("num_flew", "num_notflew")]))
 
-h <- ggplot(dc, aes(x=avg_days, color=num_trials)) +
-  labs(title=" ", color="Number of Trials", 
-       x="Average Days Since Start", y = "Frequency") +
-  geom_histogram(binwidth=1, fill="white") + 
-  theme(legend.position="top") +
-  theme_classic() +
-  scale_color_manual(values=c(grey, "black")) 
-h
+one_trial = dc[dc$num_trials == 1, ]$avg_days
+two_trials = dc[dc$num_trials == 2, ]$avg_days
+
+minb = min(c(one_trial,two_trials)) - 0.001
+maxb = max(c(one_trial,two_trials))
+ax = pretty(minb:maxb, n = 25) # vector for the breakpoints
+
+h_one_trial = hist(one_trial, breaks = ax, plot = FALSE) 
+h_two_trials = hist(two_trials, breaks = ax, plot = FALSE) 
+
+plot(h_one_trial,  
+     main = "",
+     xlab = "Average Days Since Start",
+     ylim=c(0,31), xlim = range(c(one_trial-2,two_trials+4)), 
+     col = "grey58") 
+plot(h_two_trials , col = "grey88", add = TRUE) 
 ```
 
 Average days since start accounts for bugs who died before they could be tested twice, which would most likely lead to an early average day value. The rest of the bugs that were tested twice would most likely have a later average day value. This testing regime shapes the bimodal distribution seen in the histogram. Additionally, the advantage of this computed variable is that it controls for the fact that some bugs were tested once late, and some by chance had been tested twice early. In turn, because we randomized test day, when repeated measures for each individual are combined across days, they balance each other out. Thus, average days since start allows the multi-variate models, which control for repeated tests per ID number, to converge, and we can be confident that non-random mortality is not impacting flight response.[[AB FLAG: "can be confident..." not so founded...]]
@@ -393,10 +410,12 @@ dt$successes = c(sum(d$num_flew[d$sex=="F"]), sum(d$num_flew[d$sex=="M"]))
 dt$CI = binom.confint(dt$successes, dt$trials, methods="exact")
 ```
 
-```{r echo=FALSE, fig.height=2.7*2.7, fig.width=6*2.7}
+```{r echo=FALSE, fig.height=14, fig.width=16}
 
-par(mfrow=c(1,3), mar = c(4.3, 7, 4.6, 0.1), cex.axis=c3, cex.lab=c2) 
-sex_colors = c("red", "blue")
+par(mfrow=c(2,2), mar = c(4.3, 7, 4.6, 0.1), cex.axis=c3, cex.lab=c2)
+par(mfrow=c(2,2), mar = c(4.3, 7, 3.5, 0.1), cex.axis=c3, cex.lab=c2)
+# 
+sex_colors = c("#db5c5c", "#80635b")# c("red", "blue") # c("#db5c5c", "#80635b")
 
 # plot A (flight probability grouped by sex)
 nfem = nrow(d[d$sex=="F",])
@@ -404,7 +423,8 @@ nfem = paste0("N=", nfem)
 nmale = nrow(d[d$sex=="M",])
 nmale = paste0("N=", nmale)
 
-plot(dt$CI$mean~c(1,2), xaxt='n', 
+plot(dt$CI$mean~c(1,2), xaxt='n',
+     frame.plot = F,
      ylab="Flight probability", 
      xlab="Sex", ylim=c(0,1), 
      xlim=c(0.5,2.5), 
@@ -437,17 +457,18 @@ mu_ci2=shading[[1]]
 prd2=shading[[2]]
 
 plot(ds$flew_prob~ds$wing2body_block, 
+     frame.plot = F,
      ylab="Flight probability", xlab="Wing-to-body ratio", 
      pch=19, col=sex_colors[as.factor(ds$sex)], 
      cex=c1, ylim=c(0,1))
 abline(m1, lty=2, col=sex_colors[1])
-abline(m2, lty=2, col="darkblue")
-shade(mu_ci1, lim = prd1$x, col=col.alpha("indianred1"))
-shade(mu_ci2, lim = prd2$x) 
+abline(m2, lty=2, col=sex_colors[2]) # "darkblue"
+shade(mu_ci1, lim = prd1$x, col=col.alpha(sex_colors[1])) # col.alpha("indianred1")
+shade(mu_ci2, lim = prd2$x, col=col.alpha(sex_colors[2])) 
 pval1 = paste0("p = ", round(summary(m1)$coefficients[8],2))
 pval2 = paste0("p = ", round(summary(m2)$coefficients[8],5), "*")
-text(0.72, 0.05, pval1, cex=c2, col="darkred")
-text(0.67, 0.6, pval2, cex=c2) 
+text(0.72, 0.05, pval1, cex=c2, col=sex_colors[1]) # darkred
+text(0.67, 0.6, pval2, cex=c2, col=sex_colors[2]) 
 legend(0.64, 1, 
        legend=c("male", "female"), 
        col=rev(sex_colors),
@@ -481,6 +502,7 @@ prd2=shading[[2]]
 plot(dm$flew_prob~dm$mass_block, 
      ylab="Flight probability", 
      xlab="Mass (g)", 
+     frame.plot = F,
      pch=19, 
      col=sex_colors[as.factor(dm$sex)], 
      cex=c1,
@@ -491,13 +513,13 @@ legend(0.125, 1,
        pch=19, 
        y.intersp=1.3, pt.cex=c1, cex = c2)
 abline(m1, lty=2)
-abline(m2, lty=2, col="darkblue")
-shade(mu_ci1, lim = prd1$x)
-shade(mu_ci2, lim = prd2$x, col=col.alpha("darkblue"))
+abline(m2, lty=2, col=sex_colors[2]) # darkblue
+shade(mu_ci1, lim = prd1$x, col=col.alpha(sex_colors[1]))
+shade(mu_ci2, lim = prd2$x, col=col.alpha(sex_colors[2])) #col.alpha("darkblue")
 pval1 = paste0("p = ", round(summary(m1)$coefficients[8],3), "*")
 pval2 = paste0("p = ", round(summary(m2)$coefficients[8],2))
-text(0.11, 0.5, pval1, cex=c2)
-text(0.1, 0.9, pval2, cex=c2, col="darkblue")
+text(0.11, 0.5, pval1, cex=c2, col=sex_colors[1])
+text(0.1, 0.9, pval2, cex=c2, col=sex_colors[2]) #darkblue
 mtext("C", side=3, adj=0, line=0.5, cex=c4, font=1)
 ```
 
@@ -543,6 +565,24 @@ summary(M1)
 ```{r}
 data_fem <- dc[dc$sex=="F",]
 data_fem <- center_data(data_fem, is_not_unique_data = FALSE)
+```
+
+```{r results='hold'}
+data<-data.frame(R1 = data_fem$num_flew,
+                 R2 = data_fem$num_notflew,
+                 A = data_fem$host_c,
+                 B = data_fem$sym_dist, 
+                 C = data_fem$avg_mass_logsqrt, 
+                 D = data_fem$wing2body_logsqrt_i2, 
+                 E = data_fem$avg_days_c)
+
+model_script = paste0(source_path,"generic models-binomial glm 2R ~ 4-FF + E.R")
+errors = catch_warnings(model_comparisonsAIC(model_script))
+cat("Number of models that failed to converge: ", length(errors$warnings))
+```
+
+```{r}
+summary(m17)
 ```
 
 ```{r results='hold'}

@@ -103,7 +103,9 @@ create_delta_data = function(data, remove_bugs_tested_once=TRUE) {
   # transform wing2body: 
   # this transformation has an inverse relationship with wing2body ratio, 
   # so effect estimate directions need to be flipped for interpretation.
+  max_w2b = round(max(d$wing2body)+0.005, digits = 2)
   d$wing2body_logsqrt_i<-log(sqrt(0.85-d$wing2body))-mean(log(sqrt(0.85-d$wing2body)), na.rm=TRUE)
+  d$wing2body_logsqrt_i2<-log(sqrt(max_w2b-d$wing2body))-mean(log(sqrt(max_w2b-d$wing2body)), na.rm=TRUE)
   
   return(d)
 }
