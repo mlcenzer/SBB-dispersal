@@ -7,6 +7,7 @@ output:
     includes: null
     toc: yes
     toc_depth: 3
+    number_sections: true
   html_document:
     toc: yes
     toc_depth: '3'
@@ -67,22 +68,19 @@ As a result of the experimental design, this document analyzes two main types of
 * `_per` - a column name that ends in `_per` is a column that is the percent change between T1 and T2 (T2-T1) data values. Formula: (T2-T1)/T1 * 100. 
 * `_logsqrt` - a column name that ends in `_logsqrt` is a column that has been normalized using a log-square-root transformation. Formula: `log(sqrt(<data_column>))-mean(log(sqrt(<data_column>))`. Example columns: avg_mass_logsqrt
 
-* `_logsqrt_i` - a column name that ends in `_logsqrt_i` is a column that has been normalized using a log-square-root transformation but its sign is the inverse of the column. Formula: `log(sqrt(0.85-column))-mean(log(sqrt(0.85-column))`. Example columns: wing2body_logsqrt_i (AB FLAG: max value is this 0.7633366)
+* `_logsqrt_i` - a column name that ends in `_logsqrt_i` is a column that has been normalized using a log-square-root transformation but its sign is the inverse of the column. Formula: `log(sqrt(0.85-column))-mean(log(sqrt(0.85-column))`. Example columns: wing2body_logsqrt_i
 
 # Winter 2020 Data Cleaning
 
 ## Read Libraries
 
-The flight response of *J. haematoloma* was analyzed using multivariate, generalized linear modeling (GLM) as implemented in the R packages `lme4` and `binom`. All plots, except the histogram, were generated using base R and supplemented with the `popbio` package to display logistic regressions and the `rethinking` package to display 95% confidence intervals of linear regressions. The histogram below was generated using `ggplot` libraries and helper functions found in `ggformula` package.
-
-Additional R packages not show below, but embedded in the sourced scripts are `lubridate`, `chron`, and `dplyr`. `lubridate` and `chron` both aid in datetime manipulation while `dplry` pipelines data grouping processes.
+The flight response of *J. haematoloma* was analyzed using multivariate, generalized linear modeling (GLM) as implemented in the R packages `lme4` and `binom`. All plots were generated using base R and supplemented with the `popbio` package to display logistic regressions and the `rethinking` package to display 95% confidence intervals of linear regressions. Additional R packages not show below but embedded in the sourced scripts are `lubridate`, `chron`, and `dplyr`. `lubridate` and `chron` both aid in datetime manipulation while `dplry` pipelines data grouping processes.
 
 ```{r message=FALSE, warning=FALSE}
 library(lme4)       # fit regressions 
 library(rethinking) # Bayesian data analysis and plotting
 library(popbio)     # logistic regression plotting
 library(binom)      # binomial confidence intervals
-library(ggformula)  # ggplot plotting
 ```
 
 ## Read Source Files
@@ -107,7 +105,7 @@ for (script in script_names) {
 
 ## Read the Data
 
-The flight performance data read directly below is only from Winter 2020 flight trials. The `read_flight_data()` function standardizes data types and names of the ID, trial type, host plant, flight response, egg-laying response, sex, population, and wing morph inputs. The date, start time, and end time of trails are also converted into datetimes. Variables of interest like wing-to-body ratio are also calculated and centered. Using the `clean_flight_data` function, all morphology, mass, and flight performance measurements are centered and/or standardized within the `read_flight_data()` function. Then, full dataset (n=758) that includes all bugs collected during Winter 2020 and a subset of the full dataset (n=614) that includes only bugs tested from that collection are returned.
+The flight performance data read directly below are only from Winter 2020 flight trials. The `read_flight_data()` function standardizes data types and names of the ID, trial type, host plant, flight response, egg-laying response, sex, population, and wing morph inputs. The date, start time, and end time of trails are also converted into datetimes. Variables of interest like wing-to-body ratio are also calculated and centered. Using the `clean_flight_data()` function, all morphology, mass, and flight performance measurements are centered and/or standardized within the `read_flight_data()` function. Then, what is returned is a full dataset (n=758) that includes all bugs collected during Winter 2020 and a subset of the full dataset (n=614) that includes only bugs tested from the Winter 2020 collection.
 
 The `create_delta_data()` function generates the unique dataset by grouping by ID. The function also computes trial differences, percent differences, and averages for variables of interest such as mass, flight response, egg-laying response, distance, and speed. Then, the unique data variables are centered and/or standardized.
 
@@ -125,11 +123,15 @@ d <- create_delta_data(data_tested, remove_bugs_tested_once = FALSE)
 dc <- center_data(d, is_not_unique_data = FALSE)
 ```
 
+&nbsp;
+
 Example of a  **full dataset** (each row has unique ID and trial type):
 
 ```{r}
 data_tested[c(1:2,400:401), c("ID", "trial_type")]
 ```
+
+&nbsp;
 
 Example of a **unique dataset** (each row has unique ID):
 
@@ -565,24 +567,6 @@ summary(M1)
 ```{r}
 data_fem <- dc[dc$sex=="F",]
 data_fem <- center_data(data_fem, is_not_unique_data = FALSE)
-```
-
-```{r results='hold'}
-data<-data.frame(R1 = data_fem$num_flew,
-                 R2 = data_fem$num_notflew,
-                 A = data_fem$host_c,
-                 B = data_fem$sym_dist, 
-                 C = data_fem$avg_mass_logsqrt, 
-                 D = data_fem$wing2body_logsqrt_i2, 
-                 E = data_fem$avg_days_c)
-
-model_script = paste0(source_path,"generic models-binomial glm 2R ~ 4-FF + E.R")
-errors = catch_warnings(model_comparisonsAIC(model_script))
-cat("Number of models that failed to converge: ", length(errors$warnings))
-```
-
-```{r}
-summary(m17)
 ```
 
 ```{r results='hold'}

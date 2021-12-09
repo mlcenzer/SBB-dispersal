@@ -7,6 +7,7 @@ output:
     includes: null
     toc: yes
     toc_depth: 3
+    number_sections: true
   html_document:
     toc: yes
     toc_depth: '3'
