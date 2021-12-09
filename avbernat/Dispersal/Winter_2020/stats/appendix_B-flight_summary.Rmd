@@ -179,6 +179,8 @@ red = "#bdb0af"
 red = "black"
 black = "#bdb0af"
 
+line_weight = 3
+
 ## compute 95% confidence interval for regression line
 get_CI = function(x,y,m) {
   x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
@@ -236,7 +238,7 @@ plot(dd$flew_b~dd$days_from_start, frame.plot=F,
      pch=19, col=1, 
      cex=c1,
      ylim=c(0.4,1))
-abline(m, lty=2)
+abline(m, lty=2, lw=line_weight)
 shade(mu_ci, lim = prd$x)
 pval = paste0("p = ", round(summary(m)$coefficients[8],3), "*")
 text(11, 0.45, pval, cex=c2)
@@ -275,7 +277,7 @@ plot(dt$hr_start, dt$recording_duration/60/60, frame.plot=F,
      cex=c1, 
      pch=19,
      ylim=c(0,16))
-abline(m, lty=2)
+abline(m, lty=2, lw=line_weight)
 shade(mu_ci, lim = prd$x)
 pval = paste0("p = ", round(summary(m)$coefficients[8],3)) # marginal effect
 text(15, 11, pval, cex=c2) 
@@ -318,7 +320,7 @@ legend(13.7, 15,
        col=c(red, black),
        pch=19, y.intersp=1.3, 
        pt.cex=c1, cex = c3)
-abline(m2, lty=2)
+abline(m2, lty=2, lw=line_weight)
 #shade(mu_ci2, lim = prd2$x, col=col.alpha(red, alpha=0.4))
 shade(mu_ci2, lim = prd2$x)
 pval2 = paste0("p = ", round(summary(m2)$coefficients[8],3), "*")
@@ -384,7 +386,9 @@ plot(h_two_trials , col = "grey88", add = TRUE)
 
 Average days since start accounts for bugs who died before they could be tested twice, which would most likely lead to an early average day value. The rest of the bugs that were tested twice would most likely have a later average day value. This testing regime shapes the bimodal distribution seen in the histogram. Additionally, the advantage of this computed variable is that it controls for the fact that some bugs were tested once late, and some by chance had been tested twice early. In turn, because we randomized test day, when repeated measures for each individual are combined across days, they balance each other out. Thus, average days since start allows the multi-variate models, which control for repeated tests per ID number, to converge, and we can be confident that non-random mortality is not impacting flight response.[[AB FLAG: "can be confident..." not so founded...]]
 
-### Single-Variate Effects
+### Single-Variate Effects 
+
+\subsubsection{Single-Variate Effects \\ (sex, mass, \& wing-to-body ratio)}
 
 We used aggregated datasets for single-variate modeling.
 
@@ -416,8 +420,9 @@ dt$CI = binom.confint(dt$successes, dt$trials, methods="exact")
 
 par(mfrow=c(2,2), mar = c(4.3, 7, 4.6, 0.1), cex.axis=c3, cex.lab=c2)
 par(mfrow=c(2,2), mar = c(4.3, 7, 3.5, 0.1), cex.axis=c3, cex.lab=c2)
-# 
-sex_colors = c("#db5c5c", "#80635b")# c("red", "blue") # c("#db5c5c", "#80635b")
+
+sex_pt_cols = c("#de2d26", "#654321")
+sex_shade_cols = c("#db5c5c", "#80635b")
 
 # plot A (flight probability grouped by sex)
 nfem = nrow(d[d$sex=="F",])
@@ -430,12 +435,12 @@ plot(dt$CI$mean~c(1,2), xaxt='n',
      ylab="Flight probability", 
      xlab="Sex", ylim=c(0,1), 
      xlim=c(0.5,2.5), 
-     cex=c1, pch=19, col=sex_colors)
-lines(x=xy.coords(x=c(1,1), y=c(dt$CI$lower[1], dt$CI$upper[1])), lwd=3, col=sex_colors[1])
-lines(x=xy.coords(x=c(2,2), y=c(dt$CI$lower[2], dt$CI$upper[2])), lwd=3, col=sex_colors[2])
+     cex=c1, pch=19, col=sex_pt_cols)
+lines(x=xy.coords(x=c(1,1), y=c(dt$CI$lower[1], dt$CI$upper[1])), lwd=3, col=sex_pt_cols[1])
+lines(x=xy.coords(x=c(2,2), y=c(dt$CI$lower[2], dt$CI$upper[2])), lwd=3, col=sex_pt_cols[2])
 axis(side=1, at=c(1,2), labels=c("female", "male"))
 mtext(text=c(nfem,nmale), at=c(1,2), side=1, line=-3, cex=c2)
-mtext("A", side=3, adj=0, line=0.5, cex=c4, font=1)
+mtext("A", side=3, adj=0, line=0.40, cex=c4, font=1)
 
 # plot B (wing2body ratio vs. flew_prob grouped by sex)
 
@@ -461,22 +466,22 @@ prd2=shading[[2]]
 plot(ds$flew_prob~ds$wing2body_block, 
      frame.plot = F,
      ylab="Flight probability", xlab="Wing-to-body ratio", 
-     pch=19, col=sex_colors[as.factor(ds$sex)], 
+     pch=19, col=sex_pt_cols[as.factor(ds$sex)], 
      cex=c1, ylim=c(0,1))
-abline(m1, lty=2, col=sex_colors[1])
-abline(m2, lty=2, col=sex_colors[2]) # "darkblue"
-shade(mu_ci1, lim = prd1$x, col=col.alpha(sex_colors[1])) # col.alpha("indianred1")
-shade(mu_ci2, lim = prd2$x, col=col.alpha(sex_colors[2])) 
+abline(m1, lty=2, col=sex_pt_cols[1], lw=line_weight)
+abline(m2, lty=2, col=sex_pt_cols[2], lw=line_weight)
+shade(mu_ci1, lim = prd1$x, col=col.alpha(sex_shade_cols[1]))
+shade(mu_ci2, lim = prd2$x, col=col.alpha(sex_shade_cols[2])) 
 pval1 = paste0("p = ", round(summary(m1)$coefficients[8],2))
 pval2 = paste0("p = ", round(summary(m2)$coefficients[8],5), "*")
-text(0.72, 0.05, pval1, cex=c2, col=sex_colors[1]) # darkred
-text(0.67, 0.6, pval2, cex=c2, col=sex_colors[2]) 
+text(0.72, 0.05, pval1, cex=c2, col=sex_pt_cols[1])
+text(0.67, 0.6, pval2, cex=c2, col=sex_pt_cols[2]) 
 legend(0.64, 1, 
        legend=c("male", "female"), 
-       col=rev(sex_colors),
+       col=rev(sex_pt_cols),
        pch=19, y.intersp=1.3, 
        pt.cex=c1, cex = c2)
-mtext("B", side=3, adj=0, line=0.5, cex=c4, font=1)
+mtext("B", side=3, adj=0, line=0.40, cex=c4, font=1)
 
 # plot C (mass vs. flew_prob grouped by sex)
 dm=aggregate(flew_prob~sex*mass_block, data=d, FUN=mean)
@@ -506,23 +511,23 @@ plot(dm$flew_prob~dm$mass_block,
      xlab="Mass (g)", 
      frame.plot = F,
      pch=19, 
-     col=sex_colors[as.factor(dm$sex)], 
+     col=sex_pt_cols[as.factor(dm$sex)], 
      cex=c1,
      ylim=c(0,1), xlim=c(0.02, 0.18))
 legend(0.125, 1, 
        legend=c("male", "female"), 
-       col=rev(sex_colors),
+       col=rev(sex_pt_cols),
        pch=19, 
        y.intersp=1.3, pt.cex=c1, cex = c2)
-abline(m1, lty=2)
-abline(m2, lty=2, col=sex_colors[2]) # darkblue
-shade(mu_ci1, lim = prd1$x, col=col.alpha(sex_colors[1]))
-shade(mu_ci2, lim = prd2$x, col=col.alpha(sex_colors[2])) #col.alpha("darkblue")
+abline(m1, lty=2, col=sex_pt_cols[1], lw=line_weight)
+abline(m2, lty=2, col=sex_pt_cols[2], lw=line_weight) 
+shade(mu_ci1, lim = prd1$x, col=col.alpha(sex_shade_cols[1]))
+shade(mu_ci2, lim = prd2$x, col=col.alpha(sex_shade_cols[2]))
 pval1 = paste0("p = ", round(summary(m1)$coefficients[8],3), "*")
 pval2 = paste0("p = ", round(summary(m2)$coefficients[8],2))
-text(0.11, 0.5, pval1, cex=c2, col=sex_colors[1])
-text(0.1, 0.9, pval2, cex=c2, col=sex_colors[2]) #darkblue
-mtext("C", side=3, adj=0, line=0.5, cex=c4, font=1)
+text(0.11, 0.5, pval1, cex=c2, col=sex_pt_cols[1])
+text(0.1, 0.9, pval2, cex=c2, col=sex_pt_cols[2]) 
+mtext("C", side=3, adj=0, line=0.40, cex=c4, font=1)
 ```
 
 ### Multi-Variate Models
@@ -774,7 +779,7 @@ Host plant was not a significant predictor, so we tested the wing-to-body ratio 
 &nbsp;
 &nbsp;
 
-### Compare Models - predictors: % mass, sex, wing2body (w2b)
+### Compare Models - predictors: % mass, sex, wing2body
 
 ```{r warning=FALSE}
 df$wing2body_c = df$wing2body - mean(df$wing2body) # re-center the w2b predictor
