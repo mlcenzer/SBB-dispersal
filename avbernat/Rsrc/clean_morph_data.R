@@ -56,8 +56,8 @@ read_morph_data = function(path) {
   data$dates = dates
   data$month_of_year = month(dates)
   
-  cat("number of missing dates:", n_missing_dates, "\n\n")
-  unique(data$datetime)
+  ##cat("number of missing dates:", n_missing_dates, "\n\n")
+  ##unique(data$datetime)
   
   # morph recording
   cat("morph types:", unique(data$w_morph), "\n")
@@ -78,7 +78,7 @@ read_morph_data = function(path) {
   # Pulling out only long wing morph and computing wing2body ratio
   data_long=data[data$w_morph=="L",]
   data_long$wing2body = data_long$wing/as.numeric(data_long$body)
-  cat("filtered out NA wing2body for data_long...\n")
+  ##cat("filtered out NA wing2body for data_long...\n")
   
   # Remove NA wing2body
   data_long = data_long %>%

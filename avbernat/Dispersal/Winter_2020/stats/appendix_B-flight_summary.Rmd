@@ -38,7 +38,11 @@ All code and output from the statistical analyses are shown. Code for data clean
 
 ## Description of the Data
 
-Soapberry bugs, *Jadera haematoloma*, were flight tested in the Fall 2019 (2019-10-15 to 2019-11-08) and Winter 2020 (2020-02-17 to 2020-03-10) seasons using a flight mill machine. Soapberry bugs were flight tested twice for either set time increments or multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. For each trial, the mass, flight response, egg-laying response, distance, duration, average speed, and max speed of each soapberry bug was recorded and then processed. All Python scripts used to process the flight records are located in the GitHub repository within the directory **avbernat > Dispersal > Winter_2020 > windaq_processing **. After trials, morphology measurements were taken for each bug. There are four morphology measurements: beak length, thorax width, wing length, and body length. The sex, wing morph (long-winged, shot-winged, or ambiguously-winged), host plant, and population of each bug were also recorded.
+Soapberry bugs, *Jadera haematoloma*, were flight tested in the Fall 2019 (2019-10-15 to 2019-11-08) and Winter 2020 (2020-02-17 to 2020-03-10) seasons using a flight mill machine. Soapberry bugs were flight tested twice for either set time increments or multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. For each trial, the mass, flight response, egg-laying response, distance, duration, average speed, and max speed of each soapberry bug was recorded and then processed.
+
+![](images/test2.png)
+
+All Python scripts used to process the flight records are located in the GitHub repository within the directory **avbernat > Dispersal > Winter_2020 > windaq_processing **. After trials, morphology measurements were taken for each bug. There are four morphology measurements: beak length, thorax width, wing length, and body length. The sex, wing morph (long-winged, shot-winged, or ambiguously-winged), host plant, and population of each bug were also recorded.
 
 As a result of the experimental design, this document analyzes two main types of datasets: a full dataset and a unique dataset. A **full dataset** is a dataset where each row has a unique ID and trial type combination. A **unique dataset** is a dataset where each row has a unique ID because each trial has been grouped by ID. Examples are provided below. The advantage of generating a unique dataset is that changes between trials can be observed and analyzed.
 
@@ -384,11 +388,12 @@ plot(h_one_trial,
 plot(h_two_trials , col = "grey88", add = TRUE) 
 ```
 
-Average days since start accounts for bugs who died before they could be tested twice, which would most likely lead to an early average day value. The rest of the bugs that were tested twice would most likely have a later average day value. This testing regime shapes the bimodal distribution seen in the histogram. Additionally, the advantage of this computed variable is that it controls for the fact that some bugs were tested once late, and some by chance had been tested twice early. In turn, because we randomized test day, when repeated measures for each individual are combined across days, they balance each other out. Thus, average days since start allows the multi-variate models, which control for repeated tests per ID number, to converge, and we can be confident that non-random mortality is not impacting flight response.[[AB FLAG: "can be confident..." not so founded...]]
+Average days since start accounts for bugs who died before they could be tested twice, which would most likely lead to an early average day value. The rest of the bugs that were tested twice would most likely have a later average day value. This testing regime shapes the bimodal distribution seen in the histogram. Additionally, the advantage of this computed variable is that it controls for the fact that some bugs were tested once late, and some had been tested twice early. In turn, because we randomized test day, when repeated measures for each individual are combined across days, they balance each other out. Thus, average days since start allows the multi-variate models, which control for repeated tests per ID number, to converge, and we can be confident that non-random mortality is not impacting flight response.
 
-### Single-Variate Effects 
+\subsubsection{Single-Variate Effects \\ \phantom{xyz}sex, mass, wing2body}
 
-\subsubsection{Single-Variate Effects \\ (sex, mass, \& wing-to-body ratio)}
+*show single variate effects*
+
 
 We used aggregated datasets for single-variate modeling.
 
@@ -416,10 +421,10 @@ dt$successes = c(sum(d$num_flew[d$sex=="F"]), sum(d$num_flew[d$sex=="M"]))
 dt$CI = binom.confint(dt$successes, dt$trials, methods="exact")
 ```
 
-```{r echo=FALSE, fig.height=14, fig.width=16}
+```{r echo=FALSE, fig.height=14, fig.width=17}
 
-par(mfrow=c(2,2), mar = c(4.3, 7, 4.6, 0.1), cex.axis=c3, cex.lab=c2)
 par(mfrow=c(2,2), mar = c(4.3, 7, 3.5, 0.1), cex.axis=c3, cex.lab=c2)
+# par(mfrow=c(2,2), mar = c(4.3, 5.5, 3.5, 6.1), cex.axis=c3, cex.lab=c2)
 
 sex_pt_cols = c("#de2d26", "#654321")
 sex_shade_cols = c("#db5c5c", "#80635b")
@@ -441,6 +446,8 @@ lines(x=xy.coords(x=c(2,2), y=c(dt$CI$lower[2], dt$CI$upper[2])), lwd=3, col=sex
 axis(side=1, at=c(1,2), labels=c("female", "male"))
 mtext(text=c(nfem,nmale), at=c(1,2), side=1, line=-3, cex=c2)
 mtext("A", side=3, adj=0, line=0.40, cex=c4, font=1)
+
+plot.new()
 
 # plot B (wing2body ratio vs. flew_prob grouped by sex)
 
@@ -530,7 +537,7 @@ text(0.1, 0.9, pval2, cex=c2, col=sex_pt_cols[2])
 mtext("C", side=3, adj=0, line=0.40, cex=c4, font=1)
 ```
 
-### Multi-Variate Models
+\subsubsection{Multi-Variate Models \\ \phantom{xyz}sex, mass, wing2body, host plant, distance from sympatric zone}
 
 We used the unique dataset for multi-variate modeling. 
 

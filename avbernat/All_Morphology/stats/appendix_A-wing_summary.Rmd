@@ -102,7 +102,7 @@ datapath = paste0(dir,"All_Morphology/stats/data/allmorphology05.18.21.csv")
 data_list = read_morph_data(datapath)
 
 raw_data = data_list[[1]]
-data_long = data_list[[2]] # long-wing bugs only
+data_long = data_list[[2]] # long-wing bugs with wing-to-body value only
 
 data_long = remove_torn_wings(data_long)
 ```
@@ -111,11 +111,15 @@ Bugs marked as having torn wings during measurements were only filtered out of t
 
 ## Histograms of Wing Morph Data 
 
+Soapberry bugs have two noticeable wing morphs: a long-wing (left) and short-wing morph (right).
+
+![](images/test.png)
+
 To better visualize how wing morph relates to a SBB allometric measurement, wing-to-thorax ratio, the following histograms were plotted:
 
 &nbsp;
 
-```{r wing-morph-histograms, fig.height=6, fig.width=6.6, echo=FALSE}
+```{r wing-morph-histograms, fig.height=5.5, fig.width=6.6, echo=FALSE}
 raw_data_missing = raw_data %>% 
   filter(w_morph=="" | is.na(w_morph)) 
 
@@ -137,7 +141,6 @@ hist(raw_data$wing[raw_data$w_morph=="S"]/raw_data$thorax[raw_data$w_morph=="S"]
 
 From the histograms, the relationship between wing morph and wing-to-thorax ratio is bimodal. Long-winged bugs have larger wing-to-thorax ratios with a frequency peak around 2.75, whereas short-winged bugs have much smaller wing-to-thorax ratios with a frequency peak around 1.75. It is then noticeable that there are 22 bugs who had not been identified as either S or L during measurements, but cannot be categorized into S or L because their wing-to-thorax values reside in-between the two modes.
 
-\newpage
 
 ## Barplots of Field Collection Numbers
 
@@ -203,7 +206,7 @@ p1 = p1 + annotate(geom="text", x=1, y=400, label=text[1],
 p1 
 ```
 
-Populations labeled in the legend are ordered by latitude from highest to lowest across Florida. Populations in shades of green indicate populations from the mainland of Florida while those in shades of blue indicate populations from the islands. It is noticeable here that there was a heterogeneous population collection pattern across collection datetimes. However, collection numbers by mainland vs. islands were relatively homogeneous. Additionally, as seen in the following two plots, collection numbers by host plant or sex were relatively homogeneous across datetime.
+Populations labeled in the legend are ordered by latitude from highest to lowest across Florida. Populations in shades of green indicate populations from the mainland of Florida while those in shades of blue indicate populations from the islands. It is noticeable here that population collections across datetimes are heterogeneous. However, collection numbers by mainland vs. islands were relatively homogeneous. Additionally, as seen below, collection numbers by host plant or sex were relatively homogeneous across datetimes.
 
 ```{r hostplant-barplot, fig.height=4.5, fig.width=7.2, echo=FALSE}
 raw_data$pophost = as.factor(raw_data$pophost)
@@ -228,11 +231,10 @@ p3 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=sex)) 
   theme(plot.margin=unit(c(1,0.85,1,0.15), "cm"))
 ```
 
-```{r message=FALSE, fig.height=4, fig.width=8, fig.align="center", echo=FALSE}
+```{r message=FALSE, fig.height=3.4, fig.width=8, fig.align="center", echo=FALSE}
 plot_grid(p2, p3, ncol=2)
 ```
 
-&nbsp;
 
 # Regression Modeling
 
