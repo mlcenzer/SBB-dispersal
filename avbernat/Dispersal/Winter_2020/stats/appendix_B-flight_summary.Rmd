@@ -158,35 +158,22 @@ c2 = 1.2*2  # size of large text
 c3 = 2      # size of smaller text
 c4 = 2*2    # size of title 
 
-## colors
-pink = "#b57783"
-darkred = "#820331"
-red = "#cd5c5c"
-grey = "#999999"
-grey = "grey78"
-#yellow = "#E69F00"
-blue = "#4255d4"
-orange = "#e34a33"
-lightorange = "#fdbb84"
-
-red = "#de2d26"
-#red = "#2ca25f"
-#red = orange
-#grey = "#99d8c9" # "grey48"
-black = "black"
-
-#lightorange = "#bdb0af"
-lightorange = orange
-orange = "#bdb0af"
-
-red = "#bdb0af"
-red = "black"
-black = "#bdb0af"
-
+## line weight
 line_weight = 3
 
+## colors
+grey = "grey78"
+orange = "#e34a33"
+ogrey = "#bdb0af"
+black = "black"
+
+red = "#de2d26"
+lightred = "#db5c5c"
+brown = "#654321"
+lightbrown = "#80635b"
+
 ## compute 95% confidence interval for regression line
-get_CI = function(x,y,m) {
+get_CI = function(x,m) {
   x.seq = seq(min(x) - sd(x), max(x) + sd(x), length.out=100)
   prd = data.frame(x=x.seq)
   err = predict(m, newdata = prd, se.fit = TRUE)
@@ -217,14 +204,16 @@ dd = aggregate(flew_b ~ days_from_start, data=data_tested, FUN=mean)
 
 par(mfrow=c(1,2), mar = c(4.3, 7, 3.5, 0.1), cex.axis=c3, cex.lab=c2) 
 
+flight_res_cols = c(orange, ogrey)
+  
 # plot A (barplot)
 barplot(binary_counts,
         ylim=c(0,250), beside=TRUE,
-        xlab="Trial", col=c(lightorange, orange),
+        xlab="Trial", col=flight_res_cols,
         ylab="Frequency")
 legend(4, 245,
        legend = c("no flew", "yes flew"),
-       col=c(lightorange, orange),
+       col=flight_res_cols,
        pch=15,
        cex = c2)
 mtext("A", side=3, adj=0, line=0.5, cex=c4, font=1)
@@ -233,7 +222,7 @@ mtext("A", side=3, adj=0, line=0.5, cex=c4, font=1)
 x=dd$days_from_start
 y=dd$flew_b
 m = glm(y ~ x, data=dd, family="gaussian")
-shading = get_CI(x,y,m)
+shading = get_CI(x,m)
 mu_ci=shading[[1]]
 prd=shading[[2]]
 
@@ -271,7 +260,7 @@ dt = data_tested[,c("hr_start", "recording_duration")]
 x=dt$hr_start
 y=dt$recording_duration/60/60
 m = glm(y ~ x, data=dt, family="gaussian")
-shading = get_CI(x,y,m)
+shading = get_CI(x,m)
 mu_ci=shading[[1]]
 prd=shading[[2]]
 
@@ -290,16 +279,17 @@ text(9.5, 15.5, context, cex=c2)
 mtext("C", side=3, adj=0, line=0.5, cex=c4, font=1)
 
 # plot D (filter out bugs that did not fly then categorize by flight type)
-flight_type_col = c(CB = red, 
-                    B = black, 
-                    BC = red,
-                    C = red)
+flight_cols = c(black, ogrey)
+flight_type_col = c(CB = black, 
+                    B = ogrey, 
+                    BC = black,
+                    C = black)
 
 dt=data_tested[data_tested$flew_b !=0,]
 x=dt$hr_start
 y=dt$recording_duration/60/60
 m = glm(y ~ x, data=dt, family="gaussian") 
-shading = get_CI(x,y,m)
+shading = get_CI(x,m)
 mu_ci=shading[[1]]
 prd=shading[[2]]
 
@@ -307,7 +297,7 @@ dtt=data_tested[data_tested$flew_b !=0 & data_tested$flight_type == "C",]
 x=dtt$hr_start
 y=dtt$recording_duration/60/60
 m2 = glm(y ~ x, data=dtt, family="gaussian") 
-shading2 = get_CI(x,y,m2)
+shading2 = get_CI(x,m2)
 mu_ci2=shading2[[1]]
 prd2=shading2[[2]]
 
@@ -321,14 +311,13 @@ plot(dt$hr_start, dt$recording_duration/60/60, frame.plot=F,
 legend(13.7, 15, 
        title="Flight Type",
        legend=c("continous", "burster"), 
-       col=c(red, black),
+       col=flight_cols,
        pch=19, y.intersp=1.3, 
        pt.cex=c1, cex = c3)
 abline(m2, lty=2, lw=line_weight)
-#shade(mu_ci2, lim = prd2$x, col=col.alpha(red, alpha=0.4))
 shade(mu_ci2, lim = prd2$x)
 pval2 = paste0("p = ", round(summary(m2)$coefficients[8],3), "*")
-text(13.2, 6.6, pval2, cex=c2, col=red)
+text(13.2, 6.6, pval2, cex=c2, col=flight_cols[1])
 context = expression(italic("only tested bugs that flew"))
 text(10.7, 15.5, context, cex=c2)
 mtext("D", side=3, adj=0, line=0.5, cex=c4, font=1)
@@ -392,10 +381,7 @@ Average days since start accounts for bugs who died before they could be tested 
 
 \subsubsection{Single-Variate Effects \\ \phantom{xyz}sex, mass, wing2body}
 
-*show single variate effects*
-
-
-We used aggregated datasets for single-variate modeling.
+We used aggregated datasets for single-variate modeling and plotted significant effects below.
 
 ```{r}
 # tailoring variables for plotting
@@ -421,13 +407,36 @@ dt$successes = c(sum(d$num_flew[d$sex=="F"]), sum(d$num_flew[d$sex=="M"]))
 dt$CI = binom.confint(dt$successes, dt$trials, methods="exact")
 ```
 
-```{r echo=FALSE, fig.height=14, fig.width=17}
+```{r results='hold'}
+# sex effect
+summary(glm(flew_prob ~ sex, data=ds, family="gaussian"))$coefficients 
+```
 
+```{r results='hold'}
+# wing-to-body ratio effects split by sex
+dsF = ds[ds$sex=="F",] # females
+summary(glm(flew_prob ~ wing2body_block, data=dsF, family="gaussian"))$coefficients
+
+dsM = ds[ds$sex=="M",] # males
+summary(glm(flew_prob ~ wing2body_block, data=dsM, family="gaussian"))$coefficients
+```
+
+```{r results='hold'}
+# mass effects split by sex
+dmF = dm[dm$sex=="F",] # females
+summary(glm(flew_prob ~ mass_block, data=dmF, family="gaussian"))$coefficients
+
+dmM = dm[dm$sex=="M",] # males
+summary(glm(flew_prob ~ mass_block, data=dmM, family="gaussian"))$coefficients
+```
+
+&nbsp;
+
+```{r echo=FALSE, fig.height=14.5, fig.width=17}
 par(mfrow=c(2,2), mar = c(4.3, 7, 3.5, 0.1), cex.axis=c3, cex.lab=c2)
-# par(mfrow=c(2,2), mar = c(4.3, 5.5, 3.5, 6.1), cex.axis=c3, cex.lab=c2)
 
-sex_pt_cols = c("#de2d26", "#654321")
-sex_shade_cols = c("#db5c5c", "#80635b")
+sex_pt_cols = c(red, "#523921")
+sex_shade_cols = c(lightred, lightbrown)
 
 # plot A (flight probability grouped by sex)
 nfem = nrow(d[d$sex=="F",])
@@ -451,67 +460,56 @@ plot.new()
 
 # plot B (wing2body ratio vs. flew_prob grouped by sex)
 
-d1 = ds[ds$sex=="F",]
-d2 = ds[ds$sex=="M",]
-
 # females
-x=d1[,"wing2body_block"]
-y=d1[,"flew_prob"] 
-m1 = lm(y ~ x, data=d1)
-shading=get_CI(x,y,m1)
-mu_ci1=shading[[1]]
-prd1=shading[[2]]
+x = dsF[,"wing2body_block"]
+y = dsF[,"flew_prob"]
+mF = glm(y ~ x, data=dsF, family="gaussian")
+shading=get_CI(x,mF)
+mu_ciF=shading[[1]]
+prdF=shading[[2]]
 
 # males
-x=d2[,"wing2body_block"]
-y=d2[,"flew_prob"] 
-m2 = lm(y ~ x, data=d2)
-shading=get_CI(x,y,m2)
-mu_ci2=shading[[1]]
-prd2=shading[[2]]
+x = dsM[,"wing2body_block"]
+y = dsM[,"flew_prob"]
+mM = glm(y ~ x, data=dsF, family="gaussian")
+shading=get_CI(x,mM)
+mu_ciM=shading[[1]]
+prdM=shading[[2]]
 
 plot(ds$flew_prob~ds$wing2body_block, 
      frame.plot = F,
      ylab="Flight probability", xlab="Wing-to-body ratio", 
      pch=19, col=sex_pt_cols[as.factor(ds$sex)], 
      cex=c1, ylim=c(0,1))
-abline(m1, lty=2, col=sex_pt_cols[1], lw=line_weight)
-abline(m2, lty=2, col=sex_pt_cols[2], lw=line_weight)
-shade(mu_ci1, lim = prd1$x, col=col.alpha(sex_shade_cols[1]))
-shade(mu_ci2, lim = prd2$x, col=col.alpha(sex_shade_cols[2])) 
-pval1 = paste0("p = ", round(summary(m1)$coefficients[8],2))
-pval2 = paste0("p = ", round(summary(m2)$coefficients[8],5), "*")
-text(0.72, 0.05, pval1, cex=c2, col=sex_pt_cols[1])
-text(0.67, 0.6, pval2, cex=c2, col=sex_pt_cols[2]) 
-legend(0.64, 1, 
-       legend=c("male", "female"), 
-       col=rev(sex_pt_cols),
-       pch=19, y.intersp=1.3, 
-       pt.cex=c1, cex = c2)
+abline(mF, lty=2, col=sex_pt_cols[1], lw=line_weight)
+abline(mM, lty=2, col=sex_pt_cols[2], lw=line_weight)
+shade(mu_ciF, lim = prdF$x, col=col.alpha(sex_shade_cols[1]))
+shade(mu_ciM, lim = prdM$x, col=col.alpha(sex_shade_cols[2])) 
+pvalF = paste0("p = ", round(summary(mF)$coefficients[8],2))
+pvalM = paste0("p = ", round(summary(mM)$coefficients[8],5), "*")
+text(0.72, 0.05, pvalF, cex=c2, col=sex_pt_cols[1])
+text(0.67, 0.6, pvalM, cex=c2, col=sex_pt_cols[2]) 
 mtext("B", side=3, adj=0, line=0.40, cex=c4, font=1)
 
 # plot C (mass vs. flew_prob grouped by sex)
 dm=aggregate(flew_prob~sex*mass_block, data=d, FUN=mean)
 dm$n=aggregate(flew_prob~sex*mass_block, data=d, FUN=length)$flew_prob
 
-d1 = dm[dm$sex=="F",]
-d2 = dm[dm$sex=="M",]
-
 # females
-x=d1[,"mass_block"]
-y=d1[,"flew_prob"] 
-m1 = lm(y ~ x, data=d1)
-shading=get_CI(x,y,m1)
-mu_ci1=shading[[1]]
-prd1=shading[[2]]
+x=dmF[,"mass_block"]
+y=dmF[,"flew_prob"] 
+mF = lm(y ~ x, data=dmF)
+shading=get_CI(x,mF)
+mu_ciF=shading[[1]]
+prdF=shading[[2]]
 
 # males
-x=d2[,"mass_block"]
-y=d2[,"flew_prob"] 
-m2 = lm(y ~ x, data=d2)
-shading=get_CI(x,y,m2)
-mu_ci2=shading[[1]]
-prd2=shading[[2]]
+x=dmM[,"mass_block"]
+y=dmM[,"flew_prob"] 
+mM = lm(y ~ x, data=dmM)
+shading=get_CI(x,mM)
+mu_ciM=shading[[1]]
+prdM=shading[[2]]
 
 plot(dm$flew_prob~dm$mass_block, 
      ylab="Flight probability", 
@@ -526,16 +524,18 @@ legend(0.125, 1,
        col=rev(sex_pt_cols),
        pch=19, 
        y.intersp=1.3, pt.cex=c1, cex = c2)
-abline(m1, lty=2, col=sex_pt_cols[1], lw=line_weight)
-abline(m2, lty=2, col=sex_pt_cols[2], lw=line_weight) 
-shade(mu_ci1, lim = prd1$x, col=col.alpha(sex_shade_cols[1]))
-shade(mu_ci2, lim = prd2$x, col=col.alpha(sex_shade_cols[2]))
-pval1 = paste0("p = ", round(summary(m1)$coefficients[8],3), "*")
-pval2 = paste0("p = ", round(summary(m2)$coefficients[8],2))
-text(0.11, 0.5, pval1, cex=c2, col=sex_pt_cols[1])
-text(0.1, 0.9, pval2, cex=c2, col=sex_pt_cols[2]) 
+abline(mF, lty=2, col=sex_pt_cols[1], lw=line_weight)
+abline(mM, lty=2, col=sex_pt_cols[2], lw=line_weight) 
+shade(mu_ciF, lim = prdF$x, col=col.alpha(sex_shade_cols[1]))
+shade(mu_ciM, lim = prdM$x, col=col.alpha(sex_shade_cols[2]))
+pvalF = paste0("p = ", round(summary(mF)$coefficients[8],3), "*")
+pvalM = paste0("p = ", round(summary(mM)$coefficients[8],2))
+text(0.11, 0.5, pvalF, cex=c2, col=sex_pt_cols[1])
+text(0.1, 0.9, pvalM, cex=c2, col=sex_pt_cols[2]) 
 mtext("C", side=3, adj=0, line=0.40, cex=c4, font=1)
 ```
+
+&nbsp;
 
 \subsubsection{Multi-Variate Models \\ \phantom{xyz}sex, mass, wing2body, host plant, distance from sympatric zone}
 
@@ -562,7 +562,7 @@ anova(m63, m85, test="Chisq") # Adding B*D does not improve fit
 anova(m63, m36, test="Chisq") # Adding C*D does improve fit 
 ```
 
-#### Best Fit 
+**Best Fit**
 
 ```{r}
 M1 <- glm(cbind(num_flew, num_notflew) ~ host_c * avg_mass_logsqrt 
@@ -570,11 +570,18 @@ M1 <- glm(cbind(num_flew, num_notflew) ~ host_c * avg_mass_logsqrt
 summary(M1)
 ```
 
+\newpage
+
+![](images/intkeys.png)
+
+![](images/intmainland.png)
+
 &nbsp;
 
-### Multi-Variate Models Split By Sex
 
-#### Females
+### Multi-Variate Models Split By Sex  
+
+**Females**
 
 ```{r}
 data_fem <- dc[dc$sex=="F",]
@@ -604,7 +611,7 @@ anova(m25, m17, test="Chisq") #adding D improves fit
 anova(m25, m45, test="Chisq") #adding D improves fit
 ```
 
-##### Best Fit 
+**Best Fit**
 
 ```{r}
 M2 <- glm(cbind(num_flew, num_notflew) ~ host_c * avg_mass_logsqrt +  wing2body_logsqrt_i + 
@@ -614,9 +621,9 @@ summary(M2)
 
 &nbsp;
 
-#### Males
+**Males**
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 data_male <- dc[dc$sex=="M",]
 data_male <- center_data(data_male, is_not_unique_data = FALSE)
 ```
@@ -643,7 +650,7 @@ anova(m83, m62, test="Chisq") # adding B*C marginally improves fit
 anova(m50, m62, test="Chisq") # adding C does not improve fit 
 ```
 
-##### Best Fit 
+**Best Fit**
 
 ```{r}
 M3<-glm(cbind(num_flew, num_notflew)~host_c*wing2body_logsqrt_i + sym_dist*wing2body_logsqrt_i 
