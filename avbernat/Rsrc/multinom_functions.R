@@ -1,24 +1,4 @@
-# Functions for multinomial logit modeling
-
-#### Calculate estimated parameters, standard errors, Wald test statistics, and p values.
-
-calculate_P = function(model, print_table=TRUE) {
-  # compute p-values using Wald tests (i.e. z-tests)
-  s <- summary(model) 
-  z <- s$coefficients/s$standard.errors 
-  wald <- z^2
-  p <- (1 - pnorm(abs(z), 0, 1)) * 2
-  
-  # summary table (similar to lm, glm, or lmer function)
-  model_table <- cbind(s$coefficients, c(s$edf, s$edf, s$edf), s$standard.errors[,2], z[,2], wald[,2], p[,2])
-  colnames(model_table) <- c("(Intercept)"," Estimate","DF", "Std. Err.", "z", "wald", "P > |z|")
-  
-  if (print_table) {
-    cat("\n", "AIC: ", s$AIC, "\n")
-    print(round(model_table,3))
-  }
-  return(model_table)
-}
+# functions for multinomial logit modeling
 
 calculate_P2 = function(model, var1, var2, print_table=TRUE) {
   # compute p-values using Wald tests (i.e. z-tests)
@@ -60,66 +40,38 @@ calculate_P3 = function(m, print_table=TRUE) {
   return(model_table)
 }
 
-#### Get ML prediction equations.
 
-prediction_equations = function(tb) {
-  # input model_table
-  # -1 / 1 | Flew in T1, not T2
-  I = (tb[1,1] - tb[2,1])
-  M = (tb[1,2] - tb[2,2])
-  EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", 
-               round(M,2), " Mass Change     Flew in T1, rather than T2" )
+
+
+get_prediction_eq = function(tb, table_rowA, table_rowB, var_lab1, var_lab2, var_lab3, 
+                             log_lab, title) { 
+  I = (tb[table_rowA,1] - tb[table_rowB,1])
+  M = (tb[table_rowA,2] - tb[table_rowB,2])
+  S = (tb[table_rowA,3] - tb[table_rowB,3])
+  W = (tb[table_rowA,4] - tb[table_rowB,4])
+  EQ = paste0("      ", log_lab, round(I, 2), " + ", round(M,2), var_lab1, " + ", 
+              round(S, 2), var_lab2, " + ", round(W, 2), var_lab3, "\n")
   
-  # 2 / -1 | Flew in both, not T1
-  I = (tb[3,1] - tb[1,1])
-  M = (tb[3,2] - tb[1,2])
-  EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", 
-               round(M,2), " Mass Change     Flew in both, rather than T1" )
+  print(title)
+  cat(EQ)
   
-  # 2 / 1 | Flew in both, not T2
-  I = (tb[3,1] - tb[2,1])
-  M = (tb[3,2] - tb[2,2])
-  EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", 
-               round(M,2),  " Mass Change     Flew in both, rather than T2")
-  
-  eqs = c(EQ1, EQ2, EQ3)
-  return(eqs)
+  return(EQ)
 }
 
-prediction_equations2 = function(tb, var1, var2, third_eq = TRUE) {
-  # -1 / 1 | Flew in T1, not T2
-  I = (tb[1,1] - tb[2,1])
-  M = (tb[1,2] - tb[2,2])
-  S = (tb[1,3] - tb[2,3])
-  EQ1 = paste0("log(pi_-1 / pi_1) = ", round(I, 2), " + ", round(M,2), var1, " + ", round(S, 2), var2, "   Flew in T1, not T2" )
+
+get_prediction_eqf = function(tb, table_rowA, table_rowB, var_lab1, var_lab2, 
+                             log_lab, title) { 
+  I = (tb[table_rowA,1] - tb[table_rowB,1])
+  M = (tb[table_rowA,2] - tb[table_rowB,2])
+  E = (tb[table_rowA,3] - tb[table_rowB,3])
+  EQ = paste0(log_lab, round(I, 2), " + ", round(M,2), var_lab1, " + ", round(E, 2), 
+              var_lab2)
+  print(title)
+  cat(EQ)
   
-  if (third_eq) {
-    # 2 / -1 | Flew in both, not T1
-    I = (tb[3,1] - tb[1,1])
-    M = (tb[3,2] - tb[1,2])
-    S = (tb[3,3] - tb[1,3])
-    EQ2 = paste0("log(pi_2 / pi_-1) = ", round(I, 2), " + ", round(M,2), var1, " + ", round(S, 2), var2, "   Flew in both, not T1" )
-  }
-  
-  if (third_eq) {
-    # 2 / 1 | Flew in both, not T2
-    I = (tb[3,1] - tb[2,1])
-    M = (tb[3,2] - tb[2,2])
-    S = (tb[3,3] - tb[2,3])
-    EQ3 = paste0("log(pi_2 / pi_1) = ", round(I, 2), " + ", round(M,2),  var1, " + ", round(S, 2), var2, "    Flew in both, not T2")
-  }
-  
-  eqs = EQ1
-  
-  if (third_eq) {
-    eqs = c(EQ1, EQ2, EQ3)
-  }
-  
-  print("Where F = 1")
-  return(eqs)
+  return(EQ)
 }
 
-#### Determine which multinomial model equations are significant.
 
 get_significant_models = function(val_num, effect_cat=2){
   baselines = -1:2
@@ -194,72 +146,3 @@ get_significant_modelsf = function(num_val, effect_cat=2){
   return(model_list)
 }
 
-### Getting Odds for Summary Table
-
-getting_odds = function(Odds, effect, pars, odds, r) {
-  # Odds:     Equation of the odds written out as vector of strings.
-  # effect:   Main effects written out as a vector of strings.
-  # pars:     Parameters written out as a vector of strings
-  # odds:     Model table ML equations for the given outcome and baseline.
-  # r:        Row in which the outcome is indexed. 
-  estimate = round(unlist(odds[r,1:4]),2)
-  SE = round(unlist(odds[r,6:9]),2)
-  estimates = format(estimate, nsmall = 2)
-  SEs = format(SE, nsmall = 2)
-  
-  for (i in 2:4) {
-    if (i == 2) {
-      estimate[i] = round(estimate[i]*20,2)
-    }
-    if (i == 4) {
-      estimate[i] = round(estimate[i]/100,2)
-    }
-  }
-  exp.b = c(round(exp(estimate[1:4]),2))
-  wald = c(round(unlist(odds[r,14:17]),2))
-  pvals = c(round(unlist(odds[r,18:21]),3))
-  
-  exps = format(exp.b, nsmall = 2)
-  for (i in 1:length(pvals)){
-    if (pvals[i] == "0") {
-      pvals[i] = "<0.001"
-    }
-  }
-  
-  key = cbind(Odds, effect, pars, estimates, SEs, exps, wald, pvals) 
-  
-  return(key)
-}
-
-
-getting_oddsf = function(Odds, effect, pars, odds, r) {
-  # Odds:     Equation of the odds written out as vector of strings.
-  # effect:   Main effects written out as a vector of strings.
-  # pars:     Parameters written out as a vector of strings
-  # odds:     Model table ML equations for the given outcome and baseline.
-  # r:        Row in which the outcome is indexed. 
-  estimate = round(unlist(odds[r,1:3]),2)
-  estimates = format(estimate, nsmall = 2)
-  SE = c(round(unlist(odds[r,5:7]),2))
-  SEs = format(SE, nsmall = 2)
-  
-  for (i in 2:4) {
-    if (i == 2) {
-      estimate[i] = estimate[i]*20
-    }
-  }
-  
-  exp.b = c(round(exp(estimate),2))
-  wald = c(round(unlist(odds[r,11:13]),2))
-  pvals = c(round(unlist(odds[r,14:16]),3))
-  
-  exps = format(exp.b, nsmall = 2)
-  for (i in 1:length(pvals)){
-    if (pvals[i] == "0") {
-      pvals[i] = "<0.001"
-    }
-  }
-  key = cbind(Odds, effect, pars, estimates, SEs, exps, wald, pvals) 
-  
-  return(key)
-}
