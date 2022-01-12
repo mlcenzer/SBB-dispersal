@@ -38,13 +38,13 @@ All code and output from the statistical analyses are shown. Code for data clean
 
 ## Description of the Data
 
-Soapberry bugs, *Jadera haematoloma*, were flight tested in the Fall 2019 (2019-10-15 to 2019-11-08) and Winter 2020 (2020-02-17 to 2020-03-10) seasons using a flight mill machine. Soapberry bugs were flight tested twice for either set time increments or multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. For each trial, the mass, flight response, egg-laying response, distance, duration, average speed, and max speed of each soapberry bug was recorded and then processed.
+Soapberry bugs, *Jadera haematoloma*, were flight tested in the Fall 2019 (2019-10-15 to 2019-11-08) and Winter 2020 (2020-02-17 to 2020-03-10) seasons using a flight mill machine. Soapberry bugs were flight tested twice for either set time increments or multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. For each trial, the mass, flight response, egg-laying response, distance, duration, average speed, and max speed of each soapberry bug were recorded and then processed.
 
 ![](images/test2.png)
 
 All Python scripts used to process the flight records are located in the GitHub repository within the directory **avbernat > Dispersal > Winter_2020 > windaq_processing **. After trials, morphology measurements were taken for each bug. There are four morphology measurements: beak length, thorax width, wing length, and body length. The sex, wing morph (long-winged, shot-winged, or ambiguously-winged), host plant, and population of each bug were also recorded.
 
-As a result of the experimental design, this document analyzes two main types of datasets: a full dataset and a unique dataset. A **full dataset** is a dataset where each row has a unique ID and trial type combination. A **unique dataset** is a dataset where each row has a unique ID because each trial has been grouped by ID. Examples are provided below. The advantage of generating a unique dataset is that changes between trials can be observed and analyzed.
+As a result of the experimental design, this document analyzes two main types of datasets: a full dataset and a unique dataset. A **full dataset** is a dataset where each row has a unique bug ID and trial type combination. A **unique dataset** is a dataset where each row has a unique bug ID only because each trial has been grouped by ID. Examples are provided below. The advantage of generating a unique dataset is that changes between trials can be observed and analyzed.
 
 ## Abbreviations Used in the Data and Code
 
@@ -56,7 +56,7 @@ As a result of the experimental design, this document analyzes two main types of
 * **T2** - trial 2 of flight testing
 * **EWM** - eggs when massed, binary response (yes or no)
 * **host_** - the host plant soapberry bugs were collected from, which was either *Koelreuteria elegans* or *Cardiospermum corindum*, occasionally called (and abbreviated) as goldenrain tree (GRT) or balloon vine (BV), respectively
-* **sym_dist** - distance from the local sympatric zone, which is demarked as Homestead
+* **sym_dist** - distance from the local sympatric zone, which is demarked as Homestead, Florida
 * **wing2body** - a computed and unitless column that calculates the wing length divided by the body length of a soapberry bug
 * **sd** - standard deviation
 * **se** - standard error
@@ -68,11 +68,11 @@ As a result of the experimental design, this document analyzes two main types of
 * `_c` - a column name that ends in `_c` is a column that has been centered. Example columns: sex_c, host_c, avg_days_c
 * `_s` - a column name that ends in `_s` is a column that has been standardized. Example columns: wing2body_s, sym_dist_s, thorax_s
 * `avg_` - a column name that starts in `avg_` is a column that has been averaged across trial 1 (T1) and trial 2 (T2). Example columns: avg_mass, avg_days, avg_time_start, avg_rec_dur (exception: average_speed)
-* `_diff` - a column name that ends in `_diff` is a column that is the difference between T1 and T2 data values. Formula: data values
+* `_diff` - a column name that ends in `_diff` is a column that is the difference between T1 and T2 data values. 
 * `_per` - a column name that ends in `_per` is a column that is the percent change between T1 and T2 (T2-T1) data values. Formula: (T2-T1)/T1 * 100. 
 * `_logsqrt` - a column name that ends in `_logsqrt` is a column that has been normalized using a log-square-root transformation. Formula: `log(sqrt(<data_column>))-mean(log(sqrt(<data_column>))`. Example column(s): avg_mass_logsqrt
 
-* `_logsqrt_i` - a column name that ends in `_logsqrt_i` is a column that has been normalized using a log-square-root transformation but its sign is the inverse of the column. Formula: `log(sqrt(0.85-column))-mean(log(sqrt(0.85-column))`. Example column(s): wing2body_logsqrt_i
+* `_logsqrt_i` - a column name that ends in `_logsqrt_i` is a column that has been normalized using a log-square-root transformation but its sign is the inverse of the column. Formula: `log(sqrt(0.85-column))-mean(log(sqrt(0.85-column))` where 0.85 is a number we selected that generates random errors that closely follow a normal distribution. Example column(s): wing2body_logsqrt_i
 
 \section*{Winter 2020 Flight Trials}
 \addcontentsline{toc}{section}{Winter 2020 Flight Trials}
@@ -84,6 +84,8 @@ As a result of the experimental design, this document analyzes two main types of
 The flight response of *J. haematoloma* was analyzed using multivariate, generalized linear modeling (GLM) as implemented in the R packages `lme4` and `binom`. Models were generated using the `glm()` function and compared using Akaike Information Criterion (AIC). Model selection was determined using Akaike weights, and model fit was further evaluated between two models using `anova()`.
 
 All plots were generated using base R and supplemented with the `popbio` package to display logistic regressions and the `rethinking` package to display 95% confidence intervals of linear regressions. Additional R packages not show below but embedded in the sourced scripts are `lubridate`, `chron`, and `dplyr`. `lubridate` and `chron` both aid in datetime manipulation while `dplry` pipelines data grouping processes.
+
+\newpage
 
 ```{r message=FALSE, warning=FALSE}
 library(lme4)       # fit regressions 
@@ -115,7 +117,7 @@ for (script in script_names) {
 
 The flight performance data read directly below are only from Winter 2020 flight trials. The `read_flight_data()` function standardizes data types and names of the ID, trial type, host plant, flight response, egg-laying response, sex, population, and wing morph inputs. The date, start time, and end time of trails are also converted into datetimes. Variables of interest like wing-to-body ratio are also calculated and centered. Using the `clean_flight_data()` function, all morphology, mass, and flight performance measurements are centered and/or standardized within the `read_flight_data()` function. Then, what is returned is a full dataset (n=758) that includes all bugs collected during Winter 2020 and a subset of the full dataset (n=614) that includes only bugs tested from the Winter 2020 collection.
 
-The `create_delta_data()` function generates the unique dataset by grouping by ID. The function also computes trial differences, percent differences, and averages for variables of interest such as mass, flight response, egg-laying response, distance, and speed. Then, the unique data variables are centered and/or standardized.
+The `create_delta_data()` function generates the unique dataset by grouping by ID. The function also computes trial differences, percent differences, and averages for variables of interest such as mass, flight response, and egg-laying response. Then, the unique data variables are centered and/or standardized.
 
 ```{r message=FALSE, warning=FALSE}
 data_path = paste0(dir,"/Dispersal/Winter_2020/stats/data/all_flight_data-Winter2020.csv")
@@ -186,17 +188,15 @@ get_CI = function(x,m) {
 }
 ```
 
-## Experimental Effects
+\subsection{Experimental Effects \\ \phantom{xyz}trial type, days from start, trial start time}
 
 To determine how the design of the experiment affected flight response and/or performance, three design factors were modeled: trial type (T1 vs. T2), days from start, and trial start time.
 
-### Trial Type, Days from Start & Trial Start Time 
-
 ```{r}
-# compute how many times flew yes or no per trial
+# computed how many times flew yes or no per trial
 binary_counts = table(data_tested$flew_b, data_tested$trial_type)[,2:3]
 
-# aggregate by days since the trials began and flight response to determine flight prob 
+# aggregated by days since trials began and flight response to determine flight prob 
 dd = aggregate(flew_b ~ days_from_start, data=data_tested, FUN=mean)
 ```
 
@@ -330,7 +330,7 @@ mtext("D", side=3, adj=0, line=0.5, cex=c4, font=1)
 
 To understand SBB flight response, flight response across trials was modeled against sex, host plant, distance from the sympatric zone, wing-to-body ratio, and mass. This was done using the unique dataset.
 
-Because the unique dataset was used, there exist multiple recorded counts of the number of times a SBB flew and did not fly between trials, T1 and T2. For that reason, we used `cbind(num_flew, num_notflew)` when modeling in order to account for all flight successes and failures for each individual.
+Because the unique dataset was used, there exist multiple recorded counts of the number of times a SBB flew and did not fly between T1 and T2. For that reason, we used `cbind(num_flew, num_notflew)` when modeling in order to account for all flight successes and failures for each individual.
 
 Finally, we tested whether the data was over-dispersed, which could be resolved using a Quasibinomial:
 
@@ -350,7 +350,7 @@ If the dispersion parameter is close to 1, the data is not over-dispersed, so th
 
 ### Average Days Since Start
 
-For the unique dataset, average days since start (log-square-root transformed) was computed in order to determine how an experimental factor affected flight response. It proved to not be significant: 
+For the unique dataset, average days since start was computed in order to determine how this experimental factor affected flight response across trials. It proved to not be significant: 
 
 ```{r}
 avg_days_model=glm(cbind(num_flew,num_notflew)~avg_days_c, data=dc, family=binomial)
@@ -385,14 +385,14 @@ Average days since start accounts for bugs who died before they could be tested 
 We used aggregated datasets for single-variate modeling and plotted significant effects below.
 
 ```{r}
-# tailoring variables for plotting
+# tailored variables for plotting
 d$mass_block=round(d$avg_mass/0.005)*0.005      # 0.005 g blocks 
 d$wing2body_block=round(d$wing2body, digits=2)  # 0.01 blocks
 d$days_block=round(d$avg_days, digits=0)        # integer blocks
 ```
 
 ```{r}
-# aggregate data for plotting
+# aggregated data for plotting
 dt=aggregate(flew_prob~sex, data=d, FUN=mean)
 dt$trials=c(sum(d$num_flew[d$sex=="F"]+d$num_notflew[d$sex=="F"]),
             sum(d$num_flew[d$sex=="M"]+d$num_notflew[d$sex=="M"]))
@@ -403,7 +403,7 @@ ds$n=aggregate(flew_prob~sex*wing2body_block, data=d, FUN=length)$flew_prob
 dm=aggregate(flew_prob~sex*mass_block, data=d, FUN=mean)
 dm$n=aggregate(flew_prob~sex*mass_block, data=d, FUN=length)$flew_prob
 
-# calculate binomial confidence interval
+# calculated binomial confidence interval
 dt$successes = c(sum(d$num_flew[d$sex=="F"]), sum(d$num_flew[d$sex=="M"]))
 dt$CI = binom.confint(dt$successes, dt$trials, methods="exact")
 ```
@@ -535,6 +535,9 @@ text(0.11, 0.5, pvalF, cex=c2, col=sex_pt_cols[1])
 text(0.1, 0.9, pvalM, cex=c2, col=sex_pt_cols[2]) 
 mtext("C", side=3, adj=0, line=0.40, cex=c4, font=1)
 ```
+&nbsp;
+
+**A.** Males are more than twice as likely to fly than females. **B.** There was a positive effect of wing-to-body ratio for males. **C.** There was a negative effect of mass for females.
 
 &nbsp;
 
@@ -546,12 +549,12 @@ We used the unique dataset for multi-variate modeling. To model flight potential
 
 ```{r results='hold', message=FALSE}
 data=data.frame(R1 = dc$num_flew, 
-                 R2 = dc$num_notflew, 
-                 A = dc$host_c,
-                 B = dc$sex_c,
-                 C = dc$sym_dist,
-                 D = dc$avg_mass_logsqrt,
-                 E = dc$avg_days_c)
+                R2 = dc$num_notflew, 
+                A = dc$host_c,
+                B = dc$sex_c,
+                C = dc$sym_dist,
+                D = dc$avg_mass_logsqrt,
+                E = dc$avg_days_c)
 
 model_script = paste0(source_path,"generic models-binomial glm 2R ~ 4-FF + E.R")
 model_comparisonsAIC(model_script)
@@ -572,7 +575,7 @@ M1 = glm(cbind(num_flew, num_notflew) ~ host_c * avg_mass_logsqrt
 summary(M1)
 ```
 
-The best fit model shows two significant interaction terms that interestingly affect SBB flight response across: `host_c:avg_mass_logsqrt` and `avg_mass_logsqrt:sym_dist_s`. To explore these terms further and look closer at these island-mainland/host plant dynamics, we plotted them. Only part of the code used to generate the plots is shown below.
+The best fit model shows two significant interaction terms that interestingly affect SBB flight response across: `host_c:avg_mass_logsqrt` and `avg_mass_logsqrt:sym_dist_s`. To explore these terms further and look closer at these island-mainland/native-invasive host plant dynamics, we plotted them. Only part of the code used to generate the plots is shown below.
 
 ```{r}
 HP = c(1,-1)
@@ -631,20 +634,25 @@ cols = c("skyblue","blue","grey78")
 colorfunc = colorRamp(cols)
 x = sort(runif(length(SYM), min = 0, max = 1))
 mycolors_sim = rgb(colorfunc(x), maxColorValue=255)
+mycolors_sim_a = unlist(lapply(mycolors_sim, col.alpha))
+
+scale = 1.4
 
 xlabel = expression(log(sqrt(avg("mass (g)"))))
 plot(cft$avg_mass_logsqrt, cft$model, ylab="% change", xlab=xlabel,
-     col=mycolors_sim[as.factor(cft$sym_dist)],pch=c(2,2)[as.factor(cft$host)],
-     ylim=c(-100,550))
+     col=mycolors_sim[as.factor(cft$sym_dist)],
+     pch=c(17,17)[as.factor(cft$host)],
+     ylim=c(-100,550),
+     cex=scale, cex.lab=scale, cex.axis=scale)
 grid()
 abline(v=0, col="black")
 abline(v=70, col="black")
 legend(.05, 550,
        legend=c("K. elegans", "C. corindum"),
-       col=c("black"), pch=c(1,2),cex=1)
+       col=c("black"), pch=c(19,17), cex=scale)
 legend(.05, 400,
        legend=c("Far", "Homestead", "Close"),
-       col=cols, pch=c(20, 20, 19),cex=1)
+       col=cols, pch=c(17, 17, 17), cex=scale)
 ```
 
 
@@ -655,27 +663,30 @@ cols = c("green","darkgreen","grey78")
 colorfunc = colorRamp(cols)
 x = sort(runif(length(SYM), min = 0, max = 1))
 mycolors_sim = rgb(colorfunc(x), maxColorValue=255)
+mycolors_sim_a = unlist(lapply(mycolors_sim, col.alpha))
 
 xlabel = expression(log(sqrt(avg("mass (g)"))))
 plot(cft$avg_mass_logsqrt, cft$model, ylab="% change", xlab=xlabel,
-     col=mycolors_sim[as.factor(cft$sym_dist)],pch=c(1,2)[as.factor(cft$host)],
-     ylim=c(-100,550))
+     col=mycolors_sim[as.factor(cft$sym_dist)],
+     pch=c(19,17)[as.factor(cft$host)],
+     ylim=c(-100,550),
+     cex=scale, cex.lab=scale, cex.axis=scale)
 grid()
 abline(v=0, col="black")
 abline(v=70, col="black")
 legend(.05, 550,
        legend=c("K. elegans", "C. corindum"),
-       col=c("black"), pch=c(1,2),cex=1)
+       col=c("black"), pch=c(19,17), cex=scale)
 legend(.05, 400,
        legend=c("Far", "Homestead", "Close"),
-       col=cols, pch=c(20, 20, 20),cex=1)
+       col=cols, pch=c(19, 19, 19), cex=scale)
 ```
 
-![](images/intkeys.png)
+![](images/keys-effects.png)
 
-![](images/intmainland.png)
+![](images/mainland-effects.png)
 
-First, we plotted the SBB from balloon vine, the native host plant, which is in the islands. Notably, there is a very narrow range, if any, of flight potential variability between island populations, and there is only a common consistent pattern, where if the SBB from the islands is heavier, then the less likely it will fly, regardless of where it is from on the islands. Whereas for the mainland, there is a wider range of flight potentials between populations. So distance from the sympatric zone varies more dramatically with weight changes. The deeper the SBB is in the mainland, then the more likely it will fly if its heaver but if its closer to the islands, then the more likely it will fly if its lighter.
+First, we plotted the SBB from balloon vine, the native host plant, which is in the islands. Notably, there is a very narrow range, if any, of flight potential variability between island populations, and there is only a common consistent pattern, where if the SBB from the islands is heavier, then the less likely it will fly, regardless of where it is from on the islands. Whereas for the mainland, there is a wider range of flight potentials between populations. Distance from the sympatric zone also varies more dramatically with weight changes. The deeper the SBB is in the mainland, then the more likely it will fly if its heaver but if its closer to the islands, then the more likely it will fly if its lighter.
 
 This relationship is not only spatially interesting, but it also reveals how weight sensitive SBB can be.
 
@@ -721,6 +732,8 @@ M2 = glm(cbind(num_flew, num_notflew) ~ host_c * avg_mass_logsqrt +  wing2body_l
 summary(M2)
 ```
 
+The best fit model for female SBB only partially reflects the best fit model for all SBB. Female SBB are sensitive to day changes, which can be a proxi for age. They are also not effected by distance to the local sympatric zone. 
+
 &nbsp;
 
 **Males**
@@ -732,12 +745,12 @@ data_male = center_data(data_male, is_not_unique_data = FALSE)
 
 ```{r results='hold'}
 data=data.frame(R1 = data_male$num_flew,
-                 R2 = data_male$num_notflew,
-                 A = data_male$host_c,
-                 B = data_male$sym_dist, 
-                 C = data_male$avg_mass_logsqrt, 
-                 D = data_male$wing2body_logsqrt_i, 
-                 E = data_male$avg_days_c)
+                R2 = data_male$num_notflew,
+                A = data_male$host_c,
+                B = data_male$sym_dist, 
+                C = data_male$avg_mass_logsqrt, 
+                D = data_male$wing2body_logsqrt_i, 
+                E = data_male$avg_days_c)
 
 model_script = paste0(source_path,"generic models-binomial glm 2R ~ 4-FF + E.R")
 model_comparisonsAIC(model_script)
@@ -754,16 +767,18 @@ anova(m50, m62, test="Chisq") # adding C does not improve fit
 **Best Fit**
 
 ```{r}
-M3=glm(cbind(num_flew, num_notflew)~host_c*wing2body_logsqrt_i + sym_dist*wing2body_logsqrt_i 
-        + avg_days_c, family=binomial, data=data_male) 
+M3 = glm(cbind(num_flew, num_notflew)~host_c*wing2body_logsqrt_i +
+         sym_dist*wing2body_logsqrt_i + avg_days_c, family=binomial, data=data_male)
 summary(M3)
 ```
+
+The best fit model for male SBB also only partially reflects the best fit model for all SBB. Host plant and wing-to-body ratio are significant effects while average mass (log-square root transformed) drops off for males.
 
 &nbsp;
 
 # Between-Trial Flight Response (T1 vs. T2)
 
-Between-trial flight response analyses determine how differences between trials, such as a SBB's mass or reproductive activity, impact changing flight responses between T1 and T2. Multi-categorical logit modeling was used to analyze changing flight responses, referred as "flight cases", because the outcomes of the data were no longer binary but instead more than two categories. Flight case is also a nominal response variable, meaning there is no defined order among the response variable categories. See the tables in section 3.4 to read through the encoded categories.
+Between-trial flight response analyses determine how differences between trials, such as a SBB's mass or reproductive activity, impact changing flight responses between T1 and T2. Multi-categorical logit modeling was used to analyze changing flight responses, referred to as "flight cases", because the outcomes of the data were no longer binary but instead more than two categories. Flight case is also a nominal response variable, meaning there is no defined order among the response variable categories. See the tables in section 3.4 to read through the encoded categories.
 
 ## Read Libraries
 
@@ -780,12 +795,12 @@ library(plot.matrix)  # enables matrix/heatmap plotting
 
 ## Read Source Files
 
-The sourced script below aides in creating multi-categorical logit model summary tables, displaying prediction equations of a model, and organizing prediction equation summary matrices for plotting. The tables, after running either `calculate_P2()` or `calculate_P3`, display a model's estimated parameters, standard errors, Wald test statistics, and p values. Those tables can be input into the `get_prediction_eq()` or `get_prediction_eqf()` function to return neatly printed prediction equations. Finally, the summary matrices, after running either `get_significant_models()` or `get_significant_modelsf()`, calculates what `calculate_P2()` or `calculate_P3()` calculates while extracting the p-values of each explanatory variable for each prediction equation a model. Those p-values are arranged in a matrix and plotted on a heatmap.
+The sourced script below aides in creating multi-categorical logit model summary tables, displaying prediction equations of a model, and organizing prediction equation summary matrices for plotting. The tables, after running either `calculate_P2()` or `calculate_P3`, display a model's estimated parameters, standard errors, Wald test statistics, and p values. Those tables can be input into the `get_prediction_eq()` or `get_prediction_eqf()` function to return neatly printed prediction equations. Finally, the summary matrices, after running either `get_significant_models()` or `get_significant_modelsf()`, calculates what `calculate_P2()` or `calculate_P3()` calculates while extracting the p-values of each explanatory variable for each prediction equation of a model. Those p-values are arranged in a matrix and plotted on a heatmap.
 
 The function `model_comparisonsAIC()`, which was run earlier in section 2.2, takes in the path of a generic multi-factor script, but it will now implement the `multinom()` function to build its predictive models. All aforementioned, sourced scripts are located in the **Rscr** folder.
 
 ```{r}
-script_names = c("multinom_functions.R")  # 6 relevant functions:
+script_names = c("multinom_functions.R")  # 6 functions:
                                           # calculate_P2(), calculate_P3(),
                                           # get_prediction_eq()
                                           # get_prediction_eqf()
@@ -817,7 +832,7 @@ key = cbind(Event, Encoding)
 kable(key) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
   kable_classic(html_font = "Cambria") %>%
-  add_header_above(c("Delta Flight Response Key" = 2 )) 
+  add_header_above(c("Flight Case Key" = 2 )) 
 ```
 
 ```{r echo=FALSE}
@@ -828,7 +843,7 @@ key = cbind(Event, Sign)
 kable(key) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
   kable_classic(html_font = "Cambria") %>%
-  add_header_above(c("Delta Percent Mass Key (%)" = 2 )) 
+  add_header_above(c("Mass Percent Change Key (%)" = 2 )) 
 ```
 
 ```{r echo=FALSE, warning=FALSE}
@@ -854,13 +869,13 @@ kable(key)  %>%
 
 ## Flight Case Multinomial Modeling
 
-As a summary explanation, logit models for nominal response variables pair each category $(j)$ with a selected baseline category $(J)$. The equation below offers a general prediction equation with a predictor $x$,
+To offer a brief explanation, logit models for nominal response variables pair each category $(j)$ with a selected baseline category $(J)$. The equation below offers a general prediction equation with a predictor $x$,
 
 \begin{center}
 $\log(\frac{\pi_j}{\pi_J}) = \alpha + \beta_jx, j= 1,...,J-1$
 \end{center}
 
-In the equation, $\pi$ is the probability of either the case of baseline, $\alpha$ is the intercept of the model equation, and $\beta$ is the slope, or effect, of the predictor variable. The logit function on the left-hand side of the equation signifies the logarithm of the odds. To calculate the odds, each side needs to be exponentiated. 
+In the equation, $\pi$ is the probability of either the category or the baseline, $\alpha$ is the intercept of the model equation, and $\beta$ is the slope, or effect, of the predictor variable. The logit function on the left-hand side of the equation signifies the logarithm of the odds. To calculate the odds of selecting one category over the baseline, each side needs to be exponentiated. 
 
 ### Baseline
 
@@ -893,9 +908,9 @@ Here the new equation for categories `a` and `b` has a new intercept parameter $
 
 ```{r warning=FALSE}
 data = data.frame(R = df$flight_case, 
-         A = df$mass_per,
-         B = df$sex_c,
-         C = df$host_c)
+                  A = df$mass_per,
+                  B = df$sex_c,
+                  C = df$host_c)
 model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 FF.R")
 model_comparisonsAIC(model_script)
 ```
@@ -907,16 +922,18 @@ anova(m4, m7, test="Chisq") # Adding C (host plant) does not improve fit
 anova(m4, m8, test="Chisq") # Adding A*B does not improve fit
 ```
 
-### Best Fit
+&nbsp;
+
+Here is a potential best fit; however, wing-to-body ratio was not yet considered.
 
 ```{r warning=FALSE, results = "hold"}
-M4 = multinom(flight_case ~ mass_per + sex_c, data = df)
+M4 = multinom(flight_case ~ mass_per + sex_c, data = df, trace=FALSE)
 model_table4 = calculate_P2(M4, "mass_per", "sex_c")
 ```
 
 &nbsp;
 
-Host plant was not a significant predictor, so we reran the model comparisons with wing-to-body ratio as a predictor next.
+Host plant was not a significant predictor, so we reran the model comparisons with wing-to-body ratio included as a predictor with mass percent change and sex.
 
 &nbsp;
 &nbsp;
@@ -946,7 +963,7 @@ anova(m7, m13, test="Chisq") # Adding B*C does not improve fit
 ### Best Fit
 
 ```{r warning=FALSE, results = "hold"}
-M5 = multinom(flight_case ~ mass_per + sex_c + wing2body_c, data = df)
+M5 = multinom(flight_case ~ mass_per + sex_c + wing2body_c, data = df, trace=FALSE)
 model_table5 = calculate_P3(M5)
 ```
 
@@ -970,32 +987,32 @@ EQ3 = get_prediction_eq(model_table5, 3, 2, " Mass %", " Sex", " Wing-to-Body",
 From the model summary table above, it appeared that mass, sex, and wing-to-body ratio are significant in most model equations. To better visualize which prediction equations had significant effects, we generated heatmaps for each effect for every model prediction equation.
 
 ```{r warning=FALSE, results = "hold", fig.width=10, fig.height=9, results='hide'}
-# define a run_multinom_model function based on the best fit model
+# defined a run_multinom_model function based on the best fit model
 run_multinom_model = function(d) {
   m = multinom(flight_case ~ mass_per + sex_c + wing2body_c, trace=FALSE, data = d)
   model_table = calculate_P3(m, print_table=FALSE)
   return(model_table)
 }
 
-# determine which multinomial model equations are significant with a plot
+# determined which prediction equation effects are significant with a plot
 par(mfrow=c(2,2))
 mass_per_ML = get_significant_models(19) # % mass
-  mtext("A. Mass", side=3, adj=0, line=0.5, cex=1.3, font=1)
+  mtext("Mass", side=3, adj=0, line=0.5, cex=1.4, font=1)
 sex_ML = get_significant_models(20) # sex
-  mtext("B. Sex", side=3, adj=0, line=0.5, cex=1.3, font=1)
+  mtext("Sex", side=3, adj=0, line=0.5, cex=1.4, font=1)
 w2b_ML = get_significant_models(21) # wing2body
-  mtext("C. Wing2Body", side=3, adj=0, line=0.5, cex=1.3, font=1)
+  mtext("Wing-to-body", side=3, adj=0, line=0.5, cex=1.4, font=1)
 ```
-
 &nbsp;
+
+From the heatmap visuals, it becomes clearer to see which effects were significant (i.e. the white panels). Sex, as an effect, was significant in all prediction equations except those comparing the likelihood of flying twice with flying only in T1 only and vice versa. Mass and wing-to-body ratio were less frequently significant but shared significance in common prediction equations such as, those comparing the likelihood of flying twice with not flying at all and the likelihood of flying in T1 only with not flying at all. Mass was also the only significant effect in the prediction equation comparing the likelihood of flying twice with flying only in T1 only and vice versa.
 
 ### Plot Predicted Probabilities 
 
 The predicted probabilities were computed using the `fitted()` function, which extracts fitted values from model objects.
 
 ```{r warning=FALSE}
-pp = fitted(M4) # compute fitted values of the best fit model 
-                # without wing-to-body ratio
+pp = fitted(M4) # without wing-to-body ratio
 ```
 
 ```{r warning=FALSE, echo=FALSE}
@@ -1035,8 +1052,7 @@ df4 = df
 ```
 
 ```{r warning=FALSE}
-pp = fitted(M5) # compute fitted values of the best fit model 
-                # with wing-to-body ratio
+pp = fitted(M5) # with wing-to-body ratio
 ```
 
 ```{r warning=FALSE, echo=FALSE}
@@ -1151,7 +1167,7 @@ plot3 = function(df, pp, PP, gradient=TRUE, circles=TRUE, stochasticity=TRUE, po
            cex=1.1)
   }
   if (gradient) {
-    text(50,0.84, labels="Wing-to-body", cex=c2)
+    text(48,0.84, labels="Wing-to-body", cex=c2)
   }
   
   if (gradient) {
@@ -1252,10 +1268,17 @@ plot3(df5,pp5, pp4, gradient=TRUE, circles=FALSE, stochasticity=TRUE, points=FAL
 plot_histograms()
 plot_color_scale()
 ```
+&nbsp;
+
+It is noticeable to observe how adding wing-to-body ratio in the model changes the flight case outcome. **B & C.** Each point is colored as a gradient where a low wing-to-body ratio is darker and a higher wing-to-body ratio is lighter. For either sex, there are cases where a really small wing-to-body ratio can supersede any mass changes, making a SBB no longer likely to fly at all in both trials. Meanwhile, a large wing-to-body ratio can do the inverse where the chances of flying twice can spike up and make a SBB most likely to fly twice even at extreme mass changes. Additionally, across each sex, there are flight cases where the stochasticity varies for each case. The blue line and green lines for only flying once do not oscillate much compared to the red and orange lines for flying twice or not flying at all.
 
 ## Flight Case Multinomial Modeling (Females Only)
 
-### Egg Case
+Multi-categorical logit modeling was used to analyze the flight case for females only because females were laying viable and/or inviable eggs during flight trials. These eggs were collected and counted. Additionally, on a female's trial day, we recorded whether we saw or did not see eggs in her bug home. This set of observations was termed as the "egg case", which is encoded below.
+
+### Encodings
+
+In addition to the encodings and/or signs mentioned in section 3.4, below are the egg case categorical encodings used for the multi-categorical logit models that explain flight case selection for female SBB only.
 
 ```{r echo=FALSE, warning=FALSE}
 # key = response in T2 - response in T1
@@ -1272,8 +1295,7 @@ kable(key) %>%
 ### Baseline
 
 ```{r warning=FALSE, results='hold'}
-# filtered for females and
-# remove missing values for flight case, mass percent change, & egg case between trials
+# filtered for females and removed missing values 
 df = d[with(d,!is.na(flight_case) & !is.na(mass_per) & !is.na(egg_case) & sex=="F"),]
 
 # ordered the dataset by ascending mass percent change values
@@ -1282,7 +1304,7 @@ df = df[with(df, order(mass_per)),]
 # releveled the flight case factors so as to set 0 as the first level.
 df$flight_case = relevel(as.factor(df$flight_case), ref = "0")
 
-unique(df$flight_case) # no female bug only flew in T2, so dropped factor "1"
+# no female bug only flew in T2, so dropped factor "1"
 df$flight_case = droplevels(df$flight_case)
 ```
 
@@ -1290,9 +1312,9 @@ df$flight_case = droplevels(df$flight_case)
 
 ```{r warning=FALSE}
 data = data.frame(R = df$flight_case, 
-         A = df$egg_case,
-         B = df$mass_per,
-         C = df$host_c)
+                  A = df$egg_case,
+                  B = df$mass_per,
+                  C = df$host_c)
 model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 FF.R")
 model_comparisonsAIC(model_script)
 ```
@@ -1305,17 +1327,16 @@ anova(m7, m13, test="Chisq") # Adding mass_per*host does not improve fit
 
 &nbsp;
 
-Host plant was not a significant predictor for females as well, so we tested the wing-to-body ratio as a predictor next.
+Host plant was not significant for females as well, so we tested with wing-to-body ratio next.
 
-&nbsp;
 
 \subsubsection{Compare Models \\ \phantom{xyz}mass, egg case, wing2body}
 
-```{r warning=FALSE, echo=FALSE}
+```{r warning=FALSE}
 data = data.frame(R = df$flight_case, 
-         A = df$egg_case,
-         B = df$mass_per,
-         C = df$wing2body)
+                  A = df$egg_case,
+                  B = df$mass_per,
+                  C = df$wing2body)
 model_script = paste0(source_path,"generic multinomial models- multinom 1RF + 3 FF.R")
 model_comparisonsAIC(model_script)
 ```
@@ -1331,11 +1352,12 @@ anova(m7, m12, test="Chisq") # Adding B*C does not improve fit
 ### Best Fit
 
 ```{r results="hold", warning=FALSE, message=FALSE}
-M6 = multinom(flight_case ~ mass_per + egg_case, data = df) # same top model 
+# same best fit model as the set of model comparisons in section 3.6.3
+M6 = multinom(flight_case ~ mass_per + egg_case, data = df, trace=FALSE) 
 model_table6 = calculate_P2(M6, "mass_per", "egg_case")
 ```
 
-To make the best fit model more legible, it is helpful to rewrite and print the model's **prediction equations**.
+To make the best fit model more legible, it is helpful to rewrite the model's **prediction equations**.
 
 ```{r results='hold', echo=FALSE}
 EQ = get_prediction_eqf(model_table6, 1, 2, " Mass %", " Egg Case",
@@ -1345,20 +1367,22 @@ EQ = get_prediction_eqf(model_table6, 1, 2, " Mass %", " Egg Case",
 ### Visualize Significant Effects in Prediction Equations
 
 ```{r warning=FALSE, results = "hold", fig.width=11, fig.height=4.7}
-# define a run_multinom_model function based on the best fit model
+# defined the run_multinom_model function based on the best fit model
 run_multinom_model = function(d) {
   m = multinom(flight_case ~ mass_per + egg_case, trace=FALSE, data = d) 
   model_table = calculate_P2(m, "mass_per", "egg_case", print_table=FALSE)
   return(model_table)
 }
 
-# map out which multinomial model equations are significant with a plot
+# visuals of significant effects 
 par(mfrow=c(1,2)) 
 mass_per_ML = get_significant_modelsf(15) # mass_per 
-  mtext("A. Mass", side=3, adj=0, line=0.5, cex=1.6, font=1)
+  mtext("Mass", side=3, adj=0, line=0.5, cex=1.5, font=1)
 egg_case_ML = get_significant_modelsf(16) # egg_case
-  mtext("B. Egg \nResponse", side=3, adj=0, line=0.3, cex=1.6, font=1)
+  mtext("Egg Case", side=3, adj=0, line=0.3, cex=1.5, font=1)
 ```
+
+From the heatmap visuals, it becomes clearer to see which effects were significant (i.e. the white panels). Mass and egg case were both significant in the prediction equation that compared the likelihood flying twice with flying in neither trial and vice versa. Mass was also significant in the prediction equation that compared the likelihood of flying only in T1 with flying in neither trial and vice versa. The empty labeled tick mark on the axes signify the missing flight case where a bug flew only in T2. No female flew only in T2 for the Winter 2020 trials.
 
 ### Plot Predicted Probabilities 
 
@@ -1386,7 +1410,11 @@ eggT2_rows = eggT2$index
 ```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
 plot4 = function(df, pp) {
   # only laid eggs in T1
-  plot(df$mass_per[eggT1_rows], pp[eggT1_rows,1], ylim=c(0,1.05), xlim=c(-36,108), col="red", type="l", lty=1,main="Females Only", ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)")
+  plot(df$mass_per[eggT1_rows], pp[eggT1_rows,1], ylim=c(0,1.1), xlim=c(-36,108), 
+       col="red", type="l", lty=1,
+       ylab="Flight Case Probability", 
+       xlab="Percent Change in Mass From T1 to T2 (%)",
+       cex.axis=1.2, cex.lab=1.3)
   
   points(df$mass_per[eggT1_rows], pp[eggT1_rows,2], col="blue", type="l", lty=1, cex=0.45) 
   points(df$mass_per[eggT1_rows], pp[eggT1_rows,3], col="black", type="l", lty=1, cex=0.45) 
@@ -1404,36 +1432,27 @@ plot4 = function(df, pp) {
   points(df$mass_per[eggT2_rows], pp[eggT2_rows,3], col="black", type="l", lty=3) # flew in both
   
   text(70,0.68, labels="Flew in T1 only", col="blue") # 0.059,0.54
-  text(-20,0.95, labels="Did Not Fly", col="red") # -0.036,0.95
+  text(0,0.88, labels="Did Not Fly", col="red") # -0.036,0.95
   text(-20,0.55, labels="Flew Twice", col="black") # -0.02,0.35
-  legend(76, 1.07,
-         legend = c("laid eggs in T1","no eggs laid", "eggs laid twice", "laid eggs in T2"),
+  mtext(expression(italic("Females")), side=3, adj=0.05, line=-2, cex=1.5, font=2)
+  legend(76, 1.11,
+         legend = c("laid eggs in T1",
+                    "no eggs laid", 
+                    "eggs laid twice", 
+                    "laid eggs in T2"),
          lty=1:4,
          col="black",
-         cex=0.8)
+         cex=1.1)
 }
 pp6 = fitted(M6)
 df6 = df
 plot4(df6,pp6) 
 ```
+&nbsp;
 
-```{r echo=FALSE}
-### Barplot
-# can delete
-# data_fem = data_tested[data_tested$sex=="F",]
-# binary_counts = table(data_fem$eggs_b, data_fem$trial_type)[,2:3]
-```
+There are several ways to read this graph. First, there are the blue lines, clustered together, that represent the case where a SBB flew only in T1. Whether a SBB flies only once seems to be irregardless of the egg case, which reflects the heatmap plotted in section 3.6.6. However, for flight cases where a SBB flew twice or did not fly at all, the red and black lines are mirror of each other, where egg case does significantly change the flight case outcome. The only situation in which a female SBB is most likely to fly twice would then be the small window where she would have laid no eggs but would have also gained around 40-60% of her original body mass. Additional analyses can be made from this approach. 
 
-```{r echo=FALSE, warning=FALSE, fig.height=4.7, fig.width=7.7}
-# egg_response_cols = c(orange, ogrey)
-# par(mfrow=c(1,2))
-# 
-# barplot(binary_counts, ylab="Frequency",
-#         xlab="Trial", col=egg_response_cols,
-#         legend = c("no eggs", "yes eggs"), ylim=c(0,110), beside=TRUE)
-
-# Notice that female bugs were laying more during T2 than T1.
-```
+Another way to read the graph is with the help of an interactive version of this plot available at https://rpubs.com/avbernat/729789. Here, users can select and deselect by egg case, so as to see how each egg case impacts flight case probability. For example, if all egg cases except "no eggs" are deselected, then the user is left to see how a female SBB is most likely to fly twice irrespective of mass changes, just like a male SBB's flight case probability plot.
 
 &nbsp;
 
@@ -1470,16 +1489,16 @@ for (script in script_names) {
 
 ## Read the Data
 
-The `clean_flight_data.Fall()` function standardizes data types and centers values of the flight response, sex, host plant, wing morph, egg-laying response, average mass, and distance from the sympatric zone. Then, what is returned is a full dataset (n=574) that includes all bugs collected, flight tested, and measured for their morphology during Fall 2020. The full dataset is then filtered to contain SBBs whose masses were measured and flight sets 72 to 76 because their experimental design was continuous like the Winter 2020 trial sets. Finally, the `create_delta_data.Fall()` function generates the unique dataset by grouping by ID (n=45). The function also computes trial differences, percent differences, and averages for variables of interest such as mass, flight response, egg-laying response, distance, and speed. Then, the unique data variables are centered.
+The `clean_flight_data.Fall()` function standardizes data types and centers values of the flight response, sex, host plant, wing morph, egg-laying response, average mass, and distance from the sympatric zone. Then, what is returned is a full dataset (n=574) that includes all bugs collected, flight tested, and measured for their morphology during Fall 2020. The full dataset is then filtered to contain SBBs whose masses were measured and who were tested in flight sets 72 to 76 because their experimental design was continuous like the Winter 2020 trial sets. Finally, the `create_delta_data.Fall()` function generates the unique dataset by grouping by ID (n=45). The function also computes trial differences, percent differences, and averages for variables of interest such as mass, flight response, and egg-laying response. Then, the unique data variables are centered.
 
 ```{r warning=FALSE}
 data_path = paste0(dir,"/Dispersal/Winter_2020/stats/data/full_data-Fall2019.csv")
 dataFall = clean_flight_data.Fall(data_path)
 
-# extract sets with an experimental design similar to the Winter tests
+# extracted sets with an experimental design similar to the Winter tests
 ongoing_data = dataFall[with(dataFall,!is.na(mass) & set_number > 71),]
 
-# create delta data & sort by % mass
+# created unique data and sorted by % mass
 d = create_delta_data.Fall(ongoing_data) 
 d = d[with(d, order(mass_per)),]
 ```
@@ -1495,10 +1514,10 @@ $\pi_j = \frac{e^{\alpha_j} + \beta_jx}{{\sum}_J e^{\alpha_J + \beta_J x}}, j = 
 The numerators for each probability $\pi$ varies according to the given flight case $j$, and the probabilities all sum to 1. Meanwhile, the denominator is the same for each flight case.
 
 ```{r}
-# store the best fit model summary table in a new variable
-mt = model_table5 
+# stored the best fit model summary table in a new variable
+mt = model_table5
 
-# initiate vectors to store predicted probabilities of each flight case
+# initiated vectors to store predicted probabilities of each flight case
 none_pred = c()
 T1_vs_none_pred = c()
 T2_vs_none_pred = c()
@@ -1508,17 +1527,18 @@ for (i in 1:nrow(d)) {
   m = d$mass_per[[i]]
   s = d$sex_c[[i]]
   w = d$wing2body_c[i]
-  # extract effects from the best fit model and exponentiate
+  # extracted effects from the best fit model and exponentiated
   top0 = exp(0) # none; equals 1 because it is the baseline
   top1 = exp(mt[1,1] + mt[1,2]*m + mt[1,3]*s + mt[1,4]*w) # T1 rather than none
   top2 = exp(mt[2,1] + mt[2,2]*m + mt[2,3]*s + mt[2,4]*w) # T2 rather than none
   top3 = exp(mt[3,1] + mt[3,2]*m + mt[3,3]*s + mt[3,4]*w) # both rather than none
   bottom = top0 + top1 + top2 + top3 
-  # calculate predicted probabilities
+  # calculated predicted probabilities
   none_pred = c(none_pred, top0/bottom)
   T1_vs_none_pred = c(T1_vs_none_pred, top1/bottom)
   T2_vs_none_pred = c(T2_vs_none_pred, top2/bottom)
-  both_vs_none_pred = c(both_vs_none_pred, top3/bottom) }
+  both_vs_none_pred = c(both_vs_none_pred, top3/bottom) 
+  }
 ```
 
 ```{r echo=FALSE}
@@ -1532,8 +1552,11 @@ Mrows = males$index
 ```{r echo=FALSE}
 plot5 = function(d, T1_vs_none_pred, T2_vs_none_pred, both_vs_none_pred, none_pred) {
   d$w2b_col = 0
-  plot(d$mass_per[Frows], T1_vs_none_pred[Frows], ylim=c(0,1), xlim=c(-40,104), col="blue", type="l",
-       ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) #T1 only
+  plot(d$mass_per[Frows], T1_vs_none_pred[Frows], 
+       ylim=c(0,1), xlim=c(-40,104), col="blue", type="l",
+       ylab="Flight Case Probability", 
+       xlab="Percent Change in Mass From T1 to T2 (%)", 
+       lty=1, cex.axis=1.2, cex.lab=1.3) #T1 only
   points(d$mass_per[Frows], T2_vs_none_pred[Frows], col="darkgreen", type="l", lty=1)
   points(d$mass_per[Frows], both_vs_none_pred[Frows], col="darkorange1", type="l", lty=1)
   points(d$mass_per[Frows], none_pred[Frows], col="red", type="l", lty=1)
@@ -1563,8 +1586,11 @@ plot5 = function(d, T1_vs_none_pred, T2_vs_none_pred, both_vs_none_pred, none_pr
 
 plot6 = function(d, T1_vs_none_pred, T2_vs_none_pred, both_vs_none_pred, none_pred) {
   d$w2b_col = 0
-  plot(d$mass_per[Mrows], T1_vs_none_pred[Mrows], ylim=c(0,0.8), xlim=c(-20,60), col="blue", type="l",
-       ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", lty=1) #T1 only
+  plot(d$mass_per[Mrows], T1_vs_none_pred[Mrows], 
+       ylim=c(0,0.8), xlim=c(-20,60), col="blue", type="l",
+       ylab="Flight Case Probability", 
+       xlab="Percent Change in Mass From T1 to T2 (%)", 
+       lty=1, cex.axis=1.2, cex.lab=1.3) #T1 only
   points(d$mass_per[Mrows], T2_vs_none_pred[Mrows], col="darkgreen", type="l", lty=1)
   points(d$mass_per[Mrows], both_vs_none_pred[Mrows], col="darkorange1", type="l", lty=1)
   points(d$mass_per[Mrows], none_pred[Mrows], col="red", type="l", lty=1)
@@ -1608,6 +1634,8 @@ plot_histograms = function() {
 }
 ```
 
+From the Fall 2019 continuous flight trials, two differences are noticeable in the plots below: 1) the mass percent changes are narrower and 2) there is less stochasticity, which could both be artifacts of fewer bugs having been tested. What becomes more important then is understanding how well the Winter 2020 models do at predicting the Fall 2019 results, which follows in the next section.
+
 ```{r echo=FALSE, warning=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
 par(mfrow=c(1,2), tcl=-0.5) # length of tick marks set at default
 
@@ -1617,7 +1645,7 @@ text(91, 0.99, labels="w2b", cex=0.9)
 
 par(mai=c(1,0.6,0.4,0.05))
 plot6(d, T1_vs_none_pred, T2_vs_none_pred, both_vs_none_pred, none_pred)
-text(50,0.79, labels="Wing-to-body", cex=0.9)
+text(50,0.79, labels="Wing-to-body", cex=1.2)
 text(23, 0.79, labels="w2b", cex=0.9)
 
 plot_histograms()
@@ -1648,16 +1676,28 @@ accM = calculate_accuracy(maledata,3,6)
 paste("Male prediction accuracy, ", round(accM,2))
 ```
 
+Additional, accuracy scores can be measured with the help of the `evaluate()` function embedded in the `get_confusion_matrix` and available through the `cvms` library. For example, sensitivity scores measure true positive frequency and specificity scores measure true negative frequency.
+
+```{r}
+acc_table = get_confusion_matrix(df_probs,3,6)
+acc_table[,4:5]
+```
+
 ## Confusion Matrix
 
-```{r results='hold'}
-acc_table = get_confusion_matrix(df_probs,3,6)
-acc_table[,1:5]
+The final important performance metric used to determine how well the Winter 2020 models did at predicting the Fall 2019 results is a confusion matrix. A confusion matrix will compare model predictions to actual outcomes in order to provide rates of false positives, false negatives, true positives and true negatives. In this case, the best fit multinomial model for all SBB was one that considered sex, mass percent change, and wing-to-body ratio. 
 
+```{r results='hold', fig.width=4.3, fig.height=4.3}
 confusion_matrix = acc_table$'Confusion Matrix'[[1]]
-plot_confusion_matrix(confusion_matrix, add_sums=FALSE, 
-                      palette="Greys", place_x_axis_above=FALSE)
+plot_confusion_matrix(confusion_matrix, add_sums=TRUE,
+                      sums_settings = sum_tile_settings(
+                        palette = "Oranges",
+                        label = "total"),
+                      palette="Greys", place_x_axis_above=FALSE, 
+                      add_zero_shading = FALSE)
 ```
+
+Each grey box describes the percentages of false positives, false negatives, true positives, and true negatives for predicting flight cases observed during continuous flight trials in Fall 2019. Orange boxes calculate the total percentages. Target cases are the observed cases during Fall trials and prediction cases are the flight cases predicted by the Winter models. Based on the confusion matrix, the Winter 2020 model appears to be overestimating the flight case where a SBB flew twice and underestimating flight cases where a SBB would fly only once. 
 
 ## Females
 
@@ -1704,8 +1744,11 @@ dataframe$egg_cat = c(2,2,2,0,2,2,2,0,2,2,2,0,2)
 ```
 
 ```{r echo=FALSE, fig.width=3.2*1.7*2, fig.height=2.8*2}
-plot(dfem$mass_per[egg2], T1_rather_than_none[egg2], ylim=c(0,1), col="blue", type="l",
-     ylab="Flight Case Probability", xlab="Percent Change in Mass From T1 to T2 (%)", main="Females Only", lty=2) #T1 only
+plot(dfem$mass_per[egg2], T1_rather_than_none[egg2], 
+     ylim=c(0,1), col="blue", type="l",
+     ylab="Flight Case Probability", 
+     xlab="Percent Change in Mass From T1 to T2 (%)", 
+     lty=2, cex.axis=1.2, cex.lab=1.3) #T1 only
 points(dfem$mass_per[noegg], T1_rather_than_none[noegg], col="blue", type="l", lty=1)
 points(dfem$mass_per[egg2], both_rather_than_none[egg2], col="black", type="l", lty=2)
 points(dfem$mass_per[noegg], both_rather_than_none[noegg], col="black", type="l", lty=1)
@@ -1719,8 +1762,13 @@ legend(20, 0.98,
        legend = c("no eggs","2 eggs"),
        lty=1:2,
        col="black",
-       cex=0.8)
+       cex=1.1)
+mtext(expression(italic("Females")), side=3, adj=0.05, line=-2, cex=1.5, font=2)
 ```
+
+From the Fall 2019 continuous flight trials, two differences are noticeable in the plots below: 1) there were only two egg cases (laid twice or no eggs) and 2) egg cases seem to make no noticeable differences within a given flight case. 
+
+Because mass but not egg case seems to be driving flight case outcome for Fall 2019 female SBB, this can already signal that our Winter 2020 best fit model would not necessarily be a reliable predictor of flight case. This is confirmed in the next sections using performance metrics.
 
 ### Overall and Grouped Accuracies
 
@@ -1729,13 +1777,27 @@ accF_eggs = calculate_accuracy(dataframe,3,5)
 paste("Female prediction accuracy for mass diff and egg model, ", round(accF_eggs,2))
 ```
 
+```{r}
+acc_table = get_confusion_matrix(dataframe,3,5)
+acc_table[,4:5]
+```
+
 ### Confusion Matrix
 
-```{r results='hold'}
-acc_table = get_confusion_matrix(dataframe,3,5)
-acc_table[,1:5]
-
+```{r results='hold', fig.width=4, fig.height=4}
 confusion_matrix = acc_table$'Confusion Matrix'[[1]]
-plot_confusion_matrix(confusion_matrix, add_sums=FALSE, 
-                      palette="Greys", place_x_axis_above=FALSE)
+plot_confusion_matrix(confusion_matrix, add_sums=TRUE,
+                      sums_settings = sum_tile_settings(
+                        palette = "Oranges",
+                        label = "total"), 
+                      palette="Greys", place_x_axis_above=FALSE, 
+                      add_zero_shading = FALSE)
 ```
+
+The best fit model for female SBB tested in Winter 2020 included mass percent change and egg case. This model, based on the confusion matrix, also largely overestimated the flight case where females flew twice and largely underestimated the remaining flight cases.  
+
+From the confusion matrices, it becomes evident that our best fit models would need more factors to be more accurate and sensitive to new data. It is possible that other, unmeasured and untested factors could better explain a flight case outcome, such as age or thorax muscle mass weight.
+
+
+
+

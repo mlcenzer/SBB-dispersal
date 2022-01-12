@@ -13,7 +13,7 @@ calculate_P2 = function(model, var1, var2, print_table=TRUE) {
                              "SEi", "SE1", "SE2", "zi", "z1", "z2", 
                              "waldi", "wald1","wald2","Pi > |z|", "P1 > |z|", "P2 > |z|")
   if (print_table) {
-    cat("\n", "AIC: ", s$AIC, "\n") 
+    cat("AIC: ", s$AIC, "\n") 
     print(round(model_table,3))
   }
   return(model_table)
@@ -34,7 +34,7 @@ calculate_P3 = function(m, print_table=TRUE) {
                              "SE1", "SE2", "SE3","zi", "z1", "z2", "z3",
                              "waldi", "wald1","wald2", "wald3", "Pi>|z|", "P1>|z|", "P2>|z|", "P3>|z|")
   if (print_table){
-    cat("\n", "AIC: ", s$AIC, "\n") 
+    cat("AIC: ", s$AIC, "\n") 
     print(round(model_table,3))    
   }
   return(model_table)
@@ -99,10 +99,13 @@ get_significant_models = function(val_num, effect_cat=2){
   
   #plot
   par(mar=c(5.1, 4.1, 3.1, 4.1))
-  plot(pvalues, ylab="Baselines", xlab="Equation", main="p-values", 
+  plot(pvalues, ylab="Baselines", xlab="Equation", main="",
        na.col="white", col=rev(grey.colors(7)), digits=4, 
+       na.print=FALSE,
+       cex.axis=1.3, cex.lab=1.4,
        breaks=c(0.05,0.10, 0.5, 0.8, 1),
-       text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')
+       text.cell=list(col="white", cex=1.3), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')
+  title("    p-value", line=-1, adj=1, cex=1.2)
   print(effects)
   return(model_list)
 }
@@ -131,17 +134,20 @@ get_significant_modelsf = function(num_val, effect_cat=2){
       effects[r,e] = model_table[c, effect_cat]
     } 
   }
-  colnames(pvalues) = c("T1 only", "neither trial", NA, "both trials")
-  rownames(pvalues) = c("T1 only", "neither trial", NA, "both trials") 
-  colnames(effects) = c("T1 only", "neither trial", NA, "both trials")
-  rownames(effects) = c("T1 only", "neither trial", NA, "both trials") 
+  colnames(pvalues) = c("-1", "0", NA, "2")
+  rownames(pvalues) = c("-1", "0", NA, "2") 
+  colnames(effects) = c("-1", "0", NA, "2")
+  rownames(effects) = c("-1", "0", NA, "2") 
   #browser()
   #plot
   par(mar=c(5.1, 4.1, 3.1, 4.1))
-  plot(pvalues, ylab="Baselines", xlab="Equation", main="p-values", 
+  plot(pvalues, ylab="Baselines", xlab="Equation", main="",
+       cex.axis=1.2, cex.lab=1.3,
+       na.print=FALSE,
        na.col="white", col=rev(grey.colors(7)), digits=4, 
        breaks=c(0.05,0.10, 0.5, 0.8, 1),
-       text.cell=list(col="white", cex=1), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f')#can repress these printing with fmt.cell=''
+       text.cell=list(col="white", cex=1.2), max.col=170, border=NA, fmt.cell='%.2f', fmt.key='%.2f') #can repress these printing with fmt.cell=''
+  title("    p-value", line=-1, adj=1, cex=1.2)
   
   return(model_list)
 }
