@@ -333,7 +333,7 @@ define_interactions = function(interactions){
 d = raw_data
 sex = c(1,-1)
 hp = c(1,-1)
-yr = seq(min(d$months_since_start), max(d$months_since_start), by=2)
+yr = seq(min(d$months_since_start), max(d$months_since_start), by=3)
 mo = seq(1, 12, by=1)
 combos = expand.grid(sex,hp,yr,mo)
 
@@ -380,13 +380,13 @@ colorfunc = colorRamp(cols)
 x <- sort(runif(length(sex), min = 0, max = 1))
 mycolors = rgb(colorfunc(x), maxColorValue=255)
 
-# Plotting interaction between sex and host plant \n with interaction between sex and months since start
+# Plotting interaction between sex and host plant with interaction between sex and months since start
 par(mfrow=c(1,2))
 plot(cd$yr, cd$model, frame.plot=F,
      main="% change = \n sex * host plant + sex * months since start",
      ylab="% change (long-winged)", xlab="month since start",
      ylim=c(-50,75),
-     col=cols[as.factor(cd$sex)], pch=c(1,2)[as.factor(cd$hp)])  
+     col=cols[as.factor(cd$sex)], pch=c(19,17)[as.factor(cd$hp)])  
 abline(h=0)
 legend(0, 70,
        legend=c("M", "F"), 
@@ -395,12 +395,12 @@ legend(15, 70,
        legend=c("C. corindum", "K. elegans"), 
        pch=c(1,2))
 
-# Plotting interaction between sex and host plant \n with interaction between host plant and month
+# Plotting interaction between sex and host plant  with interaction between host plant and month
 plot(cd$mo, cd$model2, frame.plot=F,
      main="% change = \n sex * host plant + host plant * month",
      ylab="% change (long-winged)", xlab="month",
      ylim=c(-50,75), xlim=c(0,12),
-     col=cols[as.factor(cd$sex)], pch=c(1,2)[as.factor(cd$hp)]) 
+     col=cols[as.factor(cd$sex)], pch=c(19,17)[as.factor(cd$hp)]) 
 abline(h=0)
 ```
 
@@ -429,15 +429,59 @@ plot(cd$yr, cd$model3, frame.plot=F,
      main="% change = months since start + \n sex * host plant + sex * months since start",
      ylab="% change (long-winged)", xlab="month since start",
      ylim=c(-10,500),
-     col=cols[as.factor(cd$sex)], pch=c(1,2)[as.factor(cd$hp)])  
+     col=cols[as.factor(cd$sex)], pch=c(19,17)[as.factor(cd$hp)])  
 abline(h=0)
 
 plot(cd$mo, cd$model4, frame.plot=F,
      main="% change = month + \n sex * host plant + host plant * month",
      ylab="% change (long-winged)", xlab="month",
      ylim=c(-10,500), xlim=c(0,12),
-     col=cols[as.factor(cd$sex)], pch=c(1,2)[as.factor(cd$hp)]) 
+     col=cols[as.factor(cd$sex)], pch=c(19,17)[as.factor(cd$hp)]) 
 abline(h=0)
+```
+
+
+```{r echo=FALSE, message=FALSE, fig.width=10, fig.height=4.8, fig.align="center"}
+par(mfrow=c(1,2))
+define_total_effect_eq = function(i, sex, hp, yr, mo){
+  total_effect = 0.0995560 * mo + (-0.0014557 * mo * yr) 
+  return(total_effect)
+}
+
+MODEL5 = get_percent_changes(combos, define_interactions, define_total_effect_eq)
+combos$model5  = MODEL5
+cd = as.data.frame(combos)
+
+colorfunc = colorRamp(c("black","#5c5c5c", "lightgrey"))
+x <- sort(runif(length(mo), min = 0, max = 1))
+mycolors_mo = rgb(colorfunc(x), maxColorValue=255)
+
+plot(cd$mo, cd$model5, frame.plot=F,
+     main="% change = month + months since start * month",
+     ylab="% change (long-winged)", xlab="month",
+     pch=18,
+     col=mycolors_mo[as.factor(combos$yr)])
+abline(h=0)
+legend(1.5, 200, 
+       title="year", 
+       legend=c("2013", "2017", "2020"), 
+       col=c("black","#5c5c5c", "lightgrey"), 
+       pch=18)
+
+
+plot(cd$yr, cd$model5, frame.plot=F,
+     main="% change = month + months since start * month",
+     ylab="% change (long-winged)", xlab="months since start",
+     pch=18,
+     col=mycolors_mo[as.factor(combos$mo)])
+text(55, 78, "year = 2019")
+abline(v=69, col="black")
+abline(h=0)
+legend(50, 200, 
+       title="month", 
+       legend=c("1  ", "6  ", "12  "), 
+       col=c("black","#5c5c5c", "lightgrey"), 
+       pch=18)
 ```
 
 All single effects and their interactions are significant in the best fit model for predicting wing morph. It may be because of the size of the dataset that the model is more sensitive at detecting weak interactions as significant.
@@ -556,7 +600,7 @@ define_interactions = function(interactions){
 d = data_long
 sex = c(1,-1)
 hp = c(1,-1)
-yr = seq(min(d$months_since_start), max(d$months_since_start), by=2)
+yr = seq(min(d$months_since_start), max(d$months_since_start), by=3)
 combos = expand.grid(sex,hp,yr)
 
 define_total_effect_eq = function(i, sex, hp, yr){
@@ -607,7 +651,7 @@ plot(cd$yr, cd$model, frame.plot=F,
      main="% change = \n sex * host plant + host plant * months since start",
      ylab="% change (wing-to-body ratio)", xlab="months since start",
      ylim=c(-1,1.5),
-     col=cols[as.factor(cd$sex)], pch=c(1,2)[as.factor(cd$hp)])  
+     col=cols[as.factor(cd$sex)], pch=c(19,17)[as.factor(cd$hp)])  
 abline(h=0)
 legend(0, 1.3,
        legend=c("M", "F"), 
@@ -619,7 +663,7 @@ plot(cd$yr, cd$model2, frame.plot=F,
      main="% change = sex + host plant + \n sex * host plant + host plant * months since start",
      ylab="% change (wing-to-body ratio)", xlab="months since start",
      ylim=c(-1,1.5),
-     col=cols[as.factor(cd$sex)], pch=c(1,2)[as.factor(cd$hp)])  
+     col=cols[as.factor(cd$sex)], pch=c(19,17)[as.factor(cd$hp)])  
 abline(h=0)
 ```
 

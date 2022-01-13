@@ -571,11 +571,11 @@ anova(m63, m36, test="Chisq") # Adding C*D does improve fit
 
 ```{r}
 M1 = glm(cbind(num_flew, num_notflew) ~ host_c * avg_mass_logsqrt 
-          + sym_dist_s * avg_mass_logsqrt + sex_c + avg_days_c, data=d, family=binomial)
+          + sym_dist_s * avg_mass_logsqrt + sex_c + avg_days_c, data=dc, family=binomial)
 summary(M1)
 ```
 
-The best fit model shows two significant interaction terms that interestingly affect SBB flight response across: `host_c:avg_mass_logsqrt` and `avg_mass_logsqrt:sym_dist_s`. To explore these terms further and look closer at these island-mainland/native-invasive host plant dynamics, we plotted them. Only part of the code used to generate the plots is shown below.
+The best fit model shows two significant interaction terms that interestingly affect SBB flight response across trials: `host_c:avg_mass_logsqrt` and `avg_mass_logsqrt:sym_dist_s`. To explore these terms further and look closer at these island-mainland/native-invasive host plant dynamics, we plotted them. Only part of the code used to generate the plots is shown below.
 
 ```{r}
 HP = c(1,-1)
@@ -590,7 +590,7 @@ eq = function(combo_matrix) {
     sym=c[i,2]
     ma=c[i,3]
     bih = 1.85594
-    bis = -1.36386 
+    bis = -1.41367
     total_effect = (bis * sym * ma) + (bih * hp * ma)
     perchange =  (exp(total_effect) - 1) * 100 
     effects_col = c(effects_col, perchange)
@@ -704,12 +704,12 @@ data_fem = center_data(data_fem, is_not_unique_data = FALSE)
 
 ```{r results='hold'}
 data=data.frame(R1 = data_fem$num_flew,
-                 R2 = data_fem$num_notflew,
-                 A = data_fem$host_c,
-                 B = data_fem$sym_dist, 
-                 C = data_fem$avg_mass_logsqrt, 
-                 D = data_fem$wing2body_logsqrt_i, 
-                 E = data_fem$avg_days_c)
+                R2 = data_fem$num_notflew,
+                A = data_fem$host_c,
+                B = data_fem$sym_dist, 
+                C = data_fem$avg_mass_logsqrt, 
+                D = data_fem$wing2body_logsqrt_i, 
+                E = data_fem$avg_days_c)
 
 model_script = paste0(source_path,"generic models-binomial glm 2R ~ 4-FF + E.R")
 model_comparisonsAIC(model_script)
