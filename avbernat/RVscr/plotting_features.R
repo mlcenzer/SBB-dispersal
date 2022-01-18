@@ -29,3 +29,12 @@ red = "#de2d26"
 lightred = "#db5c5c"
 brown = "#654321"
 lightbrown = "#80635b"
+
+
+
+# jitter = 0
+# for (i in 1:length(unique(cft_bt$sym_dist))) {
+#   jitter = jitter + 0.001
+#   cft_bt[cft_bt$sym_dist == unique(cft_bt$sym_dist)[i],]$avg_mass =
+#     cft_bt[cft_bt$sym_dist == unique(cft_bt$sym_dist)[i],]$avg_mass + jitter
+# }
