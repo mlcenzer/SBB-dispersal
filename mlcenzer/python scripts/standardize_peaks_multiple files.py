@@ -11,7 +11,9 @@ import os
 
 #path = "/Users/anastasiabernat/Desktop/odd_text_files/"
 
-path = "/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/data/recording txts/"
+base_path = "/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/"
+
+path = base_path + r"recording txts/"
 
 dir_list = sorted(os.listdir(path))
 
@@ -34,26 +36,24 @@ def peak_standardization(colum):
     
     for i in range(0, len(colum)):
         format_colum.append(round(colum[i], 2))
-        
-    mean = sum(format_colum)/len(format_colum)
-    st_dev = statistics.stdev(format_colum)
-    print(mean)
-    print(st_dev)
-    
-    min_val=round((sum(format_colum)/len(format_colum)) - 0.05, 2) #threshold values can be
-    print(min_val)
-    max_val=round((sum(format_colum)/len(format_colum)) + 0.05, 2) #modified accordingly
-    print(max_val)
+
+    # Threshold values can be modified accordingly.
+    channel_mean = (sum(format_colum)/len(format_colum))
+    min_val=round(channel_mean - 0.01, 2) # The default values are set to deliver a fine tune signal standardization
+    max_val=round(channel_mean + 0.02, 2)
+
     for ii in range(0, len(format_colum)):
         x=(format_colum[ii]-min_val)/(max_val-min_val)
-        if x < -1:
+        if x < -2:  # used negative 2 a stronger cut off when determining what is a dip in voltage.
             new_list.append(1)
         else:
             new_list.append(0)
-    print(new_list)
 
+    # A dip is a cluster of 1's in new_list, a list of 1's and 0's
+    # This for loop designates the first designated 1 in a 'dip' as the 'peak' time
+    
     for iii in range(0, len(new_list)-1):
-        if new_list[iii] > new_list[iii-1] and new_list[iii] >= new_list[iii+1]:
+        if new_list[iii] > new_list[iii-1] and new_list[iii] >= new_list[iii+1] and new_list[iii+1] != 0: 
             peaks.append(1)
         else:
             peaks.append(0)
@@ -72,10 +72,9 @@ def peak_standardization(colum):
 for file in dir_list:
     if file.startswith("."):
         continue
-    #filepath = r"/Desktop/odd_text_files/" + str(file)
-    filepath = path + str(file)
-    print(filepath)
-    filename = input("File path -> ")
+    filepath = base_path + r"recording txts/" + str(file)
+#    print(filepath)
+#    filename = input("File path -> ")
     InputFile = open(filepath, mode="r", encoding='latin-1')
     
     #************************************************************************************************************
@@ -123,13 +122,14 @@ for file in dir_list:
     # Define the filepath of the output file. Add more channels to the write command line if needed. 
     #************************************************************************************************************
     
-    #folderpath = r"/Users/anastasiabernat/Desktop/odd_standardized_files/standardized_peaks_"
-    folderpath = r"/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/python output/output_"
-    
+    folderpath = base_path + r"SBB-dispersal git/Meredith is working on/python output/standardized_peaks_"
     OutputFile = open(folderpath + str(file), mode="w")
     for i in range(0, len(Lines)):
-        OutputFile.write('%.1f' % time_colum[i] + ", " + '%.2f' % first_colum[i] + ", " + '%.2f' % second_colum[i]
-                         + ", " + '%.2f' % third_colum[i] + ", " +  '%.2f' % fourth_colum[i] + "\n")
+        OutputFile.write('%.1f' % time_colum[i] + ", " +
+                         '%.2f' % first_colum[i] + ", " +
+                         '%.2f' % second_colum[i] + ", " +
+                         '%.2f' % third_colum[i] + ", " +
+                         '%.2f' % fourth_colum[i] + "\n")
     #                     + '%.2f' % fifth_colum[i] + ", " + '%.2f' % sixth_colum[i] + ", "
     #                     + '%.2f' % seventh_colum[i] + ", " + '%.2f' % eighth_colum[i] +"\n") 
 

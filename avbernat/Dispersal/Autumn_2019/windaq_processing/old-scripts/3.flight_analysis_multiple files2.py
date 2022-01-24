@@ -125,7 +125,6 @@ def flying_bouts(time, speed, ch, tot_duration):
     flight_time = 0
     longest_bout = 0
     shortest_bout = 0
-    to_remove=[]
     bout_time = []
     fly_time=0 
     flight_60_300=[]
@@ -154,25 +153,19 @@ def flying_bouts(time, speed, ch, tot_duration):
         for i in range(0, len(time)-1):
             if float(time[i+1]) >= float(time[i]) + 20:
                 bout_time.append(time[i])
-                bout_time.append(time[i+1]) 
-                if i == 0: # 
-                    del bout_time[0] #
-
+                bout_time.append(time[i+1])
+     
         if bout_time[-1] != time[-1]:
             bout_time.append(time[-1])
 
         #***************************************************************************************************************************
-        #clean the flying bout time event list from redundant values
+        #clean the flying bout time event list from redundant values using set().
+        #set() method is used to convert any of the iterable to the distinct element and sorted sequence of iterable elements.
         #***************************************************************************************************************************
     
-        for iii in range(1, len(bout_time)):
-            if float(bout_time[iii]) == float(bout_time[iii-1]):
-                to_remove.append(bout_time[iii])
-                                 
-        for iiii in range(0, len(to_remove)):
-            while to_remove[iiii] in bout_time:
-                bout_time.remove(to_remove[iiii])
-        
+        for t in range(1, len(bout_time)):
+            bout_time = sorted(list(set(bout_time))) 
+
         #***************************************************************************************************************************
         #calculates the flight descriptive statistics
         #***************************************************************************************************************************
@@ -180,11 +173,13 @@ def flying_bouts(time, speed, ch, tot_duration):
         if len(bout_time)%2 != 0:
             last_time = float(bout_time[-1])
             del bout_time[-1]
+
         t_odd = bout_time[0::2]
         t_even = bout_time[1::2]
         for ii in range(0, len(t_odd)):
             diff = float(t_even[ii]) - float(t_odd[ii])
             tot_t.append(diff)
+
         if float(last_time) != 0:
             diff = float(last_time) - float(t_even[-1])
             tot_t.append(diff)
@@ -223,6 +218,21 @@ def flying_bouts(time, speed, ch, tot_duration):
 
     return (flight_time, shortest_bout, longest_bout, fly_time, sum_60_300, sum_300_900, sum_900_3600, sum_3600_14400, sum_14400, events_300, events_900, events_3600, events_14400, events_more_14400)       
 
+#***************************************************************************************************************************
+# Input: filepath for data file as .csv file
+# Output: a list of filenames according to data recordings on which bugs flew "Y" during the trial.
+#***************************************************************************************************************************
+    
+def yes_flew(filepath):
+    yes_flew_list = []
+    with open(filepath, "r") as data_file:
+        reader = csv.DictReader(data_file)
+        for row in reader:
+                if row["flew"] == "Y":
+                    yes_flew_list.append(row["filename"])
+
+    return yes_flew_list
+        
 
 #***************************************************************************************************************************
 # This function is used to to clean up the final time and speed variation file for each channel in order to produce
@@ -249,6 +259,7 @@ def graph(time, speed):
             speed_new.append(speed[i])
     time_new.append(0)
     speed_new.append(0)
+    
     return time_new, speed_new
 
 #************************************************************************************************************
@@ -262,15 +273,13 @@ def cls(): print ("\n" * 100)
 
 cls()
 
-path = "/Users/anastasiabernat/Desktop/Standardized Peaks/"
+path = "/Users/anastasiabernat/Desktop/odd_standardized_files/"
 print(path)
 dir_list = sorted(os.listdir(path))
-print(dir_list)
 for file in dir_list:
     if file.startswith("."):
         continue
-    filepath = r"/Users/anastasiabernat/Desktop/Standardized Peaks/" + str(file)
-    print(filepath)
+    filepath = r"/Users/anastasiabernat/Desktop/odd_standardized_files/" + str(file)
 #    filename = input('File path or file name -> ')
     tot_duration = find_time_duration(filepath)
     input_file = open(filepath, mode="r")
@@ -345,12 +354,16 @@ for file in dir_list:
         row_data['max_speed'] = max(speed_graph)
         row_data["channel_num"] = i
         #row_data["channel_letter"] = str(file).split
-        OutputFile=open(r'/Users/anastasiabernat/Desktop/Flight Analyses 2/' + str(file).split("_")[-1].replace(".txt", "") + str(i)+'.txt', "w")
-        for index in range(0, len(time_graph)):
-            OutputFile.write('%.1f' % time_graph[index] + ',' + '%.2f' %speed_graph[index] + '\n')
-        OutputFile.close()
+        filename = str(file).split("_")[-1].replace(".txt", "") + str(i)+'.txt'
+        print(filename)
         
-        with open(r"/Users/anastasiabernat/Desktop/flight_stats/flight_stats-" + str(file).split("_")[-1].replace(".txt", "") + ".csv", "w") as csv_file:
+        if filename in yes_flew(r'/Users/anastasiabernat/Desktop/all_dispersal_data_sorted.csv'):
+            OutputFile=open(r'/Users/anastasiabernat/Desktop/holder/' + filename, "w")
+            for index in range(0, len(time_graph)):
+                OutputFile.write('%.1f' % time_graph[index] + ',' + '%.2f' %speed_graph[index] + '\n')
+            OutputFile.close()
+        
+        with open(r"/Users/anastasiabernat/Desktop/holder/flight_stats-" + str(file).split("_")[-1].replace(".txt", "") + ".csv", "w") as csv_file:
             writer = csv.DictWriter(csv_file, fieldnames = row_data.keys())
             writer.writeheader()
             for row in output_data:

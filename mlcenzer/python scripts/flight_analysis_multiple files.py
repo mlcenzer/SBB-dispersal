@@ -1,5 +1,35 @@
-import csv
+#***************************************************************************************************************************
+# FLIGHT ANALYSES FOR MULTIPLE FILES
+# Version 7
+# Last updated: Jan 9, 2020
+# Authors: (Attisano, et al.), Anastasia Bernat, Meredith Cenzer
+#
+# Execution Time: 15 minutes
+#***************************************************************************************************************************
+
 import os
+import sys
+import csv
+import re
+
+import pandas as pd
+import numpy as np
+
+import time
+start = time.time()
+
+#*************************************************************************************************************
+# Process/Purpose: If you don't want a function to print, call blockPrint() before it, and enablePrint() when
+#       you want it to continue. If you want to disable all printing, start blocking at the top of the file.
+#*************************************************************************************************************
+
+def blockPrint():
+    sys.stdout = open(os.devnull, 'w')
+
+def enablePrint():
+    sys.stdout = sys.__stdout__
+
+#blockPrint()
 
 #***************************************************************************************************************************
 # Creates a time list in which each element represents the occurence of a single peak event.
@@ -12,7 +42,6 @@ def time_list(time, channel):
             time_channel.append(float(time[i]))
 
     return time_channel
-
 
 #***************************************************************************************************************************
 # Creates a list in which each element represents the speed variation between successive peak events.
@@ -48,10 +77,11 @@ def speed_list(time, ch_number):
             # Change the threshold speed value accordingly
             # Delete the # at the beginning of line 50-52 to activate the command
             #*********************************************************************
-            
-            #for x in range(0, len(speed_channel)):
-            #    if float(speed_channel[x]) < 0.1:
-            #        speed_channel[x] = 0
+            #######mlc change: uncommented minimum speed threshhold below
+
+            for x in range(0, len(speed_channel)):
+                if float(speed_channel[x]) < 0.1:
+                    speed_channel[x] = 0
 
         else:
             print ("Channel ",ch, "has only one peak - impossible to calculate motion stats")
@@ -106,7 +136,6 @@ def find_time_duration(file_name):
         tot_duration = data[-1].split(",")[0] 
         
     return float(tot_duration)
-        
 
 #***************************************************************************************************************************
 # This function returns duration of the shortest and longest bouts in seconds, entire flight duration in seconds and
@@ -125,7 +154,6 @@ def flying_bouts(time, speed, ch, tot_duration):
     flight_time = 0
     longest_bout = 0
     shortest_bout = 0
-    to_remove=[]
     bout_time = []
     fly_time=0 
     flight_60_300=[]
@@ -154,25 +182,19 @@ def flying_bouts(time, speed, ch, tot_duration):
         for i in range(0, len(time)-1):
             if float(time[i+1]) >= float(time[i]) + 20:
                 bout_time.append(time[i])
-                bout_time.append(time[i+1]) 
-                if i == 0: # 
-                    del bout_time[0] #
-
+                bout_time.append(time[i+1])
+     
         if bout_time[-1] != time[-1]:
             bout_time.append(time[-1])
 
         #***************************************************************************************************************************
-        #clean the flying bout time event list from redundant values
+        #clean the flying bout time event list from redundant values using set().
+        #set() method is used to convert any of the iterable to the distinct element and sorted sequence of iterable elements.
         #***************************************************************************************************************************
     
-        for iii in range(1, len(bout_time)):
-            if float(bout_time[iii]) == float(bout_time[iii-1]):
-                to_remove.append(bout_time[iii])
-                                 
-        for iiii in range(0, len(to_remove)):
-            while to_remove[iiii] in bout_time:
-                bout_time.remove(to_remove[iiii])
-        
+        for t in range(1, len(bout_time)):
+            bout_time = sorted(list(set(bout_time))) 
+
         #***************************************************************************************************************************
         #calculates the flight descriptive statistics
         #***************************************************************************************************************************
@@ -180,11 +202,13 @@ def flying_bouts(time, speed, ch, tot_duration):
         if len(bout_time)%2 != 0:
             last_time = float(bout_time[-1])
             del bout_time[-1]
+
         t_odd = bout_time[0::2]
         t_even = bout_time[1::2]
         for ii in range(0, len(t_odd)):
             diff = float(t_even[ii]) - float(t_odd[ii])
             tot_t.append(diff)
+
         if float(last_time) != 0:
             diff = float(last_time) - float(t_even[-1])
             tot_t.append(diff)
@@ -223,6 +247,20 @@ def flying_bouts(time, speed, ch, tot_duration):
 
     return (flight_time, shortest_bout, longest_bout, fly_time, sum_60_300, sum_300_900, sum_900_3600, sum_3600_14400, sum_14400, events_300, events_900, events_3600, events_14400, events_more_14400)       
 
+#***************************************************************************************************************************
+# Input: filepath for data file as .csv file
+# Output: a list of filenames according to data recordings on which bugs flew "Y" during the trial.
+#***************************************************************************************************************************
+    
+def yes_flew(filepath):
+    yes_flew_list = []
+    with open(filepath, "r") as data_file:
+        reader = csv.DictReader(data_file)
+        for row in reader:
+                if row["flew"] == "Y":
+                    yes_flew_list.append(row["filename"])
+
+    return yes_flew_list
 
 #***************************************************************************************************************************
 # This function is used to to clean up the final time and speed variation file for each channel in order to produce
@@ -249,7 +287,130 @@ def graph(time, speed):
             speed_new.append(speed[i])
     time_new.append(0)
     speed_new.append(0)
+    
     return time_new, speed_new
+
+#***************************************************************************************************************************                           
+# Input: Datafile path with IDs and filenames of the bugs. Can be modified to check for inconsistencies based on
+#           the columns.
+# Output: A dictionary where the filename is the key and the values are IDs. As well as additional
+#           data entry checks and summaries.
+#
+# Note that this will need to be changed if the actual files are re-named to match the filenames in the data sorted file.
+#***************************************************************************************************************************                           
+
+def get_IDs(filepath):
+    ID_data = {} 
+    with open(filepath, "r") as data_file:
+        reader = csv.DictReader(data_file)
+    
+        total_bug_count = 0
+        filename_count = 0
+        no_recording_count = 0
+        inconsistency_count = 0
+        no_ID_count = 0
+
+        no_recording_warning = 0
+        dead_count = 0
+        short_wing_count = 0
+        count_rest = 0
+
+        for row in reader:
+            total_bug_count += 1
+            set_num = row["set_number"]
+            chamber = row["chamber"]
+        
+            if row["filename"] != 'NA':
+                filename_count += 1
+                temp_name = row["filename"]
+                cases = temp_name.split("-")[0].split('0')
+                set_cases = len(cases)
+                ID = row["ID"]
+            
+                # Checking for Inconsistencies:
+
+                if row["NOTES"] == 'no recording' or row["NOTES"] == 'no recording; paint came off pre-trail':
+                    print("NO RECORDING WARNING: File exists BUT bugs did NOT fly. ---------------------")
+                    print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    no_recording_warning += 1
+                if ID == '':
+                    print("NO ID WARNING: File exists but there is no ID ---------------------")
+                    print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    no_ID_count += 1
+                if set_cases == 2:
+                    set_name = cases[1]
+                elif set_cases == 3:
+                    if cases[1] == '':
+                        set_name = cases[2]
+                    elif cases[2] == '':
+                         set_name = cases[1] + '0'
+                else:
+                    print("WARNING: File exists but its NAME may be written inconsistenly: ")
+                    print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    inconsistency_count += 1
+                filename = row["filename"]
+                ID_data[filename] = ID
+
+            # Tracking No Recordings - uncomment out as needed
+        
+            else:
+                if row["NOTES"] == 'no recording' or row["NOTES"] == 'no recording; paint came off pre-trail':
+                    #print("NO RECORDING: No file b/c bugs did NOT fly. ---------------------")
+                    #print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    no_recording_count += 1
+                elif row["died?"] == 'Y':
+                    #print("DIED: No file b/c bugs died before could be tested. ---------------------")
+                    #print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    dead_count += 1
+                elif row["short-wing?"] == 'Y':
+                    #print("SHORT-WING: No file b/c filtered out as a short wing bug. ---------------------")
+                    #print("ID: " + str(ID) + "    set_number: " + set_num + "    chamber: " + chamber)
+                    short_wing_count += 1
+                else:
+                    count_rest += 1
+                
+            #filename = "set" + set_num + temp_name.split("set")[1][3:]
+            #ID_dict[filename] = ID
+
+    # Summary
+    
+    print("WARNING CHECKS -------------------------------------")
+    print("Total number of bugs: ", total_bug_count)
+    print("Count of bugs with files: ", filename_count)
+    print("Count of unwanted 'no recordings': ", no_recording_warning)
+    print("Count of inconsistent filenames: ", inconsistency_count)
+    print("Count of no ID's: ", no_ID_count)
+
+    print("NO RECORDING COUNTS --------------------------------")
+    print("Count of total 'no recordings': ", no_recording_count)
+    print("Count of deaths before could make a recording: ", dead_count)
+    print("Count of short-wings who were filited out: ", short_wing_count)
+
+    print("CHECK ----------------------------------------------")
+    sum_no_recordings = (short_wing_count + dead_count + no_recording_count) + filename_count
+
+    print("Check if the sum of no recordings plus bugs with recordings: " + str(sum_no_recordings) + " is equal to the total number of bugs: " + str(total_bug_count))
+    print("If they're the same, this is zero: ", count_rest)
+
+    print("DICTIONARY CHECK -----------------------------------")
+    print("Check the length of ID_data: ", len(ID_data))
+    #print(ID_data)
+    print('\n')
+
+    return ID_data
+
+#********************************************************************************************************************
+# Input: Filename as a string. Necessary to do this because some files have IDs in their filename at the end before
+#           the '.txt' endstring while other files do not have IDs at the end, so each has to undergo
+#           different string manipulations to get the desired channel numbers, channel letters, and IDs.
+# Output: re.Match object if the filename does end with a digit. 'None' if the filename does NOT end with a digit. 
+#********************************************************************************************************************
+
+def filename_ends_with_digit(filename):
+    temp_filename = filename.replace("-", "_")
+    match = re.match(r'\w*\d+.txt$', temp_filename)
+    
+    return match
 
 #************************************************************************************************************
 # The flight data file(s) can be called by either defining the complete filepath (for example c:\desktop\recordings
@@ -262,20 +423,27 @@ def cls(): print ("\n" * 100)
 
 cls()
 
-#path = "/Users/anastasiabernat/Desktop/Standardized Peaks/"
-path = "/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/python output/"
+path = "/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/python_files/Standardized_Peaks/"
+
+data_path = r"/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/data/full_data3.csv"
+
+row_IDs = get_IDs(data_path)
+
+big_list=[]
+
 print(path)
 dir_list = sorted(os.listdir(path))
-print(dir_list)
 for file in dir_list:
     if file.startswith("."):
         continue
     filepath = path + str(file)
-    print(filepath)
-    filename = input('File path or file name -> ')
+#    filename = input('File path or file name -> ')
     tot_duration = find_time_duration(filepath)
     input_file = open(filepath, mode="r")
-
+    
+    df = pd.read_csv(filepath, sep=",")
+    n_rows, n_columns = df.shape
+    
     data_list = list(input_file)
     time_column = []
     list_dict=dict()
@@ -287,74 +455,252 @@ for file in dir_list:
     #peaks6 = []
     #peaks7 = []
     #peaks8 = []
-
+    
     for i in range(0, len(data_list)):
-        raw = data_list[i]
-        a,b,c,d,e = raw.split(",") # if >5 channels then a,b,c,d,e,f,g,h,j
-        time_column.append(a)
-        peaks1.append(b)
-        peaks2.append(c)
-        peaks3.append(d)
-        peaks4.append(e)
-        #peaks5.append(f)
-        #peaks6.append(g)
-        #peaks7.append(h)
-        #peaks8.append(j)
-
-    list_dict[1]=peaks1
-    list_dict[2]=peaks2
-    list_dict[3]=peaks3
-    list_dict[4]=peaks4
-    #list_dict[5]=peaks5
-    #list_dict[6]=peaks6
-    #list_dict[7]=peaks7
-    #list_dict[8]=peaks8
+        if n_columns == 2:
+            raw = data_list[i]
+            a,b = raw.split(",") # if >5 channels then a,b,c,d,e,f,g,h,j
+            time_column.append(a)
+            peaks1.append(b)
+        if n_columns > 2:
+            raw = data_list[i]
+            a,b,c,d,e = raw.split(",") # if >5 channels then a,b,c,d,e,f,g,h,j
+            time_column.append(a)
+            peaks1.append(b)
+            peaks2.append(c)
+            peaks3.append(d)
+            peaks4.append(e)
+            #peaks5.append(f)
+            #peaks6.append(g)
+            #peaks7.append(h)
+            #peaks8.append(j)
+            
+    if n_columns == 2:
+        list_dict[1]=peaks1
+    if n_columns > 2:
+        list_dict[1]=peaks1
+        list_dict[2]=peaks2
+        list_dict[3]=peaks3
+        list_dict[4]=peaks4
+        #list_dict[5]=peaks5
+        #list_dict[6]=peaks6
+        #list_dict[7]=peaks7
+        #list_dict[8]=peaks8
 
     input_file.close()
 
-
     output_data = []
-
     for i in range(1, len(list_dict)+1):
+
         row_data = {}
-        print('CHANNEL ' + str(i) + ' -------------------------------------------')
+
+        # Filename String Manipulation: Channel Letters, Channel Numbers, and IDs
+        
+        if filename_ends_with_digit(file):
+            ID = str(file).split("_")[-1].replace(".txt", "")
+            row_data["ID"] = ID
+            print("ID: ", row_data["ID"])         
+            filename = str(file).split("_")[2].replace(".txt", "") + "_" + ID + '.txt'
+            row_data['filename'] = filename
+            channel_chamber = str(file).split("_")[2].split("-")[-1]
+            channel_chamber = re.findall('\d+|\D+', channel_chamber)
+            channel_chamber = str(channel_chamber[0]) + "-" + str(channel_chamber[1])
+            channel_letter = channel_chamber[0]
+            channel_num = channel_chamber[2]
+            row_data["chamber"] = channel_chamber
+            row_data["channel_letter"] = channel_letter
+            row_data["channel_num"] = channel_num
+
+        else:
+            filename = str(file).split("_")[-1].replace(".txt", "") + str(i)+'.txt'
+            row_data['filename'] = filename
+            row_data["channel_num"] = i
+            channel_letter = str(file).split("_")[-1].split("-")[-1].replace(".txt", "")
+            channel_num = str(i)
+            row_data["channel_letter"] = channel_letter
+            row_data["chamber"] = str(channel_letter) + "-" + str(i)
+            
+            if filename in row_IDs:
+                row_data['ID'] = row_IDs[filename]
+                print("ID: ", row_IDs[filename])      
+            else:
+                print("No matching filename in dict: This results in an empty ID. This means\
+                      that either the bug died, paint fell off, it was short-winged or no \
+                      bug was actually in the channel but a file (with no data) still exists \
+                      for it because the other channels had data in it. ")
+                
+                row_data['ID'] = "dead/NA"
+                      
+                ''' I checked all the cases (5 total) that would be considered 'missing'.
+                    Each case shows either a bug that died, paint fell off, it was short
+                    wing, or no bug was ever placed on the channel. Some have ID's like:
+                        147 on set 30 channel A4 - it died
+                        406 on set 33 channel B3 - paint fell off
+                        26 on set 51 channel B4 - it was short wing (not tested)
+                    While others have no bug in the channel so no ID is there. E.g.
+                        '' on set 66 channel B4
+                        '' on set 8 channel B4
+                    To double check - ID checks were made in get_IDs function and
+                    all bugs have an ID and all ID's that recorded (not empty) data have
+                    a filename.
+                '''
+
+        # Calculations and Print Statements
+        
+        print('CHANNEL ' + channel_num + ' -------------------------------------------')
         time_channel = time_list(time_column, list_dict[i])
         speed_channel = speed_list(time_channel, i)
         time_n, speed_n, dist, av_speed = distance(time_channel, speed_channel)
         fly_time, short_bout, long_bout, flight, fly_to_300, fly_to_900, fly_to_3600, fly_to_14400, fly_more_14400, event_300, event_900, event_3600, event_14400, event_more_14400 = flying_bouts(time_n, speed_n, i, tot_duration)
-        print('Average speed channel ' + str(i) + ' -> ' + '%.2f' % av_speed)
-        row_data['average_speed'] = av_speed            # row_data['column'] = value
-        print('Total flight time channel ' + str(i) + ' -> ' + '%.2f' % fly_time)
-        row_data['total_flight_time'] = fly_time  
-        print('Distance channel ' + str(i) + ' -> ' + '%.2f' % dist)
-        row_data['distance'] = dist 
-        print('Shortest flying bout channel ' + str(i) + ' -> ' + '%.2f' % short_bout)
-        row_data['shortest_flying_bout'] = short_bout 
-        print('Longest flying bout channel ' + str(i) + ' -> ' + '%.2f' %long_bout)
-        row_data['longest_flying_bout'] = long_bout 
+        print('Average speed channel ' + channel_num + ' -> ' + '%.2f' % av_speed)
+        print('Total flight time channel ' + channel_num + ' -> ' + '%.2f' % fly_time)
+        print('Distance channel ' + channel_num + ' -> ' + '%.2f' % dist)
+        print('Shortest flying bout channel ' + channel_num + ' -> ' + '%.2f' % short_bout)
+        print('Longest flying bout channel ' + channel_num + ' -> ' + '%.2f' %long_bout)
         print('This individual spent ' + '%.3f' %flight + ' of its time flying with this composition: ')
-        row_data['portion_flying'] = flight
-        row_data['total_duration'] = tot_duration
         print('  60s-300s = ' + '%.3f' %fly_to_300 + ' with ',event_300, 'events')
         print('  300s-900s = ' + '%.3f' %fly_to_900 + ' with ',event_900, 'events')
         print('  900s-3600s = ' + '%.3f' %fly_to_3600 + ' with ',event_3600, 'events')
         print('  3600s-14400s = ' + '%.3f' %fly_to_14400 + ' with ',event_14400, 'events')
         print('  14400s = ' + '%.3f' %fly_more_14400 + ' with ',event_more_14400, 'events')
         print('\n')
-        output_data.append(row_data) # created a list of dictionaries
-        time_graph, speed_graph = graph(time_n, speed_n)
-        row_data['max_speed'] = max(speed_graph)
-        row_data["channel_num"] = i
-        #row_data["channel_letter"] = str(file).split
-
-        OutputFile=open(path + str(file).split("_")[-1].replace(".txt", "") + str(i)+'.txt', "w")
-        for index in range(0, len(time_graph)):
-            OutputFile.write('%.1f' % time_graph[index] + ',' + '%.2f' %speed_graph[index] + '\n')
-        OutputFile.close()
         
-        with open(path + r"flight_stats-" + str(file).split("_")[-1].replace(".txt", "") + ".csv", "w") as csv_file:
-            writer = csv.DictWriter(csv_file, fieldnames = row_data.keys())
-            writer.writeheader()
-            for row in output_data:
-                writer.writerow(row)
+        time_graph, speed_graph = graph(time_n, speed_n)
+
+        # Flight Stats:
+        
+        row_data["set_number"] = str(file).split("_")[2].split("-")[0].split("t0")[-1]
+        row_data['average_speed'] = av_speed
+        row_data['total_flight_time'] = fly_time 
+        row_data['distance'] = dist 
+        row_data['shortest_flying_bout'] = short_bout         
+        row_data['longest_flying_bout'] = long_bout         
+        row_data['portion_flying'] = flight
+        row_data['total_duration'] = tot_duration
+        row_data['max_speed'] = max(speed_graph)
+
+        output_data.append(row_data) # created a list of dictionaries
+
+        if row_data['ID'] == "dead/NA":
+            continue
+                    
+        big_list.append(row_data)
+        
+        
+##        if filename in yes_flew(data_path):
+##            OutputFile=open(r"/Users/anastasiabernat/Desktop/Flight_Analyses_Test/" + filename, "w")
+##            for index in range(0, len(time_graph)):
+##                OutputFile.write('%.1f' % time_graph[index] + ',' + '%.2f' %speed_graph[index] + '\n')
+##            OutputFile.close()
+        
+##        with open(r"/Users/anastasiabernat/Desktop/flight_stats4/flight_stats-" + str(file).split("_")[-1].replace(".txt", "") + ".csv", "w") as csv_file:
+##            writer = csv.DictWriter(csv_file, fieldnames = row_data.keys())
+##            writer.writeheader()
+##            for row in output_data:
+##                writer.writerow(row)
+
+#print(big_list)
+
+# All Flight Stats Summary File
+
+outpath = r"/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/data"
+with open(outpath + "flight_summary_latest2.csv", "w") as csv_file:
+    writer = csv.DictWriter(csv_file, fieldnames = big_list[1].keys())
+    writer.writeheader()
+    for row in big_list:
+        writer.writerow(row)
+
+#************************************************************************************************************
+# Merging the flight analyses summary file with the experimental data by using ID as
+# the common merging attribute. Function below can also be called to check for any
+# rows that went unmerged.
+#************************************************************************************************************
+
+def check_dimensions(analyses_data, full_data):
+
+    print(analyses_data.shape)
+    print(full_data.shape)
+
+    filename_list = []
+    for index, row in analyses_data.iterrows():
+        filename = row["filename"]
+        filename_list.append(filename)
+
+    full_data = full_data.reset_index()
+
+    for index, row in full_data.iterrows():
+        file = row["filename"]
+        if file in filename_list:
+            filename_list.remove(file)
+
+    return filename_list
+
+def check_egg_layers(egg_data, data):
+    
+    data.drop('ID', inplace=True)
+    data.reset_index(inplace=True)
+
+    ID_dict = {}
+    ID_list = []
+    for index, row in egg_data.iterrows():
+        ID = int(row['ID'])
+        yes_egg = row['Eggs']
+        ID_dict[ID] = yes_egg
+        ID_list.append(ID)
+
+    for index, row in data.iterrows():
+        ID_num = int(row['ID'])
+        if ID_num in ID_list:
+            ID_list.remove(ID_num)
+            egg_status = ID_dict[ID_num]
+
+    return ID_list, ID_dict
+   
+data_cols = ['ID', 'box','test_date', 'time_start', 'set_number','chamber', 'sex',
+             'population', 'site', 'host_plant', 'flew', 'died?', 'flight_type',
+             'flight_details', 'NOTES','filename', 'mass', 'short-wing?', 'eggs',
+             'time_end', 'latitude', 'longitude']
+analyses_cols = ['filename', 'channel_num', 'channel_letter', 'chamber', 'ID',
+                 'set_number', 'average_speed', 'total_flight_time', 'distance',
+                 'shortest_flying_bout', 'longest_flying_bout', 'portion_flying',
+                 'total_duration', 'max_speed']
+
+analyses_path = r"/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/datasheets/flight_summary2.csv"
+egg_layer_path = r"/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/datasheets/flight_female_egglayers.csv"
+
+df_data = pd.read_csv(data_path, header=None, names=data_cols, usecols=data_cols,
+                      index_col='ID')
+df_analyses = pd.read_csv(analyses_path, header=None, names=analyses_cols,
+                          usecols=analyses_cols, index_col='ID')
+df_eggs = pd.read_csv(egg_layer_path)
+
+merged_data = pd.merge(left=df_analyses, right=df_data,
+                       left_on=['ID', 'chamber', 'filename', 'set_number'],
+                       right_on=['ID', 'chamber', 'filename', 'set_number'], how='inner')
+
+# Checks
+
+##unmerged_rows = check_dimensions(df_analyses, merged_data)
+##print(unmerged_rows)
+##missing_egg_layers, ID_dict = check_egg_layers(df_eggs, df_data)
+##print("Missing females from dataset that laid eggs:", missing_egg_layers)
+##
+##print(ID_dict)
+##print(merged_data.head())
+##print(merged_data)
+
+full_data_outpath = r"/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/data/"
+full_header = merged_data.columns.values
+merged_data.to_csv(full_data_outpath, header=None, index='ID', mode='w')
+
+#************************************************************************************************************
+# Time it takes to execute the code.
+#************************************************************************************************************
+
+end = time.time()
+
+print("---",(end - start), "seconds ---")
+print("---",(end - start) / 60, "mintues ---")
+
+
 

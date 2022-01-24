@@ -1,286 +1,41 @@
 import csv
 import os
-
-#***************************************************************************************************************************
-# Creates a time list in which each element represents the occurence of a single peak event.
-#***************************************************************************************************************************
-
-def time_list(time, channel):
-    time_channel=[]
-    for i in range(0, len(channel)):
-        if float(channel[i]) == 1.00:
-            time_channel.append(float(time[i]))
-
-    return time_channel
+import time_list, speed_list, distance, find_time_duration, flying_bouts, yes_flew, get_IDs, graph
+from get_IDs import get_IDs
+from time_list import time_list
+from speed_list import speed_list
+from distance import distance
+from find_time_duration import find_time_duration
+from flying_bouts import flying_bouts
+from yes_flew import yes_flew
+from graph import graph
 
 
-#***************************************************************************************************************************
-# Creates a list in which each element represents the speed variation between successive peak events.
-# The function needs to be modified in order to accommodate the circular flight path distance covered by the insect in flight.
-# This depends on the mill's arm radius (i.e. the distance between the tethered insect and the rotational pivot) choosen by
-# the user. In the example below the arm radius was set to 17.5cm which corresponds to a 1.0996m circular flight path.
-#
-# Due to the very low friction of the magnetic bearing, the mill's arm stops rotating some time after the insect ends
-# its flying bout. This function includes an optional speed correction loop to account for these additional
-# rotations that uses a threshold speed value below which the speed is set to 0. The threshold speed value needs to be
-# choosen with care when working with slow flying insects.
-#
-# The function also automatically accounts for unused or empty channels and for instances in which only one flight
-# event occurred.
-#***************************************************************************************************************************
 
-def speed_list(time, ch_number):
-    ch = str(ch_number)
-    speed_t=0
-    speed_channel=[]
-    speed_channel.append(0)
-    if len(time) > 0:
-        if len(time) > 2:
-            for i in range(1, len(time)):
-                if float(time[i]) != float(time[i-1]):
-                    speed_t = 0.6283/(float(time[i]) - float(time[i-1]))
-                    speed_channel.append(float(speed_t))
-                else:
-                    speed_channel.append(10)
-
-            #*********************************************************************
-            # Optional error correction.
-            # Change the threshold speed value accordingly
-            # Delete the # at the beginning of line 50-52 to activate the command
-            #*********************************************************************
-            
-            #for x in range(0, len(speed_channel)):
-            #    if float(speed_channel[x]) < 0.1:
-            #        speed_channel[x] = 0
-
-        else:
-            print ("Channel ",ch, "has only one peak - impossible to calculate motion stats")
-    else:
-        print ("Channel ",ch, "is empty")
-        
-    return speed_channel
-
-#***************************************************************************************************************************
-# Calculate distance and average speed. The function corrects for false readings in the voltage signal which are identified
-# by speed values higher than a certain threshold. Such threshold value can be modified by the user to account for fast
-# flying insects. The function also accounts for very short gaps (7s in the example below) if these occurs between two
-# consecutive long and ininterrupted flying bouts. Such gap value can be modified by the user.
-#***************************************************************************************************************************
-
-def distance(time, speed):
-    distance=0
-    average_speed=0
-    time_new=[]
-    speed_new=[]
-    time_new_new=[]
-    speed_new_new=[]
-    if len(time) > 2:
-        for i in range(1, len(speed)):
-            if float(speed[i]) > 0 and float(speed[i]) < 1.8: #modify the threshold value accordingly
-                time_new.append(float(time[i]))
-                speed_new.append(float(speed[i]))
-                distance += 0.6283
-        if len(time_new) > 2:
-            time_new_new.append(time_new[0])
-            speed_new_new.append(speed_new[0])
-            for ii in range(0, len(time_new)-1):
-                if float(time_new[ii+1]) <= float(time_new[ii]) + 7: #the gap value can be changed accordingly
-                    time_new_new.append(time_new[ii+1])
-                    speed_new_new.append(speed_new[ii+1])
-            average_speed = sum(speed_new_new)/len(speed_new_new)
-        else:
-            print('Cannot calculate distance and average speed')
-    else:
-        print('Cannot calculate distance and average speed')
-    return (time_new_new, speed_new_new, distance, average_speed)  
-
-#***************************************************************************************************************************
-# Calculates flight duration of a trial. The function reads all the data, splits the data out as a list of strings (each
-# string is a row), retrieves the last line of the data, and gets the first element in the list of strings, which is the
-# flight duration. 
-#***************************************************************************************************************************
-    
-def find_time_duration(file_name):
-    with open(file_name, "r") as txtfile:
-        data = txtfile.readlines()         
-        tot_duration = data[-1].split(",")[0] 
-        
-    return float(tot_duration)
-        
-
-#***************************************************************************************************************************
-# This function returns duration of the shortest and longest bouts in seconds, entire flight duration in seconds and
-# percentage of time spent in flight over time spent at rest. The function also returns the number of flying bouts of a
-# specified duration and their respective duration expressed as percentage of the entire time spent in flight. In the example
-# below the bouts duration were set at 60-300s, 300-900s, 900-3600s, 3600-14400s and >14400s. The recording time was set at
-# 8h (28800s). 
-#***************************************************************************************************************************
-
-def flying_bouts(time, speed, ch, tot_duration):
-    t_odd = []
-    t_even = []
-    tot_t = []
-    last_time = 0
-    diff = 0
-    flight_time = 0
-    longest_bout = 0
-    shortest_bout = 0
-    bout_time = []
-    fly_time=0 
-    flight_60_300=[]
-    sum_60_300=0
-    flight_300_900=[]
-    sum_300_900=0
-    flight_900_3600=[]
-    sum_900_3600=0
-    flight_3600_14400=[]
-    sum_3600_14400=0
-    flight_14400=[]
-    sum_14400=0
-    events_300=0
-    events_900=0
-    events_3600=0
-    events_14400=0
-    events_more_14400=0
-    if len(time) > 2:
-        if float(time[1]) < float(time[0]) + 20:
-            bout_time.append(time[0])
-
-        #***************************************************************************************************************************
-        #creates a list of time values where time gaps are no longer than 20s between consecutive time elements of the list
-        #***************************************************************************************************************************
-   
-        for i in range(0, len(time)-1):
-            if float(time[i+1]) >= float(time[i]) + 20:
-                bout_time.append(time[i])
-                bout_time.append(time[i+1])
-     
-        if bout_time[-1] != time[-1]:
-            bout_time.append(time[-1])
-
-        #***************************************************************************************************************************
-        #clean the flying bout time event list from redundant values using set().
-        #set() method is used to convert any of the iterable to the distinct element and sorted sequence of iterable elements.
-        #***************************************************************************************************************************
-    
-        for t in range(1, len(bout_time)):
-            bout_time = sorted(list(set(bout_time))) 
-
-        #***************************************************************************************************************************
-        #calculates the flight descriptive statistics
-        #***************************************************************************************************************************
-        
-        if len(bout_time)%2 != 0:
-            last_time = float(bout_time[-1])
-            del bout_time[-1]
-
-        t_odd = bout_time[0::2]
-        t_even = bout_time[1::2]
-        for ii in range(0, len(t_odd)):
-            diff = float(t_even[ii]) - float(t_odd[ii])
-            tot_t.append(diff)
-
-        if float(last_time) != 0:
-            diff = float(last_time) - float(t_even[-1])
-            tot_t.append(diff)
-        flight_time = sum(float(i) for i in tot_t)
-        for index in range(0, len(tot_t)):
-            if float(tot_t[index])>60 and float(tot_t[index])<=300:
-                flight_60_300.append(float(tot_t[index])/flight_time)
-            elif float(tot_t[index])>300 and float(tot_t[index])<=900:
-                flight_300_900.append(float(tot_t[index])/flight_time)
-            elif float(tot_t[index])>900 and float(tot_t[index])<=3600:
-                flight_900_3600.append(float(tot_t[index])/flight_time)
-            elif float(tot_t[index])>3600 and float(tot_t[index])<=14400:
-                flight_3600_14400.append(float(tot_t[index])/flight_time)
-            elif float(tot_t[index])>14400:
-                flight_14400.append(float(tot_t[index])/flight_time)
-        if len(flight_60_300) > 0:
-            sum_60_300=sum(float(a) for a in flight_60_300)
-            shortest_bout = float(min(flight_60_300))*flight_time
-        if len(flight_300_900) > 0:
-            sum_300_900=sum(float(b) for b in flight_300_900)
-        if len(flight_900_3600) > 0:
-            sum_900_3600=sum(float(c) for c in flight_900_3600)
-        if len(flight_3600_14400) > 0:
-            sum_3600_14400=sum(float(d) for d in flight_3600_14400)
-        if len(flight_14400) > 0:
-            sum_14400=sum(float(e) for e in flight_14400)           
-        longest_bout = max(tot_t)
-        fly_time=flight_time/tot_duration          #total recording time defined by the user 
-        events_300=len(flight_60_300)
-        events_900=len(flight_300_900)
-        events_3600=len(flight_900_3600)
-        events_14400=len(flight_3600_14400)
-        events_more_14400=len(flight_14400)
-    else:
-        print('Channel', ch, 'has only one peak - cannot perform calculation')
-
-    return (flight_time, shortest_bout, longest_bout, fly_time, sum_60_300, sum_300_900, sum_900_3600, sum_3600_14400, sum_14400, events_300, events_900, events_3600, events_14400, events_more_14400)       
-
-#***************************************************************************************************************************
-# Input: filepath for data file as .csv file
-# Output: a list of filenames according to data recordings on which bugs flew "Y" during the trial.
-#***************************************************************************************************************************
-    
-def yes_flew(filepath):
-    yes_flew_list = []
-    with open(filepath, "r") as data_file:
-        reader = csv.DictReader(data_file)
-        for row in reader:
-                if row["flew"] == "Y":
-                    yes_flew_list.append(row["filename"])
-
-    return yes_flew_list
-        
-
-#***************************************************************************************************************************
-# This function is used to to clean up the final time and speed variation file for each channel in order to produce
-# clearer graphs.   
-#***************************************************************************************************************************
-
-def graph(time, speed):
-    time_new=[]
-    speed_new=[]
-    x=0
-    y=0
-    for i in range(0, len(time)-1):
-        if float(time[i+1]) > float(time[i]) + 20:
-            time_new.append(time[i])
-            speed_new.append(speed[i])
-            x=float(time[i]) + 1
-            time_new.append(x)
-            speed_new.append(0)
-            y=float(time[i+1]) -1
-            time_new.append(y)
-            speed_new.append(0)
-        else:
-            time_new.append(time[i])
-            speed_new.append(speed[i])
-    time_new.append(0)
-    speed_new.append(0)
-    
-    return time_new, speed_new
-
-#************************************************************************************************************
-# The flight data file(s) can be called by either defining the complete filepath (for example c:\desktop\recordings
-# \filename.txt) or defining a default path in the section "write the path here" that will be automatically
-# recalled each time the function is run. In the latter case the user will only need to type the name of
-# the .txt or .dat file to process when requested.
-#************************************************************************************************************
+#************************************************************************************************************                             
+# The flight data file(s) can be called by either defining the complete filepath (for example c:\desktop\recordings                       
+# \filename.txt) or defining a default path in the section "write the path here" that will be automatically                               
+# recalled each time the function is run. In the latter case the user will only need to type the name of                                  
+# the .txt or .dat file to process when requested.                                                                                        
+#************************************************************************************************************                             
 
 def cls(): print ("\n" * 100)
 
 cls()
 
-path = "/Users/anastasiabernat/Desktop/odd_standardized_files/"
+base_path = "/Users/meredith/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/"
+path = base_path + r"python output/"
+	
+row_IDs = get_IDs(base_path + r'data/all_dispersal_data_sorted_updated.csv')
+
+big_list=[]
+
 print(path)
 dir_list = sorted(os.listdir(path))
 for file in dir_list:
     if file.startswith("."):
         continue
-    filepath = r"/Users/anastasiabernat/Desktop/odd_standardized_files/" + str(file)
-#    filename = input('File path or file name -> ')
+    filepath = path + str(file)
     tot_duration = find_time_duration(filepath)
     input_file = open(filepath, mode="r")
 
@@ -304,10 +59,10 @@ for file in dir_list:
         peaks2.append(c)
         peaks3.append(d)
         peaks4.append(e)
-        #peaks5.append(f)
-        #peaks6.append(g)
-        #peaks7.append(h)
-        #peaks8.append(j)
+	#peaks5.append(f)
+	#peaks6.append(g)
+	#peaks7.append(h)
+	#peaks8.append(j)
 
     list_dict[1]=peaks1
     list_dict[2]=peaks2
@@ -331,7 +86,7 @@ for file in dir_list:
         time_n, speed_n, dist, av_speed = distance(time_channel, speed_channel)
         fly_time, short_bout, long_bout, flight, fly_to_300, fly_to_900, fly_to_3600, fly_to_14400, fly_more_14400, event_300, event_900, event_3600, event_14400, event_more_14400 = flying_bouts(time_n, speed_n, i, tot_duration)
         print('Average speed channel ' + str(i) + ' -> ' + '%.2f' % av_speed)
-        row_data['average_speed'] = av_speed            # row_data['column'] = value
+        row_data['average_speed'] = av_speed		# row_data['column'] = value
         print('Total flight time channel ' + str(i) + ' -> ' + '%.2f' % fly_time)
         row_data['total_flight_time'] = fly_time  
         print('Distance channel ' + str(i) + ' -> ' + '%.2f' % dist)
@@ -343,29 +98,45 @@ for file in dir_list:
         print('This individual spent ' + '%.3f' %flight + ' of its time flying with this composition: ')
         row_data['portion_flying'] = flight
         row_data['total_duration'] = tot_duration
-        print('  60s-300s = ' + '%.3f' %fly_to_300 + ' with ',event_300, 'events')
-        print('  300s-900s = ' + '%.3f' %fly_to_900 + ' with ',event_900, 'events')
-        print('  900s-3600s = ' + '%.3f' %fly_to_3600 + ' with ',event_3600, 'events')
-        print('  3600s-14400s = ' + '%.3f' %fly_to_14400 + ' with ',event_14400, 'events')
-        print('  14400s = ' + '%.3f' %fly_more_14400 + ' with ',event_more_14400, 'events')
+        print('	 60s-300s = ' + '%.3f' %fly_to_300 + ' with ',event_300, 'events')
+        print('	 300s-900s = ' + '%.3f' %fly_to_900 + ' with ',event_900, 'events')
+        print('	 900s-3600s = ' + '%.3f' %fly_to_3600 + ' with ',event_3600, 'events')
+        print('	 3600s-14400s = ' + '%.3f' %fly_to_14400 + ' with ',event_14400, 'events')
+        print('	 14400s = ' + '%.3f' %fly_more_14400 + ' with ',event_more_14400, 'events')
         print('\n')
         output_data.append(row_data) # created a list of dictionaries
         time_graph, speed_graph = graph(time_n, speed_n)
         row_data['max_speed'] = max(speed_graph)
         row_data["channel_num"] = i
-        #row_data["channel_letter"] = str(file).split
+	#row_data["channel_letter"] = str(file).split
         filename = str(file).split("_")[-1].replace(".txt", "") + str(i)+'.txt'
+        row_data['filename'] = filename
+        if filename in row_IDs:
+            row_data['ID'] = row_IDs[filename]
+            print(row_IDs[filename])
+        else:
+            row_data['ID'] = 'missing ID'
         print(filename)
+        big_list.append(row_data)
         
-        if filename in yes_flew(r'/Users/anastasiabernat/Desktop/all_dispersal_data_sorted.csv'):
-            OutputFile=open(r'/Users/anastasiabernat/Desktop/holder/' + filename, "w")
+        
+        if filename in yes_flew(base_path + r'data/all_dispersal_data_sorted_updated.csv'):
+            OutputFile=open(base_path + r'python output/' + filename, "w")
             for index in range(0, len(time_graph)):
                 OutputFile.write('%.1f' % time_graph[index] + ',' + '%.2f' %speed_graph[index] + '\n')
             OutputFile.close()
-        
-        with open(r"/Users/anastasiabernat/Desktop/holder/flight_stats-" + str(file).split("_")[-1].replace(".txt", "") + ".csv", "w") as csv_file:
-            writer = csv.DictWriter(csv_file, fieldnames = row_data.keys())
-            writer.writeheader()
-            for row in output_data:
-                writer.writerow(row)
+
+#        with open(base_path + r"flight output/flight_stats-" + str(file).split("_")[-1].replace(".txt", "") + ".csv", "w") as csv_file:
+#            writer = csv.DictWriter(csv_file, fieldnames = row_data.keys())
+#            writer.writeheader()
+#            for row in output_data:
+#                writer.writerow(row)
+
+#print(big_list)
+with open(base_path + r"flight output/flight_summary.csv", "w") as csv_file:
+    writer = csv.DictWriter(csv_file, fieldnames = big_list[1].keys())
+    writer.writeheader()
+    for row in big_list:
+        writer.writerow(row)
+
 
