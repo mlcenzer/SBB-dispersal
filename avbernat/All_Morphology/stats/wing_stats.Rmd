@@ -21,7 +21,7 @@ library(gridExtra)
 library(ggformula)
 library(tidyselect)
 
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/All_Morphology/stats/"
 setwd(dir)
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -38,19 +38,21 @@ Conclusion from the wing_timeseries.Rmd: Found no significant temporal dependenc
 ## Sourcing Scripts and Cleaning the Data
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("compare_models.R",
                  "regression_output.R", 
-                 "clean_morph_data2.R", # two functions: read_morph_data and remove_torn_wings
-                 "AICprobabilities.R")
+                 "clean_morph_data.R", # two functions: read_morph_data and remove_torn_wings
+                 "AICprobabilities.R",
+                 "remove_torn_wings.R",
+                 "get_Akaike_weights.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
   source(path) 
 }
 
-source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spatial_dependencies.R") # space
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat/RSsrc/spatial_dependencies.R") # space
 ```
 
 ```{r}
@@ -110,7 +112,7 @@ Wing overmeasured? Body measured too small? Probably the body measured off? wing
 ```{r}
 raw_data_missing = raw_data %>%
   filter(w_morph=="" | is.na(w_morph)) # had 30 that are hard to identify as either S or L based on the wing2thorax thresholds.
-raw_data_missing # need to determine the morph of these bugs manually. In the long term...need to do this manually because the boundaries of what is defined as a morph can change over time.
+head(raw_data_missing) # need to determine the morph of these bugs manually. In the long term...need to do this manually because the boundaries of what is defined as a morph can change over time.
 ```
 
 ```{r}
@@ -257,9 +259,9 @@ What determines wing morph using all the data? Does sex? host plant? month of th
 #### Testing time covariates
 
 ```{r}
-m = glm(wing_morph_binom ~ months_since_start, data=raw_data, family="binomial")
+m = glm(wing_morph_b ~ months_since_start, data=raw_data, family="binomial")
 tidy_regression(m, is_color=FALSE)
-m = glm(wing_morph_binom ~ month_of_year, data=raw_data, family="binomial")
+m = glm(wing_morph_b ~ month_of_year, data=raw_data, family="binomial")
 tidy_regression(m, is_color=FALSE)
 ```
 
@@ -268,9 +270,9 @@ nrow(data)
 ```
 
 ```{r}
-data<-data.frame(R=raw_data$wing_morph_binom, 
-                 A=raw_data$sex_binom, 
-                 B=raw_data$pophost_binom, 
+data<-data.frame(R=raw_data$wing_morph_b, 
+                 A=raw_data$sex_b, 
+                 B=raw_data$pophost_b, 
                  C=(raw_data$month_of_year),
                  D=raw_data$months_since_start)
 
@@ -287,7 +289,7 @@ anova(m4, m7, test="Chisq")
 ```
 
 ```{r}
-m = glm(wing_morph_binom ~ sex_binom + pophost_binom + month_of_year, data=raw_data, family="binomial")
+m = glm(wing_morph_b ~ sex_b + pophost_b + month_of_year, data=raw_data, family="binomial")
 ```
 
 ```{r}
@@ -300,9 +302,9 @@ Top model is m7
 * K.elegans more likely to be long-winged.
 * (+) effect later in the season such that long wing morphs become increasingly likely later in the year. 
 
-```{r}
+```{r, results='hide',fig.keep='all'}
 temp = raw_data %>% 
-  filter(!is.na(wing_morph_binom))
+  filter(!is.na(wing_morph_b))
 
 check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=14000, is_glm=TRUE)
 ```
@@ -327,7 +329,7 @@ anova(m51, m63, test="Chisq") # Adding B improves fit
 ```
 
 ```{r}
-m = glm(wing_morph_binom ~ sex_binom * pophost_binom + sex_binom * months_since_start + pophost_binom * month_of_year + month_of_year * months_since_start, data=raw_data, family="binomial") # m98 top model
+m = glm(wing_morph_b ~ sex_b * pophost_b + sex_b * months_since_start + pophost_b * month_of_year + month_of_year * months_since_start, data=raw_data, family="binomial") # m98 top model
 tidy_regression(m, is_color=FALSE)
 ```
 
@@ -344,12 +346,12 @@ tidy_regression(m, is_color=FALSE)
 * weak (-) effect of month_of_year*months_since_start where the later in the year and later in the decade, the more likely short wing morphs will be present.
 
 ```{r}
-# m = glm(wing_morph_binom ~ sex_binom*months_since_start + month_of_year*months_since_start + pophost_binom*month_of_year, data=raw_data, family="binomial") # m84 was the top model
+# m = glm(wing_morph_b ~ sex_b*months_since_start + month_of_year*months_since_start + pophost_b*month_of_year, data=raw_data, family="binomial") # m84 was the top model
 ```
 
-```{r}
+```{r, results='hide',fig.keep='all'}
 temp = raw_data %>%
-  filter(!is.na(wing_morph_binom)) # filter out NA's that glm did automatically
+  filter(!is.na(wing_morph_b)) # filter out NA's that glm did automatically
 
 check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=14000, is_glm=TRUE)
 ```
@@ -361,18 +363,18 @@ Model validation looks fine. Nothing to worry about.
 
 ```{r}
 SE = function(x){sd(x)/sqrt(length(x))}
-wmorph_summaryt<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, data=raw_data, FUN=mean)
-wmorph_summaryt$sd<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, data=raw_data,
-                          FUN=sd)$wing_morph_binom
-wmorph_summaryt$se<-aggregate(wing_morph_binom~sex_binom*pophost_binom*month_of_year*months_since_start, data=raw_data,
-                          FUN=SE)$wing_morph_binom
+wmorph_summaryt<-aggregate(wing_morph_b~sex_b*pophost_b*month_of_year*months_since_start, data=raw_data, FUN=mean)
+wmorph_summaryt$sd<-aggregate(wing_morph_b~sex_b*pophost_b*month_of_year*months_since_start, data=raw_data,
+                          FUN=sd)$wing_morph_b
+wmorph_summaryt$se<-aggregate(wing_morph_b~sex_b*pophost_b*month_of_year*months_since_start, data=raw_data,
+                          FUN=SE)$wing_morph_b
 ```
 
 ```{r}
 data = wmorph_summaryt
 data<-data.frame(R=data$sd, 
-                 A=data$sex_binom, 
-                 B=data$pophost_binom, 
+                 A=data$sex_b, 
+                 B=data$pophost_b, 
                  C=(data$month_of_year),
                  D=data$months_since_start)
 
@@ -387,7 +389,7 @@ anova(m0, m2, test="Chisq")
 ```
 
 ```{r}
-m = glm(sd ~ pophost_binom, data=wmorph_summaryt, family="gaussian")
+m = glm(sd ~ pophost_b, data=wmorph_summaryt, family="gaussian")
 tidy_regression(m, is_color=FALSE) # -1 = C.corindum
 ```
 
@@ -402,7 +404,7 @@ plot(m$fitted.values, m$residuals)
 ### Removing Torn Wings
 
 ```{r}
-data_long = remove_torn_wings(data_long)
+#data_long = remove_torn_wings(data_long)
 ```
 
 ### Winter 2020 vs. other dates 
@@ -411,7 +413,7 @@ data_long = remove_torn_wings(data_long)
 data_long$compare_dates <- -1
 data_long$compare_dates[data_long$months_since_start==81] <- 1
 
-compare_dates_model <- glm(wing2body~compare_dates + pophost_binom*sex_binom, data=data_long)
+compare_dates_model <- glm(wing2body~compare_dates + pophost_b*sex_b, data=data_long)
 
 tidy_regression(compare_dates_model, is_color=FALSE)
 ```
@@ -449,8 +451,8 @@ data_long$months_since_start_c = (data_long$months_since_start-mean(data_long$mo
 
 ```{r}
 data<-data.frame(R=data_long$wing2body_c, # centered
-                 A=data_long$sex_binom, # sex
-                 B=data_long$pophost_binom, # host
+                 A=data_long$sex_b, # sex
+                 B=data_long$pophost_b, # host
                  C=data_long$month_of_year_c, 
                  D=data_long$months_since_start_c) 
 
@@ -466,7 +468,7 @@ anova(m8, m11, test="Chisq") # Adding C does improve fit
 ```
 
 ```{r}
-m = glm(wing2body_c ~ sex_binom*pophost_binom + month_of_year_c, data=data_long, family=gaussian) 
+m = glm(wing2body_c ~ sex_b*pophost_b + month_of_year_c, data=data_long, family=gaussian) 
 tidy_regression(m, is_color=FALSE) # m11
 summary(m)
 nrow(data_long)
@@ -482,7 +484,7 @@ temp = data_long %>%
   filter(!is.na(wing2body_c))
 ```
 
-```{r}
+```{r,results='hide',fig.keep='all'}
 check_spatial_dependencies(m, temp, temp$long, temp$lat, zone = 16, cutoff=14000, is_glm=TRUE)
 ```
 There might be some spatial dependencies for long wing freq because seeing clusters of red and clusters of black.
@@ -507,8 +509,8 @@ Same best fit model (no months_since_start effect). But can plot the positive ef
 wing2body_summary<-aggregate(wing2body~pophost*month_of_year, data=data_long, FUN=mean)
 plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.factor(pophost)])
 
-wing2body_summary<-aggregate(wing2body~sex_binom*month_of_year, data=data_long, FUN=mean) # black is M; Red is F
-plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.factor(sex_binom)]) # black is C. ; Red is K.
+wing2body_summary<-aggregate(wing2body~sex_b*month_of_year, data=data_long, FUN=mean) # black is M; Red is F
+plot(wing2body~month_of_year, data=wing2body_summary, pch=19, col=c(1,2)[as.factor(sex_b)]) # black is C. ; Red is K.
 ```
 These plots are plotted cleanly in the wing_plots.Rmd script.
 
@@ -516,18 +518,18 @@ These plots are plotted cleanly in the wing_plots.Rmd script.
 
 ```{r}
 SE = function(x){sd(x)/sqrt(length(x))}
-w2b_summaryt<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long, FUN=mean)
-w2b_summaryt$sd<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long,
+w2b_summaryt<-aggregate(wing2body~sex_b*pophost_b*month_of_year*months_since_start, data=data_long, FUN=mean)
+w2b_summaryt$sd<-aggregate(wing2body~sex_b*pophost_b*month_of_year*months_since_start, data=data_long,
                           FUN=sd)$wing2body
-w2b_summaryt$se<-aggregate(wing2body~sex_binom*pophost_binom*month_of_year*months_since_start, data=data_long,
+w2b_summaryt$se<-aggregate(wing2body~sex_b*pophost_b*month_of_year*months_since_start, data=data_long,
                           FUN=SE)$wing2body
 ```
 
 ```{r}
 data = w2b_summaryt
 data<-data.frame(R=data$sd, 
-                 A=data$sex_binom, 
-                 B=data$pophost_binom, 
+                 A=data$sex_b, 
+                 B=data$pophost_b, 
                  C=(data$month_of_year),
                  D=data$months_since_start)
 
@@ -542,7 +544,7 @@ anova(m0, m2, test="Chisq") # Adding B marginally improves fit
 
 
 ```{r}
-m = glm(sd ~ pophost_binom, data=w2b_summaryt, family=gaussian) 
+m = glm(sd ~ pophost_b, data=w2b_summaryt, family=gaussian) 
 tidy_regression(m, is_color=FALSE)
 ```
 

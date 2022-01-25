@@ -1,6 +1,6 @@
 ---
 title: 'Appendix B: Modeling Flight Response'
-author: "for 'paper_title'; Bernat, AV, Cenzer, ML"
+author: "for  \n'Dispersal-behavioral plasticity within an insect-host system  \nundergoing human-induced rapid evolutionary change (HIREC)';   \nBernat, AV, Cenzer, ML"
 geometry: margin=2cm
 output:
   pdf_document:
