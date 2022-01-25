@@ -112,7 +112,7 @@ Bugs marked as having torn wings during measurements were only filtered out of t
 
 Soapberry bugs have two noticeable wing morphs: a long-wing (left) and short-wing morph (right).
 
-![](images/test.png)
+![](images/wing_morphs.png)
 
 To better visualize how wing morph relates to a SBB allometric measurement, wing-to-thorax ratio, the following histograms were plotted:
 

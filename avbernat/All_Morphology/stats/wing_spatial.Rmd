@@ -6,8 +6,8 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-#rm(list=ls())
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+rm(list=ls())
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/All_Morphology/stats/"
 setwd(dir)
 
 library(dplyr)
@@ -45,7 +45,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Sourcing Scripts and Cleaning the Data
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("compare_models.R",
                  "regression_output.R",
@@ -60,8 +60,8 @@ for (script in script_names) {
   source(path) 
 }
 
-source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_auxiliary_funs.R") # time
-source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spatial_dependencies.R") # space
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat/RTsrc/ts_auxiliary_funs.R") # time
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat/RSsrc/spatial_dependencies.R") # space
 ```
 
 ```{r}
@@ -115,7 +115,7 @@ What effects wing2body?
 ```{r}
 # And this is the Poisson GLMM
 
-M1 <- inla(wing2body ~ sex_binom + pophost_binom + month_of_year + months_since_start, 
+M1 <- inla(wing2body ~ sex_b + pophost_b + month_of_year + months_since_start, 
                     control.compute = list(dic = TRUE), 
                     family = "gaussian", 
                     data = d2)
@@ -165,7 +165,7 @@ plot(spatial_data)
 ```
 
 ```{r}
-M1 <- inla(wing2body ~ sex_binom + pophost + month_of_year + months_since_start +
+M1 <- inla(wing2body ~ sex_b + pophost + month_of_year + months_since_start +
                     f(population, model = "iid"),  
                     control.compute = list(dic = TRUE), 
                     family = "gaussian", 
@@ -196,7 +196,7 @@ plot(spatial_data)
 ```
 
 ```{r}
-M1 <- inla(wing2body ~ sex_binom + month_of_year + months_since_start +
+M1 <- inla(wing2body ~ sex_b + month_of_year + months_since_start +
                     f(population, model = "iid"),  
                     control.compute = list(dic = TRUE), 
                     family = "gaussian", 
@@ -206,7 +206,7 @@ M1 <- inla(wing2body ~ sex_binom + month_of_year + months_since_start +
 ```{r}
 temp = d4
 
-source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/spatial_dependencies.R") # space
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat/RSsrc/spatial_dependencies.R") # space
 d4 = check_spatial_dependencies(M1, temp, temp$long, temp$lat, zone = 16, cutoff=10000, is_inla=TRUE)
 ```
 
@@ -348,7 +348,7 @@ w.index <- inla.spde.make.index('w', n.spde = spde$n.spde)
 # Step 5.	Make a stack. 
 
 # Make the X matrix
-Xm <- model.matrix(~ sex_binom + pophost_binom + month_of_year, data = d4)
+Xm <- model.matrix(~ sex_b + pophost_b + month_of_year, data = d4)
 Xm <- as.data.frame(Xm)
 colnames(Xm)
 
@@ -369,14 +369,14 @@ StackFit <- inla.stack(
 ```{r}
 #####################################################
 # First we run the model without spatial dependency.
-I1 <- inla(wing2body ~ -1 + sex_binom + pophost_binom + month_of_year, 
+I1 <- inla(wing2body ~ -1 + sex_b + pophost_b + month_of_year, 
            family = "gaussian", 
            data = inla.stack.data(StackFit),
            control.compute = list(dic = TRUE, waic = TRUE),
            control.predictor = list(A = inla.stack.A(StackFit)))
 
 # And this is the model with the spatial random field:
-I2 <- inla(wing2body ~ -1 + sex_binom + pophost_binom + month_of_year + 
+I2 <- inla(wing2body ~ -1 + sex_b + pophost_b + month_of_year + 
                          f(w, model = spde), 
            family = "gaussian", 
            data = inla.stack.data(StackFit),
@@ -410,7 +410,7 @@ print(Beta2, digits = 3)
 ```
 
 ```{r}
-data_source_name = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/data/shapefiles/Detailed_Florida_State_Boundary.shp"
+data_source_name = "~/Desktop/git_repositories/SBB-dispersal/avbernat/All_Morphology/stats/data/shapefiles/Detailed_Florida_State_Boundary.shp"
 Florida_ShapeFile <- readOGR(dsn = data_source_name, layer = "Detailed_Florida_State_Boundary")
 ```
 
@@ -635,7 +635,7 @@ points(x = Loc[,1],
 Need to add the barrier on the right of the keys. Could make that shapefile in QGIS. Need Straits_of_Florida.UTM
 
 ```{r}
-data_source_name = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/data/shapefiles/Strait.shp"
+data_source_name = "~/Desktop/git_repositories/SBB-dispersal/avbernat/All_Morphology/stats/data/shapefiles/Strait.shp"
 #Strait_of_Florida_ShapeFile <- readOGR(dsn = data_source_name, layer = "Water")
 Strait_of_Florida_ShapeFile <- readOGR(dsn = data_source_name, layer = "Strait")
 ```
@@ -771,7 +771,7 @@ StackFit.Barrier <- inla.stack(
 
 ```{r}
 # And this is the model with the spatial random field:
-I4 <- inla(wing2body ~ -1 + sex_binom + pophost_binom + month_of_year + 
+I4 <- inla(wing2body ~ -1 + sex_b + pophost_b + month_of_year + 
                          f(w, model = spde.barrier), 
            family = "gaussian", 
            data = inla.stack.data(StackFit.Barrier),
@@ -927,7 +927,7 @@ w.index <- inla.spde.make.index('w', n.spde = spde$n.spde)
 # Step 5.	Make a stack. 
 
 # Make the X matrix
-Xm <- model.matrix(~ sex_binom + pophost_binom + month_of_year, data = d4)
+Xm <- model.matrix(~ sex_b + pophost_b + month_of_year, data = d4)
 Xm <- as.data.frame(Xm)
 colnames(Xm)
 
@@ -947,14 +947,14 @@ StackFit.Barrier <- inla.stack(
 ```{r}
 #####################################################
 # First we run the model without spatial dependency.
-I3 <- inla(wing2body ~ -1 + sex_binom + pophost_binom + month_of_year, 
+I3 <- inla(wing2body ~ -1 + sex_b + pophost_b + month_of_year, 
            family = "gaussian", 
            data = inla.stack.data(StackFit.Barrier),
            control.compute = list(dic = TRUE, waic = TRUE),
            control.predictor = list(A = inla.stack.A(StackFit.Barrier)))
 
 # And this is the model with the spatial random field:
-I4 <- inla(wing2body ~ -1 + sex_binom + pophost_binom + month_of_year + 
+I4 <- inla(wing2body ~ -1 + sex_b + pophost_b + month_of_year + 
                          f(w, model = spde.barrier), 
            family = "gaussian", 
            data = inla.stack.data(StackFit.Barrier),
