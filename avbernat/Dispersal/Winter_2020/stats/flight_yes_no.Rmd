@@ -8,7 +8,7 @@ output:
 ---
 ```{r setup, include=FALSE}
 rm(list=ls())
-setwd("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/")
+setwd("~/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/")
 
 library(lme4)
 library(dplyr)
@@ -47,7 +47,7 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 **Cleaning the Data**
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("center_flight_data.R", # Re-centers data 
                  "clean_flight_data.R", # Loads and cleans data
@@ -55,7 +55,8 @@ script_names = c("center_flight_data.R", # Re-centers data
                  "get_warnings.R", 
                  "compare_models.R",
                  "regression_output.R", # Cleans regression outputs; prints in color or B&W
-                 "AICprobabilities.R")
+                 "AICprobabilities.R",
+                 "get_Akaike_weights.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -71,7 +72,7 @@ d <- create_delta_data(data_tested)
 ```
 
 ```{r}
-d <- center_data(d, is_not_binded = FALSE)
+d <- center_data(d, is_not_unique_data = FALSE)
 d
 ```
 
@@ -103,7 +104,7 @@ getME(model, "lower")
 ####### Can't test eggs_b b/c it's date specific
 
 ####### (Strong) Effect of average mass
-tidy_regression(glm(cbind(num_flew, num_notflew)~average_mass_c, data=d, family=binomial), is_color=output_col) 
+tidy_regression(glm(cbind(num_flew, num_notflew)~avg_mass_c, data=d, family=binomial), is_color=output_col) 
 
 ####### Effect of number of eggs laid
 tidy_regression(glm(cbind(num_flew, num_notflew)~total_eggs, data=d, family=binomial), is_color=output_col) 
@@ -131,13 +132,13 @@ R2 = d$num_notflew
 A = d$host_c
 B = d$sex_c
 C = d$sym_dist
-D = d$average_mass_c 
-X = d$population # or population get the same top model. Variance is 0 if use pop, not 0 if use site. However, variance is 0 if use site and average_mass (down below). 
+D = d$avg_mass_c 
+X = d$population # or population get the same top model. Variance is 0 if use pop, not 0 if use site. However, variance is 0 if use site and avg_mass (down below). 
 
 data<-data.frame(R1, R2, A, B, C, D, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -163,7 +164,7 @@ tidy_regression(nomass_model_all, is_color=output_col)
 
 ```{r message=FALSE}
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1-RF + 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -183,16 +184,16 @@ tidy_regression(glmer(cbind(num_flew, num_notflew) ~ sym_dist + (1|population), 
 ```{r}
 # model m26 might be the better model than this because even adding C did not improve fit
 # and the difference in AIC between the two isn't huge.
-mass_model_all <- glmer(cbind(num_flew, num_notflew) ~ host_c * average_mass_c +  sex_c + (1|population), data=d, family=binomial)
+mass_model_all <- glmer(cbind(num_flew, num_notflew) ~ host_c * avg_mass_c +  sex_c + (1|population), data=d, family=binomial)
 tidy_regression(mass_model_all, is_color=output_col)
-mass_model_all <- glmer(cbind(num_flew, num_notflew) ~ host_c * average_mass_c + sym_dist * average_mass_c + sex_c + (1|population), data=d, family=binomial)
+mass_model_all <- glmer(cbind(num_flew, num_notflew) ~ host_c * avg_mass_c + sym_dist * avg_mass_c + sex_c + (1|population), data=d, family=binomial)
 tidy_regression(mass_model_all, is_color=output_col)
 ```
 
-Now there's a conflicting interaction between average mass and host*average_mass...and there's 
+Now there's a conflicting interaction between average mass and host*avg_mass...and there's 
 
 * no effect of host
-* no effect of average_mass_c
+* no effect of avg_mass_c
 * no effect of sym_dist
 
 but effect of sex and interactions but the interactions are conflicting...
@@ -200,21 +201,21 @@ but effect of sex and interactions but the interactions are conflicting...
 How do you graph these models? How would you graph cbind(num_flew, num_notflew)?
 
 ```{r}
-plot( cbind(num_flew, num_notflew) ~ cbind(host_c, average_mass), data=d , col=rangi2)
+plot( cbind(num_flew, num_notflew) ~ cbind(host_c, avg_mass), data=d , col=rangi2)
 ```
 
 How does num_flew or num_notflew vary with host plant?
 
 ```{r}
-coplot(num_flew ~ average_mass_c | host_c, data=d)
-coplot(num_notflew~ average_mass_c | host_c, data=d)
+coplot(num_flew ~ avg_mass_c | host_c, data=d)
+coplot(num_notflew~ avg_mass_c | host_c, data=d)
 ```
 
 ```{r, echo=FALSE}
 # error with these
 m7.8 <- map( alist(
   num_flew ~ dnorm( mu , sigma ) ,
-  mu <- a + bM * average_mass_c + bH*host_c + bMH*average_mass_c*host_c ,
+  mu <- a + bM * avg_mass_c + bH*host_c + bMH*avg_mass_c*host_c ,
   a ~ dnorm( 0 , 10 ) ,
   bM ~ dnorm( 0 , 1 ) ,
   bH ~ dnorm( 0 , 1 ) ,
@@ -225,7 +226,7 @@ data=d)
 
 m7.9 <- map( alist(
   num_flew ~ dnorm( mu , sigma ) ,
-  mu <- a + bM * average_mass_c + bH*host_c + bMH*average_mass_c*host_c + bS*sex_c,
+  mu <- a + bM * avg_mass_c + bH*host_c + bMH*avg_mass_c*host_c + bS*sex_c,
   a ~ dnorm( 0 , 10 ) ,
   bM ~ dnorm( 0 , 1 ) ,
   bH ~ dnorm( 0 , 1 ) ,
@@ -239,7 +240,7 @@ data=d)
 
 m7.10 <- map( alist(
   num_notflew ~ dnorm( mu , sigma ) ,
-  mu <- a + bM * average_mass_c + bH*host_c + bMH*average_mass_c*host_c,
+  mu <- a + bM * avg_mass_c + bH*host_c + bMH*avg_mass_c*host_c,
   a ~ dnorm( 0 , 10 ) ,
   bM ~ dnorm( 0 , 1 ) ,
   bH ~ dnorm( 0 , 1 ) ,
@@ -251,7 +252,7 @@ data=d)
 #precis(m7.10)
 ```
 
-Plot the interaction between host*average_mass:
+Plot the interaction between host*avg_mass:
 
 ```{r echo=FALSE, fig.height=10}
 par(mfrow=c(4,2)) 
@@ -259,12 +260,12 @@ par(mfrow=c(4,2))
 avgmass.seq <- c(-1,1) # -0.3, .12
 for ( m in c(-1,1) ) {
   dt <- d[d$host_c==m,]
-  plot( num_flew ~ average_mass_c, data=dt , col=rangi2 ,
+  plot( num_flew ~ avg_mass_c, data=dt , col=rangi2 ,
         main=paste("host_c =", m) , xaxp=c(-1,1,2) ,
         xlim=c(-0.03,0.13),
         ylim=c(-1,3) ,
         xlab="average mass (centered)" )
-  mu <- link( m7.8 , data=data.frame(host_c=m,average_mass_c=avgmass.seq) ) 
+  mu <- link( m7.8 , data=data.frame(host_c=m,avg_mass_c=avgmass.seq) ) 
   mu.mean <- apply( mu , 2 , mean )
   mu.PI <- apply( mu , 2 , PI , prob=0.97 )
   lines( avgmass.seq , mu.mean )
@@ -275,19 +276,19 @@ for ( m in c(-1,1) ) {
 host.seq <- c(-1,1)
 for ( h in c(-1,1)) {
   if (h == -1) {
-    dt <- d[d$average_mass_c < 0,]
-    text <- paste("average_mass_c < 0 ")
+    dt <- d[d$avg_mass_c < 0,]
+    text <- paste("avg_mass_c < 0 ")
   }
     if (h == 1) {
-    dt <- d[d$average_mass_c > 0,]
-    text <- paste("average_mass_c > 0")
+    dt <- d[d$avg_mass_c > 0,]
+    text <- paste("avg_mass_c > 0")
   }
   plot( num_flew ~ host_c, data=dt , col=rangi2 ,
         main=text , xaxp=c(-1,1,2) ,
         xlim=c(-1,1),
         ylim=c(-4,6) ,
         xlab="host (centered)" )
-  mu <- link( m7.8 , data=data.frame(average_mass_c=h,host_c=host.seq) ) 
+  mu <- link( m7.8 , data=data.frame(avg_mass_c=h,host_c=host.seq) ) 
   mu.mean <- apply( mu , 2 , mean )
   mu.PI <- apply( mu , 2 , PI , prob=0.97 )
   lines( host.seq , mu.mean )
@@ -298,12 +299,12 @@ for ( h in c(-1,1)) {
 avgmass.seq <- c(-1,1) # -0.3, .12
 for ( m in c(-1,1) ) {
   dt <- d[d$host_c==m,]
-  plot( num_notflew ~ average_mass_c, data=dt , col=rangi2 ,
+  plot( num_notflew ~ avg_mass_c, data=dt , col=rangi2 ,
         main=paste("host_c =", m) , xaxp=c(-1,1,2) ,
         xlim=c(-0.03,0.13),
         ylim=c(-1,3) ,
         xlab="average mass (centered)" )
-  mu <- link( m7.10 , data=data.frame(host_c=m,average_mass_c=avgmass.seq) ) 
+  mu <- link( m7.10 , data=data.frame(host_c=m,avg_mass_c=avgmass.seq) ) 
   mu.mean <- apply( mu , 2 , mean )
   mu.PI <- apply( mu , 2 , PI , prob=0.97 )
   lines( avgmass.seq , mu.mean )
@@ -314,19 +315,19 @@ for ( m in c(-1,1) ) {
 host.seq <- c(-1,1)
 for ( h in c(-1,1)) {
   if (h == -1) {
-    dt <- d[d$average_mass_c < 0,]
-    text <- paste("average_mass_c < 0 ")
+    dt <- d[d$avg_mass_c < 0,]
+    text <- paste("avg_mass_c < 0 ")
   }
     if (h == 1) {
-    dt <- d[d$average_mass_c > 0,]
-    text <- paste("average_mass_c > 0")
+    dt <- d[d$avg_mass_c > 0,]
+    text <- paste("avg_mass_c > 0")
   }
   plot( num_notflew ~ host_c, data=dt , col=rangi2 ,
         main=text , xaxp=c(-1,1,2) ,
         xlim=c(-1,1),
         ylim=c(-4,6) ,
         xlab="host (centered)" )
-  mu <- link( m7.10 , data=data.frame(average_mass_c=h,host_c=host.seq) ) 
+  mu <- link( m7.10 , data=data.frame(avg_mass_c=h,host_c=host.seq) ) 
   mu.mean <- apply( mu , 2 , mean )
   mu.PI <- apply( mu , 2 , PI , prob=0.97 )
   lines( host.seq , mu.mean )
@@ -340,22 +341,22 @@ Consistent with the model and graphs: If GRT and had an average mass below the m
 Overall mass vs. num_flew trend:
 
 ```{r}
-gf_point(num_flew ~ average_mass, data=d) + 
+gf_point(num_flew ~ avg_mass, data=d) + 
   geom_smooth(method='lm')
 ```
 
 Then break it between host and average mass:
 
 ```{r}
-p1 <- gf_point(num_flew ~ average_mass, col=~host_plant, data=d[d$average_mass_c < 0,], title="(a)   avgmass_c <0") + 
+p1 <- gf_point(num_flew ~ avg_mass, col=~host_plant, data=d[d$avg_mass_c < 0,], title="(a)   avgmass_c <0") + 
   geom_smooth(method='lm')
-p2 <- gf_point(num_flew ~ average_mass, col=~host_plant, data=d[d$average_mass_c > 0,], title="(b)   avgmass_c >0") + 
+p2 <- gf_point(num_flew ~ avg_mass, col=~host_plant, data=d[d$avg_mass_c > 0,], title="(b)   avgmass_c >0") + 
   geom_smooth(method='lm')
 grid.arrange(p1,p2, nrow=2)
 
-p3 <- gf_point(num_notflew ~ average_mass, col=~host_plant, data=d[d$average_mass_c < 0,], title="(a)   avgmass_c <0") + 
+p3 <- gf_point(num_notflew ~ avg_mass, col=~host_plant, data=d[d$avg_mass_c < 0,], title="(a)   avgmass_c <0") + 
   geom_smooth(method='lm')
-p4 <- gf_point(num_notflew ~ average_mass, col=~host_plant, data=d[d$average_mass_c > 0,], title="(b)   avgmass_c >0") + 
+p4 <- gf_point(num_notflew ~ avg_mass, col=~host_plant, data=d[d$avg_mass_c > 0,], title="(b)   avgmass_c >0") + 
   geom_smooth(method='lm')
 grid.arrange(p3,p4, nrow=2)
 ```
@@ -383,7 +384,7 @@ X = d$population
 data<-data.frame(R1, R2, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -413,7 +414,7 @@ X = d$population
 data<-data.frame(R1, R2, A, B, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1-RF + 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -432,14 +433,14 @@ tidy_regression(morph_model_all2, is_color=output_col)
 
 ```{r}
 # check for collinearity
-covariates <- data.frame(d$thorax, d$wing2body, d$average_mass)
+covariates <- data.frame(d$thorax, d$wing2body, d$avg_mass)
 pairs(covariates)
 ```
 
 Exponential relationships between mass and thorax. Thorax can only get so big - mass can increase but thorax caps out (top right). 
 
 ```{r}
-covariates <- data.frame(d$thorax, d$wing, d$body, d$average_mass)
+covariates <- data.frame(d$thorax, d$wing, d$body, d$avg_mass)
 pairs(covariates)
 ```
 
@@ -454,13 +455,13 @@ R1 = d$num_flew
 R2 = d$num_notflew
 A = d$thorax_c
 B = d$wing2body_c
-C = d$average_mass_c
+C = d$avg_mass_c
 X = d$population
 
 data<-data.frame(R1, R2, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -470,7 +471,7 @@ anova(m15, m17, test="Chisq") # Adding A*C does not improve fit
 ```
 
 ```{r}
-multi_model_all <- glmer(cbind(num_flew, num_notflew) ~ thorax_c * wing2body_c + wing2body_c * average_mass + (1|population), data=d, family=binomial) 
+multi_model_all <- glmer(cbind(num_flew, num_notflew) ~ thorax_c * wing2body_c + wing2body_c * avg_mass + (1|population), data=d, family=binomial) 
 tidy_regression(multi_model_all, is_color=output_col)
 ```
 
@@ -487,7 +488,7 @@ X = d$population
 data<-data.frame(R1, R2, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -539,13 +540,13 @@ R2 = d$num_notflew
 A = d$thorax_s
 B = d$wing2body_s
 C = d$sex_c
-D = d$average_mass_s
+D = d$avg_mass_s
 X = d$population
 
 data<-data.frame(R1, R2, A, B, C, D, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1-RF + 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 # Less fail if use standardized variables. Also, all the top models have multiple interactions b/c I'm guessing, they're correlated in some ways.
 ```
@@ -556,7 +557,7 @@ anova(m74, m94, test="Chisq") # Adding A*C does not improve fit
 ```
 
 ```{r}
-multi_model <- glmer(cbind(num_flew, num_notflew) ~ thorax_s * wing2body_s + wing2body_s * average_mass_s + sex_c + (1|population), data=d, family=binomial) 
+multi_model <- glmer(cbind(num_flew, num_notflew) ~ thorax_s * wing2body_s + wing2body_s * avg_mass_s + sex_c + (1|population), data=d, family=binomial) 
 tidy_regression(multi_model, is_color=output_col)
 ```
 
@@ -570,7 +571,7 @@ tidy_regression(nomass_model_all, is_color=output_col)
 tidy_regression(mass_model_all, is_color=output_col)
 ```
 
-Why this host*average_mass interaction? GRT flyers: Even when they weighed more than the average mass of the population, they flew more times, which breaks the overall trend between number times bug flew vs. average mass which is typically negative. (Refer to plots in the "All Trials" tab)
+Why this host*avg_mass interaction? GRT flyers: Even when they weighed more than the average mass of the population, they flew more times, which breaks the overall trend between number times bug flew vs. average mass which is typically negative. (Refer to plots in the "All Trials" tab)
 ```{r}
 tidy_regression(morph_model_all, is_color=output_col)
 tidy_regression(morph_model_all2, is_color=output_col)
@@ -681,7 +682,7 @@ Y = data_tested$trial_type
 data<-data.frame(R, A, B, C, D, X, Y)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -707,7 +708,7 @@ Probbaly females from GRT are flyers becuse there are the colonizers of the popu
 
 ```{r}
 # model_script = paste0(source_path,"generic models-binomial glmer 2-RF + 4-FF.R")
-# errors = withWarnings(model_comparisonsAIC(model_script))
+# errors = catch_warnings(model_comparisonsAIC(model_script))
 # cat("Number of models that failed to converge: ", length(errors$warnings))
 # too many models failed to even keep running
 ```
@@ -731,7 +732,7 @@ Y = data_tested$trial_type
 data<-data.frame(R, A, B, C, X, Y)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -754,12 +755,12 @@ Y = data_tested$trial_type
 data<-data.frame(R, A, B, C, X, Y)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2-RF + 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
 ```{r}
-anova(m13, m14, test="Chisq") # Adding A*B doe snot improve fit
+anova(m13, m14, test="Chisq") # Adding A*B does not improve fit
 ```
 
 ```{r}
@@ -878,7 +879,7 @@ D = data_T1$mass_c
 data<-data.frame(R, A, B, C, D)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -894,7 +895,7 @@ tidy_regression(nomass_T1, is_color=output_col)
 ```
 * strong negative effect of sex, where if you are female you are less likely to fly.
 * No direct effect of host plant
-* strong positive effect of sex and host where if female and from GRT, then less likely to fly.
+* strong positive effect of sex and host where if female and from GRT, then more likely to fly.
 
 <a id="with_mass"></a>
 
@@ -902,7 +903,7 @@ tidy_regression(nomass_T1, is_color=output_col)
 
 ```{r}
 model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 
 R = data_T1$flew_b
@@ -913,7 +914,7 @@ C = data_T1$mass_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -954,7 +955,7 @@ C = data_T1$wing_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -988,7 +989,7 @@ B = data_T1$wing2body_c
 data<-data.frame(R, A, B)
 
 model_script = paste0(source_path,"generic models-binomial glm 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1098,7 +1099,7 @@ D = data_T2$mass_c # as a covariate
 data<-data.frame(R, A, B, C, D)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1120,7 +1121,7 @@ tidy_regression(nomass_T2, is_color=output_col)
 
 ```{r}
 model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1159,7 +1160,7 @@ C = data_T2$wing_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1188,7 +1189,7 @@ B = data_T2$wing2body_c
 data<-data.frame(R, A, B)
 
 model_script = paste0(source_path,"generic models-binomial glm 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1237,7 +1238,7 @@ d = create_delta_data(data_tested)
 
 ```{r}
 data_fem <- d[d$sex=="F",]
-data_fem <- center_data(data_fem, is_not_binded = FALSE)
+data_fem <- center_data(data_fem, is_not_unique_data = FALSE)
 data_fem
 ```
 <a id="fem_exp"></a>
@@ -1249,7 +1250,7 @@ data_fem
 ####### Can't specific mass anymore - only average mass. (Could do mass diff?)
 
 ####### (Strong) Effect of average mass
-tidy_regression(glm(cbind(num_flew, num_notflew)~average_mass, data=data_fem, family=binomial), is_color=output_col) 
+tidy_regression(glm(cbind(num_flew, num_notflew)~avg_mass, data=data_fem, family=binomial), is_color=output_col) 
 
 ####### Effect of number of eggs laid
 tidy_regression(glm(cbind(num_flew, num_notflew)~total_eggs, data=data_fem, family=binomial), is_color=output_col) 
@@ -1276,13 +1277,13 @@ R1 = data_fem$num_flew
 R2 = data_fem$num_notflew
 A = data_fem$host_c
 B = data_fem$wing_c
-C = data_fem$average_mass 
+C = data_fem$avg_mass 
 X = data_fem$population # can't do trial type anymore
 
 data<-data.frame(R1, R2, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1304,7 +1305,7 @@ tidy_regression(nomass_fem, is_color=output_col)
 
 ```{r message=FALSE}
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1314,7 +1315,7 @@ anova(m12, m14, test="Chisq") # Adding A*B does not improve fit
 ```
 
 ```{r}
-mass_fem <- glmer(cbind(num_flew, num_notflew) ~ host_c * average_mass + wing_c + (1|population), data=data_fem, family=binomial)
+mass_fem <- glmer(cbind(num_flew, num_notflew) ~ host_c * avg_mass + wing_c + (1|population), data=data_fem, family=binomial)
 tidy_regression(mass_fem, is_color=output_col)
 ```
 
@@ -1326,7 +1327,7 @@ tidy_regression(mass_fem, is_color=output_col)
 
 ```{r}
 # check for collinearity between mass and wing length
-data<-data.frame(data_fem$host_c, data_fem$wing_c, data_fem$average_mass )
+data<-data.frame(data_fem$host_c, data_fem$wing_c, data_fem$avg_mass )
 colnames(data) <- c("Host Plant", "Wing Length", "Average Mass")
 pairs(data)
 ```
@@ -1342,14 +1343,14 @@ R1 = data_fem$num_flew
 R2 = data_fem$num_notflew
 A = data_fem$host_c
 B = data_fem$wing_c
-C = data_fem$average_mass 
+C = data_fem$avg_mass 
 D = data_fem$total_eggs_c # can't use eggs_b anymore
 X = data_fem$population 
 
 data<-data.frame(R1, R2, A, B, C, D, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1-RF + 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1386,7 +1387,7 @@ X = d$population
 data<-data.frame(R1, R2, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1416,7 +1417,7 @@ X = d$population
 data<-data.frame(R1, R2, A, B, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1532,7 +1533,7 @@ C = data_fem$mass_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1565,7 +1566,7 @@ C = data_fem$mass_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1598,7 +1599,7 @@ X = data_fem$ID  # variance is zero if use trial_type | 3 models fail to converg
 data<-data.frame(R, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1627,7 +1628,7 @@ D = data_fem$eggs_b
 data<-data.frame(R, A, B, C, D)
 
 model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1662,7 +1663,7 @@ X = data_fem$ID
 data<-data.frame(R, A, B, C, D, X)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1695,7 +1696,7 @@ C = data_fem$wing_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1724,7 +1725,7 @@ B = data_fem$wing2body_c
 data<-data.frame(R, A, B)
 
 model_script = paste0(source_path,"generic models-binomial glm 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1756,7 +1757,7 @@ X = data_fem$ID # you get a different set of top models if you use trial_type or
 data<-data.frame(R, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1786,7 +1787,7 @@ X = data_fem$trial_type # you get a different set of top models if you use trial
 data<-data.frame(R, A, B, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 1-RF + 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1850,7 +1851,7 @@ data_all <- data[[1]]
 data_tested <- data[[2]]
 d = create_delta_data(data_tested)
 data_male <- d[d$sex=="M",]
-data_male <- center_data(data_male, is_not_binded = FALSE) 
+data_male <- center_data(data_male, is_not_unique_data = FALSE) 
 data_male
 ```
 
@@ -1863,7 +1864,7 @@ data_male
 ####### Can't specific mass anymore - only average mass. (Could do mass diff?)
 
 ####### No effect of average mass (not ideal - using this cbind() method seems to be muting mass)
-tidy_regression(glm(cbind(num_flew, num_notflew)~average_mass, data=data_male, family=binomial), is_color=output_col) 
+tidy_regression(glm(cbind(num_flew, num_notflew)~avg_mass, data=data_male, family=binomial), is_color=output_col) 
 
 ####### Effect of beak length
 tidy_regression(glm(cbind(num_flew, num_notflew)~beak_c, data=data_male, family=binomial), is_color=output_col) 
@@ -1887,13 +1888,13 @@ R1 = data_male$num_flew
 R2 = data_male$num_notflew
 A = data_male$host_c
 B = data_male$wing_c
-C = data_male$average_mass 
+C = data_male$avg_mass 
 X = data_male$population # can't do trial type anymore
 
 data<-data.frame(R1, R2, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1914,7 +1915,7 @@ tidy_regression(nomass_male, is_color=output_col)
 
 ```{r message=FALSE}
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1924,7 +1925,7 @@ anova(m6, m7, test="Chisq") # Adding A does not improve fot
 ```
 
 ```{r}
-mass_male <- glmer(cbind(num_flew, num_notflew) ~ wing_c + average_mass + (1|population), data=data_male, family=binomial)
+mass_male <- glmer(cbind(num_flew, num_notflew) ~ wing_c + avg_mass + (1|population), data=data_male, family=binomial)
 tidy_regression(mass_male, is_color=output_col)
 ```
 
@@ -1933,7 +1934,7 @@ tidy_regression(mass_male, is_color=output_col)
 
 ```{r}
 # check for collinearity between mass and wing length
-data<-data.frame(data_male$host_c, data_male$wing_c, data_male$average_mass)
+data<-data.frame(data_male$host_c, data_male$wing_c, data_male$avg_mass)
 colnames(data) <- c("Host Plant", "Wing Length", "Average Mass")
 pairs(data)
 ```
@@ -1959,7 +1960,7 @@ X = d$population
 data<-data.frame(R1, R2, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1988,7 +1989,7 @@ X = d$population
 data<-data.frame(R1, R2, A, B, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2R ~ 1 RF + 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -2005,7 +2006,7 @@ tidy_regression(morph_male2, is_color=output_col)
 
 ```{r}
 # check for collinearity between mass and morhpology
-data<-data.frame(data_male$thorax_c, data_male$wing_c, data_male$body_c, data_male$average_mass)
+data<-data.frame(data_male$thorax_c, data_male$wing_c, data_male$body_c, data_male$avg_mass)
 colnames(data) <- c("Thorax Length", "Wing Length", "Body Length", "Average Mass")
 pairs(data)
 ```
@@ -2125,7 +2126,7 @@ D = data_male$mass_c
 data<-data.frame(R, A, B, C, D)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -2160,7 +2161,7 @@ tidy_regression(model_male_final, is_color=output_col)
 
 ```{r}
 model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -2205,7 +2206,7 @@ C = data_male$wing_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -2248,7 +2249,7 @@ X = data_male$ID # 3 models failed to converge when ID as RF
 data<-data.frame(R, A, B, C, D, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 1-RF + 4-FF-noD-interactions.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -2278,7 +2279,7 @@ Y = data_male$trial_type
 data<-data.frame(R, A, B, C, X, Y)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2 RF + 3-FF-noCinteractions.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 

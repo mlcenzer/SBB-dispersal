@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/"
 setwd(dir) 
 
 library(FactoMineR)
@@ -95,7 +95,7 @@ PCA_graphs <- function(dataset, PCA_title){
 ### Reading and Standardizaing Data
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("center_flight_data.R", # Re-centers data 
                  "clean_flight_data.R" # Loads and cleans data

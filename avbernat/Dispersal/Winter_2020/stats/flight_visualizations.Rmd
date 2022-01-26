@@ -3,15 +3,15 @@ title: 'Data Visualizations: flight_yes_no'
 author: "Anastasia Bernat"
 date: "5/4/2020-1/6/2021"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 # Winter 2020 Flight Trials 
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/"
 setwd(dir) 
 
 library(lme4)
@@ -36,7 +36,7 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 ## Loading, cleaning, and recoding the data
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("center_flight_data.R", # Re-centers data 
                  "clean_flight_data.R", # Loads and cleans data
@@ -45,6 +45,7 @@ script_names = c("center_flight_data.R", # Re-centers data
                  "compare_models.R",
                  "regression_output.R", # Cleans regression outputs; prints in color or B&W
                  "AICprobabilities.R",
+                 "get_Akaike_weights.R",
                  "categorize_binomial_data.R",
                  "categorize_binomial_data-MF.R",
                  "categorize_binomial_data-MF2.R")

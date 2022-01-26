@@ -7,12 +7,13 @@ output: html_document
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-setwd("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/")
+setwd("~/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/")
 
 # For Modeling
 library(lme4)
 
 # For Data Summaries and Manipulation
+library(lubridate)
 library(dplyr)
 library(mosaic)
 
@@ -42,7 +43,7 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 #### Reading the data
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("center_flight_data.R", # Re-centers data 
                  "clean_flight_data.R", # Loads and cleans data
@@ -50,6 +51,7 @@ script_names = c("center_flight_data.R", # Re-centers data
                  "compare_models.R",
                  "regression_output.R", # Cleans regression outputs; prints in color or B&W
                  "AICprobabilities.R",
+                 "get_Akaike_weights.R",
                  "plotting-lm.R",
                  "plotting-lm2.R",
                  "plotting-polyreg.R")
@@ -128,7 +130,7 @@ data<-data.frame(R=data_tested$mass_c,
                  X=data_tested$ID)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -165,7 +167,7 @@ data <- data %>%
   filter(!is.na(C))
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -191,7 +193,7 @@ data <- data %>%
   filter(!is.na(A))
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -524,7 +526,7 @@ data<-data.frame(R=data_fem$mass_c,
                  X=data_fem$ID)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 2-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -552,7 +554,7 @@ data<-data.frame(R=data_fem$mass_c,
                  X=data_fem$ID)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -578,7 +580,7 @@ data <- data %>%
   filter(!is.na(D))
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -611,7 +613,7 @@ data <- data %>%
   filter(!is.na(A))
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -647,7 +649,7 @@ data <- data %>%
   filter(!is.na(A), !is.na(B)) 
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 
 ## model_comparisonsAIC("src/generic models-gaussian glmer 1-RF + 4-FF.R") ## AB: wide difference between model selection, uncomment to compare.
@@ -782,7 +784,7 @@ data<-data.frame(R=data_male$mass_c,
                  X=data_male$ID)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 2-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -816,7 +818,7 @@ data <- data %>%
   filter(!is.na(A))
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -937,7 +939,7 @@ data<-data.frame(R=data_T1$mass_c,
                  X=data_T1$population)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -970,7 +972,7 @@ data <- data %>%
   filter(!is.na(A))
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1000,7 +1002,7 @@ data <- data %>%
   filter(!is.na(A))
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1091,7 +1093,7 @@ data<-data.frame(R=data_T2$mass_c,
                  X=data_T2$population)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1122,7 +1124,7 @@ data <- data %>%
   filter(!is.na(A))
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
@@ -1145,7 +1147,7 @@ data <- data %>%
   filter(!is.na(A))
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF REMLF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 cat("Number of models that failed to converge: ", length(errors$warnings))
 ```
 
