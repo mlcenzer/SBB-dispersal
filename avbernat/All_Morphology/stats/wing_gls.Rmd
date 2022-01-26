@@ -10,7 +10,7 @@ output:
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/All_Morphology/stats/"
 setwd(dir)
 
 library(dplyr)
@@ -41,19 +41,21 @@ Let's then try a linear model using GLS.
 ## Sourcing Scripts and Reading the Data
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("compare_models.R",
                  "regression_output.R",
-                 "clean_morph_data2.R", # two functions: read_morph_data and remove_torn_wings
-                 "AICprobabilities.R")
+                 "clean_morph_data.R", 
+                 "AICprobabilities.R",
+                 "get_Akaike_weights.R",
+                 "remove_torn_wings.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
   source(path) 
 }
 
-source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_auxiliary_funs.R")
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat/RTsrc/ts_auxiliary_funs.R")
 ```
 
 ### Clean the Data
@@ -205,10 +207,10 @@ Same thing. Exactly the same.
 ```{r}
 # remove NA dates and wing morph (S=0, L=1)
 d = raw_data %>%
-  filter(!is.na(wing_morph_binom), !is.na(datetime))
+  filter(!is.na(wing_morph_b), !is.na(datetime))
 
 # prep dataset for xts()
-ts_cols = clean_for_ts(d, contin_var="wing_morph_binom", cat_var="datetime", func="mean")
+ts_cols = clean_for_ts(d, contin_var="wing_morph_b", cat_var="datetime", func="mean")
 freq_avg = ts_cols[[1]]
 date = ts_cols[[2]]
 

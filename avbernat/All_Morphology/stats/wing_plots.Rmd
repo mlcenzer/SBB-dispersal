@@ -19,7 +19,7 @@ library(gridExtra)
 library(ggformula)
 library(tidyselect)
 
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/All_Morphology/stats/"
 setwd(dir)
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -34,16 +34,19 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Cleaning Data and Sourcing Scripts
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
-script_names = c("compare_models.R","regression_output.R", "clean_morph_data2.R")
+script_names = c("compare_models.R",
+                 "regression_output.R", 
+                 "clean_morph_data.R",
+                 "remove_torn_wings.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
   source(path) 
 }
 
-source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/ts_auxiliary_funs.R")
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat/RTsrc/ts_auxiliary_funs.R")
 ```
 
 ### Read the data
@@ -271,7 +274,7 @@ close.screen(all.screens=TRUE)
 
 ```{r}
 # Visualize wing morph ~ sex, host, months_since_start.
-w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=mean)
+w_morph_summary<-aggregate(wing_morph_b~sex*pophost*month_of_year, data=raw_data, FUN=mean)
 ```
 
 ```{r}
@@ -279,7 +282,7 @@ w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_
 
 par(ps=18)
 par(mai=c(1,1,0.5,0.2))
-plot(wing_morph_binom~month_of_year, 
+plot(wing_morph_b~month_of_year, 
      col=c(COL1,COL2)[as.factor(w_morph_summary$pophost)],
      pch=c(19,21)[as.factor(w_morph_summary$sex)], 
      data=w_morph_summary, ylab="Frequency of long-winged morph", 
@@ -298,7 +301,7 @@ legend(1.9, 0.2,
 
 ```{r}
 # Visualize wing morph ~ sex, host, months_since_start.
-w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*months_since_start, data=raw_data, FUN=mean)
+w_morph_summary<-aggregate(wing_morph_b~sex*pophost*months_since_start, data=raw_data, FUN=mean)
 ```
 
 ```{r}
@@ -306,7 +309,7 @@ w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*months_since_start, data
 
 par(ps=18)
 par(mai=c(1,1,0.5,0.2))
-plot(wing_morph_binom~months_since_start, 
+plot(wing_morph_b~months_since_start, 
      col=c(COL1,COL2)[as.factor(w_morph_summary$pophost)],
      pch=c(19,21)[as.factor(w_morph_summary$sex)], 
      data=w_morph_summary, ylab="Frequency of long-winged morph", 
@@ -325,7 +328,7 @@ legend(0, 0.2,
 
 ```{r}
 # Visualize wing morph ~ sex, host, months_since_start.
-w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year, data=raw_data, FUN=mean)
+w_morph_summary<-aggregate(wing_morph_b~sex*pophost*month_of_year, data=raw_data, FUN=mean)
 ```
 
 ```{r}
@@ -337,7 +340,7 @@ split.screen(rbind(c(0,0.54,0,1), c(0.54,1,0,1)))
 
 screen(1)
 par(mai=c(1,1,0.5,0.2))
-plot(wing_morph_binom~month_of_year,
+plot(wing_morph_b~month_of_year,
      col=c(COL1,COL2)[as.factor(w_morph_summary$pophost[w_morph_summary$sex=="F"])], 
      pch=19, data=w_morph_summary[w_morph_summary$sex=="F",],
      ylab="Frequency of long-winged morph", xlab="Month", ylim=c(0,1), cex=2, xaxt='n')
@@ -352,7 +355,7 @@ legend(1.9, 0.2,
 
 screen(2)
 par(mai=c(1,0.1,0.5,0.2))
-plot(wing_morph_binom~month_of_year,
+plot(wing_morph_b~month_of_year,
      col=c(COL1,COL2)[as.factor(w_morph_summary$pophost[w_morph_summary$sex=="M"])], 
      pch=19, data=w_morph_summary[w_morph_summary$sex=="M",], 
      xlab="Month", ylab="", ylim=c(0,1), yaxt="n", xaxt="n", cex=2)

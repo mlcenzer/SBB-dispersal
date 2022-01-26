@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/All_Morphology/stats/"
 setwd(dir)
 
 library(FactoMineR)
@@ -20,7 +20,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-knitr::purl("morph_PCA.Rmd", output = "morph_PCA.R") # convert Rmd to R script
+# knitr::purl("morph_PCA.Rmd", output = "morph_PCA.R") # convert Rmd to R script
 ```
 
 ### PCA Functions 
@@ -81,9 +81,10 @@ PCA_graphs <- function(dataset, PCA_title){
 ### Reading and Standardizaing Data
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
-script_names = c("clean_morph_data2.R" # two functions: read_morph_data and remove_torn_wings
+script_names = c("clean_morph_data.R",
+                 "remove_torn_wings.R"
                   )
 
 for (script in script_names) { 

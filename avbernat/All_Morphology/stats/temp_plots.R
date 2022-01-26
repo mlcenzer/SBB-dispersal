@@ -9,23 +9,25 @@ library(ggformula)
 library(cowplot)
 library(gridExtra) # remove after clean file
 
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/All_Morphology/stats/"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/All_Morphology/stats/"
 setwd(dir)
 
 ## Read Source Files
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("compare_models.R",
                  "regression_output.R", 
-                 "clean_morph_data3.R", # two functions: read_morph_data and remove_torn_wings
-                 "AICprobabilities.R")
+                 "clean_morph_data.R", 
+                 "AICprobabilities.R",
+                 "get_Akaike_weights.R",
+                 "remove_torn_wings.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
   source(path) 
 }
 
-source("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RTsrc/vartests.R")
+source("~/Desktop/git_repositories/SBB-dispersal/avbernat/RTsrc/vartests.R")
 
 #################################################################
 
@@ -56,8 +58,8 @@ month_labs <- c("Feb", "May", "Aug", "Oct", "Dec")
 
 #################################################################
 SE = function(x){sd(x)/sqrt(length(x))}
-w_morph_summary<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start, data=raw_data, FUN=mean)
-w_morph_summary$se<-aggregate(wing_morph_binom~sex*pophost*month_of_year*months_since_start, data=raw_data, FUN=SE)$wing_morph_binom
+w_morph_summary<-aggregate(wing_morph_b~sex*pophost*month_of_year*months_since_start, data=raw_data, FUN=mean)
+w_morph_summary$se<-aggregate(wing_morph_b~sex*pophost*month_of_year*months_since_start, data=raw_data, FUN=SE)$wing_morph_b
 
 jitter = runif(n=nrow(w_morph_summary), min=-0.5, max=0.5) #jitter slightly
 w_morph_summary$dates <- w_morph_summary$month_of_year + jitter
@@ -86,10 +88,10 @@ p8 = ggplot() +
   ggtitle("Females") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
   geom_smooth(data=dfF, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
-              mapping = aes(x = month_of_year, y = wing_morph_binom, colour = `Host Plant`)) +
+              mapping = aes(x = month_of_year, y = wing_morph_b, colour = `Host Plant`)) +
   geom_smooth(data=dfF, method="loess",
-              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
-  geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
+              mapping = aes(x = month_of_year, y = wing_morph_b, colour=`Host Plant`, fill=`Host Plant`)) + 
+  geom_point(data=dfF, mapping = aes(x = month_of_year, y = wing_morph_b, colour=`Host Plant`)) +
   customPlot + 
   scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
   scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
@@ -100,10 +102,10 @@ p9 = ggplot() +
   ggtitle("Males") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_dates, color="gainsboro") + 
   geom_smooth(data=dfM, method="lm", se=FALSE, linetype = "dashed", lwd=0.5,
-              mapping = aes(x = month_of_year, y = wing_morph_binom, colour = `Host Plant`)) +
+              mapping = aes(x = month_of_year, y = wing_morph_b, colour = `Host Plant`)) +
   geom_smooth(data=dfM, method="loess",
-              mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`, fill=`Host Plant`)) + 
-  geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing_morph_binom, colour=`Host Plant`)) +
+              mapping = aes(x = month_of_year, y = wing_morph_b, colour=`Host Plant`, fill=`Host Plant`)) + 
+  geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing_morph_b, colour=`Host Plant`)) +
   customPlot + 
   scale_color_manual(values=c("C. corindum" = "turquoise3", "K. elegans" = "springgreen4")) +
   scale_fill_manual(values = c("C. corindum" = "turquoise3", "K. elegans" = "green")) +
@@ -126,22 +128,25 @@ DF_melted <- DF_melted %>%
 
 head(DF_melted)
 
-?cumsum
-
-cumsum(1:10)
+# ?cumsum
+# 
+# cumsum(1:10)
 
 host = "C. corindum"
 
+library(msir)
+
 dd$month_of_year[dd$`Host Plant`==host]
 l <- loess.sd(dd$month_of_year[dd$`Host Plant`==host], 
-              dd$wing_morph_binom[dd$`Host Plant`==host], nsigma = 1.96)
+              dd$wing_morph_b[dd$`Host Plant`==host], nsigma = 1.96)
 
 # varability bands - looks accurate!
 
 par(mfrow=c(2,1))
 plot(dd$month_of_year[dd$`Host Plant`==host], 
-     dd$wing_morph_binom[dd$`Host Plant`==host]
-     , main = "loess.sd()", col="red", pch=19)
+     dd$wing_morph_b[dd$`Host Plant`==host]
+     , main = "loess.sd()", col="red", pch=19,
+     xlab="month", ylab="wing morph freq")
 lines(l$x, l$y)
 lines(l$x, l$upper, lty=2)
 lines(l$x, l$lower, lty=2)
@@ -150,11 +155,12 @@ host = "K. elegans"
 
 dd$month_of_year[dd$`Host Plant`==host]
 l <- loess.sd(dd$month_of_year[dd$`Host Plant`==host], 
-              dd$wing_morph_binom[dd$`Host Plant`==host], nsigma = 1.96)
+              dd$wing_morph_b[dd$`Host Plant`==host], nsigma = 1.96)
 
 plot(dd$month_of_year[dd$`Host Plant`==host], 
-     dd$wing_morph_binom[dd$`Host Plant`==host]
-     , main = "loess.sd()", col="red", pch=19)
+     dd$wing_morph_b[dd$`Host Plant`==host]
+     , main = "loess.sd()", col="red", pch=19,
+     xlab="month", ylab="wing morph freq")
 lines(l$x, l$y)
 lines(l$x, l$upper, lty=2)
 lines(l$x, l$lower, lty=2)
@@ -162,7 +168,7 @@ lines(l$x, l$lower, lty=2)
 
 library(spatialEco)
 dfFC = dfF[dfF$pophost == "C. corindum",]
-loess.ci(dfF$wing_morph_binom, 
+loess.ci(dfF$wing_morph_b, 
          dfF$month_of_year, 
          p = 0.95, plot = FALSE, span=0.4)
 
@@ -170,7 +176,7 @@ dfFC = dfF[dfF$pophost == "K. elegans",]
 
 ## prediction interval
 
-cars.lo <- loess(wing_morph_binom ~ months_since_start, dd)
+cars.lo <- loess(wing_morph_b ~ months_since_start, dd)
 table = predict(cars.lo, data.frame(months_since_start = seq(0, 12, 0.1)), se = TRUE)
 table
 
