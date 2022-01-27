@@ -7,7 +7,8 @@ output: html_document
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-setwd("~/Desktop/Rstats-winter2020/")
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/"
+setwd(dir)
 
 # For Modeling
 library(lme4)
@@ -49,13 +50,25 @@ Comparing Models:
 
 #### Reading the data
 
-```{r}
-rm(list=ls())
-output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an html
-source("src/clean_flight_data.R") # Script that loads and cleans up the data
-source("src/regression_output.R") # A script that cleans up regression outputs and prints in color or black and white
-source("src/center_flight_data.R")
+```{r message=FALSE, warning=FALSE}
+source_path = paste0(dir,"/Rsrc/")
 
+script_names = c("center_flight_data.R",  # 1 function: center_data()
+                 "clean_flight_data.R",   # 1 function: clean_flight_data()
+                 "compare_models.R",
+                 "get_Akaike_weights.R",
+                 "regression_output.R")  
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+output_col = FALSE # Recommend changing this to TRUE if working in Base R or RStudio, and FALSE if generating an
+```
+
+
+```{r}
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
@@ -94,8 +107,8 @@ data<-data.frame(R=data_tested$thorax_c,
                  B=data_tested$sex_c, 
                  C=data_tested$sym_dist)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 3-FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}
@@ -124,8 +137,8 @@ data<-data.frame(R=data_tested$body_c,
                  B=data_tested$sex_c, 
                  C=data_tested$sym_dist)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 3-FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}
@@ -154,8 +167,8 @@ data<-data.frame(R=data_tested$wing_c,
                  C=data_tested$sym_dist, 
                  D=data_tested$thorax_c)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 4-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 4-FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}
@@ -184,8 +197,8 @@ data<-data.frame(R=data_tested$beak_c,
                  C=data_tested$sym_dist, 
                  D=data_tested$thorax_c)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 4-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 4-FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}
@@ -238,12 +251,6 @@ Comparing Models:
 <a id="data_cleanF"></a>
 
 ```{r}
-rm(list=ls())
-output_col = FALSE 
-source("src/clean_flight_data.R") 
-source("src/regression_output.R")
-source("src/center_flight_data.R")
-
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
@@ -270,8 +277,8 @@ data<-data.frame(R=data_fem$thorax_c,
                  A=data_fem$host_c, 
                  B=data_fem$sym_dist)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 2-FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}
@@ -293,8 +300,8 @@ data<-data.frame(R=data_fem$body_c,
                  A=data_fem$host_c, 
                  B=data_fem$sym_dist)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 2-FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}
@@ -317,8 +324,8 @@ data<-data.frame(R=data_fem$wing_c,
                  B=data_fem$sym_dist,
                  C=data_fem$thorax_c)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 3-FF.R")
+model_comparisonsAIC(model_script)
 ```
 ```{r}
 anova(m13, m16, test="Chisq") # Adding A*C does not inprove fit
@@ -345,8 +352,8 @@ data<-data.frame(R=data_fem$beak_c,
                  B=data_fem$sym_dist,
                  C=data_fem$thorax_c)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 3-FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}
@@ -389,11 +396,7 @@ Comparing Models:
 <a id="data_cleanM"></a>
 
 ```{r}
-rm(list=ls())
 output_col = FALSE #
-source("src/clean_flight_data.R") 
-source("src/regression_output.R") 
-source("src/center_flight_data.R")
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
@@ -421,8 +424,8 @@ data<-data.frame(R=data_male$thorax_c,
                  A=data_male$host_c, 
                  B=data_male$sym_dist)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 2-FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}
@@ -446,8 +449,8 @@ data<-data.frame(R=data_male$body_c,
                  A=data_male$host_c, 
                  B=data_male$sym_dist)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 2-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 2-FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}
@@ -472,8 +475,8 @@ data<-data.frame(R=data_male$wing_c,
                  B=data_male$sym_dist,
                  C=data_male$thorax_c)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 3-FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}
@@ -498,8 +501,8 @@ data<-data.frame(R=data_male$beak_c,
                  B=data_male$sym_dist,
                  C=data_male$thorax_c)
 
-source("src/compare_models.R")
-model_comparisonsAIC("src/generic models-gaussian glmer 3-FF.R")
+model_script = paste0(source_path,"generic models-gaussian glmer 3-FF.R")
+model_comparisonsAIC(model_script)
 ```
 
 ```{r}

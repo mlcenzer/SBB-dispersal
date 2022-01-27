@@ -6,7 +6,31 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+rm(list=ls())
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/"
+setwd(dir) 
+
 knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(binom)
+```
+
+```{r}
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
+
+script_names = c("center_flight_data.R", # Re-centers data 
+                 "clean_flight_data.R", # Loads and cleans data
+                 "unique_flight_data.R",  # 1 function: create_delta_data()
+                 "clean_flight_data-Fall.R",  # 1 function: clean_flight_data.Fall()
+                 "unique_flight_data-Fall.R" # 1 function: create_delta_data.Fall()
+                )
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
 ```
 
 **Season**
@@ -17,10 +41,10 @@ data_all <- data[[1]]
 data_tested <- data[[2]] 
 
 d_all <- create_delta_data(data_tested) # winter data
-winter <- center_data(d_all, is_not_binded = FALSE)
+winter <- center_data(d_all, is_not_unique_data = FALSE)
 
-
-fall = clean_flight_data.Fall("data/all_flight_data-Fall2019.csv", morph_d)
+data_path = paste0(dir,"/Dispersal/Winter_2020/stats/data/full_data-Fall2019.csv")
+d = clean_flight_data.Fall(data_path)
 fall = create_delta_data.Fall(d)
 
 fall$season <- "fall"
@@ -43,7 +67,9 @@ for(row in 1:length(fall$flew_b)){
 ```
 
 ```{r}
-sd = rbind(fall, winter) # unique
+keep = c("ID", "sex", "population", "site", "host_plant", "sym_dist", "sex_c", "w_morph_c", "num_notflew", "num_flew", "season")
+
+sd = rbind(fall[, keep], winter[, keep]) # unique
 ```
 
 ```{r}

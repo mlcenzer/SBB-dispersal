@@ -99,31 +99,32 @@ read_flight_data<-function(filename){
     data_tested$datetime_start <- strptime(x = as.character(data_tested$dt_start_c), format = "%Y-%m-%d %H:%M:%S")
     data_tested$datetime_end <- strptime(x = as.character(data_tested$dt_end_c), format = "%Y-%m-%d %H:%M:%S")
     
-    #print(data_tested$datetime_start)
+    #print(data_tested$datetime_start[1])
     
     #print(unique(data_tested$datetime_start))
-    print(minutes(data_tested$datetime_start)[1])
-    print(hours(data_tested$datetime_start)[1])
+    #print(minute(data_tested$datetime_start)[1])
+    #print(hour(data_tested$datetime_start)[1])
     
-    browser()
-    # hrs = hours(data_tested$datetime_start)
-    # min_frac = sub("0.", ".", as.character(minutes(data_tested$datetime_start)/60))
-    # for (i in seq(1:length(min_frac))){
-    #   if (min_frac[i] == "0"){
-    #     min_frac[i] =""
-    #   }
-    # }
-    # data_tested$hr_start = as.numeric(paste0(hrs, min_frac)) 
-    # 
-    # hrs = hours(data_tested$datetime_end)
-    # min_frac = sub("0.", ".", as.character(minutes(data_tested$datetime_end)/60))
-    # for (i in seq(1:length(min_frac))){
-    #   if (min_frac[i] == "0"){
-    #     min_frac[i] =""
-    #   }
-    # }
-    # 
-    # data_tested$hr_end = as.numeric(paste0(hrs, min_frac)) 
+    ## compute hour and its hr fraction
+    
+    hrs = hour(data_tested$datetime_start)
+    min_frac = sub("0.", ".", as.character(minute(data_tested$datetime_start)/60))
+    for (i in seq(1:length(min_frac))){
+      if (min_frac[i] == "0"){
+        min_frac[i] =""
+      }
+    }
+    data_tested$hr_start = as.numeric(paste0(hrs, min_frac))
+
+    hrs = hour(data_tested$datetime_end)
+    min_frac = sub("0.", ".", as.character(minute(data_tested$datetime_end)/60))
+    for (i in seq(1:length(min_frac))){
+      if (min_frac[i] == "0"){
+        min_frac[i] =""
+      }
+    }
+
+    data_tested$hr_end = as.numeric(paste0(hrs, min_frac))
     
     return(list(data_all, data_tested))
     

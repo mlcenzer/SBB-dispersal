@@ -7,7 +7,7 @@ center_data = function(d, is_not_unique_data = TRUE) {
   # Distance From Sympatric Zone
   d$lat_c = d$latitude-mean(d$latitude)
   
-  sym_zone = d[d$population == "Homestead",]$latitude
+  sym_zone = unique(d[d$population == "Homestead",]$latitude)
   d$sym_dist = abs(d$latitude-sym_zone)
   d$sym_dist_s = (d$sym_dist - mean(d$sym_dist)) / sd(d$sym_dist)
 

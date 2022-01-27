@@ -18,7 +18,7 @@ fig_crop: no
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/"
 setwd(dir) 
 
 # Load some commonly used packages.
@@ -58,7 +58,7 @@ library(tmaptools)
 ## Read the data.
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("center_flight_data.R", # Re-centers data 
                  "clean_flight_data.R" # Loads and cleans data
@@ -90,10 +90,11 @@ data_all <- data[[2]] # bugs tested
 
 ```{r}
 # filtered_data <- full_data[,c("ID", "filename", "chamber", "set_number", "average_speed",
-#                         "total_flight_time", "distance", "shortest_flying_bout", 
+#                         "total_flight_time", "distance", "shortest_flying_bout",
 #                         "longest_flying_bout", "portion_flying", "max_speed",
-#                         "sex", "population", "site", "host_plant", "flew", "flew_b", flight_type", 
+#                         "sex", "population", "site", "host_plant", "flew", "flew_b", "flight_type",
 #                         "mass", "eggs", "latitude", "longitude")]
+
 filtered_data <- select(data_all, ID, filename, chamber, set_number, average_speed, # recently added flew_b
                         total_flight_time, distance, shortest_flying_bout, 
                         longest_flying_bout, max_speed,
@@ -230,15 +231,15 @@ county_valid_report2
 ```{r}
 # this stopped working so don't run:
 
-df_final_pop <- st_make_valid(df_transformed) %>% # stopped working but not necessary for map making
-  st_cast("MULTIPOLYGON") 
-
-poly_valid_report2 <- st_is_valid(df_final_pop)
-poly_valid_report2
-
-tm_shape(df_final_pop) +
-  tm_polygons("populations") +
-  tm_basemap("Hydda.Base")
+# df_final_pop <- st_make_valid(df_transformed) %>% # stopped working but not necessary for map making
+#   st_cast("MULTIPOLYGON") 
+# 
+# poly_valid_report2 <- st_is_valid(df_final_pop)
+# poly_valid_report2
+# 
+# tm_shape(df_final_pop) +
+#   tm_polygons("populations") +
+#   tm_basemap("Hydda.Base")
 ```
 
 ```{r}
@@ -477,10 +478,12 @@ tm_shape(dispersal_filtered) +
 
 m21
 
-tmap_save(m21, zmap.filename)
+#tmap_save(m21, zmap.filename)
 ```
 
 ```{r}
+zmap.filename = "keys_dist_map2.png"
+
 h.keys_bb <- st_bbox(combined_filtered %>% filter(counties %in% c("Miami-Dade"," North Key Largo", "Key Largo", "Plantation Key")) )
 h.keys_bb[4] <- h.keys_bb[4] - 169000
 h.keys_bb[1] <- h.keys_bb[1] + 40000
@@ -496,6 +499,8 @@ tm_shape(dispersal_filtered) +
   tm_text("zmap_site", size = 0.4, xmod = -1.7, ymod = 0.15)
 
 m22
+
+tmap_save(m22, zmap.filename)
 ```
 
 ```{r}
@@ -615,6 +620,9 @@ tmap_save(m20, zmap.filename )
 
 ```{r}
 # COMBINATION OF MAPS 
+
+map.filename = "propflew_map_full.png"
+
 m_full <- tmap_arrange(m1, m20, ncol = 2, widths= c(0.65, 0.35))
 tmap_save(m_full, map.filename, width=1920, height=1080, asp=0)
 ```

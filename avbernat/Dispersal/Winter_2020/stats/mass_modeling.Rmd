@@ -13,7 +13,6 @@ setwd("~/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/s
 library(lme4)
 
 # For Data Summaries and Manipulation
-library(lubridate)
 library(dplyr)
 library(mosaic)
 
@@ -64,8 +63,8 @@ for (script in script_names) {
 output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if generating an HTML
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
-#data_all <- data[[1]]
-#data_tested <- data[[2]]
+data_all <- data[[1]]
+data_tested <- data[[2]]
 ```
 
 <a id="test"></a>
@@ -701,6 +700,7 @@ lm_plot(data_fem, "sym_dist", "mass_c", "Distance From Sympatric Zone", "Mass (g
 #, fig.width=2.8, fig.height=2.3}
 
 lm_plot(data_fem, "wing2body_c", "mass_c", "Wing:Body", "Mass (g)", "Mass by Wing:Body")
+lm_plot(data_male, "wing2body_c", "mass_c", "Wing:Body", "Mass (g)", "Mass by Wing:Body")
 lm_plot(data_fem, "thorax_c", "mass_c", "Thorax Length (mm)", "Mass (g)", "Mass by Thorax Length")
 lm_plot(data_fem, "wing_c", "mass_c", "Wing Length (mm)", "Mass (g)", "Mass by Wing Length")
 lm_plot(data_fem, "body_c", "mass_c", "Body Length (mm)", "Mass (g)", "Mass by Body Length")
@@ -709,6 +709,7 @@ lm_plot(data_fem, "beak_c", "mass_c", "Beak Length (mm)", "Mass (g)", "Mass by B
 
 ```{r}
 lm_polyplot(data_fem, "wing2body_c", "mass_c", "Wing:Body", "Mass (g)", "Mass by Wing:Body")
+lm_polyplot(data_male, "wing2body_c", "mass_c", "Wing:Body", "Mass (g)", "Mass by Wing:Body")
 lm_polyplot(data_fem, "thorax_c", "mass_c", "Thorax Length (mm)", "Mass (g)", "Mass by Thorax Length")
 lm_polyplot(data_fem, "wing_c", "mass_c", "Wing Length (mm)", "Mass (g)", "Mass by Wing Length")
 lm_polyplot(data_fem, "body_c", "mass_c", "Body Length (mm)", "Mass (g)", "Mass by Body Length")
