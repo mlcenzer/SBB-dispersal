@@ -64,8 +64,8 @@ for (script in script_names) {
 output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if generating an HTML
 
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
-data_all <- data[[1]]
-data_tested <- data[[2]]
+#data_all <- data[[1]]
+#data_tested <- data[[2]]
 ```
 
 <a id="test"></a>
