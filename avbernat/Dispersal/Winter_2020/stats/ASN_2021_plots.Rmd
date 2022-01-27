@@ -8,7 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 ######Flight yes-no stats
 rm(list=ls())
-setwd("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats") 
+setwd("~/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats") 
 
 ##load libraries
 
@@ -26,7 +26,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("center_flight_data.R", # Re-centers data 
                  "clean_flight_data.R", # Loads and cleans data
@@ -43,7 +43,7 @@ output_col = FALSE # Change to TRUE if working in Base R or RStudio; FALSE if ge
 data <- read_flight_data("data/all_flight_data-Winter2020.csv")
 data_all <- data[[1]]
 data_tested <- data[[2]]
-d_all <- create_delta_data(data_tested, tested_more_than_once=FALSE)
+d_all <- create_delta_data(data_tested, remove_bugs_tested_once=FALSE)
 ```
 
 
@@ -51,14 +51,14 @@ d_all <- create_delta_data(data_tested, tested_more_than_once=FALSE)
 ##MC: use average days as covariate
 d_all$avg_days_c<-d_all$avg_days-mean(d_all$avg_days, na.rm=TRUE)
 
-##this transformation gets average_mass to act normal and not give haywire effect estimates
-d_all$average_mass_trans<-log(sqrt(d_all$average_mass))-mean(log(sqrt(d_all$average_mass)), na.rm=TRUE)
+##this transformation gets avg_mass to act normal and not give haywire effect estimates
+d_all$avg_mass_trans<-log(sqrt(d_all$avg_mass))-mean(log(sqrt(d_all$avg_mass)), na.rm=TRUE)
 
 ##this transformation gets wing2body ratio to act normal and not give haywire effect estimates; note that this has an inverse relationship with wing2body ratio itself, so effect estimate directions need to be flipped for interpretation.
 
 d_all$wing2body_trans<-log(sqrt(0.85-d_all$wing2body))-mean(log(sqrt(0.85-d_all$wing2body)), na.rm=TRUE)
 
-d <- center_data(d_all, is_not_binded = FALSE)
+d <- center_data(d_all, is_not_unique_data = FALSE)
 d
 ```
 
@@ -69,10 +69,10 @@ data_fem <- d_all[d_all$sex=="F",]
 
 #######################Males only
 data_male <- d_all[d_all$sex=="M",]
-data_male <- center_data(data_male, is_not_binded = FALSE)
+data_male <- center_data(data_male, is_not_unique_data = FALSE)
 
 ##plot-specific grouping variables
-d$mass_block<-round(d$average_mass/0.005)*0.005
+d$mass_block<-round(d$avg_mass/0.005)*0.005
 d$f_prob<-d$num_flew/(d$num_flew+d$num_notflew)
 d$wing2body_block<-round(d$wing2body, digits=2)
 d$days_block<-round(d$avg_days, digits=0)
@@ -218,7 +218,7 @@ legend(0.64, 1, legend=c("male", "female"), pch=19, col=c("blue", "red"), y.inte
 
 ```{r fig.height=2.7, fig.width=2.7}
 #####Plot mass vs. f_prob in females, then add males
-d$mass_block<-round(d$average_mass/0.005)*0.005
+d$mass_block<-round(d$avg_mass/0.005)*0.005
 data_temp<-aggregate(f_prob~mass_block, data=d[d$sex=="F",], FUN=mean)
 data_temp$n<-aggregate(f_prob~mass_block, data=d[d$sex=="F",], FUN=length)$f_prob
 ###I would like to add a model prediction line here
@@ -337,9 +337,9 @@ data_temp$successes <- aggregate(num_flew~sex*host_plant, data=d, FUN=sum)$num_f
 data_temp$CI<-binom.confint(data_temp$successes, data_temp$trials, methods="exact")
 
 #Print to file
-setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/plots")
+# setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/Meredith is working on/plots")
 
-pdf(file="flight_prob_vs_sex_by_host.pdf", width=6.5, height=6.5)
+#pdf(file="flight_prob_vs_sex_by_host.pdf", width=6.5, height=6.5)
 
 #plot beak length residuals
 par(mai=c(1, 1, .2, .2), ps=22)
@@ -353,7 +353,7 @@ axis(side=1, at=c(1,2), labels=c("female", "male"))
 
 mtext(text=c("N=120", "N=213"), at=c(1,2), side=1, line=-1.2)
 
-dev.off()
+#dev.off()
 
 ```
 
