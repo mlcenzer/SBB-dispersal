@@ -8,7 +8,7 @@ output:
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/"
 setwd(dir) 
 
 library(lubridate)
@@ -21,7 +21,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Loading, cleaning, and recoding the data
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("center_flight_data.R", # Re-centers data 
                  "clean_flight_data.R") # Loads and cleans data
