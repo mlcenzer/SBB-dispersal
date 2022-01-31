@@ -8,9 +8,9 @@ output:
 ---
 ```{r setup, include=FALSE}
 rm(list=ls())
-setwd("~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/")
+setwd("~/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/")
 
-#setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat_working_on/stats") ####MLC: changed to my working directory
+#setwd("~/Documents/Florida soapberry project/2019 Dispersal/SBB-dispersal git/avbernat/stats") ####MLC: changed to my working directory
 
 library(lme4)
 library(dplyr)
@@ -38,7 +38,7 @@ Flight Trials Winter 2020 Dataset was conducted from 2/17/2020 - 3/10/2020. Soap
 **Cleaning the Data**
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("center_flight_data.R", # Re-centers data 
                  "clean_flight_data.R", # Loads and cleans data
@@ -46,7 +46,8 @@ script_names = c("center_flight_data.R", # Re-centers data
                  "get_warnings.R", 
                  "compare_models.R",
                  "regression_output.R", # Cleans regression outputs; prints in color or B&W
-                 "AICprobabilities.R")
+                 "AICprobabilities.R",
+                 "get_Akaike_weights.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -82,7 +83,7 @@ getME(model, "lower")
 ####### Can't test chamber, test date, or test time any more
 
 ####### (Strong) Effect of average mass
-tidy_regression(glm(cbind(num_flew, num_notflew)~average_mass, data=d, family=binomial), is_color=output_col) ####MLC: updated to binom
+tidy_regression(glm(cbind(num_flew, num_notflew)~avg_mass, data=d, family=binomial), is_color=output_col) ####MLC: updated to binom
 
 ####### Effect of number of eggs laid
 tidy_regression(glm(cbind(num_flew, num_notflew)~total_eggs, data=d, family=binomial), is_color=output_col) ####MLC: updated to binom
@@ -113,13 +114,13 @@ R = d$num_flew
 A = d$host_c
 B = d$sex_c
 C = d$sym_dist
-D = d$average_mass 
+D = d$avg_mass 
 X = d$population
 
 data<-data.frame(R, A, B, C, D, X)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -140,7 +141,7 @@ tidy_regression(nomass_model, is_color=output_col)
 
 ```{r message=FALSE}
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -149,7 +150,7 @@ anova(m26, m50, test="Chisq") # Adding B*D does not improve fit
 ```
 
 ```{r}
-mass_model <- lmer(num_flew ~ host_c * average_mass + sex_c + (1|population), data=d)
+mass_model <- lmer(num_flew ~ host_c * avg_mass + sex_c + (1|population), data=d)
 tidy_regression(mass_model, is_color=output_col)
 ```
 
@@ -176,7 +177,7 @@ X = d$population
 data<-data.frame(R, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -204,7 +205,7 @@ X = d$population
 data<-data.frame(R, A, B, X)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -224,13 +225,13 @@ Q? Testing out models that combine most of the independent variables:
 R = d$num_flew
 A = d$thorax_c
 B = d$wing2body_c
-C = d$average_mass
+C = d$avg_mass
 X = d$population
 
 data<-data.frame(R, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -245,7 +246,7 @@ X = d$population
 data<-data.frame(R, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -328,7 +329,7 @@ Y = data_tested$trial_type
 data<-data.frame(R, A, B, C, D, X, Y)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -349,7 +350,7 @@ tidy_regression(all_model, is_color=output_col)
 
 ```{r}
 # model_script = paste0(source_path,"generic models-binomial glmer 2 RF + 4-FF.R")
-# errors = withWarnings(model_comparisonsAIC(model_script))
+# errors = catch_warnings(model_comparisonsAIC(model_script))
 # length(errors$warnings)
 # too many models failed to even keep running
 ```
@@ -371,7 +372,7 @@ Y = data_tested$trial_type
 data<-data.frame(R, A, B, C, X, Y)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -394,7 +395,7 @@ Y = data_tested$trial_type
 data<-data.frame(R, A, B, C, X, Y)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2-RF + 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -500,7 +501,7 @@ D = data_T1$mass_c
 data<-data.frame(R, A, B, C, D)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -540,7 +541,7 @@ tidy_regression(model_T1_cov, is_color=output_col)
 
 ```{r}
 model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -584,12 +585,12 @@ C = data_T1$wing_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
 ```{r}
-anova(m13, m18, test="Chisq") # Adding A*B does not improve fit
+# anova(m13, m18, test="Chisq") # Adding A*B does not improve fit
 anova(m7, m13, test="Chisq") # Adding B*C marginally improves fit
 ```
 
@@ -697,7 +698,7 @@ D = data_T2$mass_c # as a covariate
 data<-data.frame(R, A, B, C, D)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -723,7 +724,7 @@ tidy_regression(model_T2, is_color=output_col)
 
 ```{r}
 model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -762,7 +763,7 @@ C = data_T2$wing_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -873,7 +874,7 @@ C = data_fem$mass_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -908,7 +909,7 @@ C = data_fem$mass_c
 
 data<-data.frame(R, A, B, C)
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -941,7 +942,7 @@ X = data_fem$ID  # variance is zero if use trial_type | 3 models fail to converg
 data<-data.frame(R, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -970,7 +971,7 @@ D = data_fem$eggs_b
 data<-data.frame(R, A, B, C, D)
 
 model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -1005,7 +1006,7 @@ X = data_fem$ID
 data<-data.frame(R, A, B, C, D, X)
 
 model_script = paste0(source_path,"generic models-gaussian glmer 1-RF + 4-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -1038,7 +1039,7 @@ C = data_fem$wing_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -1071,7 +1072,7 @@ B = data_fem$wing2body_c
 data<-data.frame(R, A, B)
 
 model_script = paste0(source_path,"generic models-binomial glm 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -1105,7 +1106,7 @@ X = data_fem$trial_type # rescale variables warning when replace trial type with
 data<-data.frame(R, A, B, C, X)
 
 model_script = paste0(source_path,"generic models-binomial glmer 1 RF + 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -1139,7 +1140,7 @@ Y = data_fem$ID # you would think it's the same as ID, but not
 data<-data.frame(R, A, B, X, Y)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2-RF + 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -1248,7 +1249,7 @@ C = data_male$mass_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 2-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -1277,7 +1278,7 @@ tidy_regression(model_male_final, is_color=output_col)
 
 ```{r}
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -1321,7 +1322,7 @@ C = data_male$wing_c
 data<-data.frame(R, A, B, C)
 
 model_script = paste0(source_path,"generic models-binomial glm 3-FF.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -1366,7 +1367,7 @@ Y = data_male$trial_type # 9 modles failed to converge when both RFs
 data<-data.frame(R, A, B, C, D, X, Y)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2-RF + 4-FF-noD-interactions.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
@@ -1396,7 +1397,7 @@ Y = data_male$trial_type
 data<-data.frame(R, A, B, C, X, Y)
 
 model_script = paste0(source_path,"generic models-binomial glmer 2 RF + 3-FF-noCinteractions.R")
-errors = withWarnings(model_comparisonsAIC(model_script))
+errors = catch_warnings(model_comparisonsAIC(model_script))
 length(errors$warnings)
 ```
 
