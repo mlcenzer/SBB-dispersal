@@ -198,7 +198,7 @@ METHODOLOGICAL INFORMATION
 			protocols.io. https://dx.doi.org/10.17504/protocols.io.bteznjf6
 			
 			Link to WinDaq Recording and Playback Software for Hardware Product DI-1100 is located at 
-			https://www.dataq.com/products/windaq/?source=googledq&gclid=Cj0KCQiArt6PBhCoARIsAMF5wajw7BOqZI3uasbMNbAu2eAH_7LuAy2YaDMIRAMXqihk6ftIQ5NDKlIaAtpJEALw_wcB
+			https://www.dataq.com/resources/pdfs/manuals/windaq_software.pdf
 
 	D. Protocol for bug morphology measuring using the Zeiss Stemi 1000 Microscope 7x – 35x is located at
 		https://github.com/mlcenzer/SBB-dispersal/avbernat/Protocols/morph-microscope-protocol.docx
