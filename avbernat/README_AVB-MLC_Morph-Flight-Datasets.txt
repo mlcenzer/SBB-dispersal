@@ -1,4 +1,4 @@
-This README_AVB-MLC_Morph-Flight-Datasets.txt file was generated on 2022-02-02 by AVB.
+This README_AVB-MLC_Morph-Flight-Datasets.txt file was generated on 2022-02-01 by AVB.
 
 
 
@@ -381,25 +381,25 @@ DATA-SPECIFIC INFORMATION FOR: allmorphology05.18.21.csv
 1. Number of variables: 18
 2. Number of cases/rows: 3,737
 3. Variable List: 
-		pophost ............	# host plant (scientific name used) SBB collected from
+		pophost ............	# plant species SBB collected from
 		population ......... # census-designated location name where SBB collected from
 		sex ................	# binary biological category, either male (M) or female (F)
 		beak ...............	# SBB beak length (mm)
-		thorax .............	# SBB thorax width (mm)
-		wing ...............	# SBB wing length (mm)
-		body ...............	# SBB body length (mm)
+		thorax .............	# SBB pronotum width at widest point (mm)
+		wing ...............	# SBB forewing length at longest point (mm)
+		body ...............	# SBB length from tylus tip to forewing tip (mm)
 		month	.............. # month SBB collected 
 		year ...............	# year SBB collected 
-		month_since_start	..	# months since the first collection month; April 2013 initializes the count
+		month_since_start	..	# month count since the first collection month; April 2013 initializes the count
 		season ............. # season SBB collected; either Fall, Winter, Spring, or Summer
 		w_morph ............ # wing morph; either long-winged (L), short-winged (S) or ambigiuous (LS or SL)
 		lat ................ # latitude of location SBB was collected (°)
 		long ...............	# longitude of location SBB was collected (°)
-		diapause ........... # denotes whether SBB was diapausing or not
+		diapause ........... # denotes whether or not SBB was observed in a state of arrested movement during collection 
 		field_date_collected # exact date <MM.DD.YYYY> SBB was collected
 		notes	.............. # additional descriptions of SBB features; e.g. "wings torn" or "marked"
-		site ............... # location name acting as proxi to latitude and longitude; 
-									  e.g. intersection of two streets 
+		site ............... # location name acting as proxi to coordinates; e.g. intersection of two streets 
+
 4. Missing data codes: 
 
 		"" (an empty string) or NA suggests that the value was not recorded for all variables except 
@@ -420,19 +420,19 @@ DATA-SPECIFIC INFORMATION FOR: full_data-Fall2019.csv
 		set_number ...... # a number referencing a group of trails conducted within a day, each day can 
 							     have multiple set numbers
 		average_speed ... # mean speed (m/s) measured across a trial
-		max_speed ....... # fastest speed (m/s) measured in the entire trial
+		max_speed ....... # fastest speed (m/s) measured across a entire trial
 		total_duration .. # trial length (s) 
-		total_flight_time # time SBB spent flying within its trial (s)
+		total_flight_time # time SBB spent flying within a trial (s)
 		portion_flying .. # portion of time SBB spent flying compared to the trial duration
-		distance ........ # total distance SBB spent flying within its trial (m/s)
+		distance ........ # total distance SBB spent flying within a trial (m/s)
 		test_date ....... # day SBB flight tested <MM.DD>
-		time_start ...... # time SBB began flight trial, recorded in 12-hour clock <HH:MM>
-		time_end ........ # time SBB ended flight trial, recorded in 12-hour clock <HH:MM>
+		time_start ...... # time SBB began flight trial, recorded in 12-hour clock <HH:MM>, CST or UTC/GMT-06:00
+		time_end ........ # time SBB ended flight trial, recorded in 12-hour clock <HH:MM>, CST or UTC/GMT-06:00
 		
 		population ...... # census-designated location name where SBB collected from
 		site ............ # location name acting as proxi to latitude and longitude; 
 							     e.g. intersection of two streets 
-		host_plant ...... # host plant (scientific name used) SBB collected from
+		host_plant ...... # plant species SBB collected from
 		sex ............. # binary biological category, either male (M) or female (F)
 		flew ............ # binary flight category, either yes (Y) if a SBB flew or no (N) for absent flight behavior
 		flight_type ..... # observed flight behavior categories; bursting (B), continuous (C) or a mix (e.g. BC, CB)
@@ -445,9 +445,9 @@ DATA-SPECIFIC INFORMATION FOR: full_data-Fall2019.csv
 		latitude ........ # latitude of location SBB was collected from the field (°)
 		longitude ....... # longitude of location SBB was collected from the field (°)
 		beak ............ # SBB beak length (mm)
-		thorax .......... # SBB thorax width (mm)
-		wing ............ # SBB wing length (mm)
-		body ............ # SBB body length (mm)
+		thorax .......... # SBB pronotum width at widest point (mm)
+		wing ............ # SBB forewing length at longest point (mm)
+		body ............ # SBB length from tylus tip to forewing tip (mm)
 		w_morph ......... # wing morph; either long-winged (L), short-winged (S) or ambigiuous (LS or SL)
 		notes ........... # additional morphology descriptions of SBB features; e.g. "wings torn"
 
@@ -483,19 +483,18 @@ DATA-SPECIFIC INFORMATION FOR: all_flight_data-Winter2020.csv
 		set_number ....... # a number referencing a group of trails conducted within a day, each day was
 								   given a unique set number
 		average_speed .... # mean speed (m/s) measured across a trial
-		max_speed ........ # fastest speed (m/s) measured in the entire trial
+		max_speed ........ # fastest speed (m/s) measured across a trial
 		recording_duration # trial length (s) 
-		total_flight_time  # time SBB spent flying within its trial (s)
+		total_flight_time  # time SBB spent flying within a trial (s)
 		portion_flying ... # portion of time SBB spent flying compared to the trial duration
-		distance ......... # total distance SBB spent flying within its trial (m/s)
+		distance ......... # total distance SBB spent flying within a trial (m/s)
 		test_date ........ # date SBB flight tested <YYYY-DD-MM>
 		time_start ....... # time SBB began flight trial, recorded in 24-hour clock <HH:MM>
 		time_end ......... # time SBB ended flight trial, recorded in 24-hour clock <HH:MM>
 		
 		population ....... # census-designated location name where SBB collected from
-		site ............. # location name acting as proxi to latitude and longitude; 
-							      e.g. intersection of two streets 
-		host_plant ....... # host plant (scientific name used) SBB collected from
+		site ............. # location name acting as proxi to coordinates; e.g. intersection of two streets 
+		host_plant ....... # plant species SBB collected from
 		sex .............. # binary biological category, either male (M) or female (F)
 		flew ............. # binary flight category, either yes (Y) if a SBB flew or no (N) for absent flight behavior
 		flight_type ...... # observed flight behavior categories; bursting (B), continuous (C) or a mix (e.g. BC, CB)
@@ -510,9 +509,9 @@ DATA-SPECIFIC INFORMATION FOR: all_flight_data-Winter2020.csv
 		latitude ......... # latitude of location SBB was collected from the field (°)
 		longitude ........ # longitude of location SBB was collected from the field (°)
 		beak ............. # SBB beak length (mm)
-		thorax ........... # SBB thorax width (mm)
-		wing ............. # SBB wing length (mm)
-		body ............. # SBB body length (mm)
+		thorax ........... # SBB pronotum width at widest point (mm)
+		wing ............. # SBB forewing length at longest point (mm)
+		body ............. # SBB length from tylus tip to forewing tip (mm)
 		w_morph .......... # wing morph; either long-winged (L), short-winged (S) or ambigiuous (LS or SL)
 		morph_notes ...... # additional morphology descriptions of SBB features; e.g. "wings torn"
 
