@@ -25,6 +25,14 @@ newdata <- data.frame(month_of_year=seq(min(raw_data$month_of_year),
 #use fitted model to predict values of vs
 newdata$wing_morph_b = predict(model, newdata, type="response")
 
+#manually calculating predicted probabilities
+intercept = model$coefficients[1]
+coeff = model$coefficients[2]
+month = seq(min(raw_data$month_of_year), max(raw_data$month_of_year),len=500)
+p = exp(intercept + coeff*month)/ (1 + exp(intercept + coeff*month))
+
+c(min(p), max(p)) # check, all good!
+
 #plot logistic regression curve
 plot(wing_morph_b ~ month_of_year, data=raw_data, col="steelblue")
 lines(wing_morph_b ~ month_of_year, newdata, lwd=2)
