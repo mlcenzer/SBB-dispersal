@@ -514,6 +514,24 @@ wmorph_table$n = aggregate(wing_morph_b ~
                               data=raw_data,FUN=length)$wing_morph_b
 ```
 
+```{r echo=FALSE, fig.height=2.7}
+# displaying standard deviation by sex, pophost, month, and months since start 
+
+wmorph_table$sex[wmorph_table$sex_b == 1] = "F"
+wmorph_table$sex[wmorph_table$sex_b == -1] = "M"
+
+wmorph_table$pophost[wmorph_table$pophost_b == 1] = "GRT"
+wmorph_table$pophost[wmorph_table$pophost_b == -1] = "BV"
+
+layout(matrix(c(1,2,3,3,4,4), nrow = 1, ncol = 6, byrow = TRUE))
+par(mar = c(4, 4, 0.1, 0.1))   
+
+boxplot(sd~sex,data=wmorph_table, ylab="standard deviation")
+boxplot(sd~pophost,data=wmorph_table, ylab="")
+boxplot(sd~month_of_year,data=wmorph_table, xlab="month", ylab="")
+boxplot(sd~months_since_start,data=wmorph_table, xlab="months since start", ylab="")
+```
+
 ```{r}
 data = wmorph_table
 data = data.frame(R=data$sd, 
