@@ -1,0 +1,53 @@
+---
+title: "Code Review - Wing Freq Pred"
+author: "Anastasia Bernat"
+date: "2/12/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question: is the best fit model, 11% odds increase in long-wing-morph after a month passes, correct?
+
+Run these lines of code before line 308 in appendix_A-wing_summary.Rmd
+
+```{r}
+model = glm(wing_morph_b ~ month_of_year, data=raw_data, family="binomial") 
+
+summary(model)
+
+#define new data frame that contains predictor variable
+newdata <- data.frame(month_of_year=seq(min(raw_data$month_of_year),
+                                        max(raw_data$month_of_year),len=500))
+
+#use fitted model to predict values of vs
+newdata$wing_morph_b = predict(model, newdata, type="response")
+
+#plot logistic regression curve
+plot(wing_morph_b ~ month_of_year, data=raw_data, col="steelblue")
+lines(wing_morph_b ~ month_of_year, newdata, lwd=2)
+
+ggplot(raw_data, aes(x=month_of_year, y=wing_morph_b)) + 
+  geom_point(alpha=.5) +
+  stat_smooth(method="glm", se=FALSE, method.args = list(family=binomial))
+
+```
+
+# Answer: 
+I double checked this with these lines of code and no, the predicted probabilities will not go over 100% and the model accurately follows the corresponding figure paper plot.
+
+# Responding question:
+Is what I wrote a wording issue?
+Could say "After a month passes, there is a 11% increase in the odds of a soapberry bug being long-winged (B=, p=...)."
+
+# Good sources:
+
+* Source (1): https://towardsdatascience.com/a-simple-interpretation-of-logistic-regression-coefficients-e3a40a62e8cf
+
+* "In the model above, b = 0.13, c = 0.97, and p = P{Y=1} is the probability of passing a math exam. Let’s pick study_hours and see how it impacts the chances of passing the exam. Increasing the study hours by 1 unit (1 hour) will result in a 0.13 increase in logit(p) or log(p/1-p). Now, if log(p/1–p) increases by 0.13, that means that p/(1 — p) will increase by exp(0.13) = 1.14. This is a 14% increase in the odds of passing the exam (assuming that the variable female remains fixed).
+Let’s also interpret the impact of being a female on passing the exam. We know that exp(0.97) = 2.64. That being said, the odds for passing the exam are 164% higher for women." The source/example above is a good example because it deals with time...so even if someone studied 24 hours straight they would have a 2164% increase in odds of passing the exam.
+
+* Source (2): https://www.statology.org/plot-logistic-regression-in-r/
+
