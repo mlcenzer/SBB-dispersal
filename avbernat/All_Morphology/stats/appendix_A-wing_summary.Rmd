@@ -1017,8 +1017,7 @@ p7 = ggplot() +
   geom_line(aes(x=predMK$xmon, y=predMK$wprobs), linetype = "dashed", color=hp_col_lines[2]) +
   geom_line(aes(x=predMC$xmon, y=predMC$wprobs), linetype = "dashed", color=hp_col_lines[1]) +
   geom_smooth(data=raw_data[raw_data$sex=="M" & !is.na(raw_data$wing_morph_b),], method="loess", span=0.8,
-              mapping = aes(x = month_of_year, y = wing_morph_b, colour=`pophost`, fill=`pophost`),
-              show.legend=F) + 
+              mapping = aes(x = month_of_year, y = wing_morph_b, colour=`pophost`, fill=`pophost`)) + 
   geom_point(data=dfM, mapping = aes(x = month_of_year, y = wing_morph_b, colour=`Host Plant`, size=n)) +
   guides(color=F) +
   customPlot + 
@@ -1104,8 +1103,8 @@ p9 = p9 +
   annotate(geom="text", x=xlab_yrs[4], y=0.59, label=pvalue, parse=TRUE, size=font_size)
 ```
 
-#```{r figure-4-extension, echo=FALSE, message=FALSE, warning=FALSE, fig.height=13.5, fig.width=11}
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.9, fig.width=4.9}
+```{r figure-4-extension, echo=FALSE, message=FALSE, warning=FALSE, fig.height=13.5, fig.width=11}
+#```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.9, fig.width=4.9}
 
 customGRID1 = list(draw_plot(p4, 0, .66, .5, .33),
                    draw_plot(p5, 0.5, .66, .5, .33),
@@ -1116,7 +1115,9 @@ customGRID1 = list(draw_plot(p4, 0, .66, .5, .33),
                    draw_plot_label("Long-Wing Morph Frequency", 0, 0.46,
                                    fontface="plain", angle=90)
                    )
-p9 = p9 + labs(y = " ") + guides(color=F) + theme(legend.position = c(.68, 0.85)) #+ geom_smooth(show.legend = F)
+# p4 = p4 + theme(legend.position = c(0.18, .97)) 
+# p5 = p5 + theme(legend.position = c(0.15, .97)) 
+# p9 = p9 + labs(y = " ") + guides(color=F) + theme(legend.position = c(.68, 0.85)) #+ geom_smooth(show.legend = F)
 
 customGRID2 = list(draw_plot(p4, 0, .5, .5, .5),
                    draw_plot(p5, .5, .5, .5, .5),
@@ -1126,9 +1127,9 @@ customGRID2 = list(draw_plot(p4, 0, .5, .5, .5),
                                    fontface="plain", angle=90))
 
 paper_figure1 = ggdraw() +
-  customGRID2
+  customGRID1
 paper_figure1
-ggsave("images/paper_figure1.png", paper_figure1)
+#ggsave("images/paper_figure1.pdf", paper_figure1)
 ```
 
 **Extension of Figure 4. Evaluation of the frequency of long-winged morph soapberry bugs averaged across month and year from April 2013 to February 2020 using exploratory plots.** For each point, the mean frequency of long-winged morphs of each month and year is plotted with LOESS smooth lines (solid lines) and 95% confidence intervals (shading) and linear regression line(s) (dashed line(s)).
