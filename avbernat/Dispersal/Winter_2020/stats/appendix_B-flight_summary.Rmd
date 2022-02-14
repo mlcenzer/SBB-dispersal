@@ -40,7 +40,7 @@ All code and output from the statistical analyses are shown. Code for data clean
 
 Soapberry bugs, *Jadera haematoloma*, were flight tested in the Fall 2019 (2019-10-15 to 2019-11-08) and Winter 2020 (2020-02-17 to 2020-03-10) seasons using a flight mill machine. Soapberry bugs were flight tested twice for either set time increments or multiple hours in the flight mill and observed from 8 AM to (5-8 PM) each day. For each trial, the mass, flight response, egg-laying response, distance, duration, average speed, and max speed of each soapberry bug were recorded and then processed.
 
-![](images/test2.png)
+![](images/SBB-in-flight.png)
 
 All Python scripts used to process the flight records are located in the GitHub repository within the directory **avbernat > Dispersal > Winter_2020 > windaq_processing **. After trials, morphology measurements were taken for each bug. There are four morphology measurements: beak length, thorax width, wing length, and body length. The sex, wing morph (long-winged, shot-winged, or ambiguously-winged), host plant, and population of each bug were also recorded.
 
@@ -712,14 +712,16 @@ plot_color_scale = function() {
   x = 0.87
   v = c(x-0.025, x, 0.40, 0.61)
   par( fig=v, new=TRUE, mar=c(0,0,0,0) )
-  color.bar(colorRampPalette(c("skyblue", "blue"))(1000), 63)
+  colors = rev(c("skyblue", "blue"))
+  color.bar(colorRampPalette(colors)(1000), 63)
 }
 ```
 
-```{r echo=FALSE, fig.height=2.4, fig.width=2.7, message=FALSE, warning=FALSE, fig.show='hide'}
+```{r echo=FALSE, fig.height=2.7, fig.width=3, message=FALSE, warning=FALSE, fig.show='hide'}
 cft = cf[cf$host == -1,] # -1 is C.corindum
 
-xlabel = expression(log(sqrt(avg("mass (g)"))))
+#xlabel = expression(log(sqrt(avg("mass (g)"))))
+xlabel = expression(log(sqrt("mass (g)")))
 plot(cft$avg_mass_logsqrt, cft$model, ylab="Percent Change in Flight Potential", xlab=xlabel,
      col=mycolors_sim[as.factor(cft$sym_dist)],
      pch=c(17,17)[as.factor(cft$host)],
@@ -743,7 +745,6 @@ text(0.55,335, labels=LAT, cex=1.3)
 text(-0.15,220, labels="mass (g)", cex=1.3)
 plot_back_transformation()
 plot_color_scale()
-
 ```
 
 ```{r echo=FALSE}
@@ -783,11 +784,12 @@ plot_color_scale = function() {
   x = 0.57
   v = c(x-0.025, x, 0.58, 0.79)
   par( fig=v, new=TRUE, mar=c(0,0,0,0) )
-  color.bar(colorRampPalette(c("green","darkgreen", "#114007"))(1000), 63)
+  colors = rev(c("green","darkgreen", "#114007"))
+  color.bar(colorRampPalette(colors)(1000), 63)
 }
 ```
 
-```{r fig.height=2.4, fig.width=2.7, echo=FALSE, warning=FALSE, message=FALSE, fig.show='hide'}
+```{r echo=FALSE, fig.height=2.7, fig.width=3, message=FALSE, warning=FALSE, fig.show='hide'}
 cft = cf[cf$host == 1,] # 1 is K. elegans
 
 cols = c("green","darkgreen", "#0e3806")
@@ -796,7 +798,7 @@ x = sort(runif(length(SYM), min = 0, max = 1))
 mycolors_sim = rgb(colorfunc(x), maxColorValue=255)
 mycolors_sim_a = unlist(lapply(mycolors_sim, col.alpha))
 
-xlabel = expression(log(sqrt(avg("mass (g)"))))
+xlabel = expression(log(sqrt("mass (g)")))
 plot(cft$avg_mass_logsqrt, cft$model, ylab="Percent Change in Flight Potential", xlab=xlabel,
      col=mycolors_sim[as.factor(cft$sym_dist)],
      pch=c(19,17)[as.factor(cft$host)],
@@ -815,9 +817,9 @@ plot_back_transformation()
 plot_color_scale()
 ```
 
-![](images/keys-final.png)
+![](images/keys-final2.png)
 
-![](images/mainland-final.png)
+![](images/mainland-final2.png)
 
 First, we plotted the SBB from balloon vine, the native host plant, which is in the islands. Notably, there is a very narrow range, if any, of flight potential variability between island populations, and there is only a common consistent pattern, where if the SBB from the islands is heavier, then the less likely it will fly, regardless of where it is from on the islands. Whereas for the mainland, there is a wider range of flight potentials between populations. Distance from the sympatric zone also varies more dramatically with weight changes. The deeper the SBB is in the mainland, then the more likely it will fly if its heaver but if its closer to the islands, then the more likely it will fly if its lighter.
 

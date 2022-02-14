@@ -1085,13 +1085,12 @@ pvalue = paste0("italic(p)[glm]==", fit_pvalue)
 
 p9 = ggplot() + 
   ggtitle("F") + xlab("Year") + ylab("Long-Wing Morph Frequency") +
-  geom_vline(xintercept = xlab_yrs, color="gainsboro") + 
+  geom_vline(xintercept = xlab_yrs, color="gainsboro", show.legend=F) + 
   geom_line(aes(x=predF$xyr, y=predF$wprobs), linetype = "dashed", color=sex_col_lines[1], lwd=0.5) +
   geom_line(aes(x=predM$xyr, y=predM$wprobs), linetype = "dashed", color=sex_col_lines[2], lwd=0.5) +
   geom_smooth(data=raw_data[!is.na(raw_data$wing_morph_b),], method="loess", span=0.8,
-              mapping = aes(x = dates, y = wing_morph_b, colour=`Sex`, fill=`Sex`)) + 
-  geom_point(data=dd, mapping = aes(x = dates, y = wing_morph_b, colour=`Sex`, size=n),
-             show.legend=F) +
+              mapping = aes(x = dates, y = wing_morph_b, colour=`Sex`, fill=`Sex`), show.legend = F) + 
+  geom_point(data=dd, mapping = aes(x = dates, y = wing_morph_b, colour=`Sex`, size=n)) +
   customPlot + 
   scale_color_manual(values=c("Females" = sex_col_pts[1], "Males" = sex_col_pts[2])) +
   scale_fill_manual(values = c("Females" = sex_col_shade[1], "Males" = sex_col_shade[2])) +
@@ -1105,19 +1104,31 @@ p9 = p9 +
   annotate(geom="text", x=xlab_yrs[4], y=0.59, label=pvalue, parse=TRUE, size=font_size)
 ```
 
-```{r figure-4-extension, echo=FALSE, message=FALSE, warning=FALSE, fig.height=13.5, fig.width=11}
+#```{r figure-4-extension, echo=FALSE, message=FALSE, warning=FALSE, fig.height=13.5, fig.width=11}
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.9, fig.width=4.9}
+
 customGRID1 = list(draw_plot(p4, 0, .66, .5, .33),
                    draw_plot(p5, 0.5, .66, .5, .33),
                    draw_plot(p6, 0, .33, .5, .33),
                    draw_plot(p7, 0.5, .33, .5, .33),
                    draw_plot(p9, 0, 0, 1, .33),
                    draw_plot_label("Month", 0.47, 0.338, fontface="plain"),
-                   draw_plot_label("Long-Wing Morph Frequency", 0, 0.46, fontface="plain", angle=90)
-                  )
+                   draw_plot_label("Long-Wing Morph Frequency", 0, 0.46,
+                                   fontface="plain", angle=90)
+                   )
+p9 = p9 + labs(y = " ") + guides(color=F) + theme(legend.position = c(.68, 0.85)) #+ geom_smooth(show.legend = F)
+
+customGRID2 = list(draw_plot(p4, 0, .5, .5, .5),
+                   draw_plot(p5, .5, .5, .5, .5),
+                   draw_plot(p9, 0, 0, 1, .5),
+                   draw_plot_label("Month", 0.47, 0.51, fontface="plain"),
+                   draw_plot_label("Long-Wing Morph Frequency", 0, 0.30,
+                                   fontface="plain", angle=90))
 
 paper_figure1 = ggdraw() +
-  customGRID1
+  customGRID2
 paper_figure1
+ggsave("images/paper_figure1.png", paper_figure1)
 ```
 
 **Extension of Figure 4. Evaluation of the frequency of long-winged morph soapberry bugs averaged across month and year from April 2013 to February 2020 using exploratory plots.** For each point, the mean frequency of long-winged morphs of each month and year is plotted with LOESS smooth lines (solid lines) and 95% confidence intervals (shading) and linear regression line(s) (dashed line(s)).
@@ -1306,10 +1317,8 @@ p12 = p12 +
   annotate(geom="text", x=unique(d$dates)[15], y=0.716, label=pvalue, parse=TRUE, size=font_size)
 ```
 
-
-
 ```{r figure-5, echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
-#```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.2, fig.width=5}
+#```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.6, fig.width=5}
 paper_figure2 = ggdraw() +
   draw_plot(p10, 0, .5, .5, .5) +
   draw_plot(p11, .5, .5, .5, .5) +
@@ -1317,6 +1326,7 @@ paper_figure2 = ggdraw() +
   draw_plot_label("Month", 0.47, 0.51, fontface="plain") +
   draw_plot_label("Wing-to-Body Ratio", 0, 0.35, fontface="plain", angle=90)
 paper_figure2
+#ggsave("images/paper_figure2.png", paper_figure2)
 ```
 
 **Figure 5. Evaluation of the wing-to-body ratio of soapberry bugs averaged across month and year from April 2013 to February 2020 using exploratory plots.** For each point, the mean wing-to-body ratio of soapberry bugs collected in each month and year is plotted with LOESS smooth lines (solid lines) and 95% confidence intervals (shading) and linear regression line(s) (dashed line(s)). 
