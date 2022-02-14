@@ -1403,6 +1403,48 @@ plot3(df5,pp5, pp4, gradient=TRUE, circles=FALSE, stochasticity=TRUE, points=FAL
 plot_histograms()
 plot_color_scale()
 ```
+
+```{r echo=FALSE, warning=FALSE, fig.width=4.8, fig.height=4.6, warning=FALSE, fig.show=FALSE}
+# figure code 
+layout(matrix(c(1,1,2,3), nrow = 2, byrow = TRUE))
+
+par(mai=c(0.8, 0.69, 0.45, 0.04)) # bottom, right, top, left
+plot1(df4,pp4)
+par(mar = c(4, 4, 1.8, 0.1)) 
+plot2(df5,pp5, pp4, gradient=TRUE, circles=FALSE, stochasticity=TRUE, points=FALSE)
+plot3(df5,pp5, pp4, gradient=TRUE, circles=FALSE, stochasticity=TRUE, points=FALSE)
+
+plot_histograms = function() {
+  x = 0.48
+  y = 0.415
+  h = y + 0.04
+  v = c(x-0.13,x, y, h)
+  par( fig=v, new=TRUE, mar=c(0,0,0,0) )
+  hist(df$wing2body[Frows], col="white", main="", cex.axis=0.9) 
+  text(0.64,45, labels="w2b", cex=0.9)
+
+  x = 0.90
+  y = 0.415
+  h = y + 0.04
+  v = c(x-0.13,x, y, h)
+  par( fig=v, new=TRUE, mar=c(0,0,0,0) )
+  hist(df$wing2body[Mrows], col="white", main="", cex.axis=0.9, xlim=c(0.64,0.78)) 
+  text(0.66,40, labels="w2b", cex=0.9)
+}
+
+plot_color_scale = function() {
+  x = 0.98
+  y = 0.35
+  h = y + 0.08
+  v = c(x-0.025, x, y, h)
+  par( fig=v, new=TRUE, mar=c(0,0,0,0) )
+  color.bar(colorRampPalette(c("black", "grey"))(1000), 63)
+}
+
+plot_histograms()
+plot_color_scale()
+```
+
 &nbsp;
 
 It is noticeable to observe how adding wing-to-body ratio in the model changes the flight case outcome. **B & C.** Each point is colored as a gradient where a low wing-to-body ratio is darker and a higher wing-to-body ratio is lighter. For either sex, there are cases where a really small wing-to-body ratio can supersede any mass changes, making a SBB no longer likely to fly at all in both trials. Meanwhile, a large wing-to-body ratio can do the inverse where the chances of flying twice can spike up and make a SBB most likely to fly twice even at extreme mass changes. Additionally, across each sex, there are flight cases where the stochasticity varies for each case. The blue line and green lines for only flying once do not oscillate much compared to the red and orange lines for flying twice or not flying at all.
@@ -1933,6 +1975,14 @@ The best fit model for female SBB tested in Winter 2020 included mass percent ch
 
 From the confusion matrices, it becomes evident that our best fit models would need more factors to be more accurate and sensitive to new data. It is possible that other, unmeasured and untested factors could better explain a flight case outcome, such as age or thorax muscle mass weight.
 
-
-
+```{r fig.height=2.3, fig.width=2.3*1.9, echo=FALSE}
+# library(gridExtra)
+# cm1.A = cm1 + ggtitle("A") + theme(axis.text=element_text(size=10),
+#                                    title=element_text(size=16))
+# cm2.B = cm2 + ggtitle("B") + theme(axis.text=element_text(size=10),
+#                                    title=element_text(size=16))
+# set = grid.arrange(cm1.A,cm2.B, nrow=1)
+# 
+# ggsave("images/model-perf.pdf", set)
+```
 
