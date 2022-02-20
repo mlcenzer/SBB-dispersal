@@ -413,8 +413,9 @@ dispersal_filtered$zmap_site <- gsub("\\s", " ", format(dispersal_filtered$zmap_
 get_distance_buffer <- function(data, site_name) { 
   d <- filter(data, population == site_name | site == site_name)
   d_buff <- st_buffer(d, dist=max(d$distance))
-  d_buff <- d_buff %>%
-    select(distance, geometry) # can probably include population and site for easier accesss
+  # d_buff <- d_buff %>%
+  #   select(distance, geometry) # can probably include population and site for easier accesss
+  d_buff = d_buff[,c("distance", "total_flight_time", "site", "geometry")]
 }
 
 # Population Buffers
@@ -457,6 +458,53 @@ site_buffer_data <- rbind(KLMRL_buffer, JP_buffer, ND_buffer, CH_buffer,
                           DDF_buffer, MM_buffer, PA_buffer, St_buffer, 
                           F_buffer, CF_buffer, DT_buffer, MSt_buffer, 
                           DD_buffer, StM_buffer, AL_buffer, SWSt_buffer)
+```
+
+```{r}
+ggplot(site_buffer_data, aes(x=distance, y=total_flight_time)) + 
+  geom_point(aes(size=distance), label = "max distance")
+
+boxplot(site_buffer_data[,c("site", "distance")])
+
+maxdistances = site_buffer_data %>% group_by(site)  %>%
+  summarise(max = max(distance, na.rm=TRUE))
+
+maxdistances[order(maxdistances$max),]
+
+boxplot(site_buffer_data$distance ~ site_buffer_data$site)
+```
+
+```{r}
+library(rgdal)
+library(raster)
+```
+
+```{r}
+data_source_name = "~/Desktop/git_repositories/SBB-dispersal/avbernat/All_Morphology/stats/data/shapefiles/Detailed_Florida_State_Boundary.shp"
+Florida_ShapeFile <- readOGR(dsn = data_source_name, layer = "Detailed_Florida_State_Boundary")
+
+# Convert the shapefile to UTM
+Florida_ShapeFile.UTM <- spTransform(Florida_ShapeFile, 
+                           CRS("+proj=utm +zone=16 +south +ellps=WGS84 +datum=WGS84"))
+Keys.UTM = crop(Florida_ShapeFile.UTM, extent(439300.8+500000, 1194383, 12721244-1200000, 13431336-600000))
+Keys.UTM = crop(Florida_ShapeFile.UTM, extent(439300.8+700000, 1194383, 12721244-1200000, 13431336-600000)) # need to figure out why I can't overlap anything on these utm objects
+```
+```{r}
+tm_shape(Florida_ShapeFile.UTM) +
+  #tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey79") +
+  tm_layout (frame = FALSE, bg.color = "transparent") +
+  tm_polygons(col="white")  +
+tm_shape(site_buffer_data) + 
+  tm_fill("distance", alpha=0.05, legend.show = FALSE, col="#699e37") 
+```
+
+```{r}
+tm_shape(Keys.UTM) + 
+  #tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey79") +
+  tm_layout (frame = FALSE, bg.color = "transparent") +
+  tm_polygons(col="white")  +
+tm_shape(site_buffer_data) + 
+  tm_fill("distance", alpha=0.015, legend.show = FALSE, col="#7ecbde") 
 ```
 
 ```{r}
