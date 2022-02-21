@@ -665,7 +665,7 @@ cf_bt = filter_for_real_events(c_bt)
 
 ```{r echo=FALSE}
 library(plotrix)
-cols = c("skyblue","blue")
+cols = c("#d9f7ff", "skyblue","blue", "#152b7a")
 colorfunc = colorRamp(cols)
 x = sort(runif(length(SYM), min = 0, max = 1))
 mycolors_sim = rgb(colorfunc(x), maxColorValue=255)
@@ -716,7 +716,7 @@ plot_color_scale = function() {
   h = y + 0.21
   v = c(x-0.025, x, y, h)
   par( fig=v, new=TRUE, mar=c(0,0,0,0) )
-  colors = rev(c("skyblue", "blue"))
+  colors = rev(c("#d9f7ff", "skyblue","blue", "#152b7a"))
   color.bar(colorRampPalette(colors)(1000), 63)
 }
 ```
@@ -791,7 +791,7 @@ plot_color_scale = function() {
   h = y + 0.21
   v = c(x-0.025, x, y, h)
   par( fig=v, new=TRUE, mar=c(0,0,0,0) )
-  colors = rev(c("green","darkgreen", "#114007"))
+  colors = rev(c("green","#15a315", "darkgreen", "#114007", "#0a2e02"))
   color.bar(colorRampPalette(colors)(1000), 63)
 }
 ```
@@ -799,7 +799,7 @@ plot_color_scale = function() {
 ```{r echo=FALSE, fig.height=2.7, fig.width=3, message=FALSE, warning=FALSE, fig.show='hide'}
 cft = cf[cf$host == 1,] # 1 is K. elegans
 
-cols = c("green","darkgreen", "#0e3806")
+cols = c("green", "#15a315", "darkgreen", "#0e3806", "#0a2e02")
 colorfunc = colorRamp(cols)
 x = sort(runif(length(SYM), min = 0, max = 1))
 mycolors_sim = rgb(colorfunc(x), maxColorValue=255)
@@ -822,10 +822,8 @@ plot_back_transformation()
 plot_color_scale()
 ```
 
-![](images/figure5v2.png)
-First, 
-
-we plotted the SBB from balloon vine, the native host plant, which is in the islands. Notably, there is a very narrow range, if any, of flight potential variability between island populations, and there is only a common consistent pattern, where if the SBB from the islands is heavier, then the less likely it will fly, regardless of where it is from on the islands. Whereas for the mainland, there is a wider range of flight potentials between populations. Distance from the sympatric zone also varies more dramatically with weight changes. The deeper the SBB is in the mainland, then the more likely it will fly if its heaver but if its closer to the islands, then the more likely it will fly if its lighter.
+![](images/figure5v3.png)
+First, we plotted the SBB from golden raintree, the invasive host, which is on the mainland of Florida. Notably, there is a wider range of flight potentials between populations. Distance from the sympatric zone also varies more dramatically with weight changes. The deeper the SBB is in the mainland, then the more likely it will fly if its heaver but if its closer to the islands, then the more likely it will fly if its lighter. Whereas for the islands where the native host plant is located, there is a very narrow range, if any, of flight potential variability between island populations, and there is only a common consistent pattern, where if the SBB from the islands is heavier, then the less likely it will fly, regardless of where it is from on the islands.
 
 This relationship is not only spatially interesting, but it also reveals how weight sensitive SBB can be.
 

@@ -415,7 +415,7 @@ get_distance_buffer <- function(data, site_name) {
   d_buff <- st_buffer(d, dist=max(d$distance))
   # d_buff <- d_buff %>%
   #   select(distance, geometry) # can probably include population and site for easier accesss
-  d_buff = d_buff[,c("distance", "total_flight_time", "site", "geometry")]
+  d_buff = d_buff[,c("distance", "total_flight_time", "population", "site", "geometry")]
 }
 
 # Population Buffers
@@ -466,7 +466,8 @@ ggplot(site_buffer_data, aes(x=distance, y=total_flight_time)) +
 
 boxplot(site_buffer_data[,c("site", "distance")])
 
-maxdistances = site_buffer_data %>% group_by(site)  %>%
+site_buffer_data %>% group_by(site, population) 
+maxdistances = site_buffer_data %>% group_by(site, population)   %>%
   summarise(max = max(distance, na.rm=TRUE))
 
 maxdistances[order(maxdistances$max),]
