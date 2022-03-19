@@ -1875,9 +1875,7 @@ plot_confusion_matrix(confusion_matrix, add_sums=TRUE,
                       add_zero_shading = FALSE)
 ```
 
-Each grey box describes the percentages of false positives, false negatives, true positives, and true negatives for predicting flight cases observed during continuous flight trials in Fall 2019. Orange boxes calculate the total percentages. Target cases are the observed cases during Fall trials and prediction cases are the flight cases predicted by the Winter models. Based on the confusion matrix, the Winter 2020 model appears to be overestimating the flight case where a SBB flew twice and underestimating flight cases where a SBB would fly only once. 
-
-## Females
+Target cases are the observed cases during Fall trials and prediction cases are the flight cases predicted by the Winter models. Each grey box describes the percentages of false positives, false negatives, true positives, and true negatives for predicting flight cases observed during continuous flight trials in Fall 2019. Each orange box describes the percentages of overall cases that were either observed during Fall trials or were predicted by the model. Based on the confusion matrix ($n$ = 45), the Winter 2020 model appears to be overestimating the flight case where a SBB flew twice and underestimating flight cases where a SBB would fly only once. 
 
 ```{r}
 dfem = d[d$sex=="F",]
@@ -1972,9 +1970,7 @@ plot_confusion_matrix(confusion_matrix, add_sums=TRUE,
                       add_zero_shading = FALSE)
 ```
 
-The best fit model for female SBB tested in Winter 2020 included mass percent change and egg case. This model, based on the confusion matrix, also largely overestimated the flight case where females flew twice and largely underestimated the remaining flight cases.  
-
-From the confusion matrices, it becomes evident that our best fit models would need more factors to be more accurate and sensitive to new data. It is possible that other, unmeasured and untested factors could better explain a flight case outcome, such as age or thorax muscle mass weight.
+The best fit model ($n$ = 13) for female SBB tested in Winter 2020 included mass percent change and egg case. This model, based on the confusion matrix, also largely overestimated the flight case where females flew twice and largely underestimated the remaining flight cases. Here, it becomes evident that our best fit models would need more factors to be more accurate and sensitive to new data. It is possible that other, unmeasured and untested factors could better explain a flight case outcome, such as age or thorax muscle mass weight.
 
 ```{r fig.height=2.3, fig.width=2.3*1.9, echo=FALSE}
 # library(gridExtra)
