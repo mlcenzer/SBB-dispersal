@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Dispersal/Winter_2020/stats/"
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/"
 setwd(dir) 
 
 # tables
@@ -114,7 +114,7 @@ Let's apply it to our data now:
 #### Cleaning the Data
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/Rsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/Rsrc/"
 
 script_names = c("center_flight_data.R", # Re-centers data 
                  "clean_flight_data.R", # Loads and cleans data
@@ -123,7 +123,8 @@ script_names = c("center_flight_data.R", # Re-centers data
                  "compare_models.R",
                  "regression_output.R", # Cleans regression outputs; prints in color or B&W
                  "AICprobabilities.R",
-                 "multinom_functions.R")
+                 "get_Akaike_weights.R",
+                 "multinom_functions-long.R")
 
 for (script in script_names) { 
   path = paste0(source_path, script)
@@ -370,49 +371,379 @@ MASS_ML = get_significant_models(15) # mass per
 SEX_ML = get_significant_models(16) # sex
 ```
 
+```{r}
+# tests 
+# m = multinom(flight_case ~ mass_per + sex_c + wing2body_c, trace=FALSE, data = d)
+# model_table = calculate_P3(m, print_table=FALSE)
+# model_table
+# 
+# m = multinom(flight_case ~ mass_per + sex_c + I(wing2body_c*100), trace=FALSE, data = d)
+# model_table = calculate_P3(m, print_table=FALSE)
+# model_table
+```
+
+```{r}
+run_multinom_model = function(d) {
+  m = multinom(flight_case ~ mass_per + sex_c + wing2body_c, trace=FALSE, data = d)
+  model_table = calculate_P3(m, print_table=FALSE)
+  return(model_table)
+}
+
+# determined which prediction equation effects are significant with a plot
+par(mfrow=c(2,2))
+mass_per_ML = get_significant_models(19) # % mass
+  mtext("Mass", side=3, adj=0, line=0.5, cex=1.4, font=1)
+sex_ML = get_significant_models(20) # sex
+  mtext("Sex", side=3, adj=0, line=0.5, cex=1.4, font=1)
+w2b_ML = get_significant_models(21) # wing2body
+  mtext("Wing-to-body", side=3, adj=0, line=0.5, cex=1.4, font=1)
+```
+
+
 ```{r echo=FALSE}
 # 2 vs. -1
-Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T1\\, only)$", " ")
-effect = c("Intercept", "$\\delta$ Mass %", "Sex")
-pars = c("$\\alpha$", "$\\beta_1$", "$\\beta_2\\, (F=1 | M=-1)$")
-key1 = getting_oddsf(Odds, effect, pars, MASS_ML[[1]], 3) 
+Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T1\\, only)$", " ", " ")
+effect = c("Intercept", "$\\delta$ Mass %", "Sex", "Wing-to-Body")
+pars = c("$\\alpha$", "$\\beta_1$", "$\\beta_2\\, (F=1 | M=-1)$",  "$\\beta_3\\, (\\mu = 0)$")
+key1 = getting_odds(Odds, effect, pars, mass_per_ML[[1]], 3) 
 
 # 2 vs. 1
-Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T2\\, only)$", " ")
-key2 = getting_oddsf(Odds, effect, pars, MASS_ML[[3]], 3) 
+Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T2\\, only)$", " ", " ")
+key2 = getting_odds(Odds, effect, pars, mass_per_ML[[3]], 3) 
 
 # 2 vs. 0
-Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=did\\, not\\, fly)$", " ")
-key3 = getting_oddsf(Odds, effect, pars, MASS_ML[[2]], 3) 
+Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=did\\, not\\, fly)$", " ", " ")
+key3 = getting_odds(Odds, effect, pars, mass_per_ML[[2]], 3) 
 
 # -1 vs. 0
-Odds = c("$\\underline{P(Yi=flew\\, in\\, T1\\, only)}$", "$P(Yi=did\\, not\\, fly)$", " ")
-key4 = getting_oddsf(Odds, effect, pars, MASS_ML[[2]], 1) 
+Odds = c("$\\underline{P(Yi=flew\\, in\\, T1\\, only)}$", "$P(Yi=did\\, not\\, fly)$", " ", " ")
+key4 = getting_odds(Odds, effect, pars, mass_per_ML[[2]], 1) 
 
 # 1 vs. 0
-Odds = c("$\\underline{P(Yi=flew\\, in\\, T2\\, only)}$", "$P(Yi=did\\, not\\, fly)$", " ")
-key5 = getting_oddsf(Odds, effect, pars, MASS_ML[[2]], 2) 
+Odds = c("$\\underline{P(Yi=flew\\, in\\, T2\\, only)}$", "$P(Yi=did\\, not\\, fly)$", " ", " ")
+key5 = getting_odds(Odds, effect, pars, mass_per_ML[[2]], 2) 
 
 # -1 vs. 1
-Odds = c("$\\underline{P(Yi=flew\\, in\\, T1\\, only)}$", "$P(Yi=flew\\, in\\, T2\\, only)$", " ")
-key6 = getting_oddsf(Odds, effect, pars, MASS_ML[[3]], 2)
+Odds = c("$\\underline{P(Yi=flew\\, in\\, T1\\, only)}$", "$P(Yi=flew\\, in\\, T2\\, only)$", " ", " ")
+key6 = getting_odds(Odds, effect, pars, mass_per_ML[[3]], 2)
 
 key = rbind(key1, key2, key3, key4, key5, key6)
 rownames(key)<-NULL
-colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta$)*", "Wald", "p")
+colnames(key) = c("Equation","Effect", "Parameter", "Estimate", "SE", "Odds *", "Wald", "p")
 ```
 
+
 ```{r echo=FALSE}
-kable(key, caption="Table 1. Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model") %>%
+top_caption = "Table 1. Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model"
+kable(key) %>% #caption = top_caption
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
   column_spec(1, width="6cm", background="white") %>%
   kable_classic(html_font = "Cambria") %>%
+  row_spec(c(4,8,12,16,20), extra_css = "border-bottom: 1px solid") %>%
+  #column_spec(1, color = "black", background = "white") %>%
+  footnote(general = " * Instead of a 1% mass increase, which is relatively small change, the mass percent change estimates were multiplied by 20 before calculating the odds. This transformation better represents experimental observations and offers a more realistic odds.",
+           general_title = " ", number_title = "* "
+           )# %>%
+    # as_image(file=outpath) # doesn't work
+```
+
+```{r}
+# library(latex2exp)
+# library(magrittr)
+```
+
+```{r}
+# doesn't work
+colnames(key) = c("Equation","Effect", "Parameter", "Estimate", "SE", "Odds*", "Wald", "p")
+
+paper_table2 = kable(key, table.attr = "style='width:80%;'", escape = FALSE) %>% #caption = top_caption
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  column_spec(1, width="6cm", background="white") %>%
+  kable_classic(html_font = "Arial") %>%
   row_spec(c(3,6,9,12,15), extra_css = "border-bottom: 1px solid") %>%
   #column_spec(1, color = "black", background = "white") %>%
-  footnote(general = " * Instead of a 1% mass increase, which is relatively too small, the mass percent change estimates were multiplied by 20 before calculating the log odds. These changes better represent experimental observation and offers a more realistic odds. ",
-           general_title = " ", number_title = "* "
-           )
+  footnote(general = " * Instead of a 1% mass increase, which is relatively small change, the mass percent change estimates were multiplied by 20 before calculating the odds. This transformation better represents experimental observations and offers a more realistic odds.", 
+           general_title = " ", number_title = "* " ) # %>%
+  #row_spec(seq(1,nrow(key),2), background = "#f5f5f5") # %>%
+ #  as_image(file=paste0(outpath,"paper-table2-latex.png")) # doesn't work
+
+outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
+# save_kable(paper_table2, file = paste0(outpath,"paper-table2-w2b-latex.png"), keep_tex = TRUE, zoom = 5)
 ```
+
+
+```{r}
+c("Variables in the Model", "Flew twice rather than flew only in T1", "Flew twice rather than flew in T2 only", "Flew in T1 only rather than did not fly", "Flew in T2 only rather than did not fly", "Flew in T1 only rather than flew in T2 only")
+```
+
+```{r}
+# paper table - only odds
+odds_key = as.data.frame(key[,c("Effect", "Odds*", "p","Estimate", "SE")])
+odds_key = odds_key[odds_key$Effect != "Intercept",]
+sec1 = odds_key[1:3,]
+sec2 = odds_key[4:6,]
+sec3 = odds_key[7:9,]
+sec4 = odds_key[10:12,]
+sec5 = odds_key[13:15,]
+sec6 = odds_key[16:18,]
+
+odds_table = cbind(sec1[,c(1,2)], sec2[,2], sec3[,2], sec4[,2], sec5[,2], sec6[,2])
+odds_table$Effect = c("Mass % Change *", "Sex (F=1 | M=-1)", "Wing-to-Body *")
+
+colnames(odds_table) = c("Variables in the Model", "Flew twice rather than flew only in T1", "Flew twice rather than flew in T2 only", "Flew twice rather than did not fly", "Flew in T1 only rather than did not fly", "Flew in T2 only rather than did not fly", "Flew in T1 only rather than flew in T2 only")
+rownames(odds_table) = NULL
+
+# odds_table = cbind(sec1[,c(2,3)], sec2[,c(2,3)], sec3[,c(2,3)], sec4[,c(2,3)], sec5[,c(2,3)], sec6[,c(2,3)])
+
+```
+
+# 1   0   1   1   0
+# 0   1   1   1   1
+# 0   0   1   1   0
+
+```{r}
+odds_table2 = cbind(sec1[,c(1,2,4,5)], sec2[,c(2,4,5)], sec3[,c(2,4,5)], sec4[,c(2,4,5)], sec5[,c(2,4,5)], sec6[,c(2,4,5)])
+rownames(odds_table2) = NULL
+odds_table2$Transformation = c(20,1,0.01)
+odds_table2$OddsTransformation = c(1,1,0.01)
+odds_table2
+```
+```{r}
+# not sig
+#exp(-0.19*1 + 0.02*20) / exp(-0.19*-1 + 0.02*20) * 100 - 100 # female
+#exp(-0.19*-1 + 0.02*20) / exp(-0.19*-1 + 0.02*20) * 100 - 100 # male
+
+exp(5.00*1 + 0.02*0) / exp(5.00*1 + 0.02*0)  * 100 - 100 # female
+exp(5.00*-1 + 0.02*0) / exp(5.00*1 + 0.02*0)  * 100 - 100 # male
+# males 99.995 
+# <0.005
+
+exp(-0.76*1 + 0.02*0) / exp(-0.76*-1 + 0.02*0)  * 100 - 100 # female
+exp(-0.76*-1 + 0.02*0) / exp(-0.76*-1 + 0.02*0)  * 100 - 100 # male
+
+exp(-0.57*1 + 0.02*0) / exp(-0.57*-1 + 0.02*0)  * 100 - 100 # female
+exp(-0.57*-1 + 0.02*0) / exp(-0.57*-1 + 0.02*0)  * 100 - 100 # male
+
+exp(5.19*1 + 0.02*0) / exp(5.19*1 + 0.02*0)  * 100 - 100 # female
+exp(5.19*-1 + 0.02*0) / exp(5.19*1 + 0.02*0)  * 100 - 100 # male
+# males 99.997 
+# <0.0032 or approx 0.003
+
+# can probably add the mu to wing-to-body
+
+```
+
+```{r}
+# calculate the 95% confidence interval
+# e ^ [ln(OR) + 1.96 sqrt(1/a + 1/b + 1/c + 1/d)]
+
+get_95_CI = function(Beta, SE, Trans, OTrans) {
+  
+  beta = as.numeric(Beta)
+  se = as.numeric(SE)
+  upper = exp(beta*Trans + 1.96 * se*OTrans)
+  odds = exp(beta*Trans)
+  lower = exp(beta*Trans - 1.96 * se*OTrans)
+  
+  # upper = exp(beta + 1.96 * se)
+  # odds = exp(beta)
+  # lower = exp(beta - 1.96 * se)
+  
+  upper = signif(round(upper,2), digits=3)
+  odds = signif(round(odds,2), digits=3)
+  lower = signif(round(lower,2), digits=3)
+  
+  new_odds = paste0(odds, " (", lower, ", ", upper,")")
+  
+  return(new_odds)
+  
+}
+
+odds1 = get_95_CI(odds_table2[,3], odds_table2[,4], odds_table2$Transformation, odds_table2$OddsTransformation)
+odds2 = get_95_CI(odds_table2[,6], odds_table2[,7], odds_table2$Transformation, odds_table2$OddsTransformation)
+odds3 = get_95_CI(odds_table2[,9], odds_table2[,10], odds_table2$Transformation, odds_table2$OddsTransformation)
+odds4 = get_95_CI(odds_table2[,12], odds_table2[,13], odds_table2$Transformation, odds_table2$OddsTransformation)
+odds5 = get_95_CI(odds_table2[,15], odds_table2[,16], odds_table2$Transformation, odds_table2$OddsTransformation)
+odds6 = get_95_CI(odds_table2[,18], odds_table2[,19], odds_table2$Transformation, odds_table2$OddsTransformation)
+
+odds_table[,2] = odds1
+odds_table[,3] = odds2
+odds_table[,4] = odds3
+odds_table[,5] = odds4
+odds_table[,6] = odds5
+odds_table[,7] = odds6
+
+odds = odds_table
+odds
+```
+
+
+```{r}
+# 
+# # works but it has to say "latex e.g. 
+# odds[1,2] <- cell_spec(odds_table[1,2] , "latex", bold = T)
+# odds[2,3] <- cell_spec(odds_table[2,3], "latex",bold = T)
+# 
+# odds[1,4] <- cell_spec(odds_table[1,4] , "latex",bold = T)
+# odds[2,4] <- cell_spec(odds_table[2,4] , "latex",bold = T)
+# odds[3,4] <- cell_spec(odds_table[3,4] , "latex",bold = T)
+# 
+# odds[1,5] <- cell_spec(odds_table[1,5] ,  "latex",bold = T)
+# odds[2,5] <- cell_spec(odds_table[2,5] ,  "latex",bold = T)
+# odds[3,5] <- cell_spec(odds_table[3,5] ,  "latex",bold = T)
+# 
+# odds[2,6] <- cell_spec(odds_table[2,6], "latex",bold = T)
+# 
+# odds[2,7] <- cell_spec(odds_table[2,6], "latex",bold = T)
+
+# file_outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/test.pdf"
+# 
+# kable(head(iris), caption = '\\textbf{I want this in Bold}', format = 'latex') %>% 
+#   kableExtra::kable_styling(bootstrap_options = c("striped", "hover", "condensed","responsive")) %>%
+#   as_image(file=file_outpath)
+
+### simple solution but not pretty
+# odds[1,2] =  paste0(odds_table[1,2],"*") 
+# odds[2,3] =  paste0(odds_table[2,3],"*") 
+# 
+# odds[1,4] =  paste0(odds_table[1,4],"*") 
+# odds[2,4] =  paste0(odds_table[2,4],"*") 
+# odds[3,4] =  paste0(odds_table[3,4],"*") 
+# 
+# odds[1,5] =  paste0(odds_table[1,5],"*") 
+# odds[2,5] =  paste0(odds_table[2,5],"*") 
+# odds[3,5] =  paste0(odds_table[3,5],"*") 
+# 
+# odds[2,6] =  paste0(odds_table[2,6],"*")
+
+### doesn't work  - md
+# odds[1,2] =  paste0("**",odds_table[1,2],"**") 
+# odds[2,3] =  paste0("**",odds_table[2,3],"**") 
+# 
+# odds[1,4] =  paste0("**",odds_table[1,4],"**") 
+# odds[2,4] =  paste0("**",odds_table[2,4],"**") 
+# odds[3,4] =  paste0("**",odds_table[3,4],"**") 
+# 
+# odds[1,5] =  paste0("**",odds_table[1,5],"**") 
+# odds[2,5] =  paste0("**",odds_table[2,5],"**") 
+# odds[3,5] =  paste0("**",odds_table[3,5],"**") 
+# 
+# odds[2,6] =  paste0("**",odds_table[2,6],"**")
+
+#### doens't work in bolding...even though shows up - html
+# odds[1,2] =  paste0("<b>",odds_table[1,2], "</b>")
+# 
+# odds[2,3] = paste0("<b>",odds_table[2,3], "</b>")
+# 
+# odds[1,4] =  paste0("<b>",odds_table[1,4], "</b>")
+# odds[2,4] =  paste0("<b>",odds_table[2,4], "</b>")
+# odds[3,4] =  paste0("<b>",odds_table[3,4], "</b>")
+# 
+# odds[1,5] =  paste0("<b>",odds_table[1,5], "</b>")
+# odds[2,5] =  paste0("<b>",odds_table[2,5], "</b>")
+# odds[3,5] =  paste0("<b>",odds_table[3,5], "</b>")
+# 
+# odds[2,6] =  paste0("<b>",odds_table[2,6], "</b>")
+# 
+# odds[2,7] =  paste0("<b>",odds_table[2,7], "</b>")
+
+# works but it has to say "latex e.g. 
+# odds[1,2] <- cell_spec(odds_table[1,2] , bold = T, background = "#d4d4d4")
+# odds[2,3] <- cell_spec(odds_table[2,3],  bold = T, background = "#d4d4d4")
+# 
+# odds[1,4] <- cell_spec(odds_table[1,4] , bold = T, background = "#d4d4d4")
+# odds[2,4] <- cell_spec(odds_table[2,4] , bold = T, background = "#d4d4d4")
+# odds[3,4] <- cell_spec(odds_table[3,4] , bold = T, background = "#d4d4d4")
+# 
+# odds[1,5] <- cell_spec(odds_table[1,5] , bold = T, background = "#d4d4d4")
+# odds[2,5] <- cell_spec(odds_table[2,5] , bold = T, background = "#d4d4d4")
+# odds[3,5] <- cell_spec(odds_table[3,5] , bold = T, background = "#d4d4d4")
+# 
+# odds[2,6] <- cell_spec(odds_table[2,6], bold = T, background = "#d4d4d4")
+# 
+# odds[2,7] <- cell_spec(odds_table[2,7], bold = T, background = "#d4d4d4")
+
+```
+
+
+```{r}
+# doesn't work in bolding
+odds[1,2] <- cell_spec(odds_table[1,2] , bold = T)
+odds[2,3] <- cell_spec(odds_table[2,3], bold = T)
+
+odds[1,4] <- cell_spec(odds_table[1,4] , bold = T)
+odds[2,4] <- cell_spec(odds_table[2,4] , bold = T)
+odds[3,4] <- cell_spec(odds_table[3,4] , bold = T)
+
+odds[1,5] <- cell_spec(odds_table[1,5] ,  bold = T)
+odds[2,5] <- cell_spec(odds_table[2,5] ,  bold = T)
+odds[3,5] <- cell_spec(odds_table[3,5] ,  bold = T)
+
+odds[2,6] <- cell_spec(odds_table[2,6], bold = T)
+odds[2,7] <- cell_spec(odds_table[2,7], bold = T)
+# 
+```
+
+
+```{r}
+
+file_outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/pt2-w2b-latex-odds.pdf"
+
+old_caption = " * Instead of a 1% mass increase, which is relatively small change, the mass percent change estimates were multiplied by 20 before calculating the odds. This transformation better represents experimental observations and offers a more realistic odds."
+caption = " * The mass percent change estimates and wing-to-body estimates were multiplied by 20 and 0.01, respectively, before calculating the odds. These transformations better represent experimental observations and offer a more realistic odds (e.g. 20% mass increase and a 0.01 unit increase in wing-to-body ratio)."
+
+colname = "<span style='padding-right:30px'>Flew twice rather than did not fly         </span>"
+colname = "Flew twice rather than did not fly "
+colname ="Flew twice rather than did not fly <code style='background:white'>         </code>"
+colnames(odds) = c("Variables in the Model", "Flew twice rather than flew in T1", "Flew twice rather than flew in T2", colname, "Flew in T1 rather than did not fly", "Flew in T2 rather than did not fly", "Flew in T1 rather than flew in T2")
+# 
+# colname ="Flew twice rather than did not fly P(Y=2)/P(Y=0)"
+# 
+# colnames(odds) = c("Variables in the Model", "Flew twice rather than flew only in T1 P(Y=2)/P(Y=-1)", "Flew twice rather than flew in T2 only P(Y=2)/P(Y=1)", colname, "Flew in T1 only rather than did not fly P(Y=-1)/P(Y=0)", "Flew in T2 only rather than did not fly P(Y=1)/P(Y=0)", "Flew in T1 only rather than flew in T2 onlyP(Y=-1)/P(Y=1)")
+# 
+
+
+align_cols = c("l", "c", "c", "c", "c", "c", "c") # align = align_cols
+
+paper_table2 = kable(odds, table.attr = "style='width:87%;'", escape = FALSE) %>% #caption = top_caption
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  #kbl(format="latex") %>%
+  column_spec(4,latex_valign = "m")  %>%
+  column_spec(1, width="3.9cm", background="white") %>%
+  column_spec(4, width="3.5cm", background="white") %>%
+  column_spec(7, width="3.3cm", background="white") %>%
+  column_spec(6, width="3.3cm", background="white") %>%
+  column_spec(5, width="3.5cm", background="white") %>%
+  column_spec(3, width="3.3cm", background="white") %>%
+  column_spec(2, width="3.3cm", background="white") %>%
+  kable_classic(html_font = "Arial") %>%
+  row_spec(seq(1,nrow(odds),2), background = "#f5f5f5") %>%
+  # column_spec(1, extra_css = "right-bottom: 1px solid") %>%
+  # column_spec(1, color = "black", background = "white") %>%
+  footnote(general = caption, general_title = " ", number_title = "* " ) 
+# dat = odds_table %>%
+#   kbl(format="latex") %>%
+#   row_spec(2, bold=TRUE) %>%
+#   save_kable(outpath)
+
+paper_table2
+
+# paper_table2 %>%
+#    as_image(file=file_outpath)
+
+# outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
+# save_kable(paper_table2, file = paste0(outpath,"paper-table2-w2b-latex-odds.png"), keep_tex = TRUE, zoom = 5)
+
+
+# dat = odds_table %>%
+#   kbl(format="latex") %>%
+#   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+#   row_spec(2, bold=TRUE) %>%
+#   save_kable(outpath)
+
+```
+
+
 
 ```{r echo=FALSE}
 eq1 = "Flew in T1 only rather than T2 only = 5.81 + 0.05 Mass % + 4.93 Sex"
@@ -1098,7 +1429,7 @@ ML_eqs = get_significant_modelsf(16) # egg_case
 ```{r}
 # 2 vs. -1
 Odds = c("$\\underline{P(Yi=flew\\,twice)}$", "$P(Yi=flew\\, in\\, T1\\, only)$", " ")
-effect = c("Intercept", "$\\delta$ Mass %", "Egg Response")
+effect = c("Intercept", "$\\delta$ Mass %", "Egg Case")
 pars = c("$\\alpha$", "$\\beta_1$", "$\\beta_2$")
 key1 = getting_oddsf(Odds, effect, pars, ML_eqs[[1]], 2) 
 
@@ -1116,12 +1447,18 @@ colnames(key) = c("Odds","Effect", "Parameter", "Estimate", "SE", "exp($\\beta$)
 ```
 
 ```{r}
-kable(key, caption="Table 2. Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model") %>%
+key2 = key[4:9,]
+```
+
+```{r}
+colnames(key2) = c("Equation","Effect", "Parameter", "Estimate", "SE", "Odds *", "Wald", "p")
+top_caption = "Table 2. Estimated Parameters, Standard Errors, and Wald Test Statistics for All Main Effects Model"
+kable(key2) %>% # caption=top_caption
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
   column_spec(1, width="6cm", background="white") %>%
   kable_classic(html_font = "Cambria") %>%
-  row_spec(c(3,6,9), extra_css = "border-bottom: 1px solid")  %>%
-  footnote(general = " * Instead of a 1% mass increase, which is relatively too small, mass percent estimates were multiplied by 20 before calculating the log odds. These changes better represent experimental observations and offers a more realistic odds.",
+  row_spec(c(3,6), extra_css = "border-bottom: 1px solid")  %>%
+  footnote(general = " * Instead of a 1% mass increase, which is relatively small change, the mass percent change estimates were multiplied by 20 before calculating the odds. This transformation better represents experimental observations and offers a more realistic odds.",
            general_title = " ", number_title = "* "
            )
 ```
@@ -1136,6 +1473,196 @@ E = (tb[1,3] - tb[2,3])
 EQ1 = paste0("log(pi_-1 / pi_2) = ", round(I, 2), " + ", round(M,2), " Mass %", " + ", round(E, 2), " Egg Case", "     Flew in T1, rather than both" )
 EQ1  # mass_dff** | sex not
 ```
+
+```{r}
+odds_key
+```
+
+```{r}
+# paper table - only odds
+odds_key = as.data.frame(key[,c("Effect", "exp($\\beta$)*", "p","Estimate", "SE")])
+odds_key = odds_key[odds_key$Effect != "Intercept",]
+# sec1 = odds_key[1:2,]
+sec2 = odds_key[3:4,]
+sec3 = odds_key[5:6,]
+
+odds_table = cbind(sec2[,c(1,2)], sec3[,2])
+odds_table$Effect = c("Mass % Change *", "Egg Case")
+
+colnames(odds_table) = c("Variables in the Model", "Flew twice rather than did not fly", "Flew in T1 rather than did not fly")
+rownames(odds_table) = NULL
+```
+
+```{r}
+odds_table2 = cbind(sec2[,c(1,2,4,5)], sec3[,c(2,4,5)])
+rownames(odds_table2) = NULL
+odds_table2$Effect = c("Mass % Change *", "Egg Case")
+odds_table2$Transformation = c(20, 1)
+odds_table2
+```
+```{r}
+# odds_table3 = rbind(odds_table2[1,], "", odds_table2[2,], odds_table2[2,], odds_table2[2,], odds_table2[2,])
+
+odds_table3 = rbind(odds_table2, odds_table2[2,], odds_table2[2,], odds_table2[2,])
+```
+
+```{r}
+exp(-1.10*2 + 0.02*20) # laid eggs twice
+exp(-1.10*1 + 0.02*20) # laid eggs in T2 
+exp(-1.10*0 + 0.02*20)# did not lay eggs
+exp(-1.10*-1 + 0.02*20) # laid eggs in T1
+```
+
+```{r}
+exp(-1.10*2 + 0.02*0) / exp(-1.10*-1 + 0.02*0) * 100 - 100 # laid eggs twice
+exp(-1.10*1 + 0.02*0) / exp(-1.10*-1 + 0.02*0) * 100 - 100# laid eggs in T2 
+exp(-1.10*0 + 0.02*0) / exp(-1.10*-1 + 0.02*0) * 100 - 100# did not lay eggs
+exp(-1.10*-1 + 0.02*0) / exp(-1.10*-1 + 0.02*0) * 100 - 100# laid eggs in T1
+```
+
+```{r}
+exp(-1.10*2 + 0.02*20) / exp(-1.10*-1 + 0.02*20) * 100 - 100 # laid eggs twice
+exp(-1.10*1 + 0.02*20) / exp(-1.10*-1 + 0.02*20) * 100 - 100# laid eggs in T2 
+exp(-1.10*0 + 0.02*20) / exp(-1.10*-1 + 0.02*20) * 100 - 100# did not lay eggs
+exp(-1.10*-1 + 0.02*20) / exp(-1.10*-1 + 0.02*20) * 100 - 100# laid eggs in T1
+```
+
+
+```{r}
+odds_table4 = odds_table3
+egg_cases = c("Egg Case (laid eggs twice = 2)",
+"(laid eggs in T2 = 1)",
+"(did not lay eggs = 0)",
+"(laid eggs in T1 = -1)")
+
+all_transformations = c(20,2,1,0,-1)
+
+odds_table4$Transformation = all_transformations
+rownames(odds_table4) = c("Mass % Change *",egg_cases)
+
+odds_table4$rownames = rownames(odds_table4)
+
+library(stringr)
+odds_table4[3:5,9]<-str_pad(odds_table4[3:5,9],width=31, side="left") 
+odds_table4[5,9]<-str_pad(odds_table4[5,9],width=32, side="left") 
+
+rownames(odds_table4) = odds_table4$rownames
+```
+
+
+
+```{r}
+odds_table4
+```
+
+```{r}
+get_95_CI = function(Beta, SE, Trans) {
+  
+  beta = as.numeric(Beta)
+  se = as.numeric(SE)
+  upper = exp(beta*Trans + 1.96 * se)
+  odds = exp(beta*Trans)
+  lower = exp(beta*Trans - 1.96 * se)
+  
+  upper = signif(round(upper,2), digits=3)
+  odds = signif(round(odds,2), digits=3)
+  lower = signif(round(lower,2), digits=3)
+  
+  new_odds = paste0(odds, " (", lower, ", ", upper,")")
+  
+  return(new_odds)
+  
+}
+
+odds1 = get_95_CI(odds_table4[,3], odds_table4[,4], odds_table4$Transformation)
+odds2 = get_95_CI(odds_table4[,6], odds_table4[,7], odds_table4$Transformation)
+
+odds_table3[,2] = odds1
+odds_table3[,5] = odds2
+
+odds = odds_table3
+```
+
+```{r}
+rownames(odds) = odds_table4$rownames
+odds_final = odds[c(1,2,5)]
+odds_final$Effect = rownames(odds_final)
+rownames(odds_final) = NULL
+colnames(odds_final) = c("Variables in the Model", "Flew twice rather than did not fly", "Flew in T1 rather than did not fly")
+
+odds_final
+
+oddsfinal = odds_final
+
+```
+
+# 1 1
+# 1* 0 
+
+
+```{r}
+# doesn't work in bolding
+oddsfinal[1,2] <- cell_spec(odds_final[1,2] , bold = T)
+oddsfinal[2,2] <- cell_spec(odds_final[2,2] , bold = T)
+oddsfinal[3,2] <- cell_spec(odds_final[3,2] , bold = T)
+oddsfinal[4,2] <- cell_spec(odds_final[4,2] , bold = T)
+oddsfinal[5,2] <- cell_spec(odds_final[5,2] , bold = T)
+
+oddsfinal[1,3] <- cell_spec(odds_final[1,3] , bold = T)
+```
+
+```{r}
+oddsfinal[3,1] <- cell_spec(odds_final[3,1] , extra_css="padding-left:70px")
+oddsfinal[4,1] <- cell_spec(odds_final[4,1] , extra_css="padding-left:70px")
+oddsfinal[5,1] <- cell_spec(odds_final[5,1] , extra_css="padding-left:70px")
+```
+
+```{r}
+# here
+
+file_outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/fem-odds.pdf"
+
+caption = " * The mass percent change estimates were multiplied by 20 before calculating the odds. This transformation better represents experimental observations and offers a more realistic odds (e.g. 20% mass increase)."
+
+align_cols = c("l", "c", "c", "c", "c", "c", "c") # align = align_cols
+
+paper_table2 = kable(oddsfinal, table.attr = "style='width:87%;'", escape = FALSE) %>% #caption = top_caption
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  #kbl(format="latex") %>%
+  # column_spec(4,latex_valign = "m")  %>%
+  column_spec(1, width="6cm", background="white") %>%
+  # column_spec(4, width="3.5cm", background="white") %>%
+  # column_spec(7, width="3.3cm", background="white") %>%
+  # column_spec(6, width="3.3cm", background="white") %>%
+  # column_spec(5, width="3.5cm", background="white") %>%
+  # column_spec(3, width="3.3cm", background="white") %>%
+  # column_spec(2, width="3.3cm", background="white") %>%
+  kable_classic(html_font = "Arial") %>%
+  row_spec(seq(1,nrow(odds),2), background = "#f5f5f5") %>%
+  # column_spec(1, extra_css = "right-bottom: 1px solid") %>%
+  # column_spec(1, color = "black", background = "white") %>%
+  footnote(general = caption, general_title = " ", number_title = "* " ) 
+# dat = odds_table %>%
+#   kbl(format="latex") %>%
+#   row_spec(2, bold=TRUE) %>%
+#   save_kable(outpath)
+
+# paper_table2 %>%
+#   as_image(file=file_outpath)
+
+# outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
+# save_kable(paper_table2, file = paste0(outpath,"paper-table2-w2b-latex-odds.png"), keep_tex = TRUE, zoom = 5)
+
+paper_table2
+```
+
+
+
+
+
+
+
+
 
 **Predicted Probabilities**
 

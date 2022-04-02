@@ -266,7 +266,9 @@ kable(Winter_table, caption=" ") %>%
 ```
 
 
-\hfil ![](tables/tables.png){width=80%} \hfil
+\hfil ![](tables/appendix_A-table1-latex.png){width=73%} \hfil  
+
+\hfil ![](tables/appendix_A-table2-latex.png){width=73%} \hfil
 
 Fall 2019 field and test collections were a mix of short wing and long wing soapberry bugs. Winter 2020 field collections were a mix of short wing and long wing bugs, but only long wing soapberry bugs were tested.
 
@@ -282,7 +284,7 @@ We tested how sex, host plant, month, and/or year effected whether a soapberry b
 data = data.frame(R=raw_data$wing_morph_b, 
                   A=raw_data$sex_b, 
                   B=raw_data$pophost_b, 
-                  C=(raw_data$month_of_year),
+                  C=raw_data$month_of_year,
                   D=raw_data$months_since_start)
 
 model_script = paste0(source_path,"generic models-binomial glm 4-FF.R")
@@ -537,7 +539,7 @@ data = wmorph_table
 data = data.frame(R=data$sd, 
                   A=data$sex_b, 
                   B=data$pophost_b, 
-                  C=(data$month_of_year),
+                  C=data$month_of_year,
                   D=data$months_since_start)
 
 model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")
@@ -717,7 +719,7 @@ data = w2b_table
 data = data.frame(R=data$sd, 
                  A=data$sex_b, 
                  B=data$pophost_b, 
-                 C=(data$month_of_year),
+                 C=data$month_of_year,
                  D=data$months_since_start)
 
 model_script = paste0(source_path,"generic models-gaussian glm 4-FF.R")

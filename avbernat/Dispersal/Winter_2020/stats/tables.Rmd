@@ -55,6 +55,7 @@ data_tested <- center_data(data_tested)
 
 ```{r echo=FALSE}
 Fall = read.csv("/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Autumn_2019/stats/data/full_data-Fall2019.csv")
+
 mass = Fall %>% filter(mass != 0)
 #length(unique(mass$ID))
 min30 = Fall %>% filter(set_number <= 30) # where is set002?
@@ -71,7 +72,9 @@ n_unlimited = length(unique(unlimited$ID))
 
 season = c("Fall", "Fall", "Fall", "Fall", "Winter", "Winter")
 year = c("2019","2019","2019","2019","2020","2020")
-dates = c("October 15 to October 23", "October 23 to October 29", "October 30 to November 4", "November 5 to November 8", "February 17 to February 28", "March 3 to March 10")
+dates = c("October 15 to October 23", "October 23 to October 29", 
+          "October 30 to November 4", "November 5 to November 8",
+          "February 17 to February 28", "March 3 to March 10")
 exp_setup = c("30 min", "60 min", "90 min", "unlimited", "unlimited", "unlimited")
 n_tested = c(n_30, n_60, n_90, n_unlimited, nrow(T1), nrow(T2))
 wing_morph = c("short and long", "short and long","short and long","long","long","long")
@@ -82,15 +85,21 @@ colnames(table_season) <- c("Season", "Year", "Dates", "Experimental Setup", "N 
 paper_table = kable(table_season) %>%
   kable_styling(bootstrap_options = "striped", "hover", full_width = F)  
 paper_table
-#save_kable(paper_table, "table2.pdf")
+
+outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
+save_kable(paper_table, paste0(outpath,"paper-table1.pdf"))
 ```
 
 ```{r echo=FALSE}
-kable(table_season, caption=" ") %>%
+paper_table = kable(table_season, caption=" ", table.attr = "style='width:60%;'") %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
-  column_spec(1, width="2cm", background="white") %>%
-  kable_classic(html_font = "Cambria") 
-  #row_spec(c(3,6,9,12,15), extra_css = "border-bottom: 1px solid") %>%
+  column_spec(1, width="0.5cm", background="white") %>%
+  kable_classic(html_font = "Arial") %>% 
+  # row_spec(c(1:6), extra_css = "border-bottom: 1px solid") %>%
+  row_spec(seq(1,6,2), background = "#f5f5f5")
+
+outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
+save_kable(paper_table, file = paste0(outpath,"paper-table1-latex.png"), keep_tex = TRUE, zoom = 5)
 ```
 
 ## Winter
@@ -220,7 +229,8 @@ paper_table
 
 ```{r echo=FALSE}
 colnames(table2b) = c("host plant", "population", "site", "latitude", "longitude", "$\ n_{site}$", "$\ n_{pop}$")
-kable(table2b, caption="Table 1. Field soapberry bugs collected and tested for flight trials.") %>%
+top_caption = "Table 1. Field soapberry bugs collected and tested for flight trials."
+kable(table2b) %>% # caption=top_caption
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
   add_header_above(c(" ", " ", " ", "Coordinates" = 2, "Sample Sizes" = 2 )) %>% 
   add_header_above(c("Winter 2020" = 7 )) %>%
@@ -228,6 +238,24 @@ kable(table2b, caption="Table 1. Field soapberry bugs collected and tested for f
   kable_classic(html_font = "Cambria") 
   #row_spec(c(3,6,9,12,15), extra_css = "border-bottom: 1px solid") %>%
 ```
+
+
+```{r}
+colnames(table2b) = c("host plant", "population", "site", "latitude", "longitude", "n (site)", "n (pop)")
+
+appendix_table = kable(table2b, table.attr = "style='width:66%;'") %>% # caption=top_caption
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  add_header_above(c(" ", " ", " ", "Coordinates" = 2, "Sample Sizes" = 2 )) %>% 
+  add_header_above(c("Winter 2020" = 7 )) %>%
+  column_spec(1, width="3cm", background="white") %>%
+  kable_classic(html_font = "Cambria") %>%
+  row_spec(seq(1,nrow(table2b),2), background = "#f5f5f5")
+
+outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
+save_kable(appendix_table, file = paste0(outpath,"appendix_A-table1-latex.png"), keep_tex = TRUE, zoom = 5)
+```
+
+
 
 ```{r echo=FALSE}
 Fall_unique <- Fall %>%
@@ -283,6 +311,22 @@ kable(table2a, caption="Table 1. Field soapberry bugs collected and tested for f
   #row_spec(c(3,6,9,12,15), extra_css = "border-bottom: 1px solid") %>%
 ```
 
+```{r}
+colnames(table2a) = c("host plant", "population", "site", "latitude", "longitude", "n (site)", "n (pop)")
+
+top_caption = "Table 1. Field soapberry bugs collected and tested for flight trials."
+appendix_table =  kable(table2a, table.attr = "style='width:66%;'") %>% # caption=top_caption
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
+  add_header_above(c(" ", " ", " ", "Coordinates" = 2, "Sample Sizes" = 2 )) %>% 
+  add_header_above(c("Fall 2019" = 7 )) %>%
+  column_spec(1, width="3cm", background="white") %>%
+  kable_classic(html_font = "Cambria")  %>%
+  row_spec(seq(1,nrow(table2a),2), background = "#f5f5f5")
+
+outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
+save_kable(appendix_table, file = paste0(outpath,"appendix_A-table2-latex.png"), keep_tex = TRUE, zoom = 5)
+```
+
 ## Data Stats
 
 ### Mass Stats
@@ -308,7 +352,7 @@ kable(table3) %>%
 
 ```{r echo=FALSE}
 countBV <- nrow(d[d$host_plant == "C. corindum",])
-countGRT <- nrow(d[d$host_plant == "K.elegans",])
+countGRT <- nrow(d[d$host_plant == "K. elegans",])
 
 # calculate means and standard deviations
 host_masses <- t(rbind(tapply(X=data_all$mass, INDEX=data_all$host_plant, FUN=mean, na.rm=T),

@@ -1072,9 +1072,6 @@ model_table4 = calculate_P2(M4, "mass_per", "sex_c")
 
 Host plant was not a significant predictor, so we reran the model comparisons with wing-to-body ratio included as a predictor with mass percent change and sex.
 
-&nbsp;
-&nbsp;
-
 \subsubsection{Compare Models \\ \phantom{xyz}mass, sex, wing2body}
 
 ```{r warning=FALSE}
@@ -1099,25 +1096,14 @@ anova(m7, m13, test="Chisq") # Adding B*C does not improve fit
 
 ### Best Fit
 
-```{r warning=FALSE, results = "hold"}
+```{r warning=FALSE, results = "hide"}
 M5 = multinom(flight_case ~ mass_per + sex_c + wing2body_c, data = df, trace=FALSE)
 model_table5 = calculate_P3(M5)
 ```
 
-```{r}
-anova(M5, M4, test="Chisq") # Adding wing2body does improve fit
-```
+Computer results are rewritten in the table below in order to more legibly show the best fit model's **prediction equations**. Only prediction equations with at least one significant main effect are shown.
 
-To make the best fit model more legible, it is helpful to rewrite and print the model's **prediction equations**.
-
-```{r results='hold', echo=FALSE}
-EQ1 = get_prediction_eq(model_table5, 1, 2, " Mass %", " Sex", " Wing-to-Body", 
-                        "log(pi_-1 / pi_1) = ", "Flew in T1, not T2")
-EQ2 = get_prediction_eq(model_table5, 3, 1, " Mass %", " Sex", " Wing-to-Body", 
-                        "log(pi_2 / pi_-1) = ", "Flew in both, not T1")
-EQ3 = get_prediction_eq(model_table5, 3, 2, " Mass %", " Sex", " Wing-to-Body", 
-                        "log(pi_2 / pi_1) = ", "Flew in both, not T2")
-```
+\hfil ![](tables/appendix_B-table-all-w2b.png){width=100%} \hfil
 
 ### Visualize Significant Effects in Prediction Equations
 
@@ -1456,7 +1442,7 @@ Multi-categorical logit modeling was used to analyze the flight case for females
 
 ### Encodings
 
-In addition to the encodings and/or signs mentioned in section 3.4, below are the egg case categorical encodings used for the multi-categorical logit models that explain flight case selection for female SBB only.
+In addition to the encodings and/or signs mentioned in section 3.4, below are the egg case encodings used for the multi-categorical logit models that explain flight case selection for female SBB only.
 
 ```{r echo=FALSE, warning=FALSE}
 # key = response in T2 - response in T1
@@ -1529,18 +1515,15 @@ anova(m7, m12, test="Chisq") # Adding B*C does not improve fit
 
 ### Best Fit
 
-```{r results="hold", warning=FALSE, message=FALSE}
+```{r results="hide", warning=FALSE, message=FALSE}
 # same best fit model as the set of model comparisons in section 3.6.3
 M6 = multinom(flight_case ~ mass_per + egg_case, data = df, trace=FALSE) 
 model_table6 = calculate_P2(M6, "mass_per", "egg_case")
 ```
 
-To make the best fit model more legible, it is helpful to rewrite the model's **prediction equations**.
+Computer results are rewritten in the table below in order to more legibly show the best fit model's **prediction equations**. Only prediction equations with at least one significant main effect are shown.
 
-```{r results='hold', echo=FALSE}
-EQ = get_prediction_eqf(model_table6, 1, 2, " Mass %", " Egg Case",
-                        "log(pi_-1 / pi_1) = ","Flew in T1, not T2")
-```
+\hfil ![](tables/appendix_B-table-fem-sig.png){width=100%} \hfil
 
 ### Visualize Significant Effects in Prediction Equations
 
