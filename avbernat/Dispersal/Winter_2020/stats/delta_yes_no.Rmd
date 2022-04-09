@@ -139,6 +139,15 @@ data_tested <- data[[2]]
 d <- create_delta_data(data_tested)
 ```
 
+```{r}
+d[d$sex =="F" & d$flight_case == 1,] # no females where only flew in T2
+
+# d[d$sex =="F" & d$flight_case == 0,]$flight_case[1:15] = 1
+# 
+# d[d$sex =="F" & d$flight_case == 1,]
+```
+
+
 ```{r echo=FALSE}
 # for machine learning | creates CSV files to be read into the python script
 #test = d[,c(1:30,59,63:73)] # for machine learning
@@ -534,6 +543,62 @@ exp(5.19*-1 + 0.02*0) / exp(5.19*1 + 0.02*0)  * 100 - 100 # male
 ```
 
 ```{r}
+odds_table2
+```
+
+```{r}
+wings = odds_table2[3,]
+fems = odds_table2[2,]
+fems[1] = "Sex (female = 1)"
+
+males = fems
+males[1] = c("(male = -1)")
+males[2] = 1/.83
+males[3] = -0.19 * -1
+
+males[8] = 1 / 0.47
+males[9] = -0.76*-1
+
+males[11] = 1/0.57
+males[12] = -1 *-0.57
+
+
+odds_table2b = rbind(odds_table2[1,], fems, males, wings)
+
+```
+
+```{r}
+odds_table2b
+
+exp(-0.57)
+t1f = exp(23.74/100 + -0.57) # T1 F
+exp(0.57)
+t1m = exp(23.74/100 + 0.57) # T1 M
+
+exp(-0.76)
+t2f = exp(28.09/100 + -0.76) # T2 F
+exp(0.76)
+t2m = exp(28.09/100 + 0.76) # T2 M
+
+(0.4676664 / 0.6193405 - 1) * 100
+(2.138276/ 2.831764 - 1) *100
+
+t1f
+t1m
+t2f
+t2m
+
+(t2f/t1f - 1) *100 #14% more likely to fly in T1 than twice
+(t1m/t2m - 1) *100 # 21% more likely to fly twice than fly in T1
+
+(t1f/t1m - 1) * 100
+(t2f/t2m - 1) * 100
+
+exp(23.74*0.025 + -0.57)
+exp(23.74/100)
+```
+
+```{r}
 # calculate the 95% confidence interval
 # e ^ [ln(OR) + 1.96 sqrt(1/a + 1/b + 1/c + 1/d)]
 
@@ -559,24 +624,25 @@ get_95_CI = function(Beta, SE, Trans, OTrans) {
   
 }
 
-odds1 = get_95_CI(odds_table2[,3], odds_table2[,4], odds_table2$Transformation, odds_table2$OddsTransformation)
-odds2 = get_95_CI(odds_table2[,6], odds_table2[,7], odds_table2$Transformation, odds_table2$OddsTransformation)
-odds3 = get_95_CI(odds_table2[,9], odds_table2[,10], odds_table2$Transformation, odds_table2$OddsTransformation)
-odds4 = get_95_CI(odds_table2[,12], odds_table2[,13], odds_table2$Transformation, odds_table2$OddsTransformation)
-odds5 = get_95_CI(odds_table2[,15], odds_table2[,16], odds_table2$Transformation, odds_table2$OddsTransformation)
-odds6 = get_95_CI(odds_table2[,18], odds_table2[,19], odds_table2$Transformation, odds_table2$OddsTransformation)
+odds1 = get_95_CI(odds_table2b[,3], odds_table2b[,4], odds_table2b$Transformation, odds_table2b$OddsTransformation)
+odds2 = get_95_CI(odds_table2b[,6], odds_table2b[,7], odds_table2b$Transformation, odds_table2b$OddsTransformation)
+odds3 = get_95_CI(odds_table2b[,9], odds_table2b[,10], odds_table2b$Transformation, odds_table2b$OddsTransformation)
+odds4 = get_95_CI(odds_table2b[,12], odds_table2b[,13], odds_table2b$Transformation, odds_table2b$OddsTransformation)
+odds5 = get_95_CI(odds_table2b[,15], odds_table2b[,16], odds_table2b$Transformation, odds_table2b$OddsTransformation)
+odds6 = get_95_CI(odds_table2b[,18], odds_table2b[,19], odds_table2b$Transformation, odds_table2b$OddsTransformation)
 
-odds_table[,2] = odds1
-odds_table[,3] = odds2
-odds_table[,4] = odds3
-odds_table[,5] = odds4
-odds_table[,6] = odds5
-odds_table[,7] = odds6
+odds_tab = odds_table2b
 
-odds = odds_table
+odds_tab[,2] = odds1
+odds_tab[,3] = odds2
+odds_tab[,4] = odds3
+odds_tab[,5] = odds4
+odds_tab[,6] = odds5
+odds_tab[,7] = odds6
+
+odds = odds_tab
 odds
 ```
-
 
 ```{r}
 # 
@@ -668,20 +734,37 @@ odds
 
 ```{r}
 # doesn't work in bolding
-odds[1,2] <- cell_spec(odds_table[1,2] , bold = T)
-odds[2,3] <- cell_spec(odds_table[2,3], bold = T)
+odds[1,2] <- cell_spec(odds_tab[1,2] , bold = T)
+odds[2,3] <- cell_spec(odds_tab[2,3], bold = T)
 
-odds[1,4] <- cell_spec(odds_table[1,4] , bold = T)
-odds[2,4] <- cell_spec(odds_table[2,4] , bold = T)
-odds[3,4] <- cell_spec(odds_table[3,4] , bold = T)
+odds[1,4] <- cell_spec(odds_tab[1,4] , bold = T)
+odds[2,4] <- cell_spec(odds_tab[2,4] , bold = T)
+odds[3,4] <- cell_spec(odds_tab[3,4] , bold = T)
+odds[4,4] <- cell_spec(odds_tab[4,4] , bold = T)
 
-odds[1,5] <- cell_spec(odds_table[1,5] ,  bold = T)
-odds[2,5] <- cell_spec(odds_table[2,5] ,  bold = T)
-odds[3,5] <- cell_spec(odds_table[3,5] ,  bold = T)
+odds[1,5] <- cell_spec(odds_tab[1,5] ,  bold = T)
+odds[2,5] <- cell_spec(odds_tab[2,5] ,  bold = T)
+odds[3,5] <- cell_spec(odds_tab[3,5] ,  bold = T)
+odds[4,5] <- cell_spec(odds_tab[4,5] ,  bold = T)
 
-odds[2,6] <- cell_spec(odds_table[2,6], bold = T)
-odds[2,7] <- cell_spec(odds_table[2,7], bold = T)
+odds[2,6] <- cell_spec(odds_tab[2,6], bold = T)
+odds[2,7] <- cell_spec(odds_tab[2,7], bold = T)
 # 
+```
+
+```{r}
+odds_short = odds[,c(1,2,4,5)]
+
+odds_short[1,1] = "Mass % Change *"
+odds_short[4,1] = "Wing-to-Body *"
+```
+
+```{r}
+odds_s = odds_short
+odds_s[3,1] <- cell_spec(odds_short[3,1] , extra_css="padding-left:30px")
+
+rownames(odds_s) = NULL
+colnames(odds_s) = c("Variables in the Model", "Flew twice rather than flew in T1", "Flew twice rather than did not fly", "Flew in T1 rather than did not fly")
 ```
 
 
@@ -705,17 +788,17 @@ colnames(odds) = c("Variables in the Model", "Flew twice rather than flew in T1"
 
 align_cols = c("l", "c", "c", "c", "c", "c", "c") # align = align_cols
 
-paper_table2 = kable(odds, table.attr = "style='width:87%;'", escape = FALSE) %>% #caption = top_caption
+paper_table2 = kable(odds_s, table.attr = "style='width:87%;'", escape = FALSE) %>% #caption = top_caption
   kable_styling(bootstrap_options = c("striped", "hover", "condensed"))  %>%
   #kbl(format="latex") %>%
   column_spec(4,latex_valign = "m")  %>%
-  column_spec(1, width="3.9cm", background="white") %>%
-  column_spec(4, width="3.5cm", background="white") %>%
-  column_spec(7, width="3.3cm", background="white") %>%
-  column_spec(6, width="3.3cm", background="white") %>%
-  column_spec(5, width="3.5cm", background="white") %>%
-  column_spec(3, width="3.3cm", background="white") %>%
-  column_spec(2, width="3.3cm", background="white") %>%
+  column_spec(1, width="4.5cm", background="white") %>%
+  # column_spec(4, width="3.5cm", background="white") %>%
+  # column_spec(7, width="3.3cm", background="white") %>%
+  # column_spec(6, width="3.3cm", background="white") %>%
+  # column_spec(5, width="3.5cm", background="white") %>%
+  # column_spec(3, width="3.3cm", background="white") %>%
+  # column_spec(2, width="3.3cm", background="white") %>%
   kable_classic(html_font = "Arial") %>%
   row_spec(seq(1,nrow(odds),2), background = "#f5f5f5") %>%
   # column_spec(1, extra_css = "right-bottom: 1px solid") %>%
