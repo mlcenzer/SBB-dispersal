@@ -140,10 +140,9 @@ hist(raw_data$wing[raw_data$w_morph=="S"]/raw_data$thorax[raw_data$w_morph=="S"]
 
 From the histograms, the relationship between wing morph and wing-to-thorax ratio is bimodal. Long-winged bugs have larger wing-to-thorax ratios with a frequency peak around 2.75, whereas short-winged bugs have much smaller wing-to-thorax ratios with a frequency peak around 1.75. It is then noticeable that there are 22 bugs who had not been identified as either S or L during measurements, but cannot be categorized into S or L because their wing-to-thorax values reside in-between the two modes.
 
-
 ## Field Collection Numbers
 
-Bugs were collected from the field during different years and months. The barplots below display the bugs collected per **population**, **host plant**, and **sex** across the years and months:
+Bugs were collected from the field during different years and months. They were shipped to Davis, CA [2013-2016]; Tallahassee, FL [2017]; Chapel Hill, NC [2018]; or Chicago, IL [2019-2020]. The barplots below display the bugs collected per **population**, **host plant**, and **sex** across the years and months:
 
 &nbsp;
 
@@ -162,7 +161,7 @@ customPlot = list(geom_bar(position='stack', color="black", width=0.7),
                   )
 ```
 
-```{r pop-barplot, message=FALSE, fig.height=4.5, fig.width=7.2, fig.align="center", echo=FALSE}
+```{r pop-barplot, message=FALSE, fig.height=4.3, fig.width=7.2, fig.align="center", echo=FALSE}
 pop_colors = c("#2e5922","#417532", "#459c28", "#84c96d", "#8edb79", "#cae6c3",
                "#22abf0", "#66c3f2", "#b1dbf0")
 
