@@ -155,7 +155,7 @@ This shows us the data, but visually it's hard to read. Let's try mapping multip
 ## Create mappable multipolygon shapes for designated areas. Sites to use:
 
 ```{r}
-source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat_working_on/RSsrc/"
+source_path = "~/Desktop/git_repositories/SBB-dispersal/avbernat/RSsrc/"
 
 script_names = c("multipolygon_counties.R") # Loads and cleans data
 
@@ -166,8 +166,8 @@ for (script in script_names) {
 ```
 
 ```{r}
-multipolyF = map_multipolygons(dispersal_dataF)
-multipolyW = map_multipolygons(dispersal_dataW)
+multipolyF = map_multipolygons(dispersal_dataF, is_run_pops=FALSE) # just getting counties
+multipolyW = map_multipolygons(dispersal_dataW, is_run_pops=FALSE) # just getting counties
 ```
 
 ```{r}
@@ -183,6 +183,8 @@ tmap_mode("plot")
 combined_counties <- combinedF %>%
   group_by(counties) %>% # can also do population
     summarise_all(funs(list(na.omit(.))))
+
+combined_counties = st_as_sf(as.data.frame(combined_counties)) # remove tbl class
 
 tm_shape(combined_counties) +
   tm_polygons("counties") +
@@ -243,6 +245,15 @@ collect_by_season = cbind(collection_season, seasons)
 ```
 
 ```{r}
+collection_sitesF = st_as_sf(as.data.frame(collection_sitesF)) # remove tbl class
+collection_sitesW = st_as_sf(as.data.frame(collection_sitesW))
+
+collection_keysF = st_as_sf(as.data.frame(collection_keysF))
+collection_keysW = st_as_sf(as.data.frame(collection_keysW))
+
+```
+
+```{r}
 symbol_size = 0.3
 Fall_square_symbol = 0
 Winter_star_symbol = 8
@@ -252,16 +263,16 @@ colors = c("lightblue", "darkolivegreen3") # this one takes a few minutes (~4 mi
 pop = c("Gainesville", "\n\nLake Placid ", " ", "      Leesburg", "\nHomestead", " ", " ", "\n     Lake Wales")
 county_host_plant = cbind(county_hp, pop)
 
-tm_shape(FL_transformed, bbox=big_bb) +
-  tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey") +
+m1 =  tm_shape(FL_transformed, bbox=big_bb) +
+  tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey", labels.size=1) +
   tm_fill(col="white", alpha= 0.3) +
   tm_polygons("State") +
-  tm_scale_bar(position = c("left", "bottom")) + 
-  tm_text("State", size = 0.8, xmod=-9, ymod=6.7, col="grey38") +
+  tm_scale_bar(position = c("left", "bottom"), text.size = 0.8) + 
+  tm_text("State", size = 1, xmod=-8, ymod=7.0, col="grey38") +
 tm_shape(county_host_plant) +
   tm_polygons("host_plant", title="Host Plant", palette=colors) +
   tm_basemap("Hydda.Base") +
-  tm_text("pop", size = 0.8, xmod = -2, ymod = 1.2) +
+  tm_text("pop", size = 0.9, xmod = -2.15, ymod = 1.25) +
 tm_shape(collection_sitesF) +
   tm_dots(alpha = 0.8, size=symbol_size, shape=Fall_square_symbol, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) +
 tm_shape(collection_sitesW) +
@@ -270,22 +281,134 @@ tm_shape(collection_sitesW) +
   tm_dots("seasons", size=0.001, alpha=0.001, legend.show=FALSE) +
   tm_add_legend(type="symbol", labels=c("Fall 2019", "Winter 2020"), col="black", 
                 title="Season", shape=c(Fall_square_symbol,Winter_star_symbol)) +
-    tm_legend(position=c("left", "bottom")) 
+    tm_legend(position=c("left", "bottom"), title.size=1.3, legend.text.size = 1) 
 
 ## keys
 pop = c(" ", " ", "Key Largo    ", " ", " ", "\n\n\n\nNorth Key \nLargo", "Plantation Key   ", " ")
 county_host_plant = cbind(county_hp, pop)
 
-tm_shape(county_host_plant, bbox=keys_bb) + 
-    tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey") +
+m2 = tm_shape(county_host_plant, bbox=keys_bb) + 
+    tm_graticules(n.x = 3, n.y = 7, labels.format = list(digits=1), col= "grey", labels.size=1) +
     tm_polygons("host_plant", labels = NULL, legend.show = FALSE, palette=colors) +
-    tm_scale_bar(position = c("right", "bottom")) +
-  tm_text("pop", size = 0.7, xmod = -1.9, ymod = 0.7) +
+    tm_scale_bar(position = c("right", "bottom"), text.size = 0.8) +
+  tm_text("pop", size = 0.9, xmod = -1.99, ymod = 0.98) +
 tm_shape(collection_keysF) +
   tm_dots(alpha = 0.9, size=symbol_size, shape=Fall_square_symbol, title = 'Collection Sites', labels = "geometry", legend.show=TRUE) +
 tm_shape(collection_keysW) +
   tm_dots(alpha = 0.8, size=symbol_size, shape=Winter_star_symbol, title = 'Collection Sites', labels = "geometry", legend.show=TRUE)
 ```
+
+
+
+```{r}
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/"
+
+library(lme4)      # fit regressions 
+library(dplyr)     # data manipulation 
+library(ggformula) # ggplot plotting
+library(cowplot)   # ggplot helper functions to arrange multi-panel figures
+library(binom)     # binomial confidence intervals
+
+source_path = paste0(dir,"/Rsrc/")
+
+script_names = c("clean_morph_data.R",   # 1 function: read_morph_data() 
+                 "remove_torn_wings.R",  # 1 function: remove_torn_wings()
+                 "compare_models.R",     # 1 function: model_comparisonsAIC()
+                 "get_Akaike_weights.R") # 1 function: get_model_probs()
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+
+datapath = paste0(dir,"All_Morphology/stats/data/allmorphology05.18.21.csv")
+data_list = read_morph_data(datapath)
+
+raw_data = data_list[[1]]
+data_long = data_list[[2]] # long-wing bugs with wing-to-body value only
+
+data_long = remove_torn_wings(data_long)
+
+# repeating plot features
+customPlot = list(geom_bar(position='stack', color="black", width=0.7),
+                  theme_classic(),
+                  theme(axis.text.y = element_text(size=12),
+                        axis.text.x = element_text(size=12, angle = 45, hjust = 1.1),
+                        axis.title = element_text(size=21)), #,face="bold")),
+                  theme(plot.title = element_text(size = 17, face = "bold", hjust = 0.5)),
+                  theme(axis.title.x = element_text(size=13,vjust = -3)),
+                  theme(axis.title.y = element_text(size=13, vjust = 4)),
+                  theme(plot.margin=unit(c(1,1,1.1,1.2),"cm")),
+                  theme(legend.title = element_text(size=12, face="italic"),
+                         legend.text = element_text(size=12, face="italic"))
+                  )
+
+
+grt = "#99c98b" # "#68b054"
+bv = "#8fc9eb" # "#56B4E9"
+raw_data$pophost = as.factor(raw_data$pophost)
+raw_data$pophost = relevel(raw_data$pophost, "K. elegans")
+
+
+p2 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
+  labs(title=" ", 
+       fill="Host Plant", x="Field Collection Date", y="Number of Bugs Collected") +
+  scale_fill_manual(values=c(grt, bv)) + 
+  customPlot + 
+  theme(plot.title = element_text(hjust = 0)) +   
+  theme(plot.margin=unit(c(1,0.15,1,0.85), "cm")) # +
+  #ggtitle("A") 
+```
+
+```{r}
+raw_d = raw_data[raw_data$datetime == unique(raw_data$datetime)[8] | raw_data$datetime == unique(raw_data$datetime)[7], ]
+
+
+p3 = ggplot(data=subset(raw_d, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
+  labs(title=" ", 
+       fill="Host Plant", x=" ", y=" ") +
+  scale_fill_manual(values=c(grt, bv)) + 
+  customPlot + 
+  theme(plot.title = element_text(hjust = 0)) +   
+  theme(plot.margin=unit(c(1,0.15,1,0.85), "cm"))  +
+  theme(legend.position="none") +
+  theme(rect = element_rect(fill = "transparent"))
+```
+
+```{r}
+library(png)
+path = "/Users/anastasiabernat/Desktop/bv.png"
+path = "/Users/anastasiabernat/Desktop/grt3.png"
+img <- readPNG(system.file("img", path, package="png"))
+test = system.file("img", path, package="png")
+
+img = readPNG(path)
+# img
+
+plot(NA, xlim = c(1, 2), ylim = c(3, 4), type = "n", xaxt = "n", yaxt = "n", xlab = "", ylab = "", )
+rasterImage(img, 1, 3, 2, 4)
+```
+
+
+#```{r fig.width=5, fig.height=5}
+
+```{r}
+
+path = "/Users/anastasiabernat/Desktop/fig1.png"
+png(path, width = 8*2.5*1.32, height = 12*1.8*1.31, res = 600, units = "cm")
+
+library(grid)
+grid.newpage()
+x = 0.20
+y = 0.05
+print(p2, vp = viewport(0+x+y*2.7, 0.5+x+y+0.03, width=0.5+y*4, height=0.52)) #x,y coordinates 
+print(m1, vp = viewport(0+x+y+0.01, 0+x+y, width=0.6, height=0.6)) #x,y coordinates 
+print(m2, vp = viewport(0.5+x+y+0.01, 0+x+y+0.019, width=0.5, height=0.5)) #x,y coordinates of the grid here
+print(p3, vp = viewport(0+y*1.99, 0+x+y+0.046, width=0.14, height=0.30))
+
+dev.off()
+```
+
 
 ```{r}
 fall_data$date = "Oct/2019"

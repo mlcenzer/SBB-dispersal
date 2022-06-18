@@ -209,22 +209,26 @@ p1
 Stacked barplots are grouped and colored by population. Populations labeled in the legend are ordered by latitude from highest to lowest across Florida. Populations in shades of green indicate populations from the mainland of Florida while those in shades of blue indicate populations from the islands. Numbers above each bar represent the count between male (M) and female (F) soapberry bugs in each collection season. Population collections across datetimes are noticeably heterogeneous. However, collection numbers by sex and host plant were relatively homogeneous, as seen below.
 
 ```{r hostplant-barplot, fig.height=4.5, fig.width=7.2, echo=FALSE}
+grt = "#99c98b" # "#68b054"
+bv = "#8fc9eb" # "#56B4E9"
 raw_data$pophost = as.factor(raw_data$pophost)
 raw_data$pophost = relevel(raw_data$pophost, "K. elegans")
 p2 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
   labs(title="Collection numbers grouped by \n Host Plant and Datetime", 
        fill="Host Plant", x="Field Collection Date", y="Number of Bugs Collected") +
-  scale_fill_manual(values=c("#68b054", "#56B4E9")) + 
+  scale_fill_manual(values=c(grt, bv)) + 
   customPlot + 
   theme(plot.title = element_text(hjust = 0.5)) +   
   theme(plot.margin=unit(c(1,0.15,1,0.85), "cm"))
 ```
 
 ```{r sexes-barplot, fig.height=4.5, fig.width=7.2, echo=FALSE}
+male = "#646b73" # "#4d5257" # "#f0916e" # "#fa9f50" # "#80635b"
+female = "#db7d7e" #  "#db8687"#  "#c9afad" #"#d6a5a3"
 p3 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=sex)) + 
   labs(title="Collection numbers grouped by \n Sex and Datetime", 
        fill="Sex", x="Field Collection Date", y="Number of Bugs Collected") +
-  scale_fill_manual(values=c("#db5c5c", "#80635b"),
+  scale_fill_manual(values=c(female, male),
                     labels = c("Female     ", "Male       ")) + 
   customPlot + 
   theme(plot.title = element_text(hjust = 0.5)) +   
@@ -378,7 +382,7 @@ cd = as.data.frame(combos)
 
 ```{r echo=FALSE, message=FALSE, fig.width=10, fig.height=4.8, fig.align="center"}
 library(plotrix)
-cols = c("#80635b", "#db5c5c")
+cols = c(male, "#db5c5c")
 colorfunc = colorRamp(cols)
 x <- sort(runif(length(sex), min = 0, max = 1))
 mycolors = rgb(colorfunc(x), maxColorValue=255)
@@ -661,7 +665,7 @@ cd = as.data.frame(combos)
 
 
 ```{r echo=FALSE, message=FALSE, fig.width=10, fig.height=4.8}
-cols = c("#80635b", "#db5c5c")
+cols = c(male, "#db5c5c")
 colorfunc = colorRamp(cols)
 x <- sort(runif(length(sex), min = 0, max = 1))
 mycolors = rgb(colorfunc(x), maxColorValue=255)
@@ -771,9 +775,22 @@ month_labs = c("Feb", "May", "Aug", "Oct", "Dec")
 hp_col_pts = c("turquoise3", "springgreen4")
 hp_col_shade = c("turquoise3", "green")
 hp_col_lines = c("skyblue2", "darkgreen")
+
 sex_col_pts = c("brown3", "black")
 sex_col_shade = c("brown1", "sienna4")
 sex_col_lines = c("brown3", "black")
+
+grt = "#abd65c" # "#96bd4f"
+bv = "#91d0eb"
+hp_col_pts = c("turquoise3", "springgreen4")
+hp_col_shade = c(bv, grt)
+hp_col_lines = c("skyblue2", "darkgreen")
+
+female = "#d19479" # '#ab8e84'
+sex_col_pts = c("#c25153", male)
+sex_col_shade = c(female, male)
+sex_col_lines = c(female, male)
+
 
 font_size = 4.5
 ```
@@ -905,7 +922,7 @@ pvalue = paste0("italic(p)[glm]==", fit_pvalue)
 
 ### host plant
 p4 = ggplot() + 
-  ggtitle("A\n") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
+  ggtitle("A") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_allmonths, color="gainsboro") + 
   geom_line(aes(x=xmonth, y=wing_probs), linetype = "dashed") +
   geom_smooth(data=raw_data[!is.na(raw_data$wing_morph_b),], method="loess",
@@ -916,11 +933,17 @@ p4 = ggplot() +
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) + 
-  ylim(0,1.2) 
+  ylim(0,1.2) +
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=0.5)) + 
+  theme(legend.position = c(0.18, 1.02)) + 
+  labs(x = " ", y = " ") +
+  coord_cartesian(ylim=c(0.30,1.1))
+
+p40 = p4
 
 ### sex
 p5 = ggplot() + 
-  ggtitle("B\n") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
+  ggtitle("B") + xlab("Month") + ylab("Long-Wing Morph Frequency") +
   geom_vline(xintercept = xlab_allmonths, color="gainsboro") + 
   geom_line(aes(x=xmonth, y=wing_probs), linetype = "dashed") +
   geom_smooth(data=raw_data[!is.na(raw_data$wing_morph_b),], method="loess",
@@ -932,27 +955,29 @@ p5 = ggplot() +
   scale_fill_manual(values = c("Females" = sex_col_shade[1], "Males" = sex_col_shade[2])) +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) + 
   ylim(0,1.2) + 
-  theme(axis.title.y = element_blank()) 
+  theme(axis.title.y = element_blank(),
+        panel.border = element_rect(colour = "black", fill=NA, size=0.5)) +
+  theme(legend.position = c(0.15, 1.02)) + 
+  labs(x = " ", y = " ") +
+  coord_cartesian(ylim=c(0.30,1.1))
+
+p50 = p5
 
 # extract alpha, smoothing parameter, from LOESS regression(s)
 alpha = paste("alpha[loess]==", ggplot_build(p5)$data[[3]]$alpha[1])
 degree="lambda[loess]==0"
 
+pvalue45 = pvalue
+  
 p4 = p4 + 
   annotate(geom="text", x=7.2, y=0.92, label=alpha, parse=TRUE, size=font_size) +
   annotate(geom="text", x=7.2, y=0.99, label=degree, parse=TRUE, size=font_size) +
-  annotate(geom="text", x=5.5, y=0.718, label=pvalue, parse=TRUE, size=font_size) + 
-  theme(legend.position = c(0.18, 1.02)) + 
-  labs(x = " ", y = " ") +
-  coord_cartesian(ylim=c(0.30,1.1))
+  annotate(geom="text", x=5.5, y=0.718, label=pvalue, parse=TRUE, size=font_size) 
 
 p5 = p5 + 
   annotate(geom="text", x=7.2, y=0.98, label=alpha, parse=TRUE, size=font_size) +
   annotate(geom="text", x=7.2, y=1.05, label=degree, parse=TRUE, size=font_size) +
-  annotate(geom="text", x=6.5, y=0.85, label=pvalue, parse=TRUE, size=font_size) + 
-  theme(legend.position = c(0.15, 1.02)) + 
-  labs(x = " ", y = " ") +
-  coord_cartesian(ylim=c(0.30,1.1))
+  annotate(geom="text", x=6.5, y=0.85, label=pvalue, parse=TRUE, size=font_size)
 ```
 
 ```{r echo=FALSE}
@@ -1009,7 +1034,13 @@ p6 = ggplot() +
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) +
-  ylim(0,1.3)
+  ylim(0,1.3) + 
+  theme(legend.position = "none", 
+        panel.border = element_rect(colour = "black", fill=NA, size=0.5)) + 
+  labs(x = " ", y = " ") +
+  coord_cartesian(ylim=c(0.30,1.1))
+
+p60 = p6
 
 ### males & host plant
 p7 = ggplot() + 
@@ -1025,7 +1056,16 @@ p7 = ggplot() +
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) +
-  ylim(0,1.3)
+  ylim(0,1.3) +
+  #theme(legend.position = "none") + 
+  theme(legend.position = c(0.87, 0.25)) + 
+  theme(axis.title.y = element_blank(),
+        panel.border = element_rect(colour = "black", fill=NA, size=0.5)) + 
+  labs(x = " ", y = " ") +
+  coord_cartesian(ylim=c(0.30,1.1)) +
+  theme(legend.position="none")
+
+p70 = p7
 
 # extract alpha, smoothing parameter from LOESS regression(s)
 alpha = paste("alpha[loess]==", ggplot_build(p7)$data[[4]]$alpha[1])
@@ -1035,21 +1075,13 @@ p6 = p6 +
   annotate(geom="text", x=3, y=1.07, label="Females", size=6, fontface = 'italic') + 
   annotate(geom="text", x=6.5, y=0.99, label=alpha, parse=TRUE, size=font_size) +
   annotate(geom="text", x=6.5, y=1.06, label=degree, parse=TRUE, size=font_size) +
-  annotate(geom="text", x=7.5, y=0.40, label=pvalue, parse=TRUE, size=font_size) + 
-  theme(legend.position = "none") + 
-  labs(x = " ", y = " ") +
-  coord_cartesian(ylim=c(0.30,1.1))
+  annotate(geom="text", x=7.5, y=0.40, label=pvalue, parse=TRUE, size=font_size) 
 
 p7 = p7 + 
   annotate(geom="text", x=3, y=1.07, label="Males", size=6, fontface = 'italic') + 
   annotate(geom="text", x=6.5, y=0.99, label=alpha, parse=TRUE, size=font_size) +
   annotate(geom="text", x=6.5, y=1.06, label=degree,parse=TRUE, size=font_size) +
-  annotate(geom="text", x=7.5, y=0.40, label=pvalue, parse=TRUE, size=font_size) +
-  #theme(legend.position = "none") + 
-  theme(legend.position = c(0.87, 0.25)) + 
-  theme(axis.title.y = element_blank()) + 
-  labs(x = " ", y = " ") +
-  coord_cartesian(ylim=c(0.30,1.1))
+  annotate(geom="text", x=7.5, y=0.40, label=pvalue, parse=TRUE, size=font_size) 
 ```
 
 \begin{center}
@@ -1089,14 +1121,20 @@ p9 = ggplot() +
   geom_line(aes(x=predF$xyr, y=predF$wprobs), linetype = "dashed", color=sex_col_lines[1], lwd=0.5) +
   geom_line(aes(x=predM$xyr, y=predM$wprobs), linetype = "dashed", color=sex_col_lines[2], lwd=0.5) +
   geom_smooth(data=raw_data[!is.na(raw_data$wing_morph_b),], method="loess", span=0.8,
-              mapping = aes(x = dates, y = wing_morph_b, colour=`Sex`, fill=`Sex`), show.legend = F) + 
+              mapping = aes(x = dates, y = wing_morph_b, colour=`Sex`, fill=`Sex`), 
+              show.legend = F) + 
+  guides(color=F) +
   geom_point(data=dd, mapping = aes(x = dates, y = wing_morph_b, colour=`Sex`, size=n)) +
   customPlot + 
   scale_color_manual(values=c("Females" = sex_col_pts[1], "Males" = sex_col_pts[2])) +
   scale_fill_manual(values = c("Females" = sex_col_shade[1], "Males" = sex_col_shade[2])) +
   ylim(0,1.3) + # ylim bounds must include must all data points or points be marked as 'non-finite'
   coord_cartesian(ylim=c(0.30,1.1)) +
-  theme(legend.position = "none") 
+  theme(legend.position = c(0.1, 0.25),
+        panel.border = element_rect(colour = "black", fill=NA, size=0.5)) 
+    
+p90 = p9
+pvalue90 = pvalue
 
 p9 = p9 +
   annotate(geom="text", x=xlab_yrs[5], y=0.99, label=alpha, parse=TRUE, size=font_size) +
@@ -1225,7 +1263,10 @@ p10 = ggplot() +
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
   scale_x_continuous(breaks=xlab_months, labels=month_labs) + 
-  theme(axis.title.x = element_blank())
+  theme(axis.title.x = element_blank(),
+        panel.border = element_rect(colour = "black", fill=NA, size=0.5)) 
+ 
+p100 = p10
 
 ### sex
 p11 = ggplot() + 
@@ -1242,7 +1283,10 @@ p11 = ggplot() +
   scale_color_manual(values=c("Females" = sex_col_pts[1], "Males" = sex_col_pts[2])) +
   scale_fill_manual(values = c("Females" = sex_col_shade[1], "Males" = sex_col_shade[2])) +
   scale_x_continuous(breaks=xlab_months, labels= month_labs) + 
-  theme(axis.title.x = element_blank())
+  theme(axis.title.x = element_blank(),
+        panel.border = element_rect(colour = "black", fill=NA, size=0.5))
+
+p110 = p11
 
 # extract alpha, smoothing parameter from LOESS regression(s) and p-value from linear model
 alpha = paste("alpha[loess]==", ggplot_build(p10)$data[[3]]$alpha[1])
@@ -1250,6 +1294,8 @@ degree="lambda[loess]==0"
 fit_pvalue = round(summary(M3)$coeff[,"Pr(>|t|)"][5],7)
 pvalue = paste0("italic(p)[glm]==", fit_pvalue)
 
+pvalue111 = pvalue
+  
 p10 = p10 +
   annotate(geom="text", x=10, y=0.745, label=alpha, parse=TRUE, size=font_size) +
   annotate(geom="text", x=10, y=0.749, label=degree, parse=TRUE, size=font_size) +
@@ -1287,7 +1333,6 @@ fit_pvalue = round(summary(M3)$coeff[,"Pr(>|t|)"][7],3)
 pvalue = paste0("italic(p)[glm]==", fit_pvalue)
 ```
 
-
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 ### Panel C
 
@@ -1305,21 +1350,26 @@ p12 = ggplot() +
   scale_color_manual(values=c("C. corindum" = hp_col_pts[1], "K. elegans" = hp_col_pts[2])) +
   scale_fill_manual(values = c("C. corindum" = hp_col_shade[1], "K. elegans" = hp_col_shade[2])) +
   ylim(0.65, 0.85) +
-  theme(legend.position = c(0.1, 0.9)) +
+  theme(legend.position = c(0.1, 0.9),
+        panel.border = element_rect(colour = "black", fill=NA, size=0.5)) +
   #theme(legend.position = "none") +
   coord_cartesian(ylim=c(0.705,0.75))
+
+p120 = p12
+pvalue120 = pvalue
+date120 = unique(d$dates)[4]
 
 #### loess and linear regressions
 alpha = paste("alpha[loess]==", ggplot_build(p12)$data[[4]]$alpha[1])
 degree="lambda[loess]==0"
 
 p12 = p12 +
-  annotate(geom="text", x=unique(d$dates)[17]-330, y=0.743, label=alpha, parse=TRUE, size=font_size) +
-  annotate(geom="text", x=unique(d$dates)[17]-330, y=0.747, label=degree, parse=TRUE, size=font_size) +
-  annotate(geom="text", x=unique(d$dates)[15], y=0.716, label=pvalue, parse=TRUE, size=font_size)
+  annotate(geom="text", x=unique(d$dates)[7]-330, y=0.743, label=alpha, parse=TRUE, size=font_size) +
+  annotate(geom="text", x=unique(d$dates)[7]-330, y=0.747, label=degree, parse=TRUE, size=font_size) +
+  annotate(geom="text", x=unique(d$dates)[4], y=0.716, label=pvalue, parse=TRUE, size=font_size)
 ```
 
-```{r figure-5, echo=FALSE, message=FALSE, warning=FALSE, fig.height=10, fig.width=10}
+```{r figure-5, echo=FALSE, message=FALSE, warning=FALSE, fig.height=9, fig.width=10}
 #```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4.6, fig.width=5}
 paper_figure2 = ggdraw() +
   draw_plot(p10, 0, .5, .5, .5) +
@@ -1332,3 +1382,94 @@ paper_figure2
 ```
 
 **Figure 5. Evaluation of the wing-to-body ratio of soapberry bugs averaged across month and year from April 2013 to February 2020 using exploratory plots.** For each point, the mean wing-to-body ratio of soapberry bugs collected in each month and year is plotted with LOESS smooth lines (solid lines) and 95% confidence intervals (shading) and linear regression line(s) (dashed line(s)). 
+
+```{r}
+# p50 = p50 + 
+#   annotate(geom="text", x=7.2, y=0.98, label=alpha, parse=TRUE, size=font_size) +
+#   annotate(geom="text", x=7.2, y=1.05, label=degree, parse=TRUE, size=font_size) +
+#   annotate(geom="text", x=6.5, y=0.85, label=pvalue, parse=TRUE, size=font_size) + 
+#   theme(legend.position = c(0.15, 1.02)) + 
+#   labs(x = " ", y = " ") +
+#   coord_cartesian(ylim=c(0.30,1.1))
+```
+
+```{r echo=FALSE}
+p40 = p40 + theme(legend.position=c(0.85, 0.18)) +
+  coord_cartesian(ylim=c(0.30,1.01)) +
+  annotate(geom="text", x=5.5, y=0.718, label=pvalue45, parse=TRUE, size=font_size) 
+p50 = p50 + theme(legend.position=c(0.85, 0.18)) +
+  coord_cartesian(ylim=c(0.30,1.01))  +
+  annotate(geom="text", x=6.5, y=0.85, label=pvalue45, parse=TRUE, size=font_size)
+p90 = p90 + ylab(" ") + ggtitle("C") + theme(legend.position=c(0.95, 0.21))+
+  coord_cartesian(ylim=c(0.30,1.01)) +
+  annotate(geom="text", x=xlab_yrs[4], y=0.59, label=pvalue90, parse=TRUE, size=font_size)
+
+
+p100 = p100 + ggtitle("D") + theme(legend.position="none")  +
+  coord_cartesian(ylim=c(0.709,0.744)) +
+  annotate(geom="text", x=5, y=0.715, label=pvalue111, parse=TRUE, size=font_size)
+
+p110 = p110 + ggtitle("E") + theme(legend.position="none") +
+  coord_cartesian(ylim=c(0.709,0.744)) +
+  annotate(geom="text", x=5, y=0.715, label=pvalue111, parse=TRUE, size=font_size)
+
+p120 = p120 + ggtitle("F") + theme(legend.position="none") +
+  coord_cartesian(ylim=c(0.709,0.744)) +
+  annotate(geom="text", x=date120, y=0.716, label=pvalue120, parse=TRUE, size=font_size)
+```
+
+#```{r figure-paper, eval=FALSE, echo=FALSE, fig.height=9.5, fig.width=6.8, message=FALSE, warning=FALSE}
+
+```{r figure-paper, eval=FALSE, echo=FALSE, fig.height=9.5*.97, fig.width=6.8*.97, message=FALSE, warning=FALSE}
+options(scipen=0)
+p100t = p100 + theme(axis.text = element_text(size = 17)) 
+p110t = p110 + theme(axis.text = element_text(size = 17)) 
+p120t = p120 + theme(axis.text = element_text(size = 17))  +
+  theme(axis.title.x = element_blank())
+p40t = p40 + theme(axis.text = element_text(size = 17)) 
+p50t = p50 + theme(axis.text = element_text(size = 17)) 
+p90t = p90 + theme(axis.text = element_text(size = 17)) +
+  theme(axis.title.x = element_blank())
+
+paper_figure3 = ggdraw() +
+  draw_plot(p100t, x=0.01, y=0.25+0.02, width=0.49, height=0.23) + # D
+  draw_plot(p110t, x=0.51, y=0.25+0.02, width=0.49, height=0.23) + # E
+  draw_plot(p120t, x=0.01, y=0+0.02, width=0.99, height=0.23) + # F
+  draw_plot(p40t, x=0.01, y=0.75, width=0.49, height=0.25) + # A
+  draw_plot(p50t, x=0.51, y=0.75, width=0.49, height=0.25) + # B
+  draw_plot(p90t, x=0.01, y=0.50+0.02, width=0.99, height=0.23) + # C
+  draw_plot_label("Month", x=0.48, y=0.75+0.02, fontface="plain", size = 18) +
+  draw_plot_label("Month", x=0.49, y=0.25+0.03, fontface="plain", size = 18) + 
+  draw_plot_label("Year", x=0.49, y=0.50+0.03, fontface="plain", size = 18) + 
+  draw_plot_label("Year", x=0.49, y=0+0.03, fontface="plain", size = 19) + 
+  draw_plot_label("Long-Wing Morph Frequency", x=0, y=0.62, fontface="plain", angle=90, size = 18) + 
+  draw_plot_label("Wing-to-Body Ratio", x=0, y=0.15, fontface="plain", angle=90, size = 19)
+paper_figure3
+
+full_path = paste0( "~/Desktop/git_repositories/SBB-dispersal/avbernat/", 
+                    "Dispersal/Winter_2020/stats/images/paper_figure3S.pdf")
+ggsave(full_path, paper_figure3)
+```
+
+```{r echo=FALSE, eval=FALSE}
+p9 = p9 + ylab(" ") + ggtitle("F") + theme(legend.position="none")
+p4 = p4 + ggtitle("D") + theme(legend.position="none")
+p5 = p5 + ggtitle("E") + theme(legend.position="none")
+```
+
+```{r figure-paper, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=8, eval=FALSE}
+paper_figure3 = ggdraw() +
+  draw_plot(p4, x=0.01, y=0.25, width=0.49, height=0.25) + # A 1.0
+  draw_plot(p5, x=0.5, y=0.25, width=0.5, height=0.25) +
+  draw_plot(p9, x=0.01, y=0, width=0.99, height=0.25) + # F 1.0
+  draw_plot(p10, x=0.01, y=0.75, width=0.49, height=0.25) + # A .75
+  draw_plot(p11, x=0.5, y=0.75, width=0.50, height=0.25) + # B .75
+  draw_plot(p12, x=0.01, y=0.50, width=0.99, height=0.25) + # C .75  
+  draw_plot_label("Month", x=0.48, y=0.75, fontface="plain") +
+  draw_plot_label("Month", x=0.49, y=0.25, fontface="plain") + 
+  draw_plot_label("Wing-to-Body Ratio", x=0, y=0.65, fontface="plain", angle=90) +
+  draw_plot_label("Long-Wing Morph Frequency", x=0, y=0.15, fontface="plain", angle=90)
+paper_figure3
+```
+
+

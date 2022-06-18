@@ -1,0 +1,85 @@
+---
+title: "fig1"
+author: "Anastasia Bernat"
+date: "6/11/2022"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+rm(list = ls())
+
+# set working directory
+dir = "~/Desktop/git_repositories/SBB-dispersal/avbernat/"
+setwd(dir)
+
+knitr::opts_knit$set(root.dir = dir)
+knitr::opts_chunk$set(echo = TRUE)
+
+library(lme4)      # fit regressions 
+library(dplyr)     # data manipulation 
+library(ggformula) # ggplot plotting
+library(cowplot)   # ggplot helper functions to arrange multi-panel figures
+library(binom)     # binomial confidence intervals
+```
+
+
+
+```{r sourcing-scripts, message=FALSE}
+source_path = paste0(dir,"/Rsrc/")
+
+script_names = c("clean_morph_data.R",   # 1 function: read_morph_data() 
+                 "remove_torn_wings.R",  # 1 function: remove_torn_wings()
+                 "compare_models.R",     # 1 function: model_comparisonsAIC()
+                 "get_Akaike_weights.R") # 1 function: get_model_probs()
+
+for (script in script_names) { 
+  path = paste0(source_path, script)
+  source(path) 
+}
+```
+
+
+```{r reading-data}
+datapath = paste0(dir,"All_Morphology/stats/data/allmorphology05.18.21.csv")
+data_list = read_morph_data(datapath)
+
+raw_data = data_list[[1]]
+data_long = data_list[[2]] # long-wing bugs with wing-to-body value only
+
+data_long = remove_torn_wings(data_long)
+```
+
+
+```{r echo=FALSE}
+# repeating plot features
+customPlot = list(geom_bar(position='stack', color="black", width=0.7),
+                  theme_classic(),
+                  theme(axis.text.y = element_text(size=9),
+                        axis.text.x = element_text(size=9, angle = 45, hjust = 1.1),
+                        axis.title = element_text(size=17,face="bold")),
+                  theme(axis.title.x = element_text(size=10,vjust = -3)),
+                  theme(axis.title.y = element_text(size=10, vjust = 4)),
+                  theme(plot.margin=unit(c(1,1,1.1,1.2),"cm")),
+                  theme(legend.title = element_text(face="italic"),
+                         legend.text = element_text(face="italic"))
+                  )
+```
+
+
+```{r}
+grt = "#99c98b" # "#68b054"
+bv = "#8fc9eb" # "#56B4E9"
+raw_data$pophost = as.factor(raw_data$pophost)
+raw_data$pophost = relevel(raw_data$pophost, "K. elegans")
+p2 = ggplot(data=subset(raw_data, !is.na(datetime)), aes(x=datetime, fill=pophost)) + 
+  labs(title=" ", 
+       fill="Host Plant", x="Field Collection Date", y="Number of Bugs Collected") +
+  scale_fill_manual(values=c(grt, bv)) + 
+  customPlot + 
+  theme(plot.title = element_text(hjust = 0.5)) +   
+  theme(plot.margin=unit(c(1,0.15,1,0.85), "cm"))
+
+p2
+```
+

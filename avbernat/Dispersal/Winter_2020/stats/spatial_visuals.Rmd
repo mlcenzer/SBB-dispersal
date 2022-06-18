@@ -89,7 +89,7 @@ data_all <- data[[2]] # bugs tested
 ## Filter for only the columns you need.
 
 ```{r}
-# filtered_data <- full_data[,c("ID", "filename", "chamber", "set_number", "average_speed",
+# filtered_data <- data_all[,c("ID", "filename", "chamber", "set_number", "average_speed",
 #                         "total_flight_time", "distance", "shortest_flying_bout",
 #                         "longest_flying_bout", "portion_flying", "max_speed",
 #                         "sex", "population", "site", "host_plant", "flew", "flew_b", "flight_type",
@@ -168,7 +168,8 @@ FL_transformed <- st_transform(FL, 2236)
 ```{r}
 # For Other Populations and Their Respective Counties
 
-lake_wales <- "http://polygons.openstreetmap.fr/get_geojson.py?id=117732&params=0"
+lake_wales = "http://polygons.openstreetmap.fr/get_geojson.py?id=117732&params=0"
+
 polk <- "http://polygons.openstreetmap.fr/get_geojson.py?id=1214525&params=0"
   
 lake_placid <- "http://polygons.openstreetmap.fr/get_geojson.py?id=117660&params=0"
@@ -194,16 +195,17 @@ populations <- c("Lake Wales", "Lake Placid", "Homestead", "North Key Largo",
 counties <- c("Polk", "Highlands", "Miami-Dade", "Alachua", "Lake", "North Key Largo", "Key Largo", "Plantation Key")
 
 pop_urls <- c(lake_wales, lake_placid, homestead, north_key_largo, gainesville,
-          leesburg, key_largo, plantation_key)
+          #leesburg, 
+          key_largo, plantation_key)
 county_urls <- c(polk, highlands, miami_dade, alachua, lake, north_key_largo, key_largo, plantation_key)
 ```
 
 ```{r}
 # For Populations
-polylist <- lapply(pop_urls, st_read)
-sf_df <- do.call(rbind, polylist)
-pops <- cbind(sf_df, populations)
-df_transformed <- st_transform(pops, 2236)
+# polylist <- lapply(pop_urls, st_read)
+# sf_df <- do.call(rbind, polylist)
+# pops <- cbind(sf_df, populations)
+# df_transformed <- st_transform(pops, 2236)
 
 # For Counties
 countylist <- lapply(county_urls, st_read)
@@ -213,8 +215,8 @@ counties_transformed <- st_transform(counties_df, 2236)
 
 # Geometry reports
 
-poly_valid_report <- st_is_valid(df_transformed)
-poly_valid_report # see that LW, LP, GV, LB, and PK are invalid
+# poly_valid_report <- st_is_valid(df_transformed)
+# poly_valid_report # see that LW, LP, GV, LB, and PK are invalid
 
 county_valid_report <- st_is_valid(counties_transformed)
 county_valid_report

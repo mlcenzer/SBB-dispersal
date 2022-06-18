@@ -20,7 +20,7 @@
 
 ######## Just For Florida
 
-map_multipolygons = function(dispersal_data) {
+map_multipolygons = function(dispersal_data, is_run_pops=FALSE) {
 
   florida <- "http://polygons.openstreetmap.fr/get_geojson.py?id=162050&params=0"
 
@@ -81,13 +81,21 @@ map_multipolygons = function(dispersal_data) {
   county_urls <- c(polk, highlands, miami_dade, alachua, lake, north_key_largo, key_largo, plantation_key)
   
   
+  if (is_run_pops) {
+    ######## For Populations
+    polylist <- lapply(pop_urls, st_read)
+    sf_df <- do.call(rbind, polylist)
+    pops <- cbind(sf_df, populations)
+    df_transformed <- st_transform(pops, 2236)
+    
+    ######## Geometry reports
+    
+    poly_valid_report <- st_is_valid(df_transformed)
+    poly_valid_report # see that LW, LP, GV, LB, and PK are invalid
+    
+  }
   
-  ######## For Populations
-  polylist <- lapply(pop_urls, st_read)
-  sf_df <- do.call(rbind, polylist)
-  pops <- cbind(sf_df, populations)
-  df_transformed <- st_transform(pops, 2236)
-  
+
   ######## For Counties
   countylist <- lapply(county_urls, st_read)
   sf_df_county <- do.call(rbind, countylist)
@@ -95,9 +103,6 @@ map_multipolygons = function(dispersal_data) {
   counties_transformed <- st_transform(counties_df, 2236)
   
   ######## Geometry reports
-  
-  poly_valid_report <- st_is_valid(df_transformed)
-  poly_valid_report # see that LW, LP, GV, LB, and PK are invalid
   
   county_valid_report <- st_is_valid(counties_transformed)
   county_valid_report
