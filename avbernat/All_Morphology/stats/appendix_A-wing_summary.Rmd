@@ -991,7 +991,7 @@ dfM = dd[dd$sex=="Males",]
 \end{center}
 
 ```{r message=FALSE}
-# multi-variate model with month, sex, and host plant predicting wing morph
+# multiple variate model with month, sex, and host plant predicting wing morph
 fit2 = glm(wing_morph_b ~ sex_b * pophost_b + 
           pophost_b * month_of_year, family = "binomial", data = raw_data)
 
@@ -1089,7 +1089,7 @@ p7 = p7 +
 \end{center}
 
 ```{r}
-# multi-variate model with year, sex, and host plant predicting wing morph
+# multiple variate model with year, sex, and host plant predicting wing morph
 fit3 = glm(wing_morph_b ~ sex_b * dates, family = "binomial", data = raw_data)
 
 set.seed(194842)
@@ -1171,7 +1171,7 @@ paper_figure1
 #ggsave("images/paper_figure1.pdf", paper_figure1)
 ```
 
-**Extension of Figure 4. Evaluation of the frequency of long-winged morph soapberry bugs averaged across month and year from April 2013 to February 2020 using exploratory plots.** For each point, the mean frequency of long-winged morphs of each month and year is plotted with LOESS smooth lines (solid lines) and 95% confidence intervals (shading) and linear regression line(s) (dashed line(s)).
+Evaluation of the frequency of long-winged morph soapberry bugs averaged across month and year from April 2013 to February 2020 using exploratory plots. For each point, the mean frequency of long-winged morphs of each month and year is plotted with LOESS smooth lines (solid lines) and 95% confidence intervals (shading) and linear regression line(s) (dashed line(s)).
 
 \newpage
 
@@ -1312,7 +1312,7 @@ p11 = p11 +
 \end{center}
 
 ```{r}
-# multi-variate model with year and host plant predicting wing2body ratio
+# multiple variate model with year and host plant predicting wing2body ratio
 fit4 = glm(wing2body ~ pophost_b * dates, data = data_long)
 
 set.seed(194842)
@@ -1381,95 +1381,8 @@ paper_figure2
 #ggsave("images/paper_figure2.png", paper_figure2)
 ```
 
-**Figure 5. Evaluation of the wing-to-body ratio of soapberry bugs averaged across month and year from April 2013 to February 2020 using exploratory plots.** For each point, the mean wing-to-body ratio of soapberry bugs collected in each month and year is plotted with LOESS smooth lines (solid lines) and 95% confidence intervals (shading) and linear regression line(s) (dashed line(s)). 
-
-```{r}
-# p50 = p50 + 
-#   annotate(geom="text", x=7.2, y=0.98, label=alpha, parse=TRUE, size=font_size) +
-#   annotate(geom="text", x=7.2, y=1.05, label=degree, parse=TRUE, size=font_size) +
-#   annotate(geom="text", x=6.5, y=0.85, label=pvalue, parse=TRUE, size=font_size) + 
-#   theme(legend.position = c(0.15, 1.02)) + 
-#   labs(x = " ", y = " ") +
-#   coord_cartesian(ylim=c(0.30,1.1))
-```
-
-```{r echo=FALSE}
-p40 = p40 + theme(legend.position=c(0.85, 0.18)) +
-  coord_cartesian(ylim=c(0.30,1.01)) +
-  annotate(geom="text", x=5.5, y=0.718, label=pvalue45, parse=TRUE, size=font_size) 
-p50 = p50 + theme(legend.position=c(0.85, 0.18)) +
-  coord_cartesian(ylim=c(0.30,1.01))  +
-  annotate(geom="text", x=6.5, y=0.85, label=pvalue45, parse=TRUE, size=font_size)
-p90 = p90 + ylab(" ") + ggtitle("C") + theme(legend.position=c(0.95, 0.21))+
-  coord_cartesian(ylim=c(0.30,1.01)) +
-  annotate(geom="text", x=xlab_yrs[4], y=0.59, label=pvalue90, parse=TRUE, size=font_size)
-
-
-p100 = p100 + ggtitle("D") + theme(legend.position="none")  +
-  coord_cartesian(ylim=c(0.709,0.744)) +
-  annotate(geom="text", x=5, y=0.715, label=pvalue111, parse=TRUE, size=font_size)
-
-p110 = p110 + ggtitle("E") + theme(legend.position="none") +
-  coord_cartesian(ylim=c(0.709,0.744)) +
-  annotate(geom="text", x=5, y=0.715, label=pvalue111, parse=TRUE, size=font_size)
-
-p120 = p120 + ggtitle("F") + theme(legend.position="none") +
-  coord_cartesian(ylim=c(0.709,0.744)) +
-  annotate(geom="text", x=date120, y=0.716, label=pvalue120, parse=TRUE, size=font_size)
-```
-
-#```{r figure-paper, eval=FALSE, echo=FALSE, fig.height=9.5, fig.width=6.8, message=FALSE, warning=FALSE}
+Evaluation of the wing-to-body ratio of soapberry bugs averaged across month and year from April 2013 to February 2020 using exploratory plots. For each point, the mean wing-to-body ratio of soapberry bugs collected in each month and year is plotted with LOESS smooth lines (solid lines) and 95% confidence intervals (shading) and linear regression line(s) (dashed line(s)). 
 
 ```{r figure-paper, eval=FALSE, echo=FALSE, fig.height=9.5*.97, fig.width=6.8*.97, message=FALSE, warning=FALSE}
-options(scipen=0)
-p100t = p100 + theme(axis.text = element_text(size = 17)) 
-p110t = p110 + theme(axis.text = element_text(size = 17)) 
-p120t = p120 + theme(axis.text = element_text(size = 17))  +
-  theme(axis.title.x = element_blank())
-p40t = p40 + theme(axis.text = element_text(size = 17)) 
-p50t = p50 + theme(axis.text = element_text(size = 17)) 
-p90t = p90 + theme(axis.text = element_text(size = 17)) +
-  theme(axis.title.x = element_blank())
-
-paper_figure3 = ggdraw() +
-  draw_plot(p100t, x=0.01, y=0.25+0.02, width=0.49, height=0.23) + # D
-  draw_plot(p110t, x=0.51, y=0.25+0.02, width=0.49, height=0.23) + # E
-  draw_plot(p120t, x=0.01, y=0+0.02, width=0.99, height=0.23) + # F
-  draw_plot(p40t, x=0.01, y=0.75, width=0.49, height=0.25) + # A
-  draw_plot(p50t, x=0.51, y=0.75, width=0.49, height=0.25) + # B
-  draw_plot(p90t, x=0.01, y=0.50+0.02, width=0.99, height=0.23) + # C
-  draw_plot_label("Month", x=0.48, y=0.75+0.02, fontface="plain", size = 18) +
-  draw_plot_label("Month", x=0.49, y=0.25+0.03, fontface="plain", size = 18) + 
-  draw_plot_label("Year", x=0.49, y=0.50+0.03, fontface="plain", size = 18) + 
-  draw_plot_label("Year", x=0.49, y=0+0.03, fontface="plain", size = 19) + 
-  draw_plot_label("Long-Wing Morph Frequency", x=0, y=0.62, fontface="plain", angle=90, size = 18) + 
-  draw_plot_label("Wing-to-Body Ratio", x=0, y=0.15, fontface="plain", angle=90, size = 19)
-paper_figure3
-
-full_path = paste0( "~/Desktop/git_repositories/SBB-dispersal/avbernat/", 
-                    "Dispersal/Winter_2020/stats/images/paper_figure3S.pdf")
-ggsave(full_path, paper_figure3)
+source("get_paper_figure.R")
 ```
-
-```{r echo=FALSE, eval=FALSE}
-p9 = p9 + ylab(" ") + ggtitle("F") + theme(legend.position="none")
-p4 = p4 + ggtitle("D") + theme(legend.position="none")
-p5 = p5 + ggtitle("E") + theme(legend.position="none")
-```
-
-```{r figure-paper, echo=FALSE, message=FALSE, warning=FALSE, fig.height=12, fig.width=8, eval=FALSE}
-paper_figure3 = ggdraw() +
-  draw_plot(p4, x=0.01, y=0.25, width=0.49, height=0.25) + # A 1.0
-  draw_plot(p5, x=0.5, y=0.25, width=0.5, height=0.25) +
-  draw_plot(p9, x=0.01, y=0, width=0.99, height=0.25) + # F 1.0
-  draw_plot(p10, x=0.01, y=0.75, width=0.49, height=0.25) + # A .75
-  draw_plot(p11, x=0.5, y=0.75, width=0.50, height=0.25) + # B .75
-  draw_plot(p12, x=0.01, y=0.50, width=0.99, height=0.25) + # C .75  
-  draw_plot_label("Month", x=0.48, y=0.75, fontface="plain") +
-  draw_plot_label("Month", x=0.49, y=0.25, fontface="plain") + 
-  draw_plot_label("Wing-to-Body Ratio", x=0, y=0.65, fontface="plain", angle=90) +
-  draw_plot_label("Long-Wing Morph Frequency", x=0, y=0.15, fontface="plain", angle=90)
-paper_figure3
-```
-
-
