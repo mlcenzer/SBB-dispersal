@@ -9,7 +9,7 @@ get_model_probs <- function(AIC) {
   
   deltaAIC <- AIC - min(AIC)
   
-  relative_likelihood <- exp(-1/2 *  deltaAIC )
+  relative_likelihood <- exp(-1/2 * deltaAIC)
   
   Akaike_weights = relative_likelihood / sum(relative_likelihood) # relative likelihoods are normalized
   

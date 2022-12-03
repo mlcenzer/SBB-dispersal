@@ -2,17 +2,29 @@
 
 library(plotrix)
 
+## panel lettering
+panelA = "a"
+panelB = "b"
+panelC = "c"
+panelD = "d"
+panelE = "e"
+panelF = "f"
+
+font_face = 2
+
 ## scale/magnifications
 c0 = 1
 c1 = 1.3*2  # size of points
 c2 = 1.2*2  # size of large text
 c3 = 2      # size of smaller text
-c4 = 2*2    # size of title
+c4 = 2*1.8    # size of title
 c5 = 1.7
 c6 = 1.4
 c7 = 1.3
+c8 = 1.6
 c11 = 0.65
 c21 = 1.2
+
 
 c_ax=1.7
 c_lab=1.8

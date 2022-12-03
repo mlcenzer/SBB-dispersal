@@ -29,8 +29,7 @@ GENERAL INFORMATION
 
 	C. Alternate Contact Information
 		Name: Anastasia V. Bernat
-		Institution: Pacific Northwest National Laboratory
-		Email: <TBD>
+		Email: anastabernat@gmail.com
 
 	C. Acknowledged Co-Investigator
 		Name: Ana Silberg
@@ -172,12 +171,14 @@ METHODOLOGICAL INFORMATION
 	A. Protocol of field collection of soapberry bugs follows <reference pages follows page 7 in...e.g.>***
 
 			Bernat, A. and Cenzer, M. 2022. Dispersal-behavioral plasticity within an 
-			insect-host system undergoing human-induced rapid evolutionary change (HIREC). biorxiv. <temp>
+			insect-host system undergoing human-induced rapid evolutionary change (HIREC). bioRxiv. 
+			https://doi.org/10.1101/2022.06.19.496739.
 
 	B. Protocol for flight trials follows <reference pages>***
 
 			Bernat, A. and Cenzer, M. 2022. Dispersal-behavioral plasticity within an 
-			insect-host system undergoing human-induced rapid evolutionary change (HIREC). biorxiv. <temp>
+			insect-host system undergoing human-induced rapid evolutionary change (HIREC). bioRxiv. 
+			https://doi.org/10.1101/2022.06.19.496739.
 
 			as well as 
 

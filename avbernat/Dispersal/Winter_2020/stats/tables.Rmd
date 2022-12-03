@@ -87,7 +87,7 @@ paper_table = kable(table_season) %>%
 paper_table
 
 outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
-save_kable(paper_table, paste0(outpath,"paper-table1.pdf"))
+# save_kable(paper_table, paste0(outpath,"paper-table1.pdf"))
 ```
 
 ```{r echo=FALSE}
@@ -100,6 +100,27 @@ paper_table = kable(table_season, caption=" ", table.attr = "style='width:60%;'"
 
 outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
 save_kable(paper_table, file = paste0(outpath,"paper-table1-latex.png"), keep_tex = TRUE, zoom = 5)
+```
+
+
+```{r}
+outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
+writeLines(paper_table, paste0(outpath,"paper-table1-latex.html"))
+
+# doesn't work b/c it's html:
+# save_kable(paper_table, file = paste0(outpath,"paper-table1-latex.tex"), keep_tex = TRUE)
+
+# OR can work with latex only to create the table and save that:
+
+paper_table_latex = kable(table_season, format='latex', booktabs = T, linesep = "\\addlinespace")  %>%
+  # kable(table_season, format='latex') %>%
+  kable_styling(latex_options = c("striped", "scale_down")) %>% 
+  row_spec(seq(1,6,2), background = "#f5f5f5") %>%
+  kable_classic(html_font = "Arial") # Arial doesn't work
+
+# save_kable(paper_table_latex, file = paste0(outpath,"paper-table1-latex2.pdf"))
+# writeLines(paper_table_latex, paste0(outpath,"paper-table1-latex.tex"))
+## save_kable(paper_table, file = paste0(outpath,"paper-table1-latex2.png"), keep_tex = TRUE, zoom = 5)
 ```
 
 ## Winter
@@ -252,7 +273,7 @@ appendix_table = kable(table2b, table.attr = "style='width:66%;'") %>% # caption
   row_spec(seq(1,nrow(table2b),2), background = "#f5f5f5")
 
 outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
-save_kable(appendix_table, file = paste0(outpath,"appendix_A-table1-latex.png"), keep_tex = TRUE, zoom = 5)
+# save_kable(appendix_table, file = paste0(outpath,"appendix_A-table1-latex.png"), keep_tex = TRUE, zoom = 5)
 ```
 
 
@@ -324,7 +345,7 @@ appendix_table =  kable(table2a, table.attr = "style='width:66%;'") %>% # captio
   row_spec(seq(1,nrow(table2a),2), background = "#f5f5f5")
 
 outpath = "/Users/anastasiabernat/Desktop/git_repositories/SBB-dispersal/avbernat/Dispersal/Winter_2020/stats/tables/"
-save_kable(appendix_table, file = paste0(outpath,"appendix_A-table2-latex.png"), keep_tex = TRUE, zoom = 5)
+# save_kable(appendix_table, file = paste0(outpath,"appendix_A-table2-latex.png"), keep_tex = TRUE, zoom = 5)
 ```
 
 ## Data Stats

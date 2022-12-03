@@ -11,7 +11,7 @@ remove_torn_wings = function(d) {
   
   d2 = d[-rows2remove,]
   
-  cat("\nnumber of bugs with torn wings:", length(rows2remove), "\n")
+  cat("number of bugs with torn wings:", length(rows2remove), "\n")
   
   return(d2)
 }

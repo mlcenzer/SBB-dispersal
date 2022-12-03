@@ -1,40 +1,46 @@
 # figure code prep and output
 
+panelC = "c"
+panelD = "d"
+panelE = "e"
+panelF = "f"
+
 p40 = p40 + theme(legend.position=c(0.85, 0.18)) +
   coord_cartesian(ylim=c(0.30,1.01)) +
-  annotate(geom="text", x=5.5, y=0.718, label=pvalue45, parse=TRUE, size=font_size)
+  annotate(geom="text", x=5.5, y=0.718, label=pvalue45, parse=TRUE, size=font_size, fontface="plain")
 p50 = p50 + theme(legend.position=c(0.85, 0.18)) +
   coord_cartesian(ylim=c(0.30,1.01))  +
-  annotate(geom="text", x=6.5, y=0.85, label=pvalue45, parse=TRUE, size=font_size)
-p90 = p90 + ylab(" ") + ggtitle("C") + theme(legend.position=c(0.95, 0.21))+
+  annotate(geom="text", x=6.5, y=0.85, label=pvalue45, parse=TRUE, size=font_size, fontface="plain")
+p90 = p90 + ylab(" ") + ggtitle(panelC) + theme(legend.position=c(0.95, 0.21))+
   coord_cartesian(ylim=c(0.30,1.01)) +
-  annotate(geom="text", x=xlab_yrs[4], y=0.59, label=pvalue90, parse=TRUE, size=font_size)
+  annotate(geom="text", x=xlab_yrs[4], y=0.59, label=pvalue90, parse=TRUE, size=font_size, fontface="plain")
 
 
-p100 = p100 + ggtitle("D") + theme(legend.position="none")  +
+p100 = p100 + ggtitle(panelD) + theme(legend.position="none")  +
   coord_cartesian(ylim=c(0.709,0.744)) +
-  annotate(geom="text", x=5, y=0.715, label=pvalue111, parse=TRUE, size=font_size)
+  annotate(geom="text", x=5, y=0.715, label=pvalue111, parse=TRUE, size=font_size, fontface="plain")
 
-p110 = p110 + ggtitle("E") + theme(legend.position="none") +
+p110 = p110 + ggtitle(panelE) + theme(legend.position="none") +
   coord_cartesian(ylim=c(0.709,0.744)) +
-  annotate(geom="text", x=5, y=0.715, label=pvalue111, parse=TRUE, size=font_size)
+  annotate(geom="text", x=5, y=0.715, label=pvalue111, parse=TRUE, size=font_size, fontface="plain")
 
-p120 = p120 + ggtitle("F") + theme(legend.position="none") +
+p120 = p120 + ggtitle(panelF) + theme(legend.position="none") +
   coord_cartesian(ylim=c(0.709,0.744)) +
-  annotate(geom="text", x=date120, y=0.716, label=pvalue120, parse=TRUE, size=font_size)
+  annotate(geom="text", x=date120, y=0.716, label=pvalue120, parse=TRUE, size=font_size, fontface="plain")
 
 
 #```{r figure-paper, eval=FALSE, echo=FALSE, fig.height=9.5, fig.width=6.8, message=FALSE, warning=FALSE}
 
 options(scipen=0)
-p100t = p100 + theme(axis.text = element_text(size = 17))
-p110t = p110 + theme(axis.text = element_text(size = 17))
-p120t = p120 + theme(axis.text = element_text(size = 17))  +
+p100t = p100 + theme(axis.text = element_text(size = 17), plot.title=element_text(size=25, face="bold"))
+p110t = p110 + theme(axis.text = element_text(size = 17), plot.title=element_text(size=25, face="bold"))
+p120t = p120 + theme(axis.text = element_text(size = 17), plot.title=element_text(size=25, face="bold"))  +
   theme(axis.title.x = element_blank())
-p40t = p40 + theme(axis.text = element_text(size = 17))
-p50t = p50 + theme(axis.text = element_text(size = 17))
-p90t = p90 + theme(axis.text = element_text(size = 17)) +
+p40t = p40 + theme(axis.text = element_text(size = 17), plot.title=element_text(size=25, face="bold"))
+p50t = p50 + theme(axis.text = element_text(size = 17), plot.title=element_text(size=25, face="bold"))
+p90t = p90 + theme(axis.text = element_text(size = 17), plot.title=element_text(size=25, face="bold")) +
   theme(axis.title.x = element_blank())
+
 
 paper_figure3 = ggdraw() +
   draw_plot(p100t, x=0.01, y=0.25+0.02, width=0.49, height=0.23) + # D
@@ -52,5 +58,5 @@ paper_figure3 = ggdraw() +
 paper_figure3
 
 full_path = paste0( "~/Desktop/git_repositories/SBB-dispersal/avbernat/",
-                    "Dispersal/Winter_2020/stats/images/paper_figure3S.pdf")
+                    "Dispersal/Winter_2020/stats/images/paper_figure3S-scireport.pdf")
 ggsave(full_path, paper_figure3)

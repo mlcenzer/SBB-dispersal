@@ -1,5 +1,15 @@
 
 # Get Figure 5
+df_all = df4
+
+panelA = "a"
+panelB = "b"
+panelC = "c"
+panelD = "d"
+panelE = "e"
+panelF = "f"
+
+font_face = 2 # 1 is plain and 2 is boldface
 
 plot2 = function(df, pp, PP, gradient=TRUE, circles=TRUE, stochasticity=TRUE, points=TRUE, model_wo_w2b=FALSE) {
   
@@ -31,7 +41,7 @@ plot2 = function(df, pp, PP, gradient=TRUE, circles=TRUE, stochasticity=TRUE, po
     points(df$mass_per[Frows], PP[Frows,4], col=f2col, type="l") #darkred   
   }
   mtext(expression(italic("Females")), side=3, adj=0.05, line=-2, cex=1.5, font=2)
-  mtext("A", side=3, adj=0.01, line=0.5, cex=1.8, font=1)
+  mtext(panelA, side=3, adj=0.01, line=0.5, cex=1.8, font=font_face)
   text(64,0.65, labels="Flew in T1", col=f1t1col, cex=c2)
   text(20,0.70, labels="Did Not Fly", col=nf_dark, cex=c2) 
   text(82,0.37, labels="Flew Twice", col=f2col_dark, cex=c2) #maroon
@@ -106,7 +116,7 @@ plot3 = function(df, pp, PP, gradient=TRUE, circles=TRUE, stochasticity=TRUE, po
     points(df$mass_per[Mrows], PP[Mrows,4], col=f2col, type="l", cex=0.45, lty=1) # darkred
   }
   mtext(expression(italic("Males")), side=3, adj=0.05, line=-2, cex=1.5, font=2)
-  mtext("B", side=3, adj=0.01, line=0.5, cex=1.8, font=1)
+  mtext(panelB, side=3, adj=0.01, line=0.5, cex=1.8, font=font_face)
   text(22,0.35, labels="Flew in T1", col=f1t1col, cex=c2)
   text(52.5,0.18, labels="Did Not Fly", col=nf_dark, cex=c2)
   text(-14, -0.01, labels="Flew in T2", col=f1t2col_dark, cex=c2)
@@ -186,7 +196,7 @@ plot12 = function(df, pp, points=FALSE) {
   }
   mtext(expression(italic("Laid Eggs Twice")), side=3, adj=0.05, line=-2, cex=c0, font=2)
   
-  mtext("C", side=3, adj=0, line=0.5, cex=c5, font=1)
+  mtext(panelC, side=3, adj=0, line=0.5, cex=c5, font=font_face)
   
   text(89,0.60, labels="Flew in T1", col=f1t1col, cex=c6)
   text(89,0.25, labels="Did Not Fly", col=nf_dark, cex=c6)
@@ -211,7 +221,7 @@ plot10 = function(df, pp, points=FALSE) {
   }
   mtext(expression(italic("Laid Eggs in T1")), side=3, adj=0.05, line=-2, cex=c0, font=2)
   
-  mtext("D", side=3, adj=0, line=0.5, cex=c5, font=1)
+  mtext(panelD, side=3, adj=0, line=0.5, cex=c5, font=font_face)
   
   text(25,0.75, labels="Flew Twice", col=f2col_dark, cex=c6)
   text(25,0.20, labels="Did Not Fly", col=nf_dark, cex=c6)
@@ -236,7 +246,7 @@ plot11 = function(df, pp, points=FALSE) {
   
   mtext(expression(italic("Laid No Eggs")), side=3, adj=0.05, line=-2, cex=c0, font=2)
   
-  mtext("F", side=3, adj=0, line=0.5, cex=c5, font=1)
+  mtext(panelF, side=3, adj=0, line=0.5, cex=c5, font=font_face)
   
   text(45,0.65, labels="Flew Twice", col=f2col_dark, cex=c6)
   text(45,0.44, labels="Flew in T1", col=f1t1col, cex=c6)
@@ -261,7 +271,7 @@ plot13 = function(df, pp, points=FALSE) {
   }
   mtext(expression(italic("Laid Eggs in T2")), side=3, adj=0.05, line=-2, cex=c0, font=2)
   
-  mtext("E", side=3, adj=0, line=0.5, cex=c5, font=1)
+  mtext(panelE, side=3, adj=0, line=0.5, cex=c5, font=font_face)
   
   text(93,0.84, labels="Flew in T1", col=f1t1col, cex=c6)
   text(93,0.16, labels="Did Not Fly", col=nf_dark, cex=c6)
@@ -332,15 +342,15 @@ plot_color_scale()
 
 ###### extra code
 
-keep = function() {
-  par(mar = c(4, 4, 2.5, 0.2), bg="#f2f2f2")
-  # par(bg = "#f2f2f2")
-  plot3(df5,pp5, pp4, gradient=TRUE, circles=FALSE, stochasticity=TRUE, points=FALSE)
-  rect(par("usr")[1], par("usr")[3],
-       par("usr")[2], par("usr")[4],
-       col = "#ffffff") # Color
-  par(new = TRUE)
-  plot3(df5,pp5, pp4, gradient=TRUE, circles=FALSE, stochasticity=TRUE, points=FALSE)
-  
-}
+# keep = function() {
+#   par(mar = c(4, 4, 2.5, 0.2), bg="#f2f2f2")
+#   # par(bg = "#f2f2f2")
+#   plot3(df5,pp5, pp4, gradient=TRUE, circles=FALSE, stochasticity=TRUE, points=FALSE)
+#   rect(par("usr")[1], par("usr")[3],
+#        par("usr")[2], par("usr")[4],
+#        col = "#ffffff") # Color
+#   par(new = TRUE)
+#   plot3(df5,pp5, pp4, gradient=TRUE, circles=FALSE, stochasticity=TRUE, points=FALSE)
+#   
+# }
 
